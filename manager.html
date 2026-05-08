@@ -449,6 +449,399 @@
       0%   { transform: scale(1); opacity: 0.55; }
       100% { transform: scale(3); opacity: 0; }
     }
+
+    /* F-34: tab strip + burger + Profile tab + overlays */
+    .burger-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--white);
+      font-size: 18px;
+      line-height: 1;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+    .burger-btn:hover { color: var(--ice); border-color: var(--ice); }
+
+    .tab-strip {
+      display: flex;
+      gap: 4px;
+      background: var(--navy-mid);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 20px;
+      position: sticky;
+      top: 56px;
+      z-index: 9;
+    }
+    .tab-btn {
+      background: none;
+      color: var(--grey);
+      border: none;
+      border-radius: 7px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn.active {
+      background: var(--ice);
+      color: var(--navy);
+      font-weight: 600;
+    }
+
+    .profile-card {
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .profile-card-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: var(--ice);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .profile-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-row-label {
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--grey);
+      text-transform: uppercase;
+      flex-shrink: 0;
+      width: 110px;
+    }
+    .profile-row-value {
+      flex: 1;
+      font-size: 13px;
+      color: var(--white);
+      word-break: break-word;
+    }
+    .profile-row-value.readonly { color: var(--grey); }
+    .profile-row-edit-btn {
+      background: none;
+      border: none;
+      color: var(--ice);
+      font-size: 11px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+    .profile-row-edit-btn:hover { text-decoration: underline; }
+
+    .pin-holder-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+    .pin-holder-row:last-child { border-bottom: none; }
+    .pin-holder-name { font-size: 13px; color: var(--white); font-weight: 500; }
+    .pin-holder-meta { font-size: 11px; color: var(--grey); margin-top: 2px; }
+    .pin-holder-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .pin-holder-action-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--grey);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+    }
+    .pin-holder-action-btn:hover { border-color: var(--ice); color: var(--ice); }
+    .pin-holder-action-btn.danger { color: var(--red); border-color: rgba(239,68,68,0.3); }
+    .pin-holder-action-btn.danger:hover { border-color: var(--red); }
+
+    .upload-dropzone {
+      background: var(--navy);
+      border: 1.5px dashed rgba(168,216,234,0.35);
+      border-radius: 12px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .upload-dropzone:hover { border-color: var(--ice); background: rgba(168,216,234,0.04); }
+    .upload-dropzone.dragover { border-color: var(--ice); background: rgba(168,216,234,0.08); }
+
+    .proposal-card {
+      background: var(--navy);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .proposal-card-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .proposal-when { font-size: 13px; color: var(--white); font-weight: 500; }
+    .proposal-reason { font-size: 12px; color: var(--grey); margin-top: 4px; line-height: 1.5; }
+    .proposal-status-pill {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .proposal-status-pending { color: var(--amber); background: var(--amber-dim); border: 1px solid rgba(245,158,11,0.3); }
+    .proposal-status-approved { color: var(--green); background: var(--green-dim); border: 1px solid rgba(34,197,94,0.3); }
+    .proposal-status-declined { color: var(--red); background: var(--red-dim); border: 1px solid rgba(239,68,68,0.3); }
+    .proposal-status-cancelled { color: var(--grey); background: rgba(100,116,139,0.1); border: 1px solid var(--border); }
+
+    /* Burger drawer (slide from right). */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,31,61,0.7);
+      backdrop-filter: blur(2px);
+      display: none;
+      z-index: 100;
+    }
+    .overlay.open { display: block; }
+    .modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      width: calc(100% - 32px);
+      max-width: 440px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 6px;
+    }
+    .modal-sub {
+      font-size: 12px;
+      color: var(--grey);
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .modal-cancel-btn {
+      flex: 1;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--grey);
+      border-radius: 8px;
+      padding: 11px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+    }
+    .modal-confirm-btn {
+      flex: 1;
+      background: var(--ice);
+      color: var(--navy);
+      border: none;
+      border-radius: 8px;
+      padding: 11px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+    }
+    .modal-confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .field-label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--grey);
+      text-transform: uppercase;
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+
+    .burger-drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 280px;
+      max-width: 80vw;
+      background: var(--navy-mid);
+      border-left: 1px solid var(--border);
+      transform: translateX(100%);
+      transition: transform 0.2s ease-out;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+    .overlay.open .burger-drawer { transform: translateX(0); }
+    .burger-drawer-item {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--white);
+      border-radius: 10px;
+      padding: 13px 14px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      text-align: left;
+      margin-bottom: 8px;
+      transition: all 0.15s;
+    }
+    .burger-drawer-item:hover { border-color: var(--ice); color: var(--ice); }
+    .burger-drawer-spacer { flex: 1; }
+    .burger-drawer-signout {
+      background: none;
+      border: 1px solid rgba(239,68,68,0.3);
+      color: var(--red);
+      border-radius: 10px;
+      padding: 13px 14px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    /* Burger page: full-screen overlay for the four pages. */
+    .burger-page {
+      position: absolute;
+      inset: 0;
+      background: var(--navy);
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .burger-page-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .burger-page-back-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--grey);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+    .burger-page-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--white);
+    }
+    .impact-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .impact-stat-card {
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 14px;
+    }
+    .impact-stat-value { font-size: 22px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+    .impact-stat-label { font-size: 10px; letter-spacing: 1px; color: var(--grey); text-transform: uppercase; }
+
+    .glasi-row {
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .glasi-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--ice-dim);
+      color: var(--ice);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .glasi-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .glasi-row-meta { flex: 1; }
+    .glasi-row-name { font-size: 13px; color: var(--white); font-weight: 500; }
+    .glasi-row-sub { font-size: 11px; color: var(--grey); margin-top: 2px; }
+
+    /* Toast (F9): bottom-left fade-out. */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: var(--navy-mid);
+      border: 1px solid var(--ice);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--white);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      max-width: 300px;
+      z-index: 200;
+      animation: toast-in 0.2s ease-out, toast-out 0.3s ease-out 3.7s forwards;
+    }
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes toast-out {
+      to { opacity: 0; transform: translateY(10px); }
+    }
+
+    /* Mid-session revoke lock card. */
+    .revoke-lock-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,31,61,0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      padding: 24px;
+    }
+    .revoke-lock-card {
+      background: var(--navy-mid);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 360px;
+      text-align: center;
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -477,10 +870,19 @@
   <div class="portal-header">
     <span class="portal-wordmark">GLASI</span>
     <div style="font-size:13px;color:var(--grey);" id="header-bar-name"></div>
-    <button class="sign-out-btn" onclick="handleSignOut()">Sign out</button>
+    <button class="burger-btn" onclick="openBurgerMenu()" aria-label="Menu">&#9776;</button>
   </div>
 
+  <!-- F-34 tab strip -->
+  <nav class="tab-strip" id="manager-tab-strip">
+    <button id="tab-requests" class="tab-btn active" onclick="showManagerTab('requests')">Requests</button>
+    <button id="tab-profile" class="tab-btn" onclick="showManagerTab('profile')">Profile</button>
+  </nav>
+
   <div class="portal-content">
+
+  <!-- F-34: Requests tab body wraps the existing operational surface -->
+  <div id="tab-body-requests">
 
     <div class="venue-name" id="portal-venue-name"></div>
     <div class="venue-sub" id="portal-venue-sub"></div>
@@ -683,6 +1085,131 @@
       </div>
     </div>
 
+  </div><!-- /tab-body-requests -->
+
+  <!-- F-34: Profile tab body. Stacked vertically; default scroll to top. -->
+  <div id="tab-body-profile" style="display:none;">
+
+    <section id="profile-venue-details" class="profile-card">
+      <div class="profile-card-title">Venue Details</div>
+      <div id="venue-details-rows"><div style="font-size:12px;color:var(--grey);">Loading...</div></div>
+    </section>
+
+    <section id="profile-pin-holders" class="profile-card">
+      <div class="profile-card-title">PIN-Holders</div>
+      <div id="pin-holder-pending"></div>
+      <div id="pin-holder-active"><div style="font-size:12px;color:var(--grey);">Loading...</div></div>
+      <button class="primary-btn" style="margin-top:14px;" onclick="openRequestPinHolderModal()">+ Request new PIN-holder</button>
+      <div id="pin-holder-history-toggle" style="display:none;margin-top:14px;text-align:center;">
+        <button class="pin-holder-action-btn" onclick="togglePinHolderHistory()">Show history</button>
+      </div>
+      <div id="pin-holder-history" style="display:none;margin-top:10px;"></div>
+    </section>
+
+    <section id="profile-hs-document" class="profile-card">
+      <div class="profile-card-title">H&S Document</div>
+      <div id="hs-document-current" style="margin-bottom:14px;"></div>
+      <div class="upload-dropzone" id="hs-upload-zone" onclick="document.getElementById('hs-upload-input').click()">
+        <div style="font-size:13px;color:var(--white);font-weight:500;margin-bottom:6px;">Upload or replace</div>
+        <div style="font-size:11px;color:var(--grey);">PDF only, up to 10 MB</div>
+        <input type="file" id="hs-upload-input" accept="application/pdf" style="display:none;" onchange="handleHsUploadInput(event)">
+      </div>
+      <div id="hs-upload-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
+      <div id="hs-upload-success" style="font-size:12px;color:var(--green);margin-top:8px;min-height:14px;"></div>
+    </section>
+
+    <section id="profile-proposed-sessions" class="profile-card">
+      <div class="profile-card-title">Your Proposed Sessions</div>
+      <div id="proposed-sessions-list"><div style="font-size:12px;color:var(--grey);">Loading...</div></div>
+      <button class="primary-btn" style="margin-top:14px;" onclick="openProposeSessionModal()">+ Propose a session</button>
+    </section>
+
+  </div><!-- /tab-body-profile -->
+
+  </div>
+</div>
+
+<!-- F-34 OVERLAYS -->
+
+<div id="ov-burger" class="overlay" onclick="closeBurgerMenu(event)">
+  <div class="burger-drawer" onclick="event.stopPropagation()">
+    <div style="font-size:11px;letter-spacing:2px;color:var(--grey);text-transform:uppercase;margin-bottom:14px;padding:6px 4px;">Menu</div>
+    <button class="burger-drawer-item" onclick="openBurgerPage('past-requests')">Past Requests</button>
+    <button class="burger-drawer-item" onclick="openBurgerPage('past-glasis')">Past Glasis</button>
+    <button class="burger-drawer-item" onclick="openBurgerPage('impact')">Impact</button>
+    <button class="burger-drawer-item" onclick="openBurgerPage('invoices')">Invoices</button>
+    <div class="burger-drawer-spacer"></div>
+    <button class="burger-drawer-signout" onclick="handleSignOut()">Sign out</button>
+  </div>
+</div>
+
+<div id="ov-burger-page" class="overlay">
+  <div class="burger-page">
+    <div class="burger-page-header">
+      <button class="burger-page-back-btn" onclick="closeBurgerPage()">&larr; Back</button>
+      <div class="burger-page-title" id="burger-page-title"></div>
+    </div>
+    <div id="burger-page-body"><div style="font-size:13px;color:var(--grey);">Loading...</div></div>
+  </div>
+</div>
+
+<div id="ov-propose-session" class="overlay">
+  <div class="modal">
+    <div class="modal-title">Propose a session</div>
+    <div class="modal-sub">Pick a date and time at least 24 hours from now. Sessions are 4 hours long. Sam will review and approve or decline.</div>
+    <label class="field-label">Date</label>
+    <input type="date" id="propose-date" class="field" />
+    <label class="field-label">Start time</label>
+    <input type="time" id="propose-time" class="field" step="1800" value="18:00" />
+    <label class="field-label">Reason note (optional)</label>
+    <textarea id="propose-reason" class="field" rows="3" placeholder="Anything Sam should know..." style="resize:none;"></textarea>
+    <div id="propose-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" onclick="closeOverlay('ov-propose-session')">Cancel</button>
+      <button class="modal-confirm-btn" id="propose-submit-btn" onclick="submitProposeSession()">Submit</button>
+    </div>
+  </div>
+</div>
+
+<div id="ov-request-pin-holder" class="overlay">
+  <div class="modal">
+    <div class="modal-title">Request a new PIN-holder</div>
+    <div class="modal-sub">Sam will review and on approval invite the person by email to set up their account. They will then have their own PIN.</div>
+    <label class="field-label">Name</label>
+    <input type="text" id="request-pin-name" class="field" placeholder="e.g. Jordan" />
+    <label class="field-label">Email</label>
+    <input type="email" id="request-pin-email" class="field" placeholder="person@email.com" />
+    <div id="request-pin-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" onclick="closeOverlay('ov-request-pin-holder')">Cancel</button>
+      <button class="modal-confirm-btn" id="request-pin-submit-btn" onclick="submitRequestPinHolder()">Submit request</button>
+    </div>
+  </div>
+</div>
+
+<div id="ov-edit-pin-holder" class="overlay">
+  <div class="modal">
+    <div class="modal-title">Regenerate PIN</div>
+    <div class="modal-sub" id="edit-pin-target-name"></div>
+    <label class="field-label">New 4-digit PIN</label>
+    <input type="text" id="edit-pin-new" class="field" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="letter-spacing:6px;" />
+    <div id="edit-pin-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" onclick="closeOverlay('ov-edit-pin-holder')">Cancel</button>
+      <button class="modal-confirm-btn" id="edit-pin-submit-btn" onclick="submitRegeneratePin()">Set PIN</button>
+    </div>
+  </div>
+</div>
+
+<div id="ov-confirm-revoke" class="overlay">
+  <div class="modal">
+    <div class="modal-title">Revoke PIN-holder</div>
+    <div class="modal-sub" id="revoke-target-msg"></div>
+    <div id="revoke-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" onclick="closeOverlay('ov-confirm-revoke')">Cancel</button>
+      <button class="modal-confirm-btn" id="revoke-submit-btn" style="background:var(--red);color:var(--white);" onclick="submitRevokePinHolder()">Revoke</button>
+    </div>
   </div>
 </div>
 
@@ -777,13 +1304,23 @@
     if(sessionBarsWatchWs) { try { sessionBarsWatchWs.close(); } catch(e) {} sessionBarsWatchWs = null; }
     mySessionIds = new Set();
     if(shiftRequestsWs) { try { shiftRequestsWs.close(); } catch(e) {} shiftRequestsWs = null; }
+    if(pinHolderRequestsWs) { try { pinHolderRequestsWs.close(); } catch(e) {} pinHolderRequestsWs = null; }
+    if(barManagersWs) { try { barManagersWs.close(); } catch(e) {} barManagersWs = null; }
     stopPendingRequestExpiry();
     currentBar = null;
     currentManager = null;
     selectedShiftLength = null;
+    profileLoaded = false;
+    pinHolderRequestsCache = [];
+    activePinHoldersCache = [];
+    proposedSessionsCache = [];
+    closeOverlay('ov-burger');
+    closeOverlay('ov-burger-page');
     document.getElementById('login-email').value = '';
     document.getElementById('login-password').value = '';
     document.getElementById('login-error').textContent = '';
+    const lockEl = document.getElementById('revoke-lock-overlay');
+    if(lockEl) lockEl.remove();
     showScreen('login');
   }
 
@@ -859,6 +1396,9 @@
     // Subscribe to shift_requests INSERT/UPDATE for this bar (sonar refresh,
     // expiry, recall surfacing).
     subscribeToShiftRequestsForManager();
+    // F-34: pin_holder_requests realtime + bar_managers mid-session revoke detection.
+    startPinHolderRequestsWatch();
+    startBarManagersWatch();
   }
 
   function startBarRealtime() {
@@ -1027,6 +1567,12 @@
             if(pill) pill.style.display = 'none';
             document.getElementById('no-session-card').style.display = 'block';
           }
+        } else if(record.status === 'scheduled' || record.status === 'declined' || record.status === 'cancelled') {
+          // F-34: bar-proposal lifecycle. Refresh the Profile tab's proposed-sessions
+          // section if it has been loaded; surface a toast on the relevant transition.
+          if(record.status === 'scheduled') showToast('Session approved by Sam');
+          else if(record.status === 'declined') showToast('Session proposal declined');
+          if(profileLoaded) loadProposedSessions();
         }
       } catch(e) {}
     };
@@ -1670,6 +2216,899 @@
         + statusContent
         + '</div>';
     }).join('');
+  }
+
+  // =====================================================================
+  // F-34: Tab strip + Profile tab + burger menu + propose flow + PIN-holder
+  // request flow + H&S upload + mid-session revoke detection.
+  // =====================================================================
+
+  let profileLoaded = false;
+  let pinHolderRequestsCache = [];
+  let activePinHoldersCache = [];
+  let proposedSessionsCache = [];
+  let revokeTargetManagerId = null;
+  let editPinTargetManagerId = null;
+  let pinHolderRequestsWs = null;
+  let barManagersWs = null;
+
+  function showManagerTab(tabName) {
+    const isProfile = tabName === 'profile';
+    document.getElementById('tab-body-requests').style.display = isProfile ? 'none' : 'block';
+    document.getElementById('tab-body-profile').style.display = isProfile ? 'block' : 'none';
+    document.getElementById('tab-requests').classList.toggle('active', !isProfile);
+    document.getElementById('tab-profile').classList.toggle('active', isProfile);
+    if (isProfile) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      loadProfileTab();
+    }
+  }
+
+  async function loadProfileTab() {
+    if (!currentBar) return;
+    profileLoaded = true;
+    await Promise.all([
+      loadVenueDetails(),
+      loadPinHolders(),
+      loadHsDocument(),
+      loadProposedSessions()
+    ]);
+  }
+
+  // ---------------------------------------------------------------
+  // Venue Details: editable rows for name, contact phone, opening
+  // time, closing time, Google Maps link, session schedule. Address
+  // is read-only on manager side per locked decision 3.
+  // ---------------------------------------------------------------
+  function loadVenueDetails() {
+    const el = document.getElementById('venue-details-rows');
+    if (!el || !currentBar) return;
+    const rows = [
+      { key: 'name', label: 'Name', value: currentBar.name || '', type: 'text', editable: true },
+      { key: 'address', label: 'Address', value: currentBar.address || '', type: 'text', editable: false },
+      { key: 'contact_name', label: 'Contact name', value: currentBar.contact_name || '', type: 'text', editable: true },
+      { key: 'contact_phone', label: 'Contact phone', value: currentBar.contact_phone || '', type: 'tel', editable: true },
+      { key: 'opening_time', label: 'Opens', value: (currentBar.opening_time || '').slice(0,5), type: 'time', editable: true },
+      { key: 'closing_time', label: 'Closes', value: (currentBar.closing_time || '').slice(0,5), type: 'time', editable: true },
+      { key: 'google_maps_link', label: 'Maps link', value: currentBar.google_maps_link || '', type: 'url', editable: true },
+      { key: 'session_schedule', label: 'Sessions', value: currentBar.session_schedule || '', type: 'text', editable: true }
+    ];
+    el.innerHTML = rows.map(r => `
+      <div class="profile-row" data-key="${r.key}">
+        <div class="profile-row-label">${r.label}</div>
+        <div class="profile-row-value ${r.editable ? '' : 'readonly'}" data-display>${escapeHtml(r.value) || '<span style="color:var(--grey);font-size:12px;">not set</span>'}</div>
+        ${r.editable ? '<button class="profile-row-edit-btn" onclick="startEditVenueRow(this,\'' + r.key + '\',\'' + r.type + '\')">Edit</button>' : '<span style="font-size:11px;color:var(--grey);">Sam-edit only</span>'}
+      </div>
+    `).join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function startEditVenueRow(btnEl, key, type) {
+    const row = btnEl.closest('.profile-row');
+    const display = row.querySelector('[data-display]');
+    const currentValue = currentBar[key] || '';
+    const valueForInput = (key === 'opening_time' || key === 'closing_time')
+      ? (currentValue || '').slice(0,5)
+      : currentValue;
+    display.innerHTML = `<input type="${type}" class="field" data-edit-input value="${escapeHtml(valueForInput)}" style="margin:0;">`;
+    btnEl.outerHTML = `
+      <span style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="profile-row-edit-btn" onclick="saveEditVenueRow(this,'${key}')">Save</button>
+        <button class="profile-row-edit-btn" style="color:var(--grey);" onclick="cancelEditVenueRow(this,'${key}')">Cancel</button>
+      </span>
+    `;
+    const input = display.querySelector('[data-edit-input]');
+    if (input) input.focus();
+  }
+
+  function cancelEditVenueRow(btnEl, key) {
+    loadVenueDetails();
+  }
+
+  async function saveEditVenueRow(btnEl, key) {
+    const row = btnEl.closest('.profile-row');
+    const input = row.querySelector('[data-edit-input]');
+    if (!input) return;
+    const newValue = (input.value || '').trim();
+    const patch = {};
+    if (key === 'opening_time' || key === 'closing_time') {
+      patch[key] = newValue ? newValue + ':00' : null;
+    } else {
+      patch[key] = newValue || null;
+    }
+    btnEl.disabled = true;
+    btnEl.textContent = 'Saving...';
+    try {
+      const resp = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + currentBar.id, {
+        method: 'PATCH',
+        headers: { ...H, 'Prefer': 'return=representation' },
+        body: JSON.stringify(patch)
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const updated = await resp.json();
+      if (updated && updated[0]) {
+        currentBar = { ...currentBar, ...updated[0] };
+      }
+      loadVenueDetails();
+      showToast('Saved');
+    } catch (e) {
+      console.error('saveEditVenueRow failed', e);
+      btnEl.disabled = false;
+      btnEl.textContent = 'Save';
+      alert('Could not save: ' + (e.message || 'unknown'));
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // PIN-Holders: active list + pending requests at top + history toggle.
+  // ---------------------------------------------------------------
+  async function loadPinHolders() {
+    if (!currentBar) return;
+    try {
+      const [active, requests] = await Promise.all([
+        fetch(SUPABASE_URL + '/rest/v1/bar_managers?bar_id=eq.' + currentBar.id + '&revoked_at=is.null&order=created_at.asc&select=id,name,created_at', { headers: H }).then(r => r.json()),
+        fetch(SUPABASE_URL + '/rest/v1/pin_holder_requests?bar_id=eq.' + currentBar.id + '&order=created_at.desc&select=id,proposed_name,proposed_email,status,decline_reason,created_at,updated_at', { headers: H }).then(r => r.json())
+      ]);
+      activePinHoldersCache = Array.isArray(active) ? active : [];
+      pinHolderRequestsCache = Array.isArray(requests) ? requests : [];
+      renderPinHolders();
+    } catch (e) {
+      console.error('loadPinHolders failed', e);
+    }
+  }
+
+  function renderPinHolders() {
+    const pendingEl = document.getElementById('pin-holder-pending');
+    const activeEl = document.getElementById('pin-holder-active');
+    const historyToggle = document.getElementById('pin-holder-history-toggle');
+    const historyEl = document.getElementById('pin-holder-history');
+    if (!pendingEl || !activeEl) return;
+
+    const pending = pinHolderRequestsCache.filter(r => r.status === 'pending');
+    const history = pinHolderRequestsCache.filter(r => r.status !== 'pending');
+
+    pendingEl.innerHTML = pending.length ? (
+      '<div style="font-size:10px;letter-spacing:1px;color:var(--amber);text-transform:uppercase;margin-bottom:8px;">Pending requests</div>'
+      + pending.map(r => `
+        <div class="pin-holder-row" style="background:var(--amber-dim);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:10px 12px;border-bottom:none;margin-bottom:8px;">
+          <div>
+            <div class="pin-holder-name">${escapeHtml(r.proposed_name)}</div>
+            <div class="pin-holder-meta">${escapeHtml(r.proposed_email)} &middot; awaiting Sam</div>
+          </div>
+          <div class="pin-holder-actions">
+            <button class="pin-holder-action-btn" onclick="confirmWithdrawPinHolderRequest(${r.id})">Withdraw</button>
+          </div>
+        </div>
+      `).join('')
+    ) : '';
+
+    activeEl.innerHTML = activePinHoldersCache.length ? activePinHoldersCache.map(m => {
+      const created = m.created_at ? new Date(m.created_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : '';
+      return `
+        <div class="pin-holder-row">
+          <div>
+            <div class="pin-holder-name">${escapeHtml(m.name || '(no name)')}</div>
+            <div class="pin-holder-meta">PIN-holder since ${created}</div>
+          </div>
+          <div class="pin-holder-actions">
+            <button class="pin-holder-action-btn" onclick="openRegeneratePinModal(${m.id}, ${JSON.stringify(m.name || '')})">Regenerate PIN</button>
+            <button class="pin-holder-action-btn danger" onclick="openConfirmRevoke(${m.id}, ${JSON.stringify(m.name || '')})">Revoke</button>
+          </div>
+        </div>
+      `;
+    }).join('') : '<div style="font-size:12px;color:var(--grey);padding:8px 0;">No active PIN-holders.</div>';
+
+    if (history.length) {
+      historyToggle.style.display = 'block';
+      historyEl.innerHTML = history.map(r => {
+        const labelMap = { approved: 'Approved', declined: 'Declined', cancelled: 'Cancelled' };
+        const colourMap = { approved: 'var(--green)', declined: 'var(--red)', cancelled: 'var(--grey)' };
+        const when = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
+        return `<div class="pin-holder-row">
+          <div>
+            <div class="pin-holder-name">${escapeHtml(r.proposed_name)}</div>
+            <div class="pin-holder-meta">${escapeHtml(r.proposed_email)} &middot; ${when}</div>
+          </div>
+          <div style="font-size:11px;font-weight:600;color:${colourMap[r.status] || 'var(--grey)'};">${labelMap[r.status] || r.status}</div>
+        </div>`;
+      }).join('');
+    } else {
+      historyToggle.style.display = 'none';
+      historyEl.style.display = 'none';
+      historyEl.innerHTML = '';
+    }
+  }
+
+  function togglePinHolderHistory() {
+    const el = document.getElementById('pin-holder-history');
+    const btn = document.querySelector('#pin-holder-history-toggle button');
+    const showing = el.style.display === 'block';
+    el.style.display = showing ? 'none' : 'block';
+    if (btn) btn.textContent = showing ? 'Show history' : 'Hide history';
+  }
+
+  function openRequestPinHolderModal() {
+    document.getElementById('request-pin-name').value = '';
+    document.getElementById('request-pin-email').value = '';
+    document.getElementById('request-pin-error').textContent = '';
+    const btn = document.getElementById('request-pin-submit-btn');
+    btn.disabled = false;
+    btn.textContent = 'Submit request';
+    openOverlay('ov-request-pin-holder');
+  }
+
+  async function submitRequestPinHolder() {
+    const errEl = document.getElementById('request-pin-error');
+    const btn = document.getElementById('request-pin-submit-btn');
+    errEl.textContent = '';
+    const name = document.getElementById('request-pin-name').value.trim();
+    const email = document.getElementById('request-pin-email').value.trim().toLowerCase();
+    if (!name) { errEl.textContent = 'Name required.'; return; }
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { errEl.textContent = 'Valid email required.'; return; }
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    try {
+      const { data, error } = await sbAuth.rpc('request_pin_holder', {
+        p_bar_id: currentBar.id,
+        p_proposed_name: name,
+        p_proposed_email: email
+      });
+      if (error) throw error;
+      closeOverlay('ov-request-pin-holder');
+      showToast('Request sent to Sam');
+      await loadPinHolders();
+    } catch (e) {
+      console.error('submitRequestPinHolder failed', e);
+      errEl.textContent = 'Could not send: ' + (e.message || 'unknown');
+      btn.disabled = false;
+      btn.textContent = 'Submit request';
+    }
+  }
+
+  async function confirmWithdrawPinHolderRequest(requestId) {
+    if (!confirm('Withdraw this PIN-holder request?')) return;
+    try {
+      const { data, error } = await sbAuth.rpc('withdraw_pin_holder_request', { p_request_id: requestId });
+      if (error) throw error;
+      showToast('Request withdrawn');
+      await loadPinHolders();
+    } catch (e) {
+      console.error('withdraw_pin_holder_request failed', e);
+      alert('Could not withdraw: ' + (e.message || 'unknown'));
+    }
+  }
+
+  function openRegeneratePinModal(managerId, name) {
+    editPinTargetManagerId = managerId;
+    document.getElementById('edit-pin-target-name').textContent = 'For: ' + name;
+    document.getElementById('edit-pin-new').value = '';
+    document.getElementById('edit-pin-error').textContent = '';
+    const btn = document.getElementById('edit-pin-submit-btn');
+    btn.disabled = false;
+    btn.textContent = 'Set PIN';
+    openOverlay('ov-edit-pin-holder');
+  }
+
+  async function submitRegeneratePin() {
+    if (!editPinTargetManagerId) return;
+    const errEl = document.getElementById('edit-pin-error');
+    const btn = document.getElementById('edit-pin-submit-btn');
+    errEl.textContent = '';
+    const newPin = document.getElementById('edit-pin-new').value.trim();
+    if (!/^\d{4}$/.test(newPin)) { errEl.textContent = 'PIN must be exactly 4 digits.'; return; }
+    btn.disabled = true;
+    btn.textContent = 'Setting...';
+    try {
+      const { data, error } = await sbAuth.rpc('set_bar_manager_pin', {
+        manager_id: editPinTargetManagerId,
+        new_pin: newPin
+      });
+      if (error || data !== true) throw new Error((error && error.message) || 'PIN set failed');
+      closeOverlay('ov-edit-pin-holder');
+      showToast('PIN updated');
+    } catch (e) {
+      console.error('set_bar_manager_pin failed', e);
+      errEl.textContent = 'Could not set PIN: ' + (e.message || 'unknown');
+      btn.disabled = false;
+      btn.textContent = 'Set PIN';
+    }
+  }
+
+  function openConfirmRevoke(managerId, name) {
+    revokeTargetManagerId = managerId;
+    const isLast = activePinHoldersCache.length <= 1;
+    const msg = isLast
+      ? 'You cannot revoke ' + name + ' because they are the only active PIN-holder for this bar. Add another PIN-holder first.'
+      : 'Revoke ' + name + '? They will lose access immediately and cannot log in.';
+    document.getElementById('revoke-target-msg').textContent = msg;
+    document.getElementById('revoke-error').textContent = '';
+    const btn = document.getElementById('revoke-submit-btn');
+    btn.disabled = isLast;
+    btn.textContent = 'Revoke';
+    openOverlay('ov-confirm-revoke');
+  }
+
+  async function submitRevokePinHolder() {
+    if (!revokeTargetManagerId) return;
+    const errEl = document.getElementById('revoke-error');
+    const btn = document.getElementById('revoke-submit-btn');
+    errEl.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Revoking...';
+    try {
+      const { data, error } = await sbAuth.rpc('revoke_pin_holder_self_serve', { p_manager_id: revokeTargetManagerId });
+      if (error) throw error;
+      if (data !== true) throw new Error('Revoke returned false');
+      closeOverlay('ov-confirm-revoke');
+      showToast('PIN-holder revoked');
+      await loadPinHolders();
+    } catch (e) {
+      console.error('revoke_pin_holder_self_serve failed', e);
+      errEl.textContent = 'Could not revoke: ' + (e.message || 'unknown');
+      btn.disabled = false;
+      btn.textContent = 'Revoke';
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // H&S Document upload + view.
+  // ---------------------------------------------------------------
+  async function loadHsDocument() {
+    const cur = document.getElementById('hs-document-current');
+    if (!cur || !currentBar) return;
+    if (!currentBar.hs_document_url) {
+      cur.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:6px 0;">No H&amp;S document uploaded yet.</div>';
+      return;
+    }
+    const stored = currentBar.hs_document_url;
+    const filename = stored.split('/').pop() || 'document.pdf';
+    cur.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;color:var(--white);font-weight:500;word-break:break-all;">${escapeHtml(filename)}</div>
+          <div style="font-size:11px;color:var(--grey);margin-top:2px;">Currently live</div>
+        </div>
+        <button class="pin-holder-action-btn" onclick="viewHsDocument()">View</button>
+      </div>
+    `;
+  }
+
+  async function viewHsDocument() {
+    if (!currentBar || !currentBar.hs_document_url) return;
+    const stored = currentBar.hs_document_url;
+    if (/^https?:\/\//i.test(stored)) {
+      window.open(stored, '_blank');
+      return;
+    }
+    try {
+      const resp = await fetch(SUPABASE_URL + '/storage/v1/object/sign/bar_hs_documents/' + encodeURIComponent(stored), {
+        method: 'POST',
+        headers: { ...H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expiresIn: 600 })
+      });
+      const data = await resp.json();
+      const signedPath = data && (data.signedURL || data.signedUrl);
+      if (signedPath) {
+        window.open(SUPABASE_URL + '/storage/v1' + signedPath, '_blank');
+      } else {
+        alert('Could not open document.');
+      }
+    } catch (e) {
+      console.error('viewHsDocument failed', e);
+      alert('Could not open document.');
+    }
+  }
+
+  function handleHsUploadInput(event) {
+    const file = event.target.files && event.target.files[0];
+    if (file) uploadHsDocument(file);
+    event.target.value = '';
+  }
+
+  async function uploadHsDocument(file) {
+    const errEl = document.getElementById('hs-upload-error');
+    const okEl = document.getElementById('hs-upload-success');
+    errEl.textContent = '';
+    okEl.textContent = '';
+    if (file.type !== 'application/pdf') { errEl.textContent = 'PDF only.'; return; }
+    if (file.size > 10485760) { errEl.textContent = 'File exceeds 10 MB limit.'; return; }
+    if (!currentBar) return;
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = currentBar.id + '/' + safeName;
+    okEl.textContent = 'Uploading...';
+
+    try {
+      const uploadResp = await fetch(
+        SUPABASE_URL + '/storage/v1/object/' + encodeURIComponent('bar_hs_documents') + '/' + encodeURIComponent(currentBar.id) + '/' + encodeURIComponent(safeName),
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': H.Authorization,
+            'apikey': SUPABASE_ANON_KEY,
+            'Content-Type': 'application/pdf',
+            'x-upsert': 'true'
+          },
+          body: file
+        }
+      );
+      if (!uploadResp.ok) {
+        const txt = await uploadResp.text().catch(() => '');
+        throw new Error('Upload failed: ' + uploadResp.status + ' ' + txt);
+      }
+
+      const patchResp = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + currentBar.id, {
+        method: 'PATCH',
+        headers: { ...H, 'Prefer': 'return=representation' },
+        body: JSON.stringify({ hs_document_url: path })
+      });
+      if (!patchResp.ok) throw new Error('PATCH failed: ' + patchResp.status);
+      const updated = await patchResp.json();
+      if (updated && updated[0]) currentBar = { ...currentBar, ...updated[0] };
+
+      okEl.textContent = 'Uploaded. Workers in your coverage area will be prompted to re-confirm the new document.';
+      loadHsDocument();
+      showToast('Document uploaded');
+    } catch (e) {
+      console.error('uploadHsDocument failed', e);
+      okEl.textContent = '';
+      errEl.textContent = (e.message || 'Upload failed');
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Your Proposed Sessions.
+  // ---------------------------------------------------------------
+  async function loadProposedSessions() {
+    const el = document.getElementById('proposed-sessions-list');
+    if (!el || !currentBar) return;
+    try {
+      const rows = await fetch(SUPABASE_URL + '/rest/v1/sessions'
+        + '?status=in.(proposed,scheduled,declined,cancelled)'
+        + '&session_bars.bar_id=eq.' + currentBar.id
+        + '&select=id,session_date,start_time,scheduled_start,status,proposal_reason,decline_reason,created_at,session_bars!inner(bar_id)'
+        + '&order=created_at.desc',
+        { headers: H }).then(r => r.json());
+      proposedSessionsCache = Array.isArray(rows) ? rows : [];
+      renderProposedSessions();
+    } catch (e) {
+      console.error('loadProposedSessions failed', e);
+      el.innerHTML = '<div style="font-size:12px;color:var(--red);">Could not load proposed sessions.</div>';
+    }
+  }
+
+  function renderProposedSessions() {
+    const el = document.getElementById('proposed-sessions-list');
+    if (!el) return;
+    if (!proposedSessionsCache.length) {
+      el.innerHTML = '<div style="font-size:12px;color:var(--grey);padding:6px 0;">No proposed sessions yet.</div>';
+      return;
+    }
+    el.innerHTML = proposedSessionsCache.map(s => {
+      const dt = s.scheduled_start ? new Date(s.scheduled_start)
+        : (s.session_date ? new Date(s.session_date + 'T' + (s.start_time || '18:00:00')) : null);
+      const dateStr = dt ? dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}) : 'TBC';
+      const timeStr = dt ? dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+      const statusLabelMap = { proposed: 'Pending', scheduled: 'Approved', declined: 'Declined', cancelled: 'Cancelled' };
+      const pillClass = 'proposal-status-' + (s.status === 'scheduled' ? 'approved' : s.status);
+      const reasonHtml = s.proposal_reason ? `<div class="proposal-reason">${escapeHtml(s.proposal_reason)}</div>` : '';
+      const withdrawBtn = s.status === 'proposed'
+        ? `<button class="pin-holder-action-btn" style="margin-top:10px;" onclick="confirmWithdrawProposal(${s.id})">Withdraw</button>`
+        : '';
+      return `<div class="proposal-card">
+        <div class="proposal-card-row">
+          <div>
+            <div class="proposal-when">${dateStr} at ${timeStr}</div>
+            ${reasonHtml}
+          </div>
+          <div class="proposal-status-pill ${pillClass}">${statusLabelMap[s.status] || s.status}</div>
+        </div>
+        ${withdrawBtn}
+      </div>`;
+    }).join('');
+  }
+
+  function openProposeSessionModal() {
+    document.getElementById('propose-error').textContent = '';
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() + 1);
+    const minDateStr = minDate.toISOString().split('T')[0];
+    document.getElementById('propose-date').min = minDateStr;
+    document.getElementById('propose-date').value = '';
+    document.getElementById('propose-time').value = '18:00';
+    document.getElementById('propose-reason').value = '';
+    const btn = document.getElementById('propose-submit-btn');
+    btn.disabled = false;
+    btn.textContent = 'Submit';
+    openOverlay('ov-propose-session');
+  }
+
+  async function submitProposeSession() {
+    const errEl = document.getElementById('propose-error');
+    const btn = document.getElementById('propose-submit-btn');
+    errEl.textContent = '';
+    const date = document.getElementById('propose-date').value;
+    const time = document.getElementById('propose-time').value;
+    const reason = document.getElementById('propose-reason').value.trim();
+    if (!date) { errEl.textContent = 'Pick a date.'; return; }
+    if (!time) { errEl.textContent = 'Pick a start time.'; return; }
+    const scheduledStart = new Date(date + 'T' + time + ':00').toISOString();
+    if (new Date(scheduledStart).getTime() < (Date.now() + 24*60*60*1000)) {
+      errEl.textContent = 'Start must be at least 24 hours from now.';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    try {
+      const { data, error } = await sbAuth.rpc('propose_session_for_bar', {
+        p_bar_id: currentBar.id,
+        p_session_date: date,
+        p_start_time: time + ':00',
+        p_scheduled_start: scheduledStart,
+        p_proposal_reason: reason || null
+      });
+      if (error) throw error;
+      closeOverlay('ov-propose-session');
+      showToast('Proposal sent to Sam');
+      await loadProposedSessions();
+    } catch (e) {
+      console.error('propose_session_for_bar failed', e);
+      const msg = (e && e.message) || '';
+      if (/24 hours/i.test(msg)) errEl.textContent = 'Start must be at least 24 hours from now.';
+      else if (/already has a proposed or scheduled session/i.test(msg)) errEl.textContent = 'You already have a session proposed or scheduled for that date.';
+      else errEl.textContent = 'Could not submit: ' + msg;
+      btn.disabled = false;
+      btn.textContent = 'Submit';
+    }
+  }
+
+  async function confirmWithdrawProposal(sessionId) {
+    if (!confirm('Withdraw this proposed session?')) return;
+    try {
+      const { data, error } = await sbAuth.rpc('withdraw_session_proposal', { p_session_id: sessionId });
+      if (error) throw error;
+      if (data !== true) {
+        alert('Could not withdraw. The session may already have been approved by Sam.');
+      } else {
+        showToast('Proposal withdrawn');
+      }
+      await loadProposedSessions();
+    } catch (e) {
+      console.error('withdraw_session_proposal failed', e);
+      alert('Could not withdraw: ' + (e.message || 'unknown'));
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Burger menu + four pages.
+  // ---------------------------------------------------------------
+  function openBurgerMenu() { openOverlay('ov-burger'); }
+  function closeBurgerMenu(event) {
+    if (event && event.target.closest && event.target.closest('.burger-drawer')) return;
+    closeOverlay('ov-burger');
+  }
+  function closeBurgerPage() { closeOverlay('ov-burger-page'); }
+
+  function openBurgerPage(pageId) {
+    closeOverlay('ov-burger');
+    const titleMap = { 'past-requests': 'Past Requests', 'past-glasis': 'Past Glasis', 'impact': 'Impact', 'invoices': 'Invoices' };
+    document.getElementById('burger-page-title').textContent = titleMap[pageId] || '';
+    document.getElementById('burger-page-body').innerHTML = '<div style="font-size:13px;color:var(--grey);">Loading...</div>';
+    openOverlay('ov-burger-page');
+    if (pageId === 'past-requests') loadBurgerPagePastRequests();
+    else if (pageId === 'past-glasis') loadBurgerPagePastGlasis();
+    else if (pageId === 'impact') loadBurgerPageImpact();
+    else if (pageId === 'invoices') loadBurgerPageInvoices();
+  }
+
+  function ninetyDaysAgoIso() {
+    const d = new Date();
+    d.setDate(d.getDate() - 90);
+    return d.toISOString();
+  }
+
+  async function loadBurgerPagePastRequests() {
+    const el = document.getElementById('burger-page-body');
+    try {
+      const since = ninetyDaysAgoIso();
+      const rows = await fetch(SUPABASE_URL + '/rest/v1/shift_requests'
+        + '?bar_id=eq.' + currentBar.id
+        + '&created_at=gte.' + encodeURIComponent(since)
+        + '&order=created_at.desc'
+        + '&select=id,posted_at,created_at,shift_length_hours,status,bar_managers(name),shifts(clock_in_confirmed_at,clock_out_confirmed_at,bar_rating,session_workers(applications(id,name)))',
+        { headers: H }).then(r => r.json());
+      if (!Array.isArray(rows) || !rows.length) {
+        el.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:12px 0;">No requests in the last 90 days.</div>';
+        return;
+      }
+      el.innerHTML = rows.map(r => {
+        const dt = r.posted_at ? new Date(r.posted_at) : (r.created_at ? new Date(r.created_at) : null);
+        const dateStr = dt ? dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) : '';
+        const timeStr = dt ? dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+        const firer = r.bar_managers && r.bar_managers.name ? r.bar_managers.name : 'unknown';
+        const shift = r.shifts && r.shifts[0];
+        const worker = shift && shift.session_workers && shift.session_workers.applications;
+        const workerLabel = worker ? formatWorkerName(worker.name) : '';
+        return `<div class="proposal-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+            <div>
+              <div style="font-size:13px;color:var(--white);font-weight:500;">${dateStr} at ${timeStr}</div>
+              <div style="font-size:11px;color:var(--grey);margin-top:3px;">Fired by ${escapeHtml(firer)} &middot; ${r.shift_length_hours || '?'}hr shift</div>
+              ${workerLabel ? '<div style="font-size:11px;color:var(--ice);margin-top:3px;">Worker: ' + escapeHtml(workerLabel) + '</div>' : ''}
+            </div>
+            <div style="font-size:11px;font-weight:600;color:var(--grey);text-transform:uppercase;">${escapeHtml(r.status || '')}</div>
+          </div>
+        </div>`;
+      }).join('');
+    } catch (e) {
+      console.error('loadBurgerPagePastRequests failed', e);
+      el.innerHTML = '<div style="font-size:13px;color:var(--red);">Could not load past requests.</div>';
+    }
+  }
+
+  function formatWorkerName(name) {
+    if (!name) return '';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0];
+    return parts[0] + ' ' + parts[parts.length - 1].charAt(0).toUpperCase() + '.';
+  }
+
+  function avatarFallback(name) {
+    return (name || '?').trim().charAt(0).toUpperCase() || '?';
+  }
+
+  async function loadBurgerPagePastGlasis() {
+    const el = document.getElementById('burger-page-body');
+    try {
+      const since = ninetyDaysAgoIso();
+      const rows = await fetch(SUPABASE_URL + '/rest/v1/shifts'
+        + '?bar_id=eq.' + currentBar.id
+        + '&clock_in_confirmed_at=gte.' + encodeURIComponent(since)
+        + '&order=clock_in_confirmed_at.desc'
+        + '&select=id,clock_in_confirmed_at,clock_out_confirmed_at,shift_length_hours,total_earned,bar_rating,would_want_again,session_workers(applications(id,name,profile_picture_url))',
+        { headers: H }).then(r => r.json());
+      if (!Array.isArray(rows) || !rows.length) {
+        el.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:12px 0;">No completed shifts in the last 90 days.</div>';
+        return;
+      }
+      el.innerHTML = rows.map(s => {
+        const app = s.session_workers && s.session_workers.applications;
+        const name = app ? formatWorkerName(app.name) : 'Unknown';
+        const photo = app && app.profile_picture_url;
+        const dt = s.clock_in_confirmed_at ? new Date(s.clock_in_confirmed_at) : null;
+        const dateStr = dt ? dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) : '';
+        const hours = s.shift_length_hours != null ? parseFloat(s.shift_length_hours).toFixed(1).replace(/\.0$/,'') : '?';
+        const total = s.total_earned != null ? '£' + parseFloat(s.total_earned).toFixed(2) : '';
+        const rating = s.bar_rating != null ? (s.bar_rating + '★') : 'no rating';
+        const avatar = photo
+          ? '<img src="' + escapeHtml(photo) + '" alt="">'
+          : avatarFallback(app && app.name);
+        return `<div class="glasi-row">
+          <div class="glasi-avatar">${avatar}</div>
+          <div class="glasi-row-meta">
+            <div class="glasi-row-name">${escapeHtml(name)}</div>
+            <div class="glasi-row-sub">${dateStr} &middot; ${hours}h &middot; ${total} &middot; ${rating}</div>
+          </div>
+        </div>`;
+      }).join('');
+    } catch (e) {
+      console.error('loadBurgerPagePastGlasis failed', e);
+      el.innerHTML = '<div style="font-size:13px;color:var(--red);">Could not load past Glasis.</div>';
+    }
+  }
+
+  async function loadBurgerPageImpact() {
+    const el = document.getElementById('burger-page-body');
+    try {
+      const since = ninetyDaysAgoIso();
+      const [shifts, requests] = await Promise.all([
+        fetch(SUPABASE_URL + '/rest/v1/shifts'
+          + '?bar_id=eq.' + currentBar.id
+          + '&clock_in_confirmed_at=gte.' + encodeURIComponent(since)
+          + '&select=id,shift_length_hours,total_earned,bar_rating,would_want_again,clock_in_confirmed_at',
+          { headers: H }).then(r => r.json()),
+        fetch(SUPABASE_URL + '/rest/v1/shift_requests'
+          + '?bar_id=eq.' + currentBar.id
+          + '&created_at=gte.' + encodeURIComponent(since)
+          + '&select=id,posted_at,shifts(dispatched_at)',
+          { headers: H }).then(r => r.json())
+      ]);
+      const shiftRows = Array.isArray(shifts) ? shifts : [];
+      const reqRows = Array.isArray(requests) ? requests : [];
+      const totalShifts = shiftRows.length;
+      const totalHours = shiftRows.reduce((a,s) => a + (parseFloat(s.shift_length_hours) || 0), 0);
+      const totalSpend = shiftRows.reduce((a,s) => a + (parseFloat(s.total_earned) || 0), 0);
+      const wouldAgainCount = shiftRows.filter(s => s.would_want_again === true).length;
+      const wouldAgainRate = totalShifts ? Math.round((wouldAgainCount / totalShifts) * 100) : 0;
+      const respMins = reqRows
+        .map(r => {
+          const ds = r.shifts && r.shifts[0] && r.shifts[0].dispatched_at;
+          if (!ds || !r.posted_at) return null;
+          return (new Date(ds).getTime() - new Date(r.posted_at).getTime()) / 60000;
+        })
+        .filter(v => v != null && v >= 0);
+      const avgResp = respMins.length ? Math.round(respMins.reduce((a,b) => a+b, 0) / respMins.length) : null;
+
+      el.innerHTML = `
+        <div style="font-size:11px;letter-spacing:1px;color:var(--grey);text-transform:uppercase;margin-bottom:14px;">Last 90 days</div>
+        <div class="impact-stat-grid">
+          <div class="impact-stat-card"><div class="impact-stat-value">${totalShifts}</div><div class="impact-stat-label">Shifts</div></div>
+          <div class="impact-stat-card"><div class="impact-stat-value">${totalHours.toFixed(1).replace(/\.0$/,'')}h</div><div class="impact-stat-label">Hours</div></div>
+          <div class="impact-stat-card"><div class="impact-stat-value">&pound;${totalSpend.toFixed(2)}</div><div class="impact-stat-label">Spend</div></div>
+          <div class="impact-stat-card"><div class="impact-stat-value">${wouldAgainRate}%</div><div class="impact-stat-label">Would want again</div></div>
+        </div>
+        <div class="impact-stat-card" style="text-align:center;">
+          <div class="impact-stat-value">${avgResp == null ? '&mdash;' : avgResp + ' min'}</div>
+          <div class="impact-stat-label">Avg response time</div>
+        </div>
+      `;
+    } catch (e) {
+      console.error('loadBurgerPageImpact failed', e);
+      el.innerHTML = '<div style="font-size:13px;color:var(--red);">Could not load impact summary.</div>';
+    }
+  }
+
+  async function loadBurgerPageInvoices() {
+    const el = document.getElementById('burger-page-body');
+    try {
+      const [bar, sub] = await Promise.all([
+        fetch(SUPABASE_URL + '/rest/v1/bar_invoices'
+          + '?bar_id=eq.' + currentBar.id
+          + '&status=in.(sent,paid,overdue,cancelled)'
+          + '&order=created_at.desc'
+          + '&select=id,invoice_number,billing_period_start,billing_period_end,total_amount,status,sent_at,paid_at',
+          { headers: H }).then(r => r.json()).catch(() => []),
+        fetch(SUPABASE_URL + '/rest/v1/subscription_invoices'
+          + '?bar_id=eq.' + currentBar.id
+          + '&status=in.(sent,paid,overdue,cancelled)'
+          + '&order=created_at.desc'
+          + '&select=id,invoice_number,billing_period_start,billing_period_end,total_amount,status,sent_at,paid_at',
+          { headers: H }).then(r => r.json()).catch(() => [])
+      ]);
+      const barRows = Array.isArray(bar) ? bar : [];
+      const subRows = Array.isArray(sub) ? sub : [];
+      if (!barRows.length && !subRows.length) {
+        el.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:12px 0;">No invoices yet.</div>';
+        return;
+      }
+      const renderRow = (inv, kind) => {
+        const period = (inv.billing_period_start && inv.billing_period_end)
+          ? new Date(inv.billing_period_start).toLocaleDateString('en-GB',{day:'numeric',month:'short'})
+            + ' - ' + new Date(inv.billing_period_end).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})
+          : '';
+        const total = inv.total_amount != null ? '£' + parseFloat(inv.total_amount).toFixed(2) : '';
+        const sent = inv.sent_at ? new Date(inv.sent_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
+        const status = (inv.status || '').toUpperCase();
+        return `<div class="proposal-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+            <div>
+              <div style="font-size:13px;color:var(--white);font-weight:500;">${escapeHtml(inv.invoice_number || ('#' + inv.id))} <span style="font-size:10px;color:var(--grey);">${kind}</span></div>
+              <div style="font-size:11px;color:var(--grey);margin-top:3px;">${period}${sent ? ' &middot; sent ' + sent : ''}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:13px;color:var(--white);font-weight:600;">${total}</div>
+              <div style="font-size:10px;color:var(--grey);margin-top:2px;letter-spacing:1px;">${status}</div>
+            </div>
+          </div>
+        </div>`;
+      };
+      el.innerHTML = (barRows.length ? '<div style="font-size:11px;letter-spacing:1px;color:var(--ice);text-transform:uppercase;margin-bottom:8px;">Shift invoices</div>' + barRows.map(r => renderRow(r,'shift')).join('') : '')
+        + (subRows.length ? '<div style="font-size:11px;letter-spacing:1px;color:var(--ice);text-transform:uppercase;margin:16px 0 8px;">Subscription invoices</div>' + subRows.map(r => renderRow(r,'subscription')).join('') : '');
+    } catch (e) {
+      console.error('loadBurgerPageInvoices failed', e);
+      el.innerHTML = '<div style="font-size:13px;color:var(--red);">Could not load invoices.</div>';
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Overlay helpers + toast.
+  // ---------------------------------------------------------------
+  function openOverlay(id) { document.getElementById(id).classList.add('open'); }
+  function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+
+  function showToast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => { try { document.body.removeChild(t); } catch(e) {} }, 4200);
+  }
+
+  // ---------------------------------------------------------------
+  // Realtime: pin_holder_requests + bar_managers (mid-session revoke).
+  // ---------------------------------------------------------------
+  function startPinHolderRequestsWatch() {
+    if (!currentBar || pinHolderRequestsWs) return;
+    const wsUrl = SUPABASE_URL.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
+    pinHolderRequestsWs = new WebSocket(wsUrl);
+    let hb = null;
+    pinHolderRequestsWs.onopen = () => {
+      pinHolderRequestsWs.send(JSON.stringify({
+        topic: 'realtime:public:pin_holder_requests',
+        event: 'phx_join',
+        payload: { config: { postgres_changes: [
+          { event: 'INSERT', schema: 'public', table: 'pin_holder_requests', filter: 'bar_id=eq.' + currentBar.id },
+          { event: 'UPDATE', schema: 'public', table: 'pin_holder_requests', filter: 'bar_id=eq.' + currentBar.id },
+          { event: 'DELETE', schema: 'public', table: 'pin_holder_requests', filter: 'bar_id=eq.' + currentBar.id }
+        ] } },
+        ref: 'phr1'
+      }));
+      hb = setInterval(() => {
+        if (pinHolderRequestsWs && pinHolderRequestsWs.readyState === WebSocket.OPEN) {
+          pinHolderRequestsWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
+        }
+      }, 30000);
+    };
+    pinHolderRequestsWs.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.event !== 'postgres_changes') return;
+        const rec = msg.payload && msg.payload.data && msg.payload.data.record;
+        const oldRec = msg.payload && msg.payload.data && msg.payload.data.old_record;
+        if (rec && oldRec && rec.status !== oldRec.status) {
+          if (rec.status === 'approved') showToast('PIN-holder request approved');
+          else if (rec.status === 'declined') showToast('PIN-holder request declined');
+        }
+        loadPinHolders();
+      } catch (err) { console.error('pin_holder_requests realtime error', err); }
+    };
+    pinHolderRequestsWs.onclose = () => { if (hb) clearInterval(hb); pinHolderRequestsWs = null; };
+    pinHolderRequestsWs.onerror = (err) => { console.error('[pin_holder_requests ws] error', err); };
+  }
+
+  function startBarManagersWatch() {
+    if (!currentManager || barManagersWs) return;
+    const wsUrl = SUPABASE_URL.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
+    barManagersWs = new WebSocket(wsUrl);
+    let hb = null;
+    barManagersWs.onopen = () => {
+      barManagersWs.send(JSON.stringify({
+        topic: 'realtime:public:bar_managers',
+        event: 'phx_join',
+        payload: { config: { postgres_changes: [
+          { event: 'UPDATE', schema: 'public', table: 'bar_managers', filter: 'auth_user_id=eq.' + currentManager.auth_user_id }
+        ] } },
+        ref: 'bmw1'
+      }));
+      hb = setInterval(() => {
+        if (barManagersWs && barManagersWs.readyState === WebSocket.OPEN) {
+          barManagersWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
+        }
+      }, 30000);
+    };
+    barManagersWs.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.event !== 'postgres_changes') return;
+        const rec = msg.payload && msg.payload.data && msg.payload.data.record;
+        if (rec && rec.id === currentManager.id && rec.revoked_at) {
+          lockUiForRevoke();
+        }
+      } catch (err) { console.error('bar_managers realtime error', err); }
+    };
+    barManagersWs.onclose = () => { if (hb) clearInterval(hb); barManagersWs = null; };
+    barManagersWs.onerror = (err) => { console.error('[bar_managers ws] error', err); };
+  }
+
+  function lockUiForRevoke() {
+    if (document.getElementById('revoke-lock-overlay')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'revoke-lock-overlay';
+    wrap.id = 'revoke-lock-overlay';
+    wrap.innerHTML = `
+      <div class="revoke-lock-card">
+        <div style="font-size:36px;margin-bottom:14px;color:var(--red);">&#9888;</div>
+        <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:10px;">Access revoked</div>
+        <div style="font-size:13px;color:var(--grey);line-height:1.6;margin-bottom:18px;">Your PIN-holder access has been revoked. Please sign in again to confirm your access.</div>
+        <button class="primary-btn" style="margin-top:0;" onclick="handleSignOut()">Sign out</button>
+      </div>
+    `;
+    document.body.appendChild(wrap);
   }
 </script>
 

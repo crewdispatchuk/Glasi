@@ -727,20 +727,12 @@
   </div>
 
   <nav class="sidebar-nav">
-    <button class="sidebar-nav-item" id="sidebar-nav-zones" onclick="toggleZonesNav()">
-      <span class="sidebar-nav-chevron" id="sidebar-zones-chevron">&#9656;</span>
-      <span class="sidebar-nav-label">Zones</span>
-    </button>
-    <div class="sidebar-zones-children" id="sidebar-zones-children">
-      <!-- populated by renderSidebarZones() from ZONES -->
-    </div>
-
-    <button class="sidebar-nav-item" id="sidebar-nav-bars"       onclick="safeNavigate(goToBars)">Bars</button>
-    <button class="sidebar-nav-item" id="sidebar-nav-workers"    onclick="safeNavigate(goToWorkers)">Workers</button>
-    <button class="sidebar-nav-item" id="sidebar-nav-sessions"   onclick="safeNavigate(goToSessionsAudit)">Sessions</button>
-    <button class="sidebar-nav-item" id="sidebar-nav-shifts"     onclick="safeNavigate(goToShifts)">Shifts</button>
-    <button class="sidebar-nav-item" id="sidebar-nav-billing"    onclick="safeNavigate(goToBilling)">Billing</button>
-    <button class="sidebar-nav-item" id="sidebar-nav-settings"   onclick="safeNavigate(goToSettings)">Settings</button>
+    <button class="sidebar-nav-item" id="sidebar-nav-bars"     onclick="safeNavigate(goToBars)">Bars</button>
+    <button class="sidebar-nav-item" id="sidebar-nav-workers"  onclick="safeNavigate(goToWorkers)">Workers</button>
+    <button class="sidebar-nav-item" id="sidebar-nav-sessions" onclick="safeNavigate(goToSessions)">Sessions</button>
+    <button class="sidebar-nav-item" id="sidebar-nav-shifts"   onclick="safeNavigate(goToShifts)">Shifts</button>
+    <button class="sidebar-nav-item" id="sidebar-nav-billing"  onclick="safeNavigate(goToBilling)">Billing</button>
+    <button class="sidebar-nav-item" id="sidebar-nav-settings" onclick="safeNavigate(goToSettings)">Settings</button>
   </nav>
 
   <div class="sidebar-divider"></div>
@@ -841,7 +833,6 @@
       <input  id="sh-worker-filter"   class="field" type="text" placeholder="Worker name" oninput="renderShiftsPage()">
       <input  id="sh-date-from"       class="field" type="date" onchange="renderShiftsPage()">
       <input  id="sh-date-to"         class="field" type="date" onchange="renderShiftsPage()">
-      <select id="sh-zone-filter"     class="field" onchange="renderShiftsPage()"><option value="">All zones</option></select>
       <select id="sh-status-filter"   class="field" onchange="renderShiftsPage()">
         <option value="">All statuses</option>
         <option value="completed">Completed</option>
@@ -1073,28 +1064,88 @@
   </div>
 </div>
 
-<!-- F-28: legacy #screen-sessions removed. Sub-tabs relocated into
-     #screen-zone-detail above; cross-zone audit list lives in
-     #screen-sessions-audit. -->
+<!-- F-37: top-level Sessions screen with three sub-tabs (Schedule, Live,
+     History). The legacy zone-detail Sessions sub-tabs are deprecated; this
+     screen is now the single home for all session operations. -->
+<div id="screen-sessions" class="screen">
+  <div class="history-screen">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div>
+        <div class="page-title">Sessions</div>
+        <div class="page-sub">Schedule, run live, and review past sessions across all bars</div>
+      </div>
+    </div>
 
-<!-- SCHEDULE SESSION OVERLAY -->
+    <!-- Sub-tab switcher -->
+    <div style="display:flex;gap:4px;margin-bottom:24px;background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:4px;width:fit-content;">
+      <button id="sessions-tab-schedule" onclick="switchSessionsTab('schedule')" style="background:var(--ice);color:var(--navy);border:none;border-radius:7px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Schedule</button>
+      <button id="sessions-tab-live" onclick="switchSessionsTab('live')" style="background:none;color:var(--grey);border:none;border-radius:7px;padding:8px 20px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">Live</button>
+      <button id="sessions-tab-history" onclick="switchSessionsTab('history')" style="background:none;color:var(--grey);border:none;border-radius:7px;padding:8px 20px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">History</button>
+    </div>
+
+    <div id="sessions-screen-body">
+
+      <!-- SCHEDULE SUB-TAB: upcoming sessions + Schedule button -->
+      <div id="sessions-schedule-tab">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);margin-bottom:4px;text-transform:uppercase;">Upcoming Sessions</div>
+            <div class="page-sub">Scheduled sessions ready to go live</div>
+          </div>
+          <button class="small-ice-btn" onclick="openScheduleSession()">+ Schedule Session</button>
+        </div>
+        <div id="sessions-upcoming"><div class="empty">Loading...</div></div>
+      </div>
+
+      <!-- LIVE SUB-TAB: live console for the currently-live session -->
+      <div id="sessions-live-tab" style="display:none;">
+        <div id="sessions-live-empty" style="text-align:center;padding:60px 24px;">
+          <div style="font-size:40px;margin-bottom:16px;opacity:0.4;">&#128225;</div>
+          <div style="font-size:16px;font-weight:600;color:var(--white);margin-bottom:8px;">No active session</div>
+          <div style="font-size:13px;color:var(--grey);">Go live on a scheduled session to start dispatching.</div>
+        </div>
+        <div id="sessions-live-room" style="display:none;">
+          <!-- ROOM content injected by renderLiveRoom() -->
+        </div>
+      </div>
+
+      <!-- HISTORY SUB-TAB: closed sessions, filterable -->
+      <div id="sessions-history-tab" style="display:none;">
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:12px 16px;">
+          <input id="sh-date-from" class="field" type="date" style="margin:0;max-width:160px;" onchange="renderSessionsHistory()" />
+          <input id="sh-date-to"   class="field" type="date" style="margin:0;max-width:160px;" onchange="renderSessionsHistory()" />
+          <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-scheduled" onchange="renderSessionsHistory()"> Scheduled</label>
+          <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-live" onchange="renderSessionsHistory()"> Live</label>
+          <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-closed" checked onchange="renderSessionsHistory()"> Closed</label>
+          <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-cancelled" onchange="renderSessionsHistory()"> Cancelled</label>
+        </div>
+        <div id="sessions-history-list"><div class="empty">Loading...</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SCHEDULE SESSION OVERLAY (F-37: bar-set replaces zone) -->
 <div id="ov-schedule" class="overlay">
-  <div class="modal">
+  <div class="modal" style="max-width:560px;max-height:85vh;overflow-y:auto;">
     <div class="modal-title">Schedule Session</div>
-    <div class="modal-sub">Set the date, time and zone for the upcoming session.</div>
+    <div class="modal-sub">Set the date, time and bars covered by this session. Workers in the catchment of any selected bar will be invitable.</div>
     <label>Date</label>
     <input type="date" id="sched-date" class="field" style="width:100%;">
     <label>Start Time</label>
     <input type="time" id="sched-time" class="field" style="width:100%;" value="18:00">
-    <label>Zone</label>
-    <select id="sched-zone" class="field" style="width:100%;background:var(--navy-mid);color:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;">
-      <option value="">Select zone</option>
-    </select>
-    <label>Late join cutoff (minutes after start)</label>
+    <label>Bars in this session</label>
+    <div style="font-size:11px;color:var(--grey);margin:-4px 0 8px;">Pick one or more bars. The session covers all of them. Multi-bar sessions render as "First bar + N more".</div>
+    <div id="sched-bars-list" style="background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:12px 14px;max-height:220px;overflow-y:auto;">
+      <div style="font-size:12px;color:var(--grey);">Loading bars...</div>
+    </div>
+    <label style="margin-top:14px;">Late join cutoff (minutes after start)</label>
     <input type="number" id="sched-cutoff" class="field" style="width:100%;" value="30" min="0" max="120">
+    <div id="sched-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:16px;"></div>
     <div class="modal-actions">
       <button class="cancel-btn" onclick="closeOv('schedule')">Cancel</button>
-      <button class="confirm-btn" onclick="createScheduledSession()">Schedule Session</button>
+      <button class="confirm-btn" id="sched-submit-btn" onclick="createScheduledSession()">Schedule Session</button>
     </div>
   </div>
 </div>
@@ -1219,88 +1270,13 @@
   </div>
 </div>
 
-<!-- F-28: ZONE DETAIL SCREEN — now the operational hub for a single zone.
-     Hosts the three sub-tabs (Schedule, Live, Sessions) relocated from the
-     prior #screen-sessions. Sub-tab switcher + content div IDs are preserved
-     so all switchSessionsTab(), renderLiveRoom(), and round 3-6 work continue
-     to function unchanged. -->
+<!-- F-37: legacy zone detail screen retired. Sub-tabs lifted to top-level
+     #screen-sessions; this screen is now unreachable. Empty stub kept to
+     avoid orphaned references in JS (replaced with no-op body). Cleanup in
+     a follow-up pass. -->
 <div id="screen-zone-detail" class="screen">
   <div class="history-screen">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-      <div>
-        <div class="page-title" id="zone-detail-name"></div>
-        <div class="page-sub" id="zone-detail-postcodes"></div>
-      </div>
-      <button class="small-ice-btn" onclick="openEditZone(currentZoneDetail?.dbId)">Edit Zone</button>
-    </div>
-
-    <!-- Sub-tab switcher (relocated from #screen-sessions, IDs preserved) -->
-    <div style="display:flex;gap:4px;margin-bottom:24px;background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:4px;width:fit-content;">
-      <button id="sessions-tab-schedule" onclick="switchSessionsTab('schedule')" style="background:var(--ice);color:var(--navy);border:none;border-radius:7px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Schedule</button>
-      <button id="sessions-tab-live" onclick="switchSessionsTab('live')" style="background:none;color:var(--grey);border:none;border-radius:7px;padding:8px 20px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">Live</button>
-      <button id="sessions-tab-history" onclick="switchSessionsTab('history')" style="background:none;color:var(--grey);border:none;border-radius:7px;padding:8px 20px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">Sessions</button>
-    </div>
-
-    <div id="zone-detail-body">
-
-      <!-- F-28 Option B: SCHEDULE SUB-TAB.
-           Top section: zone overview (availability banner, bars, workers) —
-           rendered by renderZoneOverview() into #zone-overview-section.
-           Bottom section: upcoming sessions for this zone + Schedule button. -->
-      <div id="sessions-schedule-tab">
-        <div id="zone-overview-section">
-          <!-- populated by renderZoneOverview(zoneId) -->
-        </div>
-        <div style="border-top:1px solid var(--border);margin:32px 0;"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
-          <div>
-            <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);margin-bottom:4px;text-transform:uppercase;">Upcoming Sessions</div>
-            <div class="page-sub">Schedule and manage upcoming sessions for this zone</div>
-          </div>
-          <button class="small-ice-btn" onclick="openScheduleSession()">+ Schedule Session</button>
-        </div>
-        <div id="sessions-upcoming"></div>
-      </div>
-
-      <!-- LIVE SUB-TAB (hosts the F-03 v6 round 3-6 operational console) -->
-      <div id="sessions-live-tab" style="display:none;">
-        <div id="sessions-live-empty" style="text-align:center;padding:60px 24px;">
-          <div style="font-size:40px;margin-bottom:16px;opacity:0.4;">&#128225;</div>
-          <div style="font-size:16px;font-weight:600;color:var(--white);margin-bottom:8px;">No active session</div>
-          <div style="font-size:13px;color:var(--grey);">Go live on a scheduled session to start dispatching.</div>
-        </div>
-        <div id="sessions-live-room" style="display:none;">
-          <!-- ROOM content injected here by renderLiveRoom() -->
-        </div>
-      </div>
-
-      <!-- SESSIONS (HISTORY) SUB-TAB -->
-      <div id="sessions-history-tab" style="display:none;">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px;" id="sessions-stats-grid">
-          <div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
-            <div style="font-size:28px;font-weight:800;color:var(--white);" id="stat-total-sessions">--</div>
-            <div style="font-size:10px;letter-spacing:2px;color:var(--grey);text-transform:uppercase;margin-top:4px;">Sessions</div>
-          </div>
-          <div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
-            <div style="font-size:28px;font-weight:800;color:var(--white);" id="stat-total-requests">--</div>
-            <div style="font-size:10px;letter-spacing:2px;color:var(--grey);text-transform:uppercase;margin-top:4px;">Requests</div>
-          </div>
-          <div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
-            <div style="font-size:28px;font-weight:800;color:var(--white);" id="stat-total-shifts">--</div>
-            <div style="font-size:10px;letter-spacing:2px;color:var(--grey);text-transform:uppercase;margin-top:4px;">Shifts</div>
-          </div>
-          <div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
-            <div style="font-size:28px;font-weight:800;color:var(--ice);" id="stat-avg-response">--</div>
-            <div style="font-size:10px;letter-spacing:2px;color:var(--grey);text-transform:uppercase;margin-top:4px;">Avg Response</div>
-          </div>
-        </div>
-        <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--grey);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">PAST SESSIONS IN THIS ZONE</div>
-        <div id="sessions-history-list">
-          <div style="font-size:13px;color:var(--grey);padding:24px 0;text-align:center;">No completed sessions yet.</div>
-        </div>
-      </div>
-
-    </div>
+    <div class="empty">Zone detail retired (F-37). Use the Sessions screen.</div>
   </div>
 </div>
 
@@ -1632,13 +1608,6 @@
     <input class="field" type="text" id="bar-address" placeholder="e.g. 7 King Street, Southampton, SO14 1JS" />
     <label>Google Maps Link</label>
     <input class="field" type="text" id="bar-maps" placeholder="Paste Google Maps link here" />
-    <label>Zone</label>
-    <select class="field" id="bar-zone">
-      <option value="1">Southampton City Centre</option>
-      <option value="2">Southampton North</option>
-      <option value="3">Southampton East</option>
-      <option value="4">Portsmouth City Centre</option>
-    </select>
     <label>Status</label>
     <select class="field" id="bar-status">
       <option value="prospect">Prospect</option>
@@ -1840,7 +1809,9 @@ const VAT_RATE = 0.20;
 const VAT_NUMBER = 'Pending';
 
 let currentUser = null;
-let activeZone = null;
+let activeZone = null; // F-37: legacy. Retained so orphaned references don't crash.
+let liveSessionBars = []; // F-37: bars in the currently-live session.
+let liveSessionLabel = ''; // F-37: cached "First bar + N more" label.
 let workerBarDistances = [];
 let allWorkers = [];
 let setupWorkers = []; // workers added to room in setup
@@ -1889,45 +1860,24 @@ async function doLogin() {
 async function postLoginSetup() {
   document.getElementById('screen-login').style.display='none';
 
-  // F-28: show sidebar + apply body padding-left reservation. Replaces the
-  // prior #header.style.display = 'flex'.
   document.body.classList.add('dashboard-shell');
   const sidebarEl = document.getElementById('sidebar');
   if(sidebarEl) sidebarEl.style.display = 'flex';
 
-  await Promise.all([loadZones(), loadAllWorkers()]);
+  await loadAllWorkers();
   loadWorkerFunnel();
-  renderSidebarZones();
 
-  // F-28: three-tier zone selection on boot.
-  //   Tier 1: live session resumed → land on that session's zone, Live sub-tab
-  //   Tier 2: localStorage last-selected zone exists → restore it
-  //   Tier 3: first zone alphabetically → land there
-  //   Edge: no zones at all → fall back to home screen
+  // F-37: boot lands on Sessions. Live sub-tab if a session is currently
+  // running, otherwise Schedule. liveSessionOps.resumeIfLive() reattaches
+  // the live console state to the in-progress session before navigation.
   const restored = await liveSessionOps.resumeIfLive();
-  if(restored && activeZone?.dbId) {
-    await goToZoneDetail(activeZone.dbId);
+  if(restored) {
+    showScreen('sessions');
+    setActiveNav('sessions');
+    switchSessionsTab('live');
     return;
   }
-
-  const lastZoneId = getLastZone();
-  if(lastZoneId && ZONES.find(z => z.dbId === lastZoneId)) {
-    await goToZoneDetail(lastZoneId);
-    return;
-  }
-
-  if(ZONES.length) {
-    const sortedZones = [...ZONES].sort((a,b) => a.name.localeCompare(b.name));
-    await goToZoneDetail(sortedZones[0].dbId);
-    return;
-  }
-
-  // Edge case: zero zones. Land on home (legacy fallback).
-  showScreen('home');
-  setActiveNav(null);
-  const homeDateEl = document.getElementById('home-date');
-  if(homeDateEl) homeDateEl.textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
-  renderZones();
+  await goToSessions();
 }
 
 document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -3477,70 +3427,12 @@ function toggleInvite(email, invite) {
   renderInviteGrid();
 }
 
+// F-37: legacy zone-based session creation retired. The only path that creates
+// sessions or session_bars rows is the schedule_session_with_bars RPC invoked
+// by createScheduledSession() on the new Sessions screen. This function is
+// kept as a guarded stub so any orphaned caller surfaces clearly.
 async function startSession() {
-  if(!setupWorkers.length) { alert('Add at least one worker before starting the session.'); return; }
-  // ensure bars are loaded for this zone
-  if(!bars.length) {
-    const result = await sbGet('bars','?order=name.asc&select=id,name,address,google_maps_link,zone_id,status,notes');
-    bars = Array.isArray(result) ? result : [];
-  }
-  // create session record in supabase
-  const sessionData = await sbPost('sessions', {
-    zone_id: activeZone.dbId,
-    session_date: today(),
-    start_time: nowT(),
-    end_time: null
-  });
-
-  if(!sessionData || !sessionData[0]?.id) {
-    alert('Failed to create session in database. Check your connection and try again.');
-    return;
-  }
-
-  liveSessionOps.sessionId = sessionData[0].id;
-  liveSessionOps.start(liveSessionOps.sessionId);
-
-  // write each worker to session_workers as invited
-  for(const w of setupWorkers) {
-    const sw = await sbPost('session_workers', {
-      session_id: liveSessionOps.sessionId,
-      application_id: w.id,
-      worker_name: w.name,
-      worker_phone: w.phone||null,
-      status: 'invited'
-    });
-    w.sessionWorkerId = sw?.[0]?.id || null;
-  }
-
-  liveSessionOps.workers=setupWorkers.map(w=>({
-    ...w,
-    applicationId: w.id,
-    id: uid(),
-    status: 'invited',
-    code: gen4(),
-    clockOutCode: gen4(),
-    bar: null,
-    barRecord: null,
-    dispatchedAt: null,
-    clockInAt: null,
-    clockInCode: null,
-    shiftLength: null,
-    hourly_rate: w.hourly_rate||12.71,
-    wage: null,
-    clockOutAt: null,
-    rating: null,
-    notes: null,
-    shiftRequestId: null,
-    shiftId: uid()
-  }));
-
-  shifts=[];
-  sessionStartTime=new Date();
-  startTimer();
-  document.getElementById('session-zone-name').textContent=activeZone.name;
-  showScreen('session');
-  renderRoom();
-  updateCounts();
+  alert('Legacy zone-based session start is retired (F-37). Schedule a session from the Sessions screen using the bar-set picker.');
 }
 
 function startTimer() {
@@ -3654,7 +3546,6 @@ async function saveBar() {
       name,
       address: document.getElementById('bar-address').value.trim()||null,
       google_maps_link: document.getElementById('bar-maps').value.trim()||null,
-      zone_id: parseInt(document.getElementById('bar-zone').value),
       status: document.getElementById('bar-status').value,
       notes: document.getElementById('bar-notes').value.trim()||null
     });
@@ -5879,15 +5770,11 @@ async function confirmCloseSession() {
   selectedWorkerId = null;
   setupWorkers=[]; shifts=[];
 
-  // F-28: navigate back to the closed session's zone-detail Sessions sub-tab
-  // with the just-closed session pre-opened. Falls back to top-level audit
-  // if the zone is unknown.
-  if(sessionZone?.dbId) {
-    await goToZoneDetail(sessionZone.dbId);
-    switchSessionsTab('history', { sessionId });
-  } else {
-    await goToSessionsAudit();
-  }
+  // F-37: navigate to top-level Sessions screen, History sub-tab, with the
+  // just-closed session pre-opened.
+  showScreen('sessions');
+  setActiveNav('sessions');
+  switchSessionsTab('history', { sessionId });
 
   // offer worker reports download
   if(reports && reports.length) {
@@ -5896,18 +5783,16 @@ async function confirmCloseSession() {
 }
 
 function dismissReport() {
-  // F-28 REFINEMENT 2: navigate to the closed session's zone-detail Sessions
-  // sub-tab, matching confirmCloseSession's pattern. Falls back to top-level
-  // Sessions audit if zone context unknown.
+  // F-37: zone scoping retired. After dismissing a report, land on the
+  // top-level Sessions screen, History sub-tab. Reports-list callers retain
+  // their direct route via goToReports.
   if(document.getElementById('sidebar-nav-reports')?.classList.contains('active')) {
     goToReports();
     return;
   }
-  if(currentZoneDetail?.dbId) {
-    goToZoneDetail(currentZoneDetail.dbId).then(() => switchSessionsTab('history'));
-    return;
-  }
-  goToSessionsAudit();
+  showScreen('sessions');
+  setActiveNav('sessions');
+  switchSessionsTab('history');
 }
 
 async function generateSessionReport(sessionShifts, zone, requests) {
@@ -8322,23 +8207,26 @@ function openOv(name) { document.getElementById(`ov-${name}`).classList.add('ope
 function closeOv(name) { document.getElementById(`ov-${name}`).classList.remove('open'); }
 
 // -- SESSIONS ---------------------------------------------------------------
+// F-37: switchSessionsTab now toggles three top-level sub-tabs inside the new
+// #screen-sessions. Zone scoping removed. History reads cross-bar; Live shows
+// the currently-running session console.
 function switchSessionsTab(tab, opts) {
   const isLive = tab === 'live';
   const isHistory = tab === 'history';
   const isSchedule = tab === 'schedule';
 
-  document.getElementById('sessions-schedule-tab').style.display = isSchedule ? 'block' : 'none';
-  document.getElementById('sessions-live-tab').style.display = isLive ? 'block' : 'none';
-  document.getElementById('sessions-history-tab').style.display = isHistory ? 'block' : 'none';
+  const scheduleEl = document.getElementById('sessions-schedule-tab');
+  const liveEl = document.getElementById('sessions-live-tab');
+  const historyEl = document.getElementById('sessions-history-tab');
+  if(scheduleEl) scheduleEl.style.display = isSchedule ? 'block' : 'none';
+  if(liveEl) liveEl.style.display = isLive ? 'block' : 'none';
+  if(historyEl) historyEl.style.display = isHistory ? 'block' : 'none';
 
-  // Round 5 FIX 1 + F-28: live tab escapes the parent .history-screen
-  // 1100px constraint via .live-mode override. The host moved from
-  // #screen-sessions to #screen-zone-detail in F-28; the toggle target is
-  // updated to the zone-detail's .history-screen wrapper.
-  const screenWrap = document.querySelector('#screen-zone-detail .history-screen');
+  // Live tab escapes the parent .history-screen 1100px constraint via
+  // .live-mode override. Host is the new top-level #screen-sessions.
+  const screenWrap = document.querySelector('#screen-sessions .history-screen');
   if(screenWrap) screenWrap.classList.toggle('live-mode', isLive);
 
-  // Tab button styles
   ['schedule','live','history'].forEach(t => {
     const btn = document.getElementById('sessions-tab-'+t);
     if(!btn) return;
@@ -8348,23 +8236,20 @@ function switchSessionsTab(tab, opts) {
     btn.style.fontWeight = active ? '600' : '400';
   });
 
+  if(isSchedule) {
+    loadSessionsList();
+  }
   if(isHistory) {
-    // Optional sessionId opens that session's detail directly. Used by
-    // confirmCloseSession so the just-closed session is in view immediately.
     if(opts && opts.sessionId) {
       loadSessionDetail(opts.sessionId);
     } else {
-      // F-28: scope history to the currently-viewed zone.
-      loadSessionsHistory(currentZoneDetail?.dbId);
+      renderSessionsHistory();
     }
   }
-
   if(isLive && liveSessionOps.sessionId) {
     document.getElementById('sessions-live-empty').style.display = 'none';
     document.getElementById('sessions-live-room').style.display = 'block';
     renderLiveRoom();
-    // Visible-while-away: clear the dirty flag, the renderLiveRoom call above
-    // already painted the latest state.
     liveSessionOps.consumeDirty('live');
   } else if(isLive) {
     document.getElementById('sessions-live-empty').style.display = 'block';
@@ -8385,14 +8270,15 @@ function renderLiveRoom() {
   // If room already built, just update header and re-render content
   if(room.querySelector('#request-section')) {
     const zoneEl = room.querySelector('[data-zone-name]');
-    if(zoneEl) zoneEl.textContent = activeZone?.name || '';
+    if(zoneEl) zoneEl.textContent = liveSessionLabel || '';
     renderRequestCards();
     renderRoom();
     renderSessionStats();
     return;
   }
 
-  const zoneName = activeZone?.name || '';
+  // F-37: header label is the bar-set summary, not a zone name.
+  const zoneName = liveSessionLabel || '';
   const sessionDate = new Date().toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'short'});
 
   room.innerHTML = `
@@ -8475,118 +8361,234 @@ function renderLiveRoom() {
   renderSessionStats();
 }
 
-// F-28: legacy alias. Older call sites may still invoke goToSessions(); they
-// now route to the cross-zone audit list. Kept as an alias for one batch;
-// audit + remove in a future cleanup.
+// F-37: top-level Sessions screen. Defaults to Live if a session is currently
+// live, otherwise Schedule. postLoginSetup uses the same heuristic on boot.
 async function goToSessions() {
-  return goToSessionsAudit();
+  showScreen('sessions');
+  setActiveNav('sessions');
+  // Look up live state once; pick the sub-tab accordingly.
+  let liveExists = false;
+  try {
+    const liveRows = await sbGet('sessions', '?status=eq.live&select=id&limit=1');
+    liveExists = Array.isArray(liveRows) && liveRows.length > 0;
+  } catch(e) { /* default Schedule on error */ }
+  if(liveExists) {
+    switchSessionsTab('live');
+  } else {
+    switchSessionsTab('schedule');
+  }
 }
 
-// F-28: optional zoneId scopes the upcoming-sessions list to a single zone
-// (called from goToZoneDetail). Omit zoneId for cross-zone (legacy callers).
-async function loadSessionsList(zoneId) {
+// F-37: cross-bar upcoming-sessions list. Sessions embed session_bars(bars(name))
+// so the card surfaces the bar set rather than a zone name. Multi-bar sets
+// truncate as "First bar + N more".
+async function loadSessionsList() {
   const upcomingEl = document.getElementById('sessions-upcoming');
   if(!upcomingEl) return;
   upcomingEl.innerHTML = '<div class="empty">Loading...</div>';
 
-  const sessionsQuery = '?select=*&order=session_date.desc,start_time.desc'
-    + (zoneId ? '&zone_id=eq.' + encodeURIComponent(zoneId) : '');
-  const [allSessions, zonesData] = await Promise.all([
-    sbGet('sessions', sessionsQuery),
-    sbGet('zones', '?select=id,name')
-  ]);
+  const allSessions = await sbGet('sessions',
+    '?status=eq.scheduled&select=id,session_date,start_time,scheduled_start,status,session_bars(bars(id,name))&order=scheduled_start.asc.nullsfirst,session_date.asc,start_time.asc'
+  );
+  const upcoming = Array.isArray(allSessions) ? allSessions : [];
 
-  const upcoming = allSessions.filter(s => s.status === 'scheduled');
-
-  // Load invite counts for upcoming sessions
   const inviteCounts = {};
   if(upcoming.length) {
     const ids = upcoming.map(s => s.id).join(',');
     const invites = await sbGet('session_invites', '?session_id=in.('+ids+')&select=session_id,attendance_confirmed');
-    invites.forEach(inv => {
+    (invites || []).forEach(inv => {
       if(!inviteCounts[inv.session_id]) inviteCounts[inv.session_id] = { invited: 0, confirmed: 0, declined: 0, pending: 0 };
       inviteCounts[inv.session_id].invited++;
-      inviteCounts[inv.session_id][inv.attendance_confirmed]++;
+      const k = inv.attendance_confirmed || 'pending';
+      if(inviteCounts[inv.session_id][k] != null) inviteCounts[inv.session_id][k]++;
     });
   }
 
-  // Render upcoming
   if(!upcoming.length) {
     upcomingEl.innerHTML = '<div class="empty">No scheduled sessions. Click Schedule Session to plan one.</div>';
-  } else {
-    upcomingEl.innerHTML = upcoming.map(s => {
-      const zone = zonesData.find(z => Number(z.id) === Number(s.zone_id));
-      const dt = s.scheduled_start ? new Date(s.scheduled_start) : (s.session_date ? new Date(s.session_date + 'T' + (s.start_time || '18:00:00')) : null);
-      const dateStr = dt ? dt.toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'short'}) : 'TBC';
-      const timeStr = dt ? dt.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '';
-      const counts = inviteCounts[s.id] || { invited: 0, confirmed: 0, declined: 0, pending: 0 };
-      return `<div class="zone-card" style="margin-bottom:12px;padding:16px 20px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-          <div>
-            <div style="font-weight:600;color:var(--white);font-size:14px;margin-bottom:2px;">${dateStr} at ${timeStr}</div>
-            <div style="color:var(--grey);font-size:12px;">${zone ? zone.name : 'Unknown zone'}</div>
-          </div>
-          <div style="text-align:right;">
-            <span style="font-size:10px;font-weight:600;letter-spacing:1px;color:var(--amber);background:rgba(200,162,74,0.1);border:1px solid rgba(200,162,74,0.3);padding:3px 8px;border-radius:4px;">SCHEDULED</span>
-          </div>
-        </div>
-        <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
-          <div style="font-size:12px;color:var(--grey);">Invited: <strong style="color:var(--white);">${counts.invited}</strong></div>
-          <div style="font-size:12px;color:var(--grey);">Confirmed: <strong style="color:#4ade80;">${counts.confirmed}</strong></div>
-          <div style="font-size:12px;color:var(--grey);">Declined: <strong style="color:var(--amber);">${counts.declined}</strong></div>
-          <div style="font-size:12px;color:var(--grey);">No response: <strong style="color:var(--grey);">${counts.pending}</strong></div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="small-ice-btn" onclick="openInviteWorkers(${s.id})">Invite workers in zone</button>
-          <button class="small-ice-btn" onclick="goLiveSession(${s.id})">Go Live</button>
-          <button style="background:none;border:1px solid var(--border);color:var(--grey);border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;" onclick="cancelScheduledSession(${s.id})">Cancel</button>
-        </div>
-      </div>`;
-    }).join('');
+    return;
   }
+  upcomingEl.innerHTML = upcoming.map(s => {
+    const dt = s.scheduled_start ? new Date(s.scheduled_start) : (s.session_date ? new Date(s.session_date + 'T' + (s.start_time || '18:00:00')) : null);
+    const dateStr = dt ? dt.toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'short'}) : 'TBC';
+    const timeStr = dt ? dt.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '';
+    const counts = inviteCounts[s.id] || { invited: 0, confirmed: 0, declined: 0, pending: 0 };
+    const barLabel = describeBarSet(s);
+    return `<div class="zone-card" style="margin-bottom:12px;padding:16px 20px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div>
+          <div style="font-weight:600;color:var(--white);font-size:14px;margin-bottom:2px;">${dateStr} at ${timeStr}</div>
+          <div style="color:var(--grey);font-size:12px;">${barLabel || 'No bars assigned'}</div>
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:10px;font-weight:600;letter-spacing:1px;color:var(--amber);background:rgba(200,162,74,0.1);border:1px solid rgba(200,162,74,0.3);padding:3px 8px;border-radius:4px;">SCHEDULED</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
+        <div style="font-size:12px;color:var(--grey);">Invited: <strong style="color:var(--white);">${counts.invited}</strong></div>
+        <div style="font-size:12px;color:var(--grey);">Confirmed: <strong style="color:#4ade80;">${counts.confirmed}</strong></div>
+        <div style="font-size:12px;color:var(--grey);">Declined: <strong style="color:var(--amber);">${counts.declined}</strong></div>
+        <div style="font-size:12px;color:var(--grey);">No response: <strong style="color:var(--grey);">${counts.pending}</strong></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="small-ice-btn" onclick="openInviteWorkers(${s.id})">Invite workers</button>
+        <button class="small-ice-btn" onclick="goLiveSession(${s.id})">Go Live</button>
+        <button style="background:none;border:1px solid var(--border);color:var(--grey);border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;" onclick="cancelScheduledSession(${s.id})">Cancel</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-async function openScheduleSession() {
-  // populate zone dropdown
-  const zonesData = await sbGet('zones', '?select=id,name');
-  const zoneSelect = document.getElementById('sched-zone');
-  zoneSelect.innerHTML = '<option value="">Select zone</option>' + zonesData.map(z => `<option value="${z.id}">${z.name}</option>`).join('');
-  // F-28: pre-select current zone-detail's zone if user opened the modal
-  // from a zone's Schedule sub-tab. Reduces clicks; user can still change.
-  if(currentZoneDetail?.dbId) {
-    zoneSelect.value = String(currentZoneDetail.dbId);
+// F-37: dashboard equivalent of the worker portal helper. Renders a session's
+// bar set as "First bar + N more" with graceful fallback when session_bars is
+// empty (legacy/unbacked sessions).
+function describeBarSet(session) {
+  if(!session) return '';
+  const bars = (session.session_bars || [])
+    .map(sb => sb && sb.bars && sb.bars.name)
+    .filter(Boolean);
+  if(bars.length === 1) return bars[0];
+  if(bars.length > 1) return bars[0] + ' + ' + (bars.length - 1) + ' more';
+  return '';
+}
+
+// F-37: History sub-tab render. Cross-bar list with date + status filters.
+// Drops the zone-scoped statistics quad-panel from the legacy render; the
+// stats are surfaced via the global Sessions audit on the legacy
+// #screen-sessions-audit screen which remains available.
+async function renderSessionsHistory() {
+  const listEl = document.getElementById('sessions-history-list');
+  if(!listEl) return;
+  listEl.innerHTML = '<div class="empty">Loading...</div>';
+
+  const wantStatuses = [];
+  if(document.getElementById('sh-status-scheduled')?.checked) wantStatuses.push('scheduled');
+  if(document.getElementById('sh-status-live')?.checked) wantStatuses.push('live');
+  if(document.getElementById('sh-status-closed')?.checked) wantStatuses.push('closed');
+  if(document.getElementById('sh-status-cancelled')?.checked) wantStatuses.push('cancelled');
+  if(!wantStatuses.length) { listEl.innerHTML = '<div class="empty">Pick at least one status filter.</div>'; return; }
+
+  const dateFrom = document.getElementById('sh-date-from')?.value || '';
+  const dateTo = document.getElementById('sh-date-to')?.value || '';
+
+  let q = '?status=in.(' + wantStatuses.join(',') + ')';
+  if(dateFrom) q += '&session_date=gte.' + encodeURIComponent(dateFrom);
+  if(dateTo)   q += '&session_date=lte.' + encodeURIComponent(dateTo);
+  q += '&select=id,session_date,start_time,scheduled_start,status,session_bars(bars(id,name))&order=session_date.desc,start_time.desc';
+
+  const rows = await sbGet('sessions', q);
+  if(!Array.isArray(rows) || !rows.length) {
+    listEl.innerHTML = '<div class="empty">No sessions match those filters.</div>';
+    return;
   }
-  // default date to next Friday
+  listEl.innerHTML = rows.map(s => {
+    const dt = s.scheduled_start ? new Date(s.scheduled_start) : (s.session_date ? new Date(s.session_date + 'T' + (s.start_time || '18:00:00')) : null);
+    const dateStr = dt ? dt.toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'short',year:'numeric'}) : 'TBC';
+    const timeStr = dt ? dt.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '';
+    const statusColour = s.status === 'live' ? 'var(--green)' : s.status === 'closed' ? 'var(--grey)' : s.status === 'cancelled' ? 'var(--red)' : 'var(--amber)';
+    const barLabel = describeBarSet(s);
+    return `<div class="zone-card" style="margin-bottom:12px;padding:14px 18px;cursor:pointer;" onclick="openSessionDetail(${s.id})">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+        <div>
+          <div style="font-weight:600;color:var(--white);font-size:13px;">${dateStr} at ${timeStr}</div>
+          <div style="color:var(--grey);font-size:12px;margin-top:2px;">${barLabel || 'No bars assigned'}</div>
+        </div>
+        <span style="font-size:10px;font-weight:600;letter-spacing:1px;color:${statusColour};text-transform:uppercase;">${s.status}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// F-37: bar multi-select replaces zone dropdown. Bars are listed with their
+// status; only trial/active bars are eligible (a session at a prospect bar
+// makes no sense). Selection state lives in the DOM via checked attribute.
+async function openScheduleSession() {
+  const errEl = document.getElementById('sched-error');
+  if(errEl) errEl.textContent = '';
+  const submitBtn = document.getElementById('sched-submit-btn');
+  if(submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Schedule Session'; }
+
+  const listEl = document.getElementById('sched-bars-list');
+  if(listEl) listEl.innerHTML = '<div style="font-size:12px;color:var(--grey);">Loading bars...</div>';
+
+  // Default date to next Friday.
   const d = new Date();
   d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7 || 7));
   document.getElementById('sched-date').value = d.toISOString().split('T')[0];
+
+  let barRows = [];
+  try {
+    barRows = await sbGet('bars', '?status=in.(trial,active)&order=name.asc&select=id,name,address,status');
+  } catch(e) { barRows = []; }
+
+  if(!Array.isArray(barRows) || !barRows.length) {
+    if(listEl) listEl.innerHTML = '<div style="font-size:12px;color:var(--grey);">No trial or active bars available. Add a bar first.</div>';
+  } else if(listEl) {
+    listEl.innerHTML = barRows.map(b => `
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">
+        <input type="checkbox" class="sched-bar-cb" value="${b.id}" style="margin-top:3px;">
+        <span style="flex:1;">
+          <span style="display:block;font-size:13px;color:var(--white);font-weight:500;">${b.name}</span>
+          <span style="display:block;font-size:11px;color:var(--grey);margin-top:2px;">${b.address || ''} &nbsp;·&nbsp; <span style="color:var(--ice);">${b.status}</span></span>
+        </span>
+      </label>
+    `).join('');
+    const lastBorder = listEl.querySelector('label:last-child');
+    if(lastBorder) lastBorder.style.borderBottom = 'none';
+  }
+
   openOv('schedule');
 }
 
+// F-37: schedule via SECURITY DEFINER RPC. The RPC inserts the session row
+// AND the session_bars rows in one transaction; admin email gate enforced
+// inside the function. No path here writes session_invites; invites are sent
+// only when Sam manually clicks Send invite per worker on the invite panel.
 async function createScheduledSession() {
+  const errEl = document.getElementById('sched-error');
+  const submitBtn = document.getElementById('sched-submit-btn');
+  if(errEl) errEl.textContent = '';
+
   const date = document.getElementById('sched-date').value;
   const time = document.getElementById('sched-time').value;
-  const zoneId = document.getElementById('sched-zone').value;
   const cutoff = document.getElementById('sched-cutoff').value;
+  const checked = Array.from(document.querySelectorAll('.sched-bar-cb:checked')).map(cb => parseInt(cb.value, 10)).filter(Boolean);
 
-  if(!date || !time || !zoneId) { alert('Please fill in all fields.'); return; }
+  if(!date) { if(errEl) errEl.textContent = 'Pick a date.'; return; }
+  if(!time) { if(errEl) errEl.textContent = 'Pick a start time.'; return; }
+  if(!checked.length) { if(errEl) errEl.textContent = 'Pick at least one bar.'; return; }
 
+  if(submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Scheduling...'; }
   const scheduledStart = new Date(date + 'T' + time + ':00').toISOString();
 
-  const result = await sbPost('sessions', {
-    session_date: date,
-    start_time: time + ':00',
-    zone_id: parseInt(zoneId),
-    status: 'scheduled',
-    scheduled_start: scheduledStart,
-    cutoff_minutes: parseInt(cutoff) || 30
-  });
-
-  if(result && result[0]) {
+  try {
+    const { data: { session: authSession } } = await sbAuth.auth.getSession();
+    const token = authSession?.access_token || KEY;
+    const resp = await fetch(SB + '/rest/v1/rpc/schedule_session_with_bars', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': KEY,
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        p_session_date: date,
+        p_start_time: time + ':00',
+        p_scheduled_start: scheduledStart,
+        p_cutoff_minutes: parseInt(cutoff, 10) || 30,
+        p_bar_ids: checked
+      })
+    });
+    if(!resp.ok) {
+      const text = await resp.text();
+      throw new Error(text || ('HTTP ' + resp.status));
+    }
     closeOv('schedule');
     await loadSessionsList();
-  } else {
-    alert('Failed to create session. Please try again.');
+  } catch(e) {
+    console.error('createScheduledSession failed', e);
+    if(errEl) errEl.textContent = 'Could not schedule: ' + (e.message || 'unknown');
+    if(submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Schedule Session'; }
   }
 }
 
@@ -8611,25 +8613,26 @@ async function goLiveSession(sessionId) {
   liveSessionStart = Date.now();
   liveSessionOps.start(sessionId);
 
-  // 3. Load session details
-  const sessions = await sbGet('sessions', '?id=eq.'+sessionId+'&select=*,zones(id,name,postcodes)');
+  // 3. Load session details (F-37: session_bars FK embed replaces zones).
+  const sessions = await sbGet('sessions', '?id=eq.'+sessionId+'&select=*,session_bars(bars(id,name,address,google_maps_link,status))');
   const session = sessions[0];
 
   if(session) {
-    activeZone = { dbId: session.zone_id, name: session.zones?.name || '', postcodes: session.zones?.postcodes || [] };
-    // Load bars
+    // F-37: liveSessionLabel feeds the live console header in place of
+    // activeZone.name. The full bar list is also exposed as
+    // liveSessionBars for the dispatch UI.
+    liveSessionBars = (session.session_bars || []).map(sb => sb && sb.bars).filter(Boolean);
+    liveSessionLabel = describeBarSet(session) || 'Live session';
     try {
-      const barsResult = await sbGet('bars','?order=name.asc&select=id,name,address,google_maps_link,zone_id,status,notes');
+      const barsResult = await sbGet('bars','?order=name.asc&select=id,name,address,google_maps_link,status,notes');
       bars = Array.isArray(barsResult) ? barsResult : [];
     } catch(e) {}
   }
 
-  // 4. F-28: Navigate to the session's zone-detail screen, Live sub-tab.
-  //    goToZoneDetail's default-sub-tab logic will pick Live since the DB
-  //    query at the top of that function will see the just-set status='live'.
-  if(session?.zone_id) {
-    await goToZoneDetail(session.zone_id);
-  }
+  // 4. F-37: Navigate to the new top-level Sessions screen, Live sub-tab.
+  showScreen('sessions');
+  setActiveNav('sessions');
+  switchSessionsTab('live');
 
   // 5. Load workers in background
   await loadLiveSessionWorkers(sessionId);
@@ -8726,16 +8729,16 @@ async function openSessionDetail(sessionId) {
   showScreen('session-detail');
   setActiveNav('sessions');
 
-  const sessions = await sbGet('sessions', '?id=eq.'+sessionId+'&select=*');
+  // F-37: load session with its bar set via FK embed.
+  const sessions = await sbGet('sessions', '?id=eq.'+sessionId+'&select=*,session_bars(bars(id,name))');
   const session = sessions[0];
   if(!session) return;
 
-  const zonesData = await sbGet('zones', '?select=id,name');
-  const zone = zonesData.find(z => Number(z.id) === Number(session.zone_id));
   const date = session.session_date ? new Date(session.session_date).toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '';
+  const barLabel = describeBarSet(session) || 'No bars assigned';
 
   document.getElementById('session-detail-title').textContent = date.toUpperCase();
-  document.getElementById('session-detail-sub').textContent = (zone ? zone.name : '') + (session.start_time ? '  |  ' + session.start_time.slice(0,5) + ' - ' + (session.end_time ? session.end_time.slice(0,5) : 'open') : '');
+  document.getElementById('session-detail-sub').textContent = barLabel + (session.start_time ? '  |  ' + session.start_time.slice(0,5) + ' - ' + (session.end_time ? session.end_time.slice(0,5) : 'open') : '');
 
   const workers = document.getElementById('session-detail-workers');
   workers.innerHTML = '<div class="empty">Loading workers...</div>';
@@ -8890,56 +8893,63 @@ function copyWorkerReport(btn, reportId) {
 // Resend). View is preview-only with zero side effects. Bulk "Invite all in
 // zone" is stubbed for future work.
 
+// F-37: invite list driven by catchment overlap with the session's bar set.
+// Eligibility: worker_status='onboarded', active!=false, AND at least one
+// worker_bar_distances row with active=true, walking_minutes <= 30, and
+// bar_id IN session.bar_set. Bulk-invite is intentionally removed; the only
+// path that creates a session_invites row is the per-worker Send invite
+// button click. There is no auto-invite path anywhere in F-37.
 async function loadInviteWorkers(sessionId) {
   openOv('invite-workers');
   const listEl = document.getElementById('invite-workers-list');
   listEl.innerHTML = '<div class="empty">Loading workers...</div>';
 
-  const sessions = await sbGet('sessions', '?id=eq.'+sessionId+'&select=zone_id,session_date');
+  const sessions = await sbGet('sessions', '?id=eq.'+sessionId+'&select=id,session_date,session_bars(bars(id,name))');
   const session = sessions[0];
-  if(!session) return;
+  if(!session) { listEl.innerHTML = '<div class="empty">Session not found.</div>'; return; }
 
-  const zones = await sbGet('zones', '?id=eq.'+session.zone_id+'&select=postcodes,name');
-  const zone = zones[0];
-  const postcodes = zone ? (zone.postcodes || []) : [];
-  const zoneName = zone ? zone.name : 'Zone';
-
-  const existing = await sbGet('session_invites', '?session_id=eq.'+sessionId+'&select=application_id');
-  const existingIds = new Set(existing.map(e => Number(e.application_id)));
-
-  // Onboarded + active workers per CORE v5 eligibility (worker_status='onboarded',
-  // active=true, zone match). Embed session_workers -> shifts to compute average
-  // bar rating. reliability_score is internal-to-Sam under v5; visible here on
-  // the dashboard, not on the worker portal.
-  const workers = await sbGet('applications',
-    '?worker_status=eq.onboarded&active=not.eq.false'
-    + '&select=id,name,postcode_full,tier,reliability_score,session_workers(shifts(bar_rating))');
-
-  if(!workers.length) {
-    listEl.innerHTML = '<div class="empty">No onboarded workers available.</div>';
+  const sessionBarIds = (session.session_bars || []).map(sb => sb && sb.bars && sb.bars.id).filter(Boolean);
+  const barLabel = describeBarSet(session) || 'No bars assigned';
+  if(!sessionBarIds.length) {
+    listEl.innerHTML = '<div class="empty">This session has no bars assigned. Add bars before inviting workers.</div>';
     return;
   }
 
-  function avgBarRating(w) {
-    const ratings = (w.session_workers || [])
-      .flatMap(sw => (sw.shifts || []).map(s => s.bar_rating))
-      .filter(r => r != null);
-    if(!ratings.length) return null;
-    return ratings.reduce((a,b) => a+b, 0) / ratings.length;
+  const existing = await sbGet('session_invites', '?session_id=eq.'+sessionId+'&select=application_id');
+  const existingIds = new Set((existing || []).map(e => Number(e.application_id)));
+
+  // Catchment: distinct application_ids whose worker_bar_distances overlap
+  // the session bar set. Embed applications inline so we render in one pass.
+  const distRows = await sbGet('worker_bar_distances',
+    '?bar_id=in.(' + sessionBarIds.join(',') + ')&active=eq.true&walking_minutes=lte.30'
+    + '&select=application_id,bar_id,walking_minutes,applications!inner(id,name,postcode_full,tier,reliability_score,worker_status,active)');
+
+  // Reduce to one row per application, keep the minimum walking_minutes
+  // across the bar_set so we can sort by it. F-35 catchment semantics.
+  const byApp = new Map();
+  (distRows || []).forEach(d => {
+    const app = d.applications;
+    if(!app) return;
+    if(app.worker_status !== 'onboarded') return;
+    if(app.active === false) return;
+    const existing = byApp.get(app.id);
+    if(!existing || (d.walking_minutes != null && d.walking_minutes < (existing.walking_minutes ?? Infinity))) {
+      byApp.set(app.id, { app, walking_minutes: d.walking_minutes });
+    }
+  });
+  const eligible = Array.from(byApp.values())
+    .sort((a, b) => (a.walking_minutes ?? Infinity) - (b.walking_minutes ?? Infinity));
+
+  if(!eligible.length) {
+    listEl.innerHTML = '<div class="empty">No onboarded workers in catchment for this session\'s bars.</div>';
+    return;
   }
 
-  function inZone(w) {
-    return postcodes.some(p => w.postcode_full && w.postcode_full.startsWith(p));
-  }
-
-  const inZoneWorkers = workers.filter(inZone);
-  const outZoneWorkers = workers.filter(w => !inZone(w));
-
-  function renderWorker(w) {
+  function renderWorker(entry) {
+    const w = entry.app;
     const alreadyInvited = existingIds.has(Number(w.id));
     const rel = w.reliability_score != null ? Math.round(w.reliability_score) + '%' : 'no data';
-    const rating = avgBarRating(w);
-    const ratingStr = rating != null ? rating.toFixed(1) + '★' : 'no data';
+    const walking = entry.walking_minutes != null ? (entry.walking_minutes + ' min walk') : 'distance unknown';
     const sendBtnHtml = alreadyInvited
       ? '<button disabled style="flex:1;background:rgba(168,198,232,0.18);border:1px solid var(--border);color:var(--grey);border-radius:6px;padding:8px 12px;font-size:12px;font-weight:700;cursor:default;font-family:\'Inter\',sans-serif;">Invited</button>'
       : '<button onclick="sendInvite('+sessionId+', '+w.id+', this)" style="flex:1;background:var(--ice);border:1px solid var(--ice);color:var(--navy);border-radius:6px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;">Send invite</button>';
@@ -8947,7 +8957,7 @@ async function loadInviteWorkers(sessionId) {
       <div style="margin-bottom:10px;">
         <div style="font-size:14px;color:var(--white);font-weight:600;">${w.name}</div>
         <div style="font-size:11px;color:var(--grey);margin-top:3px;font-family:'JetBrains Mono',monospace;">${w.postcode_full || ''}</div>
-        <div style="font-size:11px;color:var(--grey);margin-top:3px;">Tier ${w.tier || 1} &nbsp;·&nbsp; Reliability ${rel} &nbsp;·&nbsp; Bar rating ${ratingStr}</div>
+        <div style="font-size:11px;color:var(--grey);margin-top:3px;">Tier ${w.tier || 1} &nbsp;·&nbsp; Reliability ${rel} &nbsp;·&nbsp; ${walking}</div>
       </div>
       <div style="display:flex;gap:6px;">
         <button onclick="viewInvite(${sessionId}, ${w.id})" style="flex:1;background:none;border:1px solid var(--border);color:var(--grey);border-radius:6px;padding:8px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;">View invite</button>
@@ -8958,24 +8968,22 @@ async function loadInviteWorkers(sessionId) {
 
   listEl.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);">
-      <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);">${zoneName}</div>
-      <button onclick="bulkInviteAllInZone()" style="background:none;border:1px solid var(--border);color:var(--grey);border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;">Invite all in zone</button>
+      <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);">${barLabel}</div>
+      <div style="font-size:11px;color:var(--grey);">${eligible.length} eligible</div>
     </div>
-    <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);margin-bottom:8px;">IN ZONE (${inZoneWorkers.length})</div>
-    ${inZoneWorkers.length ? inZoneWorkers.map(renderWorker).join('') : '<div class="empty" style="margin-bottom:12px;">No onboarded workers in this zone yet.</div>'}
-    ${outZoneWorkers.length ? `
-      <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--grey);margin:16px 0 8px;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';">
-        OTHER WORKERS (${outZoneWorkers.length}) <span style="font-size:10px;font-weight:400;">tap to show</span>
-      </div>
-      <div style="display:none;">${outZoneWorkers.map(renderWorker).join('')}</div>
-    ` : ''}
+    <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);margin-bottom:8px;">IN CATCHMENT</div>
+    ${eligible.map(renderWorker).join('')}
   `;
 }
 
 // Build the email payload for an invite from session + worker data. Used by
 // both viewInvite (preview) and sendInvite (writes + sends). No side effects.
+// F-37: bar_zone field repurposed as a human-readable bar-set label
+// ("First bar + N more"); bar_name is the first bar in the set. The Edge
+// Function template still references both fields, so the email layout is
+// unchanged.
 async function buildInvitePayload(sessionId, applicationId, sessionInviteId) {
-  const sessions = await sbGet('sessions', '?id=eq.'+sessionId+'&select=session_date,scheduled_start,start_time,zone_id,zones(name)');
+  const sessions = await sbGet('sessions', '?id=eq.'+sessionId+'&select=session_date,scheduled_start,start_time,session_bars(bars(id,name))');
   const session = sessions[0];
   if(!session) return null;
 
@@ -8983,8 +8991,9 @@ async function buildInvitePayload(sessionId, applicationId, sessionInviteId) {
   const app = apps[0];
   if(!app) return null;
 
-  const bars = await sbGet('bars', '?zone_id=eq.'+session.zone_id+'&select=name&limit=1');
-  const barName = bars[0] ? bars[0].name : '';
+  const setBars = (session.session_bars || []).map(sb => sb && sb.bars).filter(Boolean);
+  const barName = setBars.length ? setBars[0].name : '';
+  const setLabel = describeBarSet(session) || barName;
 
   const dateStr = session.scheduled_start
     ? new Date(session.scheduled_start).toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long'})
@@ -8992,14 +9001,13 @@ async function buildInvitePayload(sessionId, applicationId, sessionInviteId) {
   const timeStr = session.scheduled_start
     ? new Date(session.scheduled_start).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'})
     : (session.start_time ? session.start_time.slice(0,5) : '');
-  const zoneName = (session.zones && session.zones.name) ? session.zones.name : '';
 
   return {
     to_email: app.email,
     worker_name: app.name,
     session_time: timeStr,
     session_date: dateStr,
-    bar_zone: zoneName,
+    bar_zone: setLabel,
     session_id: sessionId,
     bar_name: barName,
     session_invite_id: sessionInviteId
@@ -9396,8 +9404,7 @@ async function loadShiftsPage() {
 
   allPairedUnits = rows.map(r => ({
     ...r,
-    _workerFeedback: feedbackByShift.get(Number(r.id)) || null,
-    _zoneId: r.bars?.zone_id ?? null
+    _workerFeedback: feedbackByShift.get(Number(r.id)) || null
   }));
 
   populateShiftsFilters();
@@ -9406,19 +9413,11 @@ async function loadShiftsPage() {
 
 function populateShiftsFilters() {
   const barSel  = document.getElementById('sh-bar-filter');
-  const zoneSel = document.getElementById('sh-zone-filter');
   if(barSel && barSel.options.length <= 1) {
     bars.forEach(b => {
       const o = document.createElement('option');
       o.value = String(b.id); o.textContent = b.name;
       barSel.appendChild(o);
-    });
-  }
-  if(zoneSel && zoneSel.options.length <= 1 && Array.isArray(ZONES)) {
-    ZONES.forEach(z => {
-      const o = document.createElement('option');
-      o.value = String(z.dbId); o.textContent = z.name;
-      zoneSel.appendChild(o);
     });
   }
 }
@@ -9429,7 +9428,6 @@ function readShiftsFilters() {
     worker:   (document.getElementById('sh-worker-filter')?.value || '').toLowerCase(),
     from:     document.getElementById('sh-date-from')?.value || '',
     to:       document.getElementById('sh-date-to')?.value || '',
-    zoneId:   document.getElementById('sh-zone-filter')?.value || '',
     status:   document.getElementById('sh-status-filter')?.value || '',
     feedback: document.getElementById('sh-feedback-filter')?.value || ''
   };
@@ -9442,7 +9440,6 @@ function matchShiftsFilters(p, f) {
   const refDate = p.clock_in_confirmed_at || p.created_at;
   if(f.from && refDate && new Date(refDate) < new Date(f.from + 'T00:00:00')) return false;
   if(f.to   && refDate && new Date(refDate) > new Date(f.to   + 'T23:59:59')) return false;
-  if(f.zoneId && String(p._zoneId) !== f.zoneId) return false;
   if(f.status && p.status !== f.status) return false;
   if(f.feedback) {
     const wf = p._workerFeedback;

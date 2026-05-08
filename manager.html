@@ -755,7 +755,7 @@
     // F-26: Stage 3 — bars lookup by id. Excludes manager_pin and
     // manager_password from the select (they are no-op decoration during
     // the bar_managers transition; never needed client-side post-F-26).
-    const barRows = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + currentManager.bar_id + '&select=id,name,address,zone_id,contact_name,closing_time,opening_time,session_schedule', { headers: H }).then(r => r.json());
+    const barRows = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + currentManager.bar_id + '&select=id,name,address,contact_name,closing_time,opening_time,session_schedule', { headers: H }).then(r => r.json());
     if(!barRows || !barRows.length) {
       await sbAuth.auth.signOut();
       H.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
@@ -774,6 +774,8 @@
     H.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
     stopWorkerWatch();
     if(sessionsWatchWs) { try { sessionsWatchWs.close(); } catch(e) {} sessionsWatchWs = null; }
+    if(sessionBarsWatchWs) { try { sessionBarsWatchWs.close(); } catch(e) {} sessionBarsWatchWs = null; }
+    mySessionIds = new Set();
     if(shiftRequestsWs) { try { shiftRequestsWs.close(); } catch(e) {} shiftRequestsWs = null; }
     stopPendingRequestExpiry();
     currentBar = null;
@@ -803,7 +805,7 @@
     }
     currentManager = managerRows[0];
 
-    const barRows = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + currentManager.bar_id + '&select=id,name,address,zone_id,contact_name,closing_time,opening_time,session_schedule', { headers: H }).then(r => r.json());
+    const barRows = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + currentManager.bar_id + '&select=id,name,address,contact_name,closing_time,opening_time,session_schedule', { headers: H }).then(r => r.json());
     if(!barRows || !barRows.length) {
       await sbAuth.auth.signOut();
       H.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
@@ -825,9 +827,10 @@
     document.getElementById('portal-venue-name').textContent = 'Hi ' + managerName;
     document.getElementById('portal-venue-sub').textContent = bar.name + ' · Glasi Partner';
 
-    // Check if a session is live in this zone
+    // F-37: bar's live session is any session in 'live' status whose bar_set
+    // includes this bar. Query via session_bars join.
     try {
-      const liveSessions = await fetch(SUPABASE_URL + '/rest/v1/sessions?zone_id=eq.' + bar.zone_id + '&status=eq.live&select=id&limit=1', { headers: H }).then(r => r.json());
+      const liveSessions = await fetch(SUPABASE_URL + '/rest/v1/session_bars?bar_id=eq.' + bar.id + '&select=session_id,sessions!inner(id,status)&sessions.status=eq.live&limit=1', { headers: H }).then(r => r.json());
       const sessionActive = liveSessions?.length > 0;
       if(sessionActive) {
         document.getElementById('no-session-card').style.display = 'none';
@@ -918,10 +921,68 @@
     dispatchedWorkerWs.onclose = () => { if(hb) clearInterval(hb); };
   }
 
+  // F-37: split sessions watch into two subs.
+  // Sub A (sessionBarsWatchWs): session_bars filtered by bar_id. INSERT means
+  //   this bar was added to a session's bar_set; cache the session_id.
+  //   DELETE means removed; uncache. Postgres realtime DELETE payload has
+  //   old_record (the row that was deleted) under msg.payload?.data?.old_record.
+  // Sub B (sessionsWatchWs): sessions UPDATE unfiltered. Realtime filter
+  //   syntax does not support array-contains or join-derived filters, so we
+  //   subscribe broadly and client-side filter against mySessionIds.
+  // Bandwidth tripwire: at ~10 sessions UPDATE/min sustained, switch to a
+  //   derived view or per-bar sub via a Postgres function. Logged in
+  //   BUILD_STATE; current scale makes the unfiltered sub trivially cheap.
   let sessionsWatchWs = null;
+  let sessionBarsWatchWs = null;
+  let mySessionIds = new Set();
 
   function startSessionsWatch() {
-    if(!currentBar || sessionsWatchWs) return;
+    if(!currentBar) return;
+    // Bootstrap mySessionIds from current session_bars rows for this bar.
+    fetch(SUPABASE_URL + '/rest/v1/session_bars?bar_id=eq.' + currentBar.id + '&select=session_id', { headers: H })
+      .then(r => r.json())
+      .then(rows => {
+        mySessionIds = new Set((rows || []).map(r => r.session_id));
+      })
+      .catch(() => {});
+
+    // Sub A: session_bars filtered by bar_id (INSERT + DELETE).
+    if(!sessionBarsWatchWs) {
+      const wsUrl = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
+      sessionBarsWatchWs = new WebSocket(wsUrl);
+      let hbA = null;
+      sessionBarsWatchWs.onopen = () => {
+        sessionBarsWatchWs.send(JSON.stringify({
+          topic: 'realtime:public:session_bars',
+          event: 'phx_join',
+          payload: { config: { postgres_changes: [
+            { event: 'INSERT', schema: 'public', table: 'session_bars', filter: 'bar_id=eq.' + currentBar.id },
+            { event: 'DELETE', schema: 'public', table: 'session_bars', filter: 'bar_id=eq.' + currentBar.id }
+          ] } },
+          ref: 'sbA1'
+        }));
+        hbA = setInterval(() => {
+          if(sessionBarsWatchWs?.readyState === WebSocket.OPEN) {
+            sessionBarsWatchWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
+          }
+        }, 30000);
+      };
+      sessionBarsWatchWs.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if(msg.event !== 'postgres_changes') return;
+          const type = msg.payload?.data?.type;
+          const record = msg.payload?.data?.record || msg.payload?.data?.old_record;
+          if(!record || record.bar_id !== currentBar.id) return;
+          if(type === 'INSERT') mySessionIds.add(record.session_id);
+          else if(type === 'DELETE') mySessionIds.delete(record.session_id);
+        } catch(_e) {}
+      };
+      sessionBarsWatchWs.onclose = () => { if(hbA) clearInterval(hbA); sessionBarsWatchWs = null; };
+    }
+
+    // Sub B: sessions UPDATE unfiltered; client-side filter on mySessionIds.
+    if(sessionsWatchWs) return;
     const wsUrl = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
     sessionsWatchWs = new WebSocket(wsUrl);
     let hb = null;
@@ -930,7 +991,7 @@
       sessionsWatchWs.send(JSON.stringify({
         topic: 'realtime:public:sessions',
         event: 'phx_join',
-        payload: { config: { postgres_changes: [{ event: 'UPDATE', schema: 'public', table: 'sessions', filter: 'zone_id=eq.' + currentBar.zone_id }] } },
+        payload: { config: { postgres_changes: [{ event: 'UPDATE', schema: 'public', table: 'sessions' }] } },
         ref: 'sw1'
       }));
       hb = setInterval(() => {
@@ -946,10 +1007,9 @@
         if(msg.event !== 'postgres_changes') return;
         const record = msg.payload?.data?.record;
         if(!record) return;
+        // F-37 client-side filter: only react to sessions whose bar_set includes our bar.
+        if(!mySessionIds.has(record.id)) return;
         if(record.status === 'live') {
-          // Session in this bar's zone just went live. Surface the form only
-          // if no active card is up; otherwise leave the in-flight UI alone
-          // and just hide the no-session card.
           document.getElementById('no-session-card').style.display = 'none';
           const onActiveLive = document.getElementById('active-status-card').style.display === 'block';
           if(!onActiveLive) {
@@ -960,8 +1020,6 @@
             document.getElementById('request-form').style.display = 'block';
           }
         } else if(record.status === 'closed') {
-          // Active card stays put if a shift is still in progress; only the
-          // request form / pill gets hidden behind the no-session card.
           const onActive = document.getElementById('active-status-card').style.display === 'block';
           if(!onActive) {
             document.getElementById('request-form').style.display = 'none';
@@ -1536,9 +1594,9 @@
     if(errorEl) errorEl.textContent = '';
 
     try {
-      // Find the active session for this bar's zone
-      const sessions = await fetch(SUPABASE_URL + '/rest/v1/sessions?zone_id=eq.' + currentBar.zone_id + '&status=eq.live&select=id&limit=1', { headers: H }).then(r => r.json());
-      const sessionId = sessions?.[0]?.id || null;
+      // F-37: find active session whose bar_set includes this bar.
+      const sessionRows = await fetch(SUPABASE_URL + '/rest/v1/session_bars?bar_id=eq.' + currentBar.id + '&select=session_id,sessions!inner(id,status)&sessions.status=eq.live&limit=1', { headers: H }).then(r => r.json());
+      const sessionId = sessionRows?.[0]?.session_id || sessionRows?.[0]?.sessions?.id || null;
 
       const now = new Date();
 

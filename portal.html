@@ -2037,7 +2037,7 @@
     <div class="burger-items">
       <button class="burger-item" onclick="closeBurgerMenu(); showBurgerPage('how-glasi-works');">How Glasi works</button>
       <button class="burger-item" onclick="closeBurgerMenu(); showBurgerPage('how-selection-works');">How selection works</button>
-      <button class="burger-item" onclick="closeBurgerMenu(); showBurgerPage('bars-zone');">Bars in my zone</button>
+      <button class="burger-item" onclick="closeBurgerMenu(); showBurgerPage('bars-zone');">Bars I cover</button>
       <button class="burger-item" onclick="closeBurgerMenu(); showBurgerPage('shift-history');">Shift history</button>
       <button class="burger-item" onclick="closeBurgerMenu(); showBurgerPage('earnings');">Earnings summary</button>
       <button class="burger-item" onclick="closeBurgerMenu(); showBurgerPage('support');">Support</button>
@@ -2118,7 +2118,7 @@
 
         <!-- Bars in zone -->
         <div class="bars-zone-card">
-          <div class="bars-zone-title">Bars in zone</div>
+          <div class="bars-zone-title">Bars I cover</div>
           <div id="bars-zone-list">
             <div style="font-size:13px;color:var(--grey);padding:12px 0;">Loading…</div>
           </div>
@@ -2400,10 +2400,10 @@
       </div>
     </div>
 
-    <!-- Bars in my zone (dedicated page; richer than the Profile summary) -->
+    <!-- Bars I cover (dedicated page; richer than the Profile summary) -->
     <div id="burger-page-bars-zone" class="burger-page" style="display:none;">
       <button class="burger-page-back" onclick="closeBurgerPage()">← Back</button>
-      <div class="burger-page-title">Bars in my zone</div>
+      <div class="burger-page-title">Bars I cover</div>
       <div class="burger-page-sub">Every venue you can be dispatched to. Tap to read and sign their health and safety document.</div>
       <div id="bars-zone-detailed-list">
         <div style="font-size:13px;color:var(--grey);padding:12px 0;">Loading…</div>
@@ -3253,7 +3253,7 @@
 
     // Bars in zone — kicks off the lookup chain (worker postcode → zone →
     // bars → hs_acknowledgements). Renders the list when complete.
-    loadBarsInZone();
+    loadBarsICover();
 
     // Tiers page renders from currentWorker only (no extra fetch). Painting
     // it eagerly means the tab opens instantly when the worker switches.
@@ -3293,60 +3293,87 @@
     }
   }
 
-  // ── Bars in zone ──────────────────────────────────────────────────
-  // Loaded once on profile entry. Each bar row links to its H&S document
-  // detail view; status reflects whether an hs_acknowledgements row exists
-  // for (application_id, bar_id).
-  let barsInZoneCache = []; // [{ id, name, hs_document_path, signed_at }]
+  // ── Bars I cover ──────────────────────────────────────────────────
+  // F-37: replaces the legacy zone-postcode-prefix lookup with catchment
+  // overlap from worker_bar_distances. Loads on profile entry; each bar row
+  // links to its H&S document detail view; status reflects whether the
+  // worker has any hs_acknowledgements row (across all session_invites)
+  // for that bar.
+  //
+  // Two pre-existing tripwires fixed inline as part of this rewrite:
+  //   1. Canonical bars column is hs_document_url.
+  //   2. hs_acknowledgements has no application_id column. Acknowledgements
+  //      are keyed (session_invite_id, bar_id), so we resolve via the worker's
+  //      session_invites and roll up.
+  let barsInZoneCache = []; // [{ id, name, hs_document_url, signed_at }]
 
-  async function loadBarsInZone() {
+  async function loadBarsICover() {
     const listEl = document.getElementById('bars-zone-list');
     if(!listEl || !currentWorker) return;
 
     try {
-      // 1. Resolve worker's zone via postcode prefix. zones.postcodes is a
-      // text[] of district prefixes (e.g. ['SO14','SO15']).
       const pc = (currentWorker.postcode_full || '').trim().toUpperCase();
       if(!pc) {
-        listEl.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:12px 0;">Postcode not on file. Contact hello@glasi.co.uk to set your zone.</div>';
-        return;
-      }
-      const zoneRows = await fetch(SUPABASE_URL + '/rest/v1/zones?select=id,name,postcodes', { headers: H }).then(r => r.json());
-      const zone = (zoneRows || []).find(z => Array.isArray(z.postcodes) && z.postcodes.some(p => pc.startsWith(String(p).toUpperCase())));
-      if(!zone) {
-        listEl.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:12px 0;">No matching zone for your postcode.</div>';
+        listEl.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:12px 0;">Postcode not on file. Contact hello@glasi.co.uk to set your address.</div>';
         return;
       }
 
-      // 2. Bars in zone + the worker's H&S acknowledgements, fetched in parallel.
-      const [barRows, ackRows] = await Promise.all([
-        fetch(SUPABASE_URL + '/rest/v1/bars?zone_id=eq.' + zone.id + '&order=name.asc&select=id,name,address,hs_document_path', { headers: H }).then(r => r.json()),
-        fetch(SUPABASE_URL + '/rest/v1/hs_acknowledgements?application_id=eq.' + currentWorker.id + '&select=bar_id,acknowledged_at', { headers: H }).then(r => r.json())
-      ]);
+      // F-37 Step 1: bars within catchment via worker_bar_distances.
+      const distRows = await fetch(SUPABASE_URL +
+        '/rest/v1/worker_bar_distances?application_id=eq.' + currentWorker.id +
+        '&active=eq.true&walking_minutes=lte.30' +
+        '&select=bar_id,walking_minutes,bars(id,name,address,hs_document_url,status)',
+        { headers: H }).then(r => r.json());
+
+      const inCatchment = (distRows || [])
+        .filter(d => d.bars && (d.bars.status === 'trial' || d.bars.status === 'active'))
+        .map(d => ({
+          id: d.bars.id,
+          name: d.bars.name,
+          address: d.bars.address,
+          hs_document_url: d.bars.hs_document_url,
+          walking_minutes: d.walking_minutes
+        }))
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+      // F-37 Step 2: H&S acknowledgements via session_invites FK embed.
+      // hs_acknowledgements is keyed (session_invite_id, bar_id); a worker's
+      // acks for a bar live across any session_invite they hold for that bar.
+      // PostgREST FK embed flattens the rows; we roll up to "any ack means signed".
+      const inviteAckRows = await fetch(SUPABASE_URL +
+        '/rest/v1/session_invites?application_id=eq.' + currentWorker.id +
+        '&select=id,hs_acknowledgements(bar_id,acknowledged_at)',
+        { headers: H }).then(r => r.json());
 
       const ackByBar = {};
-      (ackRows || []).forEach(a => { ackByBar[a.bar_id] = a.acknowledged_at; });
+      (inviteAckRows || []).forEach(inv => {
+        (inv.hs_acknowledgements || []).forEach(a => {
+          if(!a) return;
+          const existing = ackByBar[a.bar_id];
+          if(!existing || existing < a.acknowledged_at) ackByBar[a.bar_id] = a.acknowledged_at;
+        });
+      });
 
-      barsInZoneCache = (barRows || []).map(b => ({
+      barsInZoneCache = inCatchment.map(b => ({
         id: b.id,
         name: b.name,
         address: b.address,
-        hs_document_path: b.hs_document_path,
+        hs_document_url: b.hs_document_url,
         signed_at: ackByBar[b.id] || null
       }));
 
-      renderBarsInZone();
+      renderBarsICover();
     } catch(e) {
-      console.error('loadBarsInZone failed', e);
+      console.error('loadBarsICover failed', e);
       listEl.innerHTML = '<div style="font-size:13px;color:var(--red);padding:12px 0;">Could not load bars. Try again later.</div>';
     }
   }
 
-  function renderBarsInZone() {
+  function renderBarsICover() {
     const listEl = document.getElementById('bars-zone-list');
     if(!listEl) return;
     if(!barsInZoneCache.length) {
-      listEl.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:12px 0;">No bars in your zone yet.</div>';
+      listEl.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:12px 0;">No bars in your coverage area yet.</div>';
       return;
     }
     listEl.innerHTML = barsInZoneCache.map(b => {
@@ -3366,6 +3393,19 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  // F-37: format the bar set for a session. Prefers the new session_bars
+  // embed; falls back to the legacy zones.name for historical sessions that
+  // have not been backfilled. Multi-bar sets render as "First bar + N more".
+  function describeSessionLocation(session) {
+    if(!session) return '';
+    const bars = (session.session_bars || [])
+      .map(sb => sb && sb.bars && sb.bars.name)
+      .filter(Boolean);
+    if(bars.length === 1) return bars[0];
+    if(bars.length > 1) return bars[0] + ' + ' + (bars.length - 1) + ' more';
+    return (session.zones && session.zones.name) || '';
+  }
+
   // ── Per-bar H&S document detail view ──────────────────────────────
   let currentBarDetailId = null;
 
@@ -3383,34 +3423,41 @@
     // Resolve the document URL via Supabase Storage signed URL endpoint.
     // bar_hs_documents is a private bucket; signed URLs are short-lived and
     // safe to embed in an iframe without auth headers. If the bar has no
-    // hs_document_path on file, surface a friendly message and skip the iframe.
+    // hs_document_url on file, surface a friendly message and skip the iframe.
     const iframe = document.getElementById('bar-detail-pdf');
     const fallback = document.getElementById('bar-detail-pdf-fallback');
     const fallbackLink = document.getElementById('bar-detail-pdf-link');
     if(iframe) iframe.src = '';
     if(fallback) fallback.style.display = 'none';
 
-    if(!bar.hs_document_path) {
+    if(!bar.hs_document_url) {
       if(iframe) iframe.style.display = 'none';
       if(fallback) {
         fallback.style.display = 'block';
         if(fallbackLink) {
-          fallbackLink.textContent = 'Document not available yet — contact Glasi.';
+          fallbackLink.textContent = 'Document not available yet, contact Glasi.';
           fallbackLink.removeAttribute('href');
         }
       }
+    } else if(/^https?:\/\//i.test(bar.hs_document_url)) {
+      // F-37 tripwire 2 fix: column was renamed from hs_document_path to
+      // hs_document_url. If a row stores a full URL we use it directly; the
+      // signing call would be wrong. Database currently has zero populated
+      // rows, so this branch is forward-defensive.
+      if(iframe) { iframe.style.display = 'block'; iframe.src = bar.hs_document_url; }
+      if(fallback) fallback.style.display = 'block';
+      if(fallbackLink) { fallbackLink.href = bar.hs_document_url; fallbackLink.textContent = 'Open document'; }
     } else {
+      // Storage-path branch: column holds an object key inside the
+      // bar_hs_documents private bucket and we need a signed URL.
       if(iframe) iframe.style.display = 'block';
       try {
-        const signResp = await fetch(SUPABASE_URL + '/storage/v1/object/sign/bar_hs_documents/' + encodeURIComponent(bar.hs_document_path), {
+        const signResp = await fetch(SUPABASE_URL + '/storage/v1/object/sign/bar_hs_documents/' + encodeURIComponent(bar.hs_document_url), {
           method: 'POST',
           headers: { ...H, 'Content-Type': 'application/json' },
           body: JSON.stringify({ expiresIn: 600 })
         });
         const signData = await signResp.json();
-        // Supabase storage returns the signed path as either signedURL (legacy)
-        // or signedUrl (current). Handle both. The full URL is
-        // SUPABASE_URL + /storage/v1 + path.
         const signedPath = signData?.signedURL || signData?.signedUrl || null;
         const signedUrl = signedPath ? (SUPABASE_URL + '/storage/v1' + signedPath) : null;
         if(signedUrl) {
@@ -3497,7 +3544,7 @@
     if(banner) banner.style.display = 'block';
     if(signedDate) signedDate.textContent = new Date(acknowledgedAt).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
     // Re-render the bars list so the row's status badge flips on the way back.
-    renderBarsInZone();
+    renderBarsICover();
   }
 
   // ── Tiers page ────────────────────────────────────────────────────
@@ -3629,7 +3676,7 @@
       // 7-day stat. Bars-in-zone is needed for hs_needs_signing — load
       // through the existing cache helper if not already populated.
       const [invites, shiftRows, latestTierRows, dismissalsRows, allLedger] = await Promise.all([
-        fetch(SUPABASE_URL + '/rest/v1/session_invites?application_id=eq.' + currentWorker.id + '&select=id,created_at,session_id,attendance_confirmed,sessions(status,session_date,scheduled_start,start_time,zone_id,zones(name))', { headers: H }).then(r => r.json()),
+        fetch(SUPABASE_URL + '/rest/v1/session_invites?application_id=eq.' + currentWorker.id + '&select=id,created_at,session_id,attendance_confirmed,sessions(status,session_date,scheduled_start,start_time,zone_id,zones(name),session_bars(bars(id,name)))', { headers: H }).then(r => r.json()),
         swIds.length
           ? fetch(SUPABASE_URL + '/rest/v1/shifts?session_worker_id=in.(' + swIds.join(',') + ')&status=eq.completed&select=id,clock_in_confirmed_at,clock_out_confirmed_at,shift_length_hours,total_earned,hourly_rate,bar_id,session_id&order=clock_out_confirmed_at.desc&limit=50', { headers: H }).then(r => r.json())
           : Promise.resolve([]),
@@ -3641,9 +3688,9 @@
       const dismissed = new Set((dismissalsRows || []).map(d => d.source_type + ':' + d.source_id));
 
       // 3. Bars-in-zone cache for hs_needs_signing items + shift bar names.
-      // Phase 1's loadBarsInZone populates barsInZoneCache with name +
-      // hs_document_path + signed_at per bar. Trigger it if empty.
-      if(!barsInZoneCache.length) await loadBarsInZone();
+      // Phase 1's loadBarsICover populates barsInZoneCache with name +
+      // hs_document_url + signed_at per bar. Trigger it if empty.
+      if(!barsInZoneCache.length) await loadBarsICover();
 
       // Resolve any shift bar_ids not in the zone cache (e.g. historical
       // shifts at a bar that's since been re-zoned).
@@ -3718,11 +3765,11 @@
         });
       }
 
-      // 4e. hs_needs_signing — bars in zone with hs_document_path set and
+      // 4e. hs_needs_signing — bars in zone with hs_document_url set and
       // no acknowledgement row yet. Pinned at the top (no ts), alphabetical
       // by bar name. NOT dismissable.
       const hsItems = barsInZoneCache
-        .filter(b => b.hs_document_path && !b.signed_at)
+        .filter(b => b.hs_document_url && !b.signed_at)
         .map(b => ({
           source_type: 'hs_needs_signing',
           source_id: b.id,
@@ -3787,7 +3834,7 @@
             const parsed = new Date(dateStr).getTime();
             if(!isNaN(parsed)) ts = parsed;
           }
-          return { inv, ts, status: s.status, zoneName: s.zones?.name || '' };
+          return { inv, ts, status: s.status, locationLabel: describeSessionLocation(s) };
         })
         .filter(x => x.ts && x.ts > now && x.status !== 'closed')
         .sort((a, b) => a.ts - b.ts)[0];
@@ -3797,7 +3844,7 @@
         const date = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
         const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
         if(whenEl) whenEl.textContent = day + ', ' + date + ' at ' + time;
-        if(zoneEl) zoneEl.textContent = upcoming.zoneName || '';
+        if(zoneEl) zoneEl.textContent = upcoming.locationLabel || '';
         card.style.display = 'block';
       } else if(card) {
         card.style.display = 'none';
@@ -3841,9 +3888,9 @@
         ? dt2.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
           + ' at ' + dt2.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
         : 'Date TBC';
-      const zone = s.zones?.name || '';
+      const loc = describeSessionLocation(s);
       iconHtml = '<div class="activity-row-icon session">★</div>';
-      label = 'Session invite for ' + when2 + (zone ? ' in ' + zone : '');
+      label = 'Session invite for ' + when2 + (loc ? ' at ' + loc : '');
       if(inv.attendance_confirmed === 'pending') {
         metaText = 'Pending response';
         // Dismiss control hidden until the worker has responded.
@@ -3854,9 +3901,9 @@
       onclickAttr = 'onclick="onActivityRowClick(event, this)" data-nav="sessions"';
     } else if(ev.source_type === 'session_live') {
       const inv = ev.payload;
-      const zone = inv.sessions?.zones?.name || '';
+      const loc = describeSessionLocation(inv.sessions);
       iconHtml = '<div class="activity-row-icon dispatched">●</div>';
-      label = 'Session is live' + (zone ? ' in ' + zone : '');
+      label = 'Session is live' + (loc ? ' at ' + loc : '');
       onclickAttr = 'onclick="onActivityRowClick(event, this)" data-nav="sessions"';
     } else if(ev.source_type === 'shift') {
       const s = ev.payload;
@@ -3920,7 +3967,7 @@
         // view takes over. openBarDetail relies on barsInZoneCache, which
         // is loaded on Profile entry — re-trigger a load if cache is empty.
         setTimeout(() => {
-          if(!barsInZoneCache.length) loadBarsInZone().then(() => openBarDetail(barId));
+          if(!barsInZoneCache.length) loadBarsICover().then(() => openBarDetail(barId));
           else openBarDetail(barId);
         }, 30);
       }
@@ -4163,7 +4210,7 @@
   // ── Dedicated Bars-in-zone page ──────────────────────────────────
   // Sibling of the Profile summary list; richer per-bar info (address +
   // walking minutes from worker_bar_distances). Reuses barsInZoneCache
-  // populated by loadBarsInZone, augmented with walking_minutes here.
+  // populated by loadBarsICover, augmented with walking_minutes here.
   async function loadDedicatedBarsInZone() {
     const listEl = document.getElementById('bars-zone-detailed-list');
     if(!listEl || !currentWorker) return;
@@ -4172,7 +4219,7 @@
     // page without visiting Profile), trigger the Profile loader first.
     if(!barsInZoneCache.length) {
       listEl.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:12px 0;">Loading…</div>';
-      await loadBarsInZone();
+      await loadBarsICover();
     }
 
     // Augment cache with walking distances. Cached on the array itself so
@@ -4188,7 +4235,7 @@
     }
 
     if(!barsInZoneCache.length) {
-      listEl.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:12px 0;">No bars in your zone yet.</div>';
+      listEl.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:12px 0;">No bars in your coverage area yet.</div>';
       return;
     }
 
@@ -4221,7 +4268,7 @@
   // Function name kept for backward compat; it now handles every state.
   async function checkForLiveSession() {
     if(!currentWorker) return;
-    const rows = await fetch(SUPABASE_URL + '/rest/v1/session_invites?application_id=eq.' + currentWorker.id + '&select=id,session_code,session_id,joined_at,left_at,attendance_confirmed,attendance_confirmed_at,sessions(status,session_date,scheduled_start,start_time,zone_id,zones(name))', { headers: H }).then(r => r.json());
+    const rows = await fetch(SUPABASE_URL + '/rest/v1/session_invites?application_id=eq.' + currentWorker.id + '&select=id,session_code,session_id,joined_at,left_at,attendance_confirmed,attendance_confirmed_at,sessions(status,session_date,scheduled_start,start_time,zone_id,zones(name),session_bars(bars(id,name)))', { headers: H }).then(r => r.json());
 
     // Always reset the scheduled-state cards + the new live-confirmed card
     // before evaluating; the branches below re-show whichever is relevant.
@@ -4254,7 +4301,7 @@
         subscribeToSessionWorkers(liveInvite.session_id);
 
         const zoneEl = document.getElementById('live-zone');
-        if(zoneEl) zoneEl.textContent = liveInvite.sessions?.zones?.name || '';
+        if(zoneEl) zoneEl.textContent = describeSessionLocation(liveInvite.sessions);
 
         if(sw.status === 'onshift') {
           await renderClockedIn(sw);
@@ -4271,7 +4318,7 @@
         currentSessionInvite = liveInvite;
         document.getElementById('sessions-empty').style.display = 'none';
         document.getElementById('sessions-live').style.display = 'block';
-        document.getElementById('live-zone').textContent = liveInvite.sessions?.zones?.name || '';
+        document.getElementById('live-zone').textContent = describeSessionLocation(liveInvite.sessions);
         startLiveSession();
         return;
       }
@@ -4355,8 +4402,8 @@
       ? dt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
         + ' at ' + dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
       : 'Date TBC';
-    const zoneStr = s.zones?.name ? ' in ' + s.zones.name : '';
-    const fullStr = whenStr + zoneStr;
+    const loc = describeSessionLocation(s);
+    const fullStr = whenStr + (loc ? ' at ' + loc : '');
 
     if(invite.attendance_confirmed === 'confirmed') {
       const el = document.getElementById('sessions-confirmed-waiting');
@@ -4513,7 +4560,7 @@
     if(!invite) return;
     currentSessionInvite = invite;
     const zoneEl = document.getElementById('live-zone');
-    if(zoneEl) zoneEl.textContent = invite.sessions?.zones?.name || '';
+    if(zoneEl) zoneEl.textContent = describeSessionLocation(invite.sessions);
     // Hide every other Sessions-tab surface so prejoin renders clean.
     ['sessions-empty','sessions-pending-response','sessions-confirmed-waiting',
      'sessions-live-confirmed-join','sessions-live'].forEach(id => {
@@ -4542,7 +4589,7 @@
       if(el) el.style.display = 'none';
     });
     const zoneEl = document.getElementById('live-confirmed-zone');
-    if(zoneEl) zoneEl.textContent = invite.sessions?.zones?.name || '';
+    if(zoneEl) zoneEl.textContent = describeSessionLocation(invite.sessions);
     const card = document.getElementById('sessions-live-confirmed-join');
     if(card) card.style.display = 'block';
   }

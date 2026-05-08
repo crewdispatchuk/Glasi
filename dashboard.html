@@ -1079,6 +1079,7 @@
     <!-- Sub-tab switcher -->
     <div style="display:flex;gap:4px;margin-bottom:24px;background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:4px;width:fit-content;">
       <button id="sessions-tab-schedule" onclick="switchSessionsTab('schedule')" style="background:var(--ice);color:var(--navy);border:none;border-radius:7px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Schedule</button>
+      <button id="sessions-tab-proposed" onclick="switchSessionsTab('proposed')" style="background:none;color:var(--grey);border:none;border-radius:7px;padding:8px 20px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;">Proposed <span id="proposed-count-badge" style="display:none;background:var(--amber);color:var(--navy);font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;min-width:18px;text-align:center;"></span></button>
       <button id="sessions-tab-live" onclick="switchSessionsTab('live')" style="background:none;color:var(--grey);border:none;border-radius:7px;padding:8px 20px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">Live</button>
       <button id="sessions-tab-history" onclick="switchSessionsTab('history')" style="background:none;color:var(--grey);border:none;border-radius:7px;padding:8px 20px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">History</button>
     </div>
@@ -1095,6 +1096,21 @@
           <button class="small-ice-btn" onclick="openScheduleSession()">+ Schedule Session</button>
         </div>
         <div id="sessions-upcoming"><div class="empty">Loading...</div></div>
+      </div>
+
+      <!-- F-34: PROPOSED SUB-TAB. Combined inbox: bar-proposed sessions + PIN-holder requests. -->
+      <div id="sessions-proposed-tab" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);margin-bottom:4px;text-transform:uppercase;">Pending Approval</div>
+            <div class="page-sub">Bar-initiated session proposals and PIN-holder requests awaiting your decision</div>
+          </div>
+        </div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);margin-bottom:8px;text-transform:uppercase;">Session Proposals</div>
+        <div id="proposed-session-list"><div class="empty">Loading...</div></div>
+        <div style="border-top:1px solid var(--border);margin:32px 0;"></div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);margin-bottom:8px;text-transform:uppercase;">PIN-Holder Requests</div>
+        <div id="proposed-pin-holder-list"><div class="empty">Loading...</div></div>
       </div>
 
       <!-- LIVE SUB-TAB: live console for the currently-live session -->
@@ -1114,9 +1130,11 @@
         <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:12px 16px;">
           <input id="sh-date-from" class="field" type="date" style="margin:0;max-width:160px;" onchange="renderSessionsHistory()" />
           <input id="sh-date-to"   class="field" type="date" style="margin:0;max-width:160px;" onchange="renderSessionsHistory()" />
+          <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-proposed" onchange="renderSessionsHistory()"> Proposed</label>
           <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-scheduled" onchange="renderSessionsHistory()"> Scheduled</label>
           <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-live" onchange="renderSessionsHistory()"> Live</label>
           <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-closed" checked onchange="renderSessionsHistory()"> Closed</label>
+          <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-declined" onchange="renderSessionsHistory()"> Declined</label>
           <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-cancelled" onchange="renderSessionsHistory()"> Cancelled</label>
         </div>
         <div id="sessions-history-list"><div class="empty">Loading...</div></div>
@@ -1681,6 +1699,22 @@
   </div>
 </div>
 
+<!-- F-34: decline-proposal overlay. Used for both session proposals and
+     PIN-holder requests. The kind argument distinguishes which RPC to call. -->
+<div class="overlay" id="ov-decline-proposal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title">Decline this request</div>
+    <div class="modal-sub">Optionally tell yourself why. The reason is internal-only; the bar sees the decline status, not the reason.</div>
+    <label>Reason (optional)</label>
+    <textarea class="field" id="decline-reason-input" rows="3" style="resize:none;"></textarea>
+    <div id="decline-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:16px;"></div>
+    <div class="modal-actions">
+      <button class="cancel-btn" onclick="closeOv('decline-proposal')">Cancel</button>
+      <button class="confirm-btn" id="decline-submit-btn" style="background:var(--red);color:var(--white);" onclick="submitDeclineProposal()">Decline</button>
+    </div>
+  </div>
+</div>
+
 <!-- F-26: edit-manager sub-modal. Opens from a manager row in ov-edit-bar.
      Allows name update via PATCH, PIN regenerate via set_bar_manager_pin RPC.
      Email is read-only (auth user email change is its own flow, deferred). -->
@@ -1867,6 +1901,11 @@ async function postLoginSetup() {
   await loadAllWorkers();
   loadWorkerFunnel();
 
+  // F-34: prefetch the Proposed inbox count so the sidebar badge surfaces
+  // immediately, then start the realtime sub so new arrivals update it live.
+  refreshProposedCountBadge();
+  startProposedInboxRealtime();
+
   // F-37: boot lands on Sessions. Live sub-tab if a session is currently
   // running, otherwise Schedule. liveSessionOps.resumeIfLive() reattaches
   // the live console state to the in-progress session before navigation.
@@ -1878,6 +1917,23 @@ async function postLoginSetup() {
     return;
   }
   await goToSessions();
+}
+
+// F-34: lightweight badge-count fetch (no full inbox load). Used at boot
+// before the user opens the Proposed sub-tab.
+async function refreshProposedCountBadge() {
+  try {
+    const [sessions, pinReqs] = await Promise.all([
+      sbGet('sessions','?status=eq.proposed&select=id'),
+      sbGet('pin_holder_requests','?status=eq.pending&select=id')
+    ]);
+    const total = (Array.isArray(sessions) ? sessions.length : 0)
+      + (Array.isArray(pinReqs) ? pinReqs.length : 0);
+    const badge = document.getElementById('proposed-count-badge');
+    if(!badge) return;
+    if(total > 0) { badge.style.display = 'inline-block'; badge.textContent = String(total); }
+    else { badge.style.display = 'none'; badge.textContent = ''; }
+  } catch(e) { console.warn('refreshProposedCountBadge failed', e); }
 }
 
 document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -8214,20 +8270,21 @@ function switchSessionsTab(tab, opts) {
   const isLive = tab === 'live';
   const isHistory = tab === 'history';
   const isSchedule = tab === 'schedule';
+  const isProposed = tab === 'proposed';
 
   const scheduleEl = document.getElementById('sessions-schedule-tab');
+  const proposedEl = document.getElementById('sessions-proposed-tab');
   const liveEl = document.getElementById('sessions-live-tab');
   const historyEl = document.getElementById('sessions-history-tab');
   if(scheduleEl) scheduleEl.style.display = isSchedule ? 'block' : 'none';
+  if(proposedEl) proposedEl.style.display = isProposed ? 'block' : 'none';
   if(liveEl) liveEl.style.display = isLive ? 'block' : 'none';
   if(historyEl) historyEl.style.display = isHistory ? 'block' : 'none';
 
-  // Live tab escapes the parent .history-screen 1100px constraint via
-  // .live-mode override. Host is the new top-level #screen-sessions.
   const screenWrap = document.querySelector('#screen-sessions .history-screen');
   if(screenWrap) screenWrap.classList.toggle('live-mode', isLive);
 
-  ['schedule','live','history'].forEach(t => {
+  ['schedule','proposed','live','history'].forEach(t => {
     const btn = document.getElementById('sessions-tab-'+t);
     if(!btn) return;
     const active = t === tab;
@@ -8238,6 +8295,9 @@ function switchSessionsTab(tab, opts) {
 
   if(isSchedule) {
     loadSessionsList();
+  }
+  if(isProposed) {
+    loadProposedTab();
   }
   if(isHistory) {
     if(opts && opts.sessionId) {
@@ -8255,6 +8315,289 @@ function switchSessionsTab(tab, opts) {
     document.getElementById('sessions-live-empty').style.display = 'block';
     document.getElementById('sessions-live-room').style.display = 'none';
   }
+}
+
+// ============================================================================
+// F-34: Proposed sub-tab (combined inbox: bar-proposed sessions + PIN-holder
+// requests). Approve / decline / view. Manual PIN-holder approve fires the
+// existing F-26 admin-create-bar-manager Edge Function. No auto-invite paths.
+// ============================================================================
+
+let proposedSessionsCache = [];
+let proposedPinHolderCache = [];
+let declineTargetId = null;
+let declineTargetKind = null; // 'session' or 'pinholder'
+let proposedInboxWs = null;
+
+async function loadProposedTab() {
+  const sessionListEl = document.getElementById('proposed-session-list');
+  const pinListEl = document.getElementById('proposed-pin-holder-list');
+  if(sessionListEl) sessionListEl.innerHTML = '<div class="empty">Loading...</div>';
+  if(pinListEl) pinListEl.innerHTML = '<div class="empty">Loading...</div>';
+
+  try {
+    const [sessions, pinReqs] = await Promise.all([
+      sbGet('sessions',
+        '?status=eq.proposed'
+        + '&select=id,session_date,start_time,scheduled_start,proposal_reason,created_at,proposed_by_manager_id,bar_managers!proposed_by_manager_id(name),session_bars(bars(id,name))'
+        + '&order=created_at.asc'),
+      sbGet('pin_holder_requests',
+        '?status=eq.pending'
+        + '&order=created_at.asc'
+        + '&select=id,bar_id,proposed_name,proposed_email,created_at,bar_managers!requested_by_manager_id(name),bars(id,name)')
+    ]);
+    proposedSessionsCache = Array.isArray(sessions) ? sessions : [];
+    proposedPinHolderCache = Array.isArray(pinReqs) ? pinReqs : [];
+    renderProposedSessions();
+    renderProposedPinHolders();
+    updateProposedCountBadge();
+  } catch(e) {
+    console.error('loadProposedTab failed', e);
+    if(sessionListEl) sessionListEl.innerHTML = '<div class="empty">Could not load proposals.</div>';
+    if(pinListEl) pinListEl.innerHTML = '<div class="empty">Could not load PIN-holder requests.</div>';
+  }
+}
+
+function updateProposedCountBadge() {
+  const total = proposedSessionsCache.length + proposedPinHolderCache.length;
+  const badge = document.getElementById('proposed-count-badge');
+  if(!badge) return;
+  if(total > 0) { badge.style.display = 'inline-block'; badge.textContent = String(total); }
+  else { badge.style.display = 'none'; badge.textContent = ''; }
+}
+
+function renderProposedSessions() {
+  const el = document.getElementById('proposed-session-list');
+  if(!el) return;
+  if(!proposedSessionsCache.length) {
+    el.innerHTML = '<div class="empty">No pending session proposals.</div>';
+    return;
+  }
+  el.innerHTML = proposedSessionsCache.map(s => {
+    const dt = s.scheduled_start ? new Date(s.scheduled_start)
+      : (s.session_date ? new Date(s.session_date + 'T' + (s.start_time || '18:00:00')) : null);
+    const dateStr = dt ? dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}) : 'TBC';
+    const timeStr = dt ? dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+    const barName = (s.session_bars && s.session_bars[0] && s.session_bars[0].bars && s.session_bars[0].bars.name) || 'Unknown bar';
+    const requester = (s.bar_managers && s.bar_managers.name) || 'unknown';
+    const reason = s.proposal_reason || '';
+    const submitted = s.created_at ? new Date(s.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
+    return `<div class="zone-card" style="margin-bottom:12px;padding:16px 20px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--white);">${dateStr} at ${timeStr}</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:3px;">${escapeProposalHtml(barName)} &middot; requested by ${escapeProposalHtml(requester)} &middot; submitted ${submitted}</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="small-ice-btn" onclick="approveSessionProposal(${s.id})">Approve</button>
+          <button style="background:none;border:1px solid rgba(239,68,68,0.3);color:var(--red);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;" onclick="openDeclineProposalModal(${s.id},'session')">Decline</button>
+        </div>
+      </div>
+      ${reason ? '<div style="font-size:12px;color:var(--grey);background:var(--navy);border-left:2px solid var(--ice);padding:10px 12px;border-radius:4px;line-height:1.6;">' + escapeProposalHtml(reason) + '</div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderProposedPinHolders() {
+  const el = document.getElementById('proposed-pin-holder-list');
+  if(!el) return;
+  if(!proposedPinHolderCache.length) {
+    el.innerHTML = '<div class="empty">No pending PIN-holder requests.</div>';
+    return;
+  }
+  el.innerHTML = proposedPinHolderCache.map(r => {
+    const barName = (r.bars && r.bars.name) || 'Unknown bar';
+    const requester = (r.bar_managers && r.bar_managers.name) || 'unknown';
+    const submitted = r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
+    return `<div class="zone-card" style="margin-bottom:12px;padding:16px 20px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--white);">${escapeProposalHtml(r.proposed_name)}</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:3px;">${escapeProposalHtml(r.proposed_email)}</div>
+          <div style="font-size:11px;color:var(--grey);margin-top:6px;">${escapeProposalHtml(barName)} &middot; requested by ${escapeProposalHtml(requester)} &middot; submitted ${submitted}</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="small-ice-btn" onclick="approvePinHolderRequest(${r.id})">Approve</button>
+          <button style="background:none;border:1px solid rgba(239,68,68,0.3);color:var(--red);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;" onclick="openDeclineProposalModal(${r.id},'pinholder')">Decline</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escapeProposalHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function approveSessionProposal(sessionId) {
+  if(!confirm('Approve this session proposal? It will land on the Schedule tab as scheduled.')) return;
+  try {
+    const { data, error } = await sbAuth.rpc('approve_session_proposal', { p_session_id: sessionId });
+    if(error) throw error;
+    if(data !== true) { alert('Proposal could not be approved (already actioned?).'); }
+    await loadProposedTab();
+    await loadSessionsList();
+  } catch(e) {
+    console.error('approve_session_proposal failed', e);
+    alert('Approve failed: ' + (e.message || 'unknown'));
+  }
+}
+
+function openDeclineProposalModal(id, kind) {
+  declineTargetId = id;
+  declineTargetKind = kind;
+  document.getElementById('decline-reason-input').value = '';
+  document.getElementById('decline-error').textContent = '';
+  const btn = document.getElementById('decline-submit-btn');
+  btn.disabled = false;
+  btn.textContent = 'Decline';
+  openOv('decline-proposal');
+}
+
+async function submitDeclineProposal() {
+  const errEl = document.getElementById('decline-error');
+  const btn = document.getElementById('decline-submit-btn');
+  errEl.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Declining...';
+  const reason = (document.getElementById('decline-reason-input').value || '').trim() || null;
+  try {
+    if(declineTargetKind === 'session') {
+      const { data, error } = await sbAuth.rpc('decline_session_proposal', {
+        p_session_id: declineTargetId, p_decline_reason: reason
+      });
+      if(error) throw error;
+      if(data !== true) throw new Error('Proposal already actioned');
+    } else if(declineTargetKind === 'pinholder') {
+      const { data, error } = await sbAuth.rpc('decline_pin_holder_request', {
+        p_request_id: declineTargetId, p_decline_reason: reason
+      });
+      if(error) throw error;
+      if(data !== true) throw new Error('Request already actioned');
+    }
+    closeOv('decline-proposal');
+    await loadProposedTab();
+  } catch(e) {
+    console.error('submitDeclineProposal failed', e);
+    errEl.textContent = 'Decline failed: ' + (e.message || 'unknown');
+    btn.disabled = false;
+    btn.textContent = 'Decline';
+  }
+}
+
+// PIN-holder approval is two-step: invoke admin-create-bar-manager Edge
+// Function (the existing F-26 path; auth user creation is service-role only)
+// then PATCH the pin_holder_requests row to status='approved'. The PIN is
+// auto-generated; Sam reads it off the confirmation modal and shares with
+// the bar.
+async function approvePinHolderRequest(requestId) {
+  const req = proposedPinHolderCache.find(r => r.id === requestId);
+  if(!req) return;
+  const barName = (req.bars && req.bars.name) || 'this bar';
+  const initialPin = String(Math.floor(1000 + Math.random() * 9000));
+  if(!confirm('Approve PIN-holder ' + req.proposed_name + ' at ' + barName + '?\n\nInitial PIN will be ' + initialPin + '.\n\nEmail Sam will copy this PIN to share with the bar; the PIN cannot be retrieved later, only regenerated.')) return;
+
+  try {
+    const { data: { session: authSession } } = await sbAuth.auth.getSession();
+    const token = authSession?.access_token || KEY;
+    const resp = await fetch(SB + '/functions/v1/admin-create-bar-manager', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': KEY,
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        bar_id: req.bar_id,
+        name: req.proposed_name,
+        email: req.proposed_email,
+        initial_pin: initialPin
+      })
+    });
+    const result = await resp.json().catch(() => ({}));
+    if(!resp.ok || !result.ok) throw new Error(result.error || ('Edge Function HTTP ' + resp.status));
+
+    const newManagerId = result.manager_id || null;
+    const callerEmail = (authSession && authSession.user && authSession.user.email) || 'sam@glasi.co.uk';
+    await sbPatch('pin_holder_requests', '?id=eq.' + requestId, {
+      status: 'approved',
+      approved_bar_manager_id: newManagerId,
+      approved_by_admin_email: callerEmail
+    });
+
+    alert('PIN-holder approved.\n\nInitial PIN: ' + initialPin + '\n\nShare with the bar; PIN cannot be retrieved later.');
+    await loadProposedTab();
+  } catch(e) {
+    console.error('approvePinHolderRequest failed', e);
+    alert('Approve failed: ' + (e.message || 'unknown'));
+  }
+}
+
+// Realtime: pin_holder_requests INSERT/UPDATE + sessions UPDATE for proposed
+// transitions. Drives badge count + inbox refresh on Sam's dashboard so he
+// sees new proposals as they arrive. Toast on insert.
+function startProposedInboxRealtime() {
+  if(proposedInboxWs) return;
+  const wsUrl = SB.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + KEY + '&vsn=1.0.0';
+  proposedInboxWs = new WebSocket(wsUrl);
+  let hb = null;
+  proposedInboxWs.onopen = () => {
+    proposedInboxWs.send(JSON.stringify({
+      topic: 'realtime:public:pin_holder_requests',
+      event: 'phx_join',
+      payload: { config: { postgres_changes: [
+        { event: 'INSERT', schema: 'public', table: 'pin_holder_requests' },
+        { event: 'UPDATE', schema: 'public', table: 'pin_holder_requests' }
+      ] } },
+      ref: 'pix1'
+    }));
+    proposedInboxWs.send(JSON.stringify({
+      topic: 'realtime:public:sessions',
+      event: 'phx_join',
+      payload: { config: { postgres_changes: [
+        { event: 'INSERT', schema: 'public', table: 'sessions' },
+        { event: 'UPDATE', schema: 'public', table: 'sessions' }
+      ] } },
+      ref: 'pix2'
+    }));
+    hb = setInterval(() => {
+      if(proposedInboxWs && proposedInboxWs.readyState === WebSocket.OPEN) {
+        proposedInboxWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
+      }
+    }, 30000);
+  };
+  proposedInboxWs.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if(msg.event !== 'postgres_changes') return;
+      const type = msg.payload && msg.payload.data && msg.payload.data.type;
+      const rec = msg.payload && msg.payload.data && msg.payload.data.record;
+      const table = msg.payload && msg.payload.data && msg.payload.data.table;
+      if(table === 'sessions') {
+        if(type === 'INSERT' && rec && rec.status === 'proposed') {
+          showDashboardToast('New session proposal received');
+        }
+      } else if(table === 'pin_holder_requests') {
+        if(type === 'INSERT' && rec && rec.status === 'pending') {
+          showDashboardToast('New PIN-holder request');
+        }
+      }
+      // Refresh inbox + badge regardless of which event
+      loadProposedTab();
+    } catch(err) { console.error('proposedInboxWs error', err); }
+  };
+  proposedInboxWs.onclose = () => { if(hb) clearInterval(hb); proposedInboxWs = null; };
+  proposedInboxWs.onerror = (err) => { console.error('[proposedInboxWs] error', err); };
+}
+
+function showDashboardToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:20px;left:20px;background:var(--navy-mid);border:1px solid var(--ice);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--white);box-shadow:0 6px 20px rgba(0,0,0,0.3);max-width:300px;z-index:10000;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { try { document.body.removeChild(t); } catch(e) {} }, 4200);
 }
 
 let liveSessionTimer = null;
@@ -8462,9 +8805,11 @@ async function renderSessionsHistory() {
   listEl.innerHTML = '<div class="empty">Loading...</div>';
 
   const wantStatuses = [];
+  if(document.getElementById('sh-status-proposed')?.checked) wantStatuses.push('proposed');
   if(document.getElementById('sh-status-scheduled')?.checked) wantStatuses.push('scheduled');
   if(document.getElementById('sh-status-live')?.checked) wantStatuses.push('live');
   if(document.getElementById('sh-status-closed')?.checked) wantStatuses.push('closed');
+  if(document.getElementById('sh-status-declined')?.checked) wantStatuses.push('declined');
   if(document.getElementById('sh-status-cancelled')?.checked) wantStatuses.push('cancelled');
   if(!wantStatuses.length) { listEl.innerHTML = '<div class="empty">Pick at least one status filter.</div>'; return; }
 
@@ -8485,7 +8830,13 @@ async function renderSessionsHistory() {
     const dt = s.scheduled_start ? new Date(s.scheduled_start) : (s.session_date ? new Date(s.session_date + 'T' + (s.start_time || '18:00:00')) : null);
     const dateStr = dt ? dt.toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'short',year:'numeric'}) : 'TBC';
     const timeStr = dt ? dt.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '';
-    const statusColour = s.status === 'live' ? 'var(--green)' : s.status === 'closed' ? 'var(--grey)' : s.status === 'cancelled' ? 'var(--red)' : 'var(--amber)';
+    const statusColour =
+      s.status === 'live' ? 'var(--green)' :
+      s.status === 'closed' ? 'var(--grey)' :
+      s.status === 'cancelled' ? 'var(--red)' :
+      s.status === 'declined' ? 'var(--red)' :
+      s.status === 'proposed' ? 'var(--amber)' :
+      'var(--amber)';
     const barLabel = describeBarSet(s);
     return `<div class="zone-card" style="margin-bottom:12px;padding:14px 18px;cursor:pointer;" onclick="openSessionDetail(${s.id})">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">

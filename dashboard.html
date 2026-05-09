@@ -1679,22 +1679,22 @@
   </div>
 </div>
 
-<!-- F-26: add-manager sub-modal. Opens from "+ Add Manager" inside ov-edit-bar.
-     Calls the admin-create-bar-manager Edge Function. -->
+<!-- F-34a: add-PIN-holder sub-modal. Calls the admin_create_bar_manager RPC.
+     Email field removed under F-34a; PIN-holders no longer have personal
+     auth users. Pick a name and an initial 4-digit PIN; share the PIN
+     with the bar out of band. -->
 <div class="overlay" id="ov-add-manager">
   <div class="modal" style="max-width:480px;">
-    <div class="modal-title">Add Manager</div>
+    <div class="modal-title">Add PIN-Holder</div>
     <div class="modal-sub" id="add-manager-bar-name">—</div>
     <label>Name</label>
     <input class="field" type="text" id="add-mgr-name" placeholder="e.g. Wolf" />
-    <label>Email</label>
-    <input class="field" type="email" id="add-mgr-email" placeholder="manager@bar.com" />
     <label>Initial PIN (4 digits)</label>
     <input class="field" type="text" id="add-mgr-pin" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
     <div id="add-mgr-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:16px;"></div>
     <div class="modal-actions">
       <button class="cancel-btn" onclick="closeOv('add-manager')">Cancel</button>
-      <button class="confirm-btn" id="add-mgr-btn" onclick="addBarManager()">Send Invite + Set PIN</button>
+      <button class="confirm-btn" id="add-mgr-btn" onclick="addBarManager()">Add PIN-Holder</button>
     </div>
   </div>
 </div>
@@ -3068,9 +3068,7 @@ async function tryRestoreSession() {
   liveSessionOps.requests = reqData.map(r => ({
     ...r,
     _barName: r.bars?.name || '',
-    _requesterName: r.bar_managers?.name
-                  || bars.find(b => b.id === r.bar_id)?.manager_name
-                  || 'Unknown'
+    _requesterName: r.bar_managers?.name || 'Unknown'
   }));
 
   // load completed shifts for this session
@@ -3713,11 +3711,11 @@ function openAddManagerModal() {
   if(!editingBarId) return;
   const bar = bars.find(b => b.id === editingBarId);
   document.getElementById('add-manager-bar-name').textContent = 'For: ' + (bar?.name || 'Bar');
-  ['add-mgr-name','add-mgr-email','add-mgr-pin'].forEach(id => document.getElementById(id).value = '');
+  ['add-mgr-name','add-mgr-pin'].forEach(id => document.getElementById(id).value = '');
   const errEl = document.getElementById('add-mgr-error');
   if(errEl) errEl.textContent = '';
   const btn = document.getElementById('add-mgr-btn');
-  if(btn) { btn.disabled = false; btn.textContent = 'Send Invite + Set PIN'; }
+  if(btn) { btn.disabled = false; btn.textContent = 'Add PIN-Holder'; }
   openOv('add-manager');
 }
 
@@ -3728,33 +3726,26 @@ async function addBarManager() {
   const btn = document.getElementById('add-mgr-btn');
 
   const name = document.getElementById('add-mgr-name').value.trim();
-  const email = document.getElementById('add-mgr-email').value.trim().toLowerCase();
   const pin = document.getElementById('add-mgr-pin').value.trim();
   if(!name) { if(errEl) errEl.textContent = 'Name required.'; return; }
-  if(!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    if(errEl) errEl.textContent = 'Valid email required.'; return;
-  }
   if(!/^\d{4}$/.test(pin)) { if(errEl) errEl.textContent = 'PIN must be exactly 4 digits.'; return; }
 
-  if(btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
+  if(btn) { btn.disabled = true; btn.textContent = 'Adding...'; }
 
+  // F-34a: switched from admin-create-bar-manager Edge Function to the
+  // admin_create_bar_manager RPC. PIN-holders no longer have personal auth
+  // users; just a bar_managers row + PIN under the bar's shared auth user.
   try {
-    const { data: { session } } = await sbAuth.auth.getSession();
-    const token = session?.access_token || KEY;
-    const resp = await fetch(SB + '/functions/v1/admin-create-bar-manager', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': KEY,
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify({ bar_id: editingBarId, name, email, initial_pin: pin })
+    const { data: newId, error } = await sbAuth.rpc('admin_create_bar_manager', {
+      p_bar_id: editingBarId,
+      p_name: name,
+      p_pin: pin
     });
-    const result = await resp.json().catch(() => ({}));
-    if(!resp.ok || !result.ok) throw new Error(result.error || ('HTTP ' + resp.status));
+    if(error) throw error;
+    if(newId == null) throw new Error('Empty result from admin_create_bar_manager');
   } catch(e) {
-    if(errEl) errEl.textContent = 'Manager creation failed: ' + (e.message || 'unknown');
-    if(btn) { btn.disabled = false; btn.textContent = 'Send Invite + Set PIN'; }
+    if(errEl) errEl.textContent = 'PIN-holder add failed: ' + (e.message || 'unknown');
+    if(btn) { btn.disabled = false; btn.textContent = 'Add PIN-Holder'; }
     return;
   }
 
@@ -3992,9 +3983,9 @@ const liveSessionOps = {
           const barName = bars.find(b => b.id === record.bar_id)?.name || 'Unknown';
           record._barName = barName;
           // F-29: realtime payload has no FK joins. Re-fetch the linked
-          // bar_manager name when bar_manager_id is present, else fall back to
-          // the legacy bars.manager_name column.
-          let _requesterName = bars.find(b => b.id === record.bar_id)?.manager_name || 'Unknown';
+          // bar_manager name when bar_manager_id is present.
+          // F-34a: legacy bars.manager_name fallback dropped (column gone).
+          let _requesterName = 'Unknown';
           if(record.bar_manager_id) {
             try {
               const rows = await sbGet('shift_requests',
@@ -4129,9 +4120,7 @@ const liveSessionOps = {
       for(const r of reqData) {
         const existing = liveSessionOps.requests.find(x => x.id === r.id);
         const _barName = r.bars?.name || '';
-        const _requesterName = r.bar_managers?.name
-                              || bars.find(b => b.id === r.bar_id)?.manager_name
-                              || 'Unknown';
+        const _requesterName = r.bar_managers?.name || 'Unknown';
         if(existing) {
           existing.status = r.status;
           existing.current_round = r.current_round;
@@ -4262,11 +4251,10 @@ function fmtHm(ts) {
   });
 }
 
-// F-29: requester name with F-26 FK first, legacy fallback, then 'Unknown'.
+// F-34a: requester name resolved via the F-26 FK chain; legacy
+// bars.manager_name fallback dropped (column dropped in F-34a).
 function resolveRequesterName(r) {
-  return r._requesterName
-      || (bars.find(b => b.id === r.bar_id)?.manager_name)
-      || 'Unknown';
+  return r._requesterName || 'Unknown';
 }
 
 // F-29: status pill mapping. session_worker is the truth source for
@@ -8087,7 +8075,9 @@ async function downloadTimesheet(shiftId) {
 }
 
 async function downloadBI(shiftId) {
-  const shiftArr = await sbGet('shifts', '?id=eq.'+shiftId+'&select=*,session_workers(worker_name,dispatched_at,departed_at,clock_in_at),bars(name,address,manager_name,bartenders,drinks_per_hour,avg_drink_value,avg_customer_spend,typical_rush_minutes,lost_minutes_per_bartender)');
+  // F-34a: bars.manager_name dropped; resolve manager via shift_requests FK
+  // chain to bar_managers. Falls back to "Bar Manager" if the chain fails.
+  const shiftArr = await sbGet('shifts', '?id=eq.'+shiftId+'&select=*,session_workers(worker_name,dispatched_at,departed_at,clock_in_at),bars(name,address,bartenders,drinks_per_hour,avg_drink_value,avg_customer_spend,typical_rush_minutes,lost_minutes_per_bartender),shift_requests(bar_managers(name))');
   const s = shiftArr[0];
   if(!s) return;
 
@@ -8095,7 +8085,7 @@ async function downloadBI(shiftId) {
   const bar = s.bars || {};
   const barName = bar.name || 'Unknown';
   const barAddress = bar.address || '';
-  const managerName = bar.manager_name || 'Bar Manager';
+  const managerName = s.shift_requests?.bar_managers?.name || 'Bar Manager';
 
   const fmtT = t => t ? new Date(t).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '--';
   const fmtD = t => t ? new Date(t).toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '--';
@@ -8497,29 +8487,21 @@ async function approvePinHolderRequest(requestId) {
   if(!req) return;
   const barName = (req.bars && req.bars.name) || 'this bar';
   const initialPin = String(Math.floor(1000 + Math.random() * 9000));
-  if(!confirm('Approve PIN-holder ' + req.proposed_name + ' at ' + barName + '?\n\nInitial PIN will be ' + initialPin + '.\n\nEmail Sam will copy this PIN to share with the bar; the PIN cannot be retrieved later, only regenerated.')) return;
+  if(!confirm('Approve PIN-holder ' + req.proposed_name + ' at ' + barName + '?\n\nInitial PIN will be ' + initialPin + '.\n\nCopy this PIN now to share with the bar; it cannot be retrieved later, only regenerated.')) return;
 
+  // F-34a: switched from admin-create-bar-manager Edge Function to the
+  // admin_create_bar_manager RPC. PIN-holders no longer have personal auth
+  // users; just bar_managers row + PIN under the bar's shared auth user.
   try {
-    const { data: { session: authSession } } = await sbAuth.auth.getSession();
-    const token = authSession?.access_token || KEY;
-    const resp = await fetch(SB + '/functions/v1/admin-create-bar-manager', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': KEY,
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify({
-        bar_id: req.bar_id,
-        name: req.proposed_name,
-        email: req.proposed_email,
-        initial_pin: initialPin
-      })
+    const { data: newManagerId, error } = await sbAuth.rpc('admin_create_bar_manager', {
+      p_bar_id: req.bar_id,
+      p_name: req.proposed_name,
+      p_pin: initialPin
     });
-    const result = await resp.json().catch(() => ({}));
-    if(!resp.ok || !result.ok) throw new Error(result.error || ('Edge Function HTTP ' + resp.status));
+    if(error) throw error;
+    if(newManagerId == null) throw new Error('Empty result from admin_create_bar_manager');
 
-    const newManagerId = result.manager_id || null;
+    const { data: { session: authSession } } = await sbAuth.auth.getSession();
     const callerEmail = (authSession && authSession.user && authSession.user.email) || 'sam@glasi.co.uk';
     await sbPatch('pin_holder_requests', '?id=eq.' + requestId, {
       status: 'approved',
@@ -9615,7 +9597,7 @@ function renderPairedUnitCard(p, view /* 'shifts' | 'billing' */) {
   const wf  = p._workerFeedback || null;
 
   const barName = bar.name || 'Unknown bar';
-  const requesterName = bm.name || bar.manager_name || 'Unknown';
+  const requesterName = bm.name || 'Unknown';
   const workerName = app.name || sw.worker_name || 'Unknown';
   const shiftLen = parseFloat(p.shift_length_hours||0);
   const dateLine = f30FmtDateTime(p.clock_in_confirmed_at || p.created_at);
@@ -9737,13 +9719,13 @@ async function loadShiftsPage() {
   if(container) container.innerHTML = '<div class="empty">Loading...</div>';
 
   if(!bars.length) {
-    const r = await sbGet('bars','?order=name.asc&select=id,name,address,zone_id,status,manager_name');
+    const r = await sbGet('bars','?order=name.asc&select=id,name,address,zone_id,status');
     bars = Array.isArray(r) ? r : [];
   }
 
   const rows = await sbGet('shifts',
     '?status=in.(completed,cancelled,no_show)&order=clock_out_confirmed_at.desc.nullslast,created_at.desc'
-    + '&select=*,bars(id,name,zone_id,manager_name),session_workers(id,application_id,status,worker_name,applications(id,name,tier,parasol_worker_ref)),shift_requests(id,bar_manager_id,posted_at,raw_message,bar_managers(name))');
+    + '&select=*,bars(id,name,zone_id),session_workers(id,application_id,status,worker_name,applications(id,name,tier,parasol_worker_ref)),shift_requests(id,bar_manager_id,posted_at,raw_message,bar_managers(name))');
 
   let feedbackByShift = new Map();
   if(rows.length) {
@@ -9849,7 +9831,7 @@ async function openPairedUnit(shiftId) {
     + '<div class="pu-detail-section">'
     +   '<h3>Attribution</h3>'
     +   '<div class="pu-detail-row"><span class="l">Bar</span><span class="v">'+(bar.name || '—')+'</span></div>'
-    +   '<div class="pu-detail-row"><span class="l">Bar manager</span><span class="v">'+(bm.name || bar.manager_name || '—')+'</span></div>'
+    +   '<div class="pu-detail-row"><span class="l">Bar manager</span><span class="v">'+(bm.name || '—')+'</span></div>'
     +   '<div class="pu-detail-row"><span class="l">Worker</span><span class="v">'+(app.name || sw.worker_name || '—')+'</span></div>'
     +   '<div class="pu-detail-row"><span class="l">Worker tier</span><span class="v">'+(app.tier != null ? 'Tier '+app.tier : '—')+'</span></div>'
     +   '<div class="pu-detail-row"><span class="l">Worker rate</span><span class="v">'+(p.hourly_rate ? f30FmtCurrency(p.hourly_rate)+'/hr' : '—')+'</span></div>'
@@ -9895,12 +9877,12 @@ async function loadBillingShifts() {
   const container = document.getElementById('billing-shifts-cards');
   if(container) container.innerHTML = '<div class="empty">Loading...</div>';
   if(!bars.length) {
-    const r = await sbGet('bars','?order=name.asc&select=id,name,address,zone_id,status,manager_name');
+    const r = await sbGet('bars','?order=name.asc&select=id,name,address,zone_id,status');
     bars = Array.isArray(r) ? r : [];
   }
   const rows = await sbGet('shifts',
     '?status=eq.completed&order=clock_out_confirmed_at.desc.nullslast,created_at.desc'
-    + '&select=*,bars(id,name,zone_id,manager_name),session_workers(id,application_id,status,worker_name,applications(id,name,tier,parasol_worker_ref)),shift_requests(id,bar_manager_id,posted_at,bar_managers(name))');
+    + '&select=*,bars(id,name,zone_id),session_workers(id,application_id,status,worker_name,applications(id,name,tier,parasol_worker_ref)),shift_requests(id,bar_manager_id,posted_at,bar_managers(name))');
   allPairedUnits = rows.map(r => ({ ...r, _zoneId: r.bars?.zone_id ?? null }));
   populateBillingShiftsFilters();
   renderBillingShifts();
@@ -10144,7 +10126,7 @@ async function loadBillingSubscriptions() {
   const container = document.getElementById('billing-subs-cards');
   if(container) container.innerHTML = '<div class="empty">Loading...</div>';
   if(!bars.length) {
-    const r = await sbGet('bars','?order=name.asc&select=id,name,address,zone_id,status,manager_name');
+    const r = await sbGet('bars','?order=name.asc&select=id,name,address,zone_id,status');
     bars = Array.isArray(r) ? r : [];
   }
   const subs = await sbGet('bar_subscriptions',

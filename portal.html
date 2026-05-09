@@ -153,18 +153,24 @@
     }
 
     /* PORTAL SHELL */
+    /* F-34-polish: three-column grid keeps the wordmark visually centred
+       regardless of side widths. Burger lives top-left, wordmark centre,
+       right cell is an empty spacer matching the burger's width.
+       Sign-out moved into the burger drawer in F-34-polish. */
     .portal-topbar {
       background: var(--navy-mid);
       border-bottom: 1px solid var(--border);
       padding: 0 16px;
-      display: flex;
+      display: grid;
+      grid-template-columns: 40px 1fr 40px;
       align-items: center;
-      justify-content: space-between;
       height: 56px;
       position: sticky;
       top: 0;
       z-index: 20;
     }
+    .portal-topbar > .portal-wordmark { justify-self: center; }
+    .portal-header-spacer { width: 40px; height: 1px; }
 
     .portal-wordmark {
       font-family: 'Raleway', sans-serif;
@@ -222,16 +228,7 @@
       border-bottom-color: var(--ice);
     }
 
-    .sign-out-btn {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--grey);
-      font-size: 11px;
-      font-family: 'Inter', sans-serif;
-      padding: 5px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+    /* F-34-polish: .sign-out-btn removed; sign-out lives in the burger drawer. */
 
     /* BURGER DRAWER */
     .burger-overlay {
@@ -2041,14 +2038,14 @@
       <button class="burger-item" onclick="closeBurgerMenu(); showBurgerPage('shift-history');">Shift history</button>
       <button class="burger-item" onclick="closeBurgerMenu(); showBurgerPage('earnings');">Earnings summary</button>
       <button class="burger-item" onclick="closeBurgerMenu(); showBurgerPage('support');">Support</button>
-      <button class="burger-item danger" onclick="closeBurgerMenu(); handleSignOut();">Log out</button>
+      <button class="burger-item danger" onclick="closeBurgerMenu(); handleSignOut();">Sign out</button>
     </div>
   </div>
 
   <div class="portal-topbar">
     <button class="burger-btn" onclick="openBurgerMenu()" aria-label="Menu">☰</button>
     <span class="portal-wordmark">GLASI</span>
-    <button class="sign-out-btn" onclick="handleSignOut()">Sign out</button>
+    <span class="portal-header-spacer" aria-hidden="true"></span>
   </div>
 
   <!-- F-32: Tier ring header (compact). Persistent across tabs once authenticated.

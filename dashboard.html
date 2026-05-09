@@ -655,10 +655,23 @@
     .rc-status-pill { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 9px; border-radius: 10px; white-space: nowrap; display: inline-block; font-weight: 700; }
     .rc-status-pending    { background: var(--ice-dim);            color: var(--ice); }
     .rc-status-dispatched { background: var(--amber-dim);          color: var(--amber); }
+    /* F-34b: On the Way sits between Dispatched (amber) and On Shift (green).
+       Ice-blue accent matches the existing en-route confirmation copy. */
+    .rc-status-on-the-way { background: rgba(168,216,234,0.18);    color: var(--ice); }
     .rc-status-onshift    { background: var(--green-dim);          color: var(--green); }
     .rc-status-completed  { background: rgba(100,116,139,0.18);    color: var(--grey); }
     .rc-status-expired    { background: var(--red-dim);            color: var(--red); }
     .rc-status-cancelled  { background: rgba(100,116,139,0.10);    color: var(--grey); }
+    /* F-34b: Share Location indicator. Surfaced on the dispatched-worker
+       card when session_workers.share_location_tapped_at is non-null. */
+    .share-location-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; letter-spacing: 0.5px; font-weight: 600;
+      color: var(--ice); background: rgba(168,216,234,0.10);
+      border: 1px solid rgba(168,216,234,0.25); border-radius: 8px;
+      padding: 2px 8px;
+    }
+    .share-location-badge::before { content: "\2713"; font-size: 11px; }
 
     .rc-dispatched-row { font-size: 12px; color: var(--grey); background: rgba(168,216,234,0.06); border-left: 2px solid var(--ice); padding: 6px 10px; border-radius: 4px; margin-bottom: 10px; }
     .rc-dispatched-row strong { color: var(--white); font-weight: 600; }
@@ -3059,7 +3072,7 @@ async function tryRestoreSession() {
   // load session workers and requests in parallel
   const [swData, reqData] = await Promise.all([
     sbGet('session_workers',
-      '?session_id=eq.'+session.id+'&select=id,application_id,worker_name,worker_phone,status,clock_in_code,clock_out_code,clock_in_at,dispatched_at,departed_at,bar_id,shift_length_hours,shift_request_id,expected_arrival_minutes'
+      '?session_id=eq.'+session.id+'&select=id,application_id,worker_name,worker_phone,status,clock_in_code,clock_out_code,clock_in_at,dispatched_at,departed_at,share_location_tapped_at,bar_id,shift_length_hours,shift_request_id,expected_arrival_minutes'
     ),
     sbGet('shift_requests',
       '?session_id=eq.'+session.id+'&order=request_time.asc&select=*,bars(name),bar_managers(name)'
@@ -3124,6 +3137,7 @@ async function tryRestoreSession() {
       barContact: barContact,
       dispatchedAt: sw.dispatched_at,
       departedAt: sw.departed_at || null,
+      shareLocationTappedAt: sw.share_location_tapped_at || null,
       clockInAt: sw.clock_in_at,
       clockInCode: sw.clock_in_code || null,
       gsRef: null, // restored from shifts table below
@@ -3955,6 +3969,7 @@ const liveSessionOps = {
         const worker = liveSessionOps.workers.find(w => w.sessionWorkerId === record.id);
         if(worker) {
           if(record.departed_at) worker.departedAt = record.departed_at;
+          if(record.share_location_tapped_at) worker.shareLocationTappedAt = record.share_location_tapped_at;
           if(record.status) worker.status = record.status;
           if(record.clock_in_at) worker.clockInAt = record.clock_in_at;
           if(record.status === 'completed') {
@@ -4103,12 +4118,13 @@ const liveSessionOps = {
     const sessionId = this.sessionId;
     try {
       const swData = await sbGet('session_workers',
-        '?session_id=eq.'+sessionId+'&select=id,application_id,status,clock_in_at,dispatched_at,departed_at,bar_id,shift_length_hours,shift_request_id');
+        '?session_id=eq.'+sessionId+'&select=id,application_id,status,clock_in_at,dispatched_at,departed_at,share_location_tapped_at,bar_id,shift_length_hours,shift_request_id');
       for(const sw of swData) {
         const worker = liveSessionOps.workers.find(w => w.sessionWorkerId === sw.id);
         if(worker) {
           worker.status = sw.status;
           worker.departedAt = sw.departed_at || null;
+          worker.shareLocationTappedAt = sw.share_location_tapped_at || null;
           worker.clockInAt = sw.clock_in_at;
           worker.dispatchedAt = sw.dispatched_at;
           worker.shiftRequestId = sw.shift_request_id;
@@ -4260,9 +4276,14 @@ function resolveRequesterName(r) {
 // F-29: status pill mapping. session_worker is the truth source for
 // dispatch / on-shift / completed; r.status is fallback for terminal states
 // where no session_worker exists (pending / expired / cancelled).
+// F-34b: new "On the Way" pill between Dispatched (Selected) and On Shift,
+// fired when sw.departedAt is set but clockInAt is still null.
 function computeRequestPill(r, sw) {
   if(sw) {
     if(sw.status === 'dispatched' && !sw.clockInAt) {
+      if(sw.departedAt) {
+        return { slug: 'on-the-way', label: 'On the Way' };
+      }
       return { slug: 'dispatched', label: 'Dispatched' };
     }
     if(sw.status === 'onshift' || (sw.clockInAt && !sw.clockOutAt)) {
@@ -6786,8 +6807,15 @@ function renderRequestCards() {
             +(isOnShift
               ? '<div style="font-size:13px;color:var(--green);font-weight:700;margin-bottom:8px;">On shift · started '+(dispWorker.clockInAt ? new Date(dispWorker.clockInAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : '')+'</div>'
               : isEnRoute
-                ? '<div style="font-size:13px;color:var(--green);font-weight:700;margin-bottom:8px;">Confirmed en route'+(dispWorker.departedAt?' · '+new Date(dispWorker.departedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):'')+'</div>'
-                : '<div style="font-size:13px;color:var(--amber);font-weight:700;margin-bottom:8px;">Awaiting departure confirmation</div>')
+                ? '<div style="font-size:13px;color:var(--ice);font-weight:700;margin-bottom:8px;">On the Way'+(dispWorker.departedAt?' · '+new Date(dispWorker.departedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):'')+'</div>'
+                : '<div style="font-size:13px;color:var(--amber);font-weight:700;margin-bottom:8px;">Awaiting on-the-way confirmation</div>')
+
+            // F-34b Share Location indicator: surfaced when worker tapped
+            // the WhatsApp Share Location link on the dispatched-fresh
+            // screen. Read-only signal for the operator.
+            +((!isOnShift && dispWorker.shareLocationTappedAt)
+              ? '<div style="margin-bottom:8px;"><span class="share-location-badge" title="Worker tapped Share Location at '+new Date(dispWorker.shareLocationTappedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})+'">Shared location</span></div>'
+              : '')
 
             // ETA / shift end
             +(isOnShift

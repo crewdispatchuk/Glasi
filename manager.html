@@ -824,25 +824,8 @@
       to { opacity: 0; transform: translateY(10px); }
     }
 
-    /* Mid-session revoke lock card. */
-    .revoke-lock-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15,31,61,0.95);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 300;
-      padding: 24px;
-    }
-    .revoke-lock-card {
-      background: var(--navy-mid);
-      border: 1px solid rgba(239,68,68,0.3);
-      border-radius: 16px;
-      padding: 28px;
-      max-width: 360px;
-      text-align: center;
-    }
+    /* F-34a: mid-session revoke lock-UI retired. Revoked PIN-holders fail to
+       verify on next fire attempt; the bar's session continues. */
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1056,7 +1039,12 @@
           </label>
           <div id="manager-pin-section" style="display:none;">
             <label class="field-label">Enter your PIN to confirm</label>
-            <input type="password" id="manager-pin-input" class="field" maxlength="4" placeholder="4-digit PIN" oninput="checkPinConfirm()" style="letter-spacing:8px;font-size:18px;">
+            <input type="password" id="manager-pin-input" class="field" maxlength="4"
+              inputmode="numeric" pattern="[0-9]{4}"
+              autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
+              placeholder="4-digit PIN"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'');checkSubmitReady()"
+              style="letter-spacing:8px;font-size:18px;">
             <div id="manager-pin-error" style="font-size:12px;color:var(--red);margin-top:6px;min-height:16px;"></div>
           </div>
         </div>
@@ -1100,7 +1088,10 @@
       <div class="profile-card-title">PIN-Holders</div>
       <div id="pin-holder-pending"></div>
       <div id="pin-holder-active"><div style="font-size:12px;color:var(--grey);">Loading...</div></div>
-      <button class="primary-btn" style="margin-top:14px;" onclick="openRequestPinHolderModal()">+ Request new PIN-holder</button>
+      <button class="primary-btn" style="margin-top:14px;" onclick="openAddPinHolderModal()">+ Add PIN-holder</button>
+      <div style="margin-top:10px;text-align:center;">
+        <button onclick="openRequestPinHolderModal()" style="background:none;border:none;color:var(--ice);font-size:12px;font-family:inherit;cursor:pointer;text-decoration:underline;padding:6px;">Or ask Glasi to add a PIN-holder for you</button>
+      </div>
       <div id="pin-holder-history-toggle" style="display:none;margin-top:14px;text-align:center;">
         <button class="pin-holder-action-btn" onclick="togglePinHolderHistory()">Show history</button>
       </div>
@@ -1173,10 +1164,38 @@
   </div>
 </div>
 
+<!-- F-34a: self-serve Add PIN-holder. The bar picks the PIN here and the
+     RPC inserts the bar_managers row directly. No email invite, no auth
+     user creation; PIN-holders are PIN-only under the shared bar login. -->
+<div id="ov-add-pin-holder" class="overlay">
+  <div class="modal">
+    <div class="modal-title">Add a new PIN-holder</div>
+    <div class="modal-sub">Pick a name and a 4-digit PIN. The PIN can be changed later from this same screen.</div>
+    <label class="field-label">Name</label>
+    <input type="text" id="add-pin-holder-name" class="field" placeholder="e.g. Jordan" />
+    <label class="field-label">4-digit PIN</label>
+    <input type="password" id="add-pin-holder-pin" class="field" maxlength="4" inputmode="numeric" pattern="[0-9]{4}"
+      autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
+      placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="letter-spacing:6px;" />
+    <label class="field-label">Confirm PIN</label>
+    <input type="password" id="add-pin-holder-pin-confirm" class="field" maxlength="4" inputmode="numeric" pattern="[0-9]{4}"
+      autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
+      placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="letter-spacing:6px;" />
+    <div id="add-pin-holder-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" onclick="closeOverlay('ov-add-pin-holder')">Cancel</button>
+      <button class="modal-confirm-btn" id="add-pin-holder-submit-btn" onclick="submitAddPinHolder()">Add PIN-holder</button>
+    </div>
+  </div>
+</div>
+
+<!-- F-34a: legacy request-and-approve path (parallel option per locked
+     decision F10). Bar submits a request; Glasi reviews on the dashboard
+     and approves, generating a PIN to share with the bar. -->
 <div id="ov-request-pin-holder" class="overlay">
   <div class="modal">
-    <div class="modal-title">Request a new PIN-holder</div>
-    <div class="modal-sub">Sam will review and on approval invite the person by email to set up their account. They will then have their own PIN.</div>
+    <div class="modal-title">Ask Glasi to add a PIN-holder</div>
+    <div class="modal-sub">Glasi will review and add the PIN-holder for you. We'll share their PIN once approved.</div>
     <label class="field-label">Name</label>
     <input type="text" id="request-pin-name" class="field" placeholder="e.g. Jordan" />
     <label class="field-label">Email</label>
@@ -1184,7 +1203,7 @@
     <div id="request-pin-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
     <div class="modal-actions">
       <button class="modal-cancel-btn" onclick="closeOverlay('ov-request-pin-holder')">Cancel</button>
-      <button class="modal-confirm-btn" id="request-pin-submit-btn" onclick="submitRequestPinHolder()">Submit request</button>
+      <button class="modal-confirm-btn" id="request-pin-submit-btn" onclick="submitRequestPinHolder()">Send to Glasi</button>
     </div>
   </div>
 </div>
@@ -1194,11 +1213,38 @@
     <div class="modal-title">Regenerate PIN</div>
     <div class="modal-sub" id="edit-pin-target-name"></div>
     <label class="field-label">New 4-digit PIN</label>
-    <input type="text" id="edit-pin-new" class="field" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="letter-spacing:6px;" />
+    <input type="password" id="edit-pin-new" class="field" maxlength="4" inputmode="numeric" pattern="[0-9]{4}"
+      autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
+      placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="letter-spacing:6px;" />
+    <label class="field-label">Confirm PIN</label>
+    <input type="password" id="edit-pin-new-confirm" class="field" maxlength="4" inputmode="numeric" pattern="[0-9]{4}"
+      autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
+      placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="letter-spacing:6px;" />
     <div id="edit-pin-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
     <div class="modal-actions">
       <button class="modal-cancel-btn" onclick="closeOverlay('ov-edit-pin-holder')">Cancel</button>
       <button class="modal-confirm-btn" id="edit-pin-submit-btn" onclick="submitRegeneratePin()">Set PIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- F-34a: change-bar-password modal. Surfaced from the password-rotation
+     hint that appears after a PIN-holder is revoked. Calls
+     sbAuth.auth.updateUser({password}) to rotate the bar's shared password. -->
+<div id="ov-change-bar-password" class="overlay">
+  <div class="modal">
+    <div class="modal-title">Change bar password</div>
+    <div class="modal-sub">All PIN-holders use this shared password to log in. After changing, share the new password with everyone who still needs access.</div>
+    <label class="field-label">New password</label>
+    <input type="password" id="change-pwd-new" class="field" autocomplete="new-password"
+      placeholder="At least 8 characters" />
+    <label class="field-label">Confirm new password</label>
+    <input type="password" id="change-pwd-new-confirm" class="field" autocomplete="new-password"
+      placeholder="Re-enter new password" />
+    <div id="change-pwd-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" onclick="closeOverlay('ov-change-bar-password')">Cancel</button>
+      <button class="modal-confirm-btn" id="change-pwd-submit-btn" onclick="submitChangeBarPassword()">Change password</button>
     </div>
   </div>
 </div>
@@ -1239,7 +1285,10 @@
   });
 
   let currentBar = null;
-  let currentManager = null; // F-26: bar_managers row for the logged-in manager
+  // F-34a: currentManager removed. Auth identity is bar-level via
+  // bars.auth_user_id; per-firer attribution comes from PIN entry at the
+  // moment of action (only attributable action today is firing a shift
+  // request, handled atomically inside fire_shift_request RPC).
   let selectedShiftLength = null;
   let dispatchedWorkerWs = null;
 
@@ -1262,34 +1311,20 @@
       return;
     }
 
-    // F-26 login fix: synchronously propagate JWT into shared H header
-    // before Stage 2/3 fetches. The onAuthStateChange callback runs
-    // asynchronously and isn't reliable as the auth source for fetches
-    // that follow signInWithPassword in the same call stack. Mirrors the
-    // pattern at line 773 in the session-restore handler.
+    // F-26 login fix preserved: synchronously propagate JWT into shared H
+    // header before bar fetch, since onAuthStateChange runs asynchronously.
     H.Authorization = 'Bearer ' + data.session.access_token;
 
-    // F-26: Stage 2 — bar_managers lookup by auth_user_id. Filters revoked_at
-    // IS NULL so revoked managers cannot proceed even with valid Auth session.
+    // F-34a: single-stage bar fetch via bars.auth_user_id (the new
+    // authoritative auth link). The legacy bar_managers Stage 2 lookup is
+    // retired with currentManager. Per-firer identity is captured at the
+    // moment of action (PIN on shift-request fire), not at login.
     const authUserId = data.session.user.id;
-    const managerRows = await fetch(SUPABASE_URL + '/rest/v1/bar_managers?auth_user_id=eq.' + encodeURIComponent(authUserId) + '&revoked_at=is.null&select=id,bar_id,name', { headers: H }).then(r => r.json());
-    if(!managerRows || !managerRows.length) {
-      await sbAuth.auth.signOut();
-      H.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
-      errorEl.textContent = 'No account found or account revoked. Please contact hello@glasi.co.uk.';
-      return;
-    }
-    currentManager = managerRows[0];
-
-    // F-26: Stage 3 — bars lookup by id. Excludes manager_pin and
-    // manager_password from the select (they are no-op decoration during
-    // the bar_managers transition; never needed client-side post-F-26).
-    const barRows = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + currentManager.bar_id + '&select=id,name,address,contact_name,closing_time,opening_time,session_schedule', { headers: H }).then(r => r.json());
+    const barRows = await fetch(SUPABASE_URL + '/rest/v1/bars?auth_user_id=eq.' + encodeURIComponent(authUserId) + '&select=id,name,address,contact_name,contact_phone,closing_time,opening_time,session_schedule,google_maps_link,hs_document_url', { headers: H }).then(r => r.json());
     if(!barRows || !barRows.length) {
       await sbAuth.auth.signOut();
       H.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
-      currentManager = null;
-      errorEl.textContent = 'Bar not found. Please contact hello@glasi.co.uk.';
+      errorEl.textContent = 'No bar found for this account. Please contact hello@glasi.co.uk.';
       return;
     }
     currentBar = barRows[0];
@@ -1310,7 +1345,6 @@
     if(barManagersWs) { try { barManagersWs.close(); } catch(e) {} barManagersWs = null; }
     stopPendingRequestExpiry();
     currentBar = null;
-    currentManager = null;
     selectedShiftLength = null;
     profileLoaded = false;
     pinHolderRequestsCache = [];
@@ -1321,34 +1355,21 @@
     document.getElementById('login-email').value = '';
     document.getElementById('login-password').value = '';
     document.getElementById('login-error').textContent = '';
-    const lockEl = document.getElementById('revoke-lock-overlay');
-    if(lockEl) lockEl.remove();
     showScreen('login');
   }
 
-  // Restore session on page reload. F-26: lookup by auth_user_id against
-  // bar_managers (filters revoked), then fetch bars by id (no manager_pin
-  // / manager_password). If the auth session is valid but no active
-  // bar_managers row matches, sign out and stay on login.
+  // F-34a: session-resume mirrors the simplified handleLogin path.
+  // Single-stage bar fetch via bars.auth_user_id; no per-manager hydration.
   window.addEventListener('DOMContentLoaded', async () => {
     const { data } = await sbAuth.auth.getSession();
     if(!data?.session) return;
     H.Authorization = 'Bearer ' + data.session.access_token;
     const authUserId = data.session.user.id;
 
-    const managerRows = await fetch(SUPABASE_URL + '/rest/v1/bar_managers?auth_user_id=eq.' + encodeURIComponent(authUserId) + '&revoked_at=is.null&select=id,bar_id,name', { headers: H }).then(r => r.json());
-    if(!managerRows || !managerRows.length) {
-      await sbAuth.auth.signOut();
-      H.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
-      return;
-    }
-    currentManager = managerRows[0];
-
-    const barRows = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + currentManager.bar_id + '&select=id,name,address,contact_name,closing_time,opening_time,session_schedule', { headers: H }).then(r => r.json());
+    const barRows = await fetch(SUPABASE_URL + '/rest/v1/bars?auth_user_id=eq.' + encodeURIComponent(authUserId) + '&select=id,name,address,contact_name,contact_phone,closing_time,opening_time,session_schedule,google_maps_link,hs_document_url', { headers: H }).then(r => r.json());
     if(!barRows || !barRows.length) {
       await sbAuth.auth.signOut();
       H.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
-      currentManager = null;
       return;
     }
     currentBar = barRows[0];
@@ -1359,14 +1380,11 @@
 
   async function loadPortal() {
     const bar = currentBar;
-    // F-26: greet the actual logged-in manager (currentManager.name) instead
-    // of bars.manager_name (which is no-op decoration during transition).
-    const managerName = currentManager?.name || bar.contact_name || 'there';
-    // F-34-polish: bar name is now the prominent body header (portal-venue-name);
-    // greeting + role moves to the sub line. The previous header-bar-name element
-    // was removed from .portal-header in F-34-polish.
+    // F-34a (locked F9): dynamic greeting. Use bar.contact_name when set;
+    // otherwise the venue-name body header carries identity on its own.
+    const greetingPrefix = bar.contact_name ? ('Hi ' + bar.contact_name + ' · ') : '';
     document.getElementById('portal-venue-name').textContent = bar.name;
-    document.getElementById('portal-venue-sub').textContent = 'Hi ' + managerName + ' · Glasi Partner';
+    document.getElementById('portal-venue-sub').textContent = greetingPrefix + 'Glasi Partner';
 
     // F-37: bar's live session is any session in 'live' status whose bar_set
     // includes this bar. Query via session_bars join.
@@ -2096,91 +2114,88 @@
       if(pinSection) pinSection.style.display = 'none';
       document.getElementById('request-btn').disabled = true;
     }
+    checkSubmitReady();
   }
 
-  async function checkPinConfirm() {
-    const pin = document.getElementById('manager-pin-input')?.value.trim();
+  // F-34a: PIN pre-validation removed. Submit-button gate is now length-only;
+  // the actual PIN check happens atomically inside fire_shift_request RPC at
+  // submit time (PIN-verify + live-session-resolve + INSERT in one round trip).
+  function checkSubmitReady() {
+    const pin = (document.getElementById('manager-pin-input')?.value || '').trim();
+    const termsChecked = document.getElementById('manager-check-terms')?.checked;
     const errorEl = document.getElementById('manager-pin-error');
     const btn = document.getElementById('request-btn');
     if(errorEl) errorEl.textContent = '';
-    if(!pin || pin.length !== 4) {
-      if(btn) btn.disabled = true;
-      return;
-    }
-    if(!currentManager?.id) {
-      if(btn) btn.disabled = true;
-      if(errorEl) errorEl.textContent = 'Session expired. Please refresh and try again.';
-      return;
-    }
-    // F-26: PIN never compared client-side. The verify_bar_manager_pin RPC
-    // bcrypt-checks server-side via pgcrypto and returns boolean. PIN value
-    // exists only in the input field briefly; nothing else carries it.
-    try {
-      const { data, error } = await sbAuth.rpc('verify_bar_manager_pin', {
-        manager_id: currentManager.id,
-        pin_attempt: pin
-      });
-      if(!error && data === true) {
-        if(btn) btn.disabled = false;
-      } else {
-        if(btn) btn.disabled = true;
-        if(errorEl) errorEl.textContent = 'Incorrect PIN.';
-      }
-    } catch(e) {
-      if(btn) btn.disabled = true;
-      if(errorEl) errorEl.textContent = 'Could not verify PIN. Try again.';
+    if(btn) {
+      btn.disabled = !(termsChecked && /^\d{4}$/.test(pin) && selectedShiftLength);
     }
   }
 
-  // Keep for compatibility
-  function checkNameConfirm() { checkPinConfirm(); }
+  // Legacy compat shells; both delegate to the new length-only gate.
+  async function checkPinConfirm() { checkSubmitReady(); }
+  function checkNameConfirm() { checkSubmitReady(); }
 
+  // F-34a: atomic fire path. fire_shift_request RPC verifies the bar caller,
+  // verifies the PIN against active PIN-holders at this bar, resolves the live
+  // session covering this bar, and INSERTs shift_requests with bar_manager_id
+  // set to the matched firer. Single round trip; clean error codes.
   async function submitRequest() {
     if(!selectedShiftLength || !currentBar) return;
     const btn = document.getElementById('request-btn');
+    const errorEl = document.getElementById('request-error');
+    const pinInput = document.getElementById('manager-pin-input');
+    const pin = (pinInput?.value || '').trim();
+
     btn.disabled = true;
     btn.textContent = 'Sending...';
-    const errorEl = document.getElementById('request-error');
     if(errorEl) errorEl.textContent = '';
 
+    if(!/^\d{4}$/.test(pin)) {
+      if(errorEl) errorEl.textContent = 'Enter your 4-digit PIN.';
+      btn.disabled = false;
+      btn.textContent = 'Request a Glasi';
+      return;
+    }
+
     try {
-      // F-37: find active session whose bar_set includes this bar.
-      const sessionRows = await fetch(SUPABASE_URL + '/rest/v1/session_bars?bar_id=eq.' + currentBar.id + '&select=session_id,sessions!inner(id,status)&sessions.status=eq.live&limit=1', { headers: H }).then(r => r.json());
-      const sessionId = sessionRows?.[0]?.session_id || sessionRows?.[0]?.sessions?.id || null;
-
-      const now = new Date();
-
-      const resp = await fetch(SUPABASE_URL + '/rest/v1/shift_requests', {
-        method: 'POST',
-        headers: { ...H, 'Prefer': 'return=representation' },
-        body: JSON.stringify({
-          bar_id: currentBar.id,
-          bar_manager_id: currentManager?.id || null, // F-26: per-request attribution
-          session_id: sessionId,
-          shift_length_hours: selectedShiftLength,
-          request_time: now.toISOString(),
-          posted_at: now.toISOString(),
-          status: 'pending',
-          raw_message: 'Bar manager request via portal'
-        })
+      const { data: newRequestId, error } = await sbAuth.rpc('fire_shift_request', {
+        p_bar_id: currentBar.id,
+        p_pin: pin,
+        p_shift_length_hours: selectedShiftLength
       });
-      if(!resp.ok) throw new Error('HTTP ' + resp.status);
-      const result = await resp.json();
-      const newRequest = Array.isArray(result) ? result[0] : result;
+      if(error) throw error;
+      if(newRequestId == null) throw new Error('Empty result from fire_shift_request');
 
-      // Reset form state BEFORE the form gets hidden, so re-expanding later
-      // never surfaces the stale "Sending..." disabled button.
+      // Clear PIN input on success (locked decision 5).
+      if(pinInput) pinInput.value = '';
+
       resetRequestFormState();
-      // Active card surfaces; showFindingState calls showStatus('finding')
-      // which surfaces the pill via showRequestPill().
+      // Pull the inserted row back so showFindingState has the full payload
+      // (the RPC returns just the id; the realtime UPDATE flow expects the
+      // full object shape).
+      const inserted = await fetch(SUPABASE_URL + '/rest/v1/shift_requests?id=eq.' + newRequestId + '&select=*', { headers: H }).then(r => r.json());
+      const newRequest = (Array.isArray(inserted) && inserted[0])
+        ? inserted[0]
+        : { id: newRequestId, bar_id: currentBar.id, status: 'pending' };
       showFindingState(newRequest);
       loadPastRequests();
     } catch(e) {
-      // Reset button so the manager can retry. Form stays expanded with the
-      // error visible.
+      console.error('fire_shift_request failed', e);
+      const msg = (e && e.message) || '';
+      // Clear PIN on any failure so the next attempt re-types from scratch.
+      if(pinInput) pinInput.value = '';
+      if(/PIN does not match/i.test(msg)) {
+        if(errorEl) errorEl.textContent = 'Incorrect PIN. Try again.';
+      } else if(/No live session/i.test(msg)) {
+        if(errorEl) errorEl.textContent = 'Glasi is not on call right now.';
+      } else if(/Not authorised/i.test(msg)) {
+        if(errorEl) errorEl.textContent = 'Session expired. Please sign in again.';
+      } else {
+        if(errorEl) errorEl.textContent = 'Could not send request. Try again.';
+      }
       btn.disabled = false;
       btn.textContent = 'Request a Glasi';
-      if(errorEl) errorEl.textContent = 'Request failed. Try again.';
+      checkSubmitReady();
     }
   }
 
@@ -2281,7 +2296,7 @@
       <div class="profile-row" data-key="${r.key}">
         <div class="profile-row-label">${r.label}</div>
         <div class="profile-row-value ${r.editable ? '' : 'readonly'}" data-display>${escapeHtml(r.value) || '<span style="color:var(--grey);font-size:12px;">not set</span>'}</div>
-        ${r.editable ? '<button class="profile-row-edit-btn" onclick="startEditVenueRow(this,\'' + r.key + '\',\'' + r.type + '\')">Edit</button>' : '<span style="font-size:11px;color:var(--grey);">Sam-edit only</span>'}
+        ${r.editable ? '<button class="profile-row-edit-btn" onclick="startEditVenueRow(this,\'' + r.key + '\',\'' + r.type + '\')">Edit</button>' : '<span style="font-size:11px;color:var(--grey);">Glasi-edit only</span>'}
       </div>
     `).join('');
   }
@@ -2382,7 +2397,7 @@
         <div class="pin-holder-row" style="background:var(--amber-dim);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:10px 12px;border-bottom:none;margin-bottom:8px;">
           <div>
             <div class="pin-holder-name">${escapeHtml(r.proposed_name)}</div>
-            <div class="pin-holder-meta">${escapeHtml(r.proposed_email)} &middot; awaiting Sam</div>
+            <div class="pin-holder-meta">${escapeHtml(r.proposed_email)} &middot; awaiting Glasi</div>
           </div>
           <div class="pin-holder-actions">
             <button class="pin-holder-action-btn" onclick="confirmWithdrawPinHolderRequest(${r.id})">Withdraw</button>
@@ -2436,13 +2451,57 @@
     if (btn) btn.textContent = showing ? 'Show history' : 'Hide history';
   }
 
+  // F-34a: self-serve Add PIN-holder fast path. Bar picks the PIN; RPC
+  // INSERTs the bar_managers row directly under the shared bar login.
+  function openAddPinHolderModal() {
+    document.getElementById('add-pin-holder-name').value = '';
+    document.getElementById('add-pin-holder-pin').value = '';
+    document.getElementById('add-pin-holder-pin-confirm').value = '';
+    document.getElementById('add-pin-holder-error').textContent = '';
+    const btn = document.getElementById('add-pin-holder-submit-btn');
+    btn.disabled = false;
+    btn.textContent = 'Add PIN-holder';
+    openOverlay('ov-add-pin-holder');
+  }
+
+  async function submitAddPinHolder() {
+    const errEl = document.getElementById('add-pin-holder-error');
+    const btn = document.getElementById('add-pin-holder-submit-btn');
+    errEl.textContent = '';
+    const name = document.getElementById('add-pin-holder-name').value.trim();
+    const pin = document.getElementById('add-pin-holder-pin').value.trim();
+    const pinConfirm = document.getElementById('add-pin-holder-pin-confirm').value.trim();
+    if (!name) { errEl.textContent = 'Name required.'; return; }
+    if (!/^\d{4}$/.test(pin)) { errEl.textContent = 'PIN must be exactly 4 digits.'; return; }
+    if (pin !== pinConfirm) { errEl.textContent = 'PINs do not match.'; return; }
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+    try {
+      const { data, error } = await sbAuth.rpc('add_pin_holder_self_serve', {
+        p_bar_id: currentBar.id,
+        p_name: name,
+        p_pin: pin
+      });
+      if (error) throw error;
+      closeOverlay('ov-add-pin-holder');
+      showToast('PIN-holder added');
+      await loadPinHolders();
+    } catch (e) {
+      console.error('add_pin_holder_self_serve failed', e);
+      errEl.textContent = 'Could not add: ' + (e.message || 'unknown');
+      btn.disabled = false;
+      btn.textContent = 'Add PIN-holder';
+    }
+  }
+
+  // F-34a: legacy request-and-approve path (parallel option per F10).
   function openRequestPinHolderModal() {
     document.getElementById('request-pin-name').value = '';
     document.getElementById('request-pin-email').value = '';
     document.getElementById('request-pin-error').textContent = '';
     const btn = document.getElementById('request-pin-submit-btn');
     btn.disabled = false;
-    btn.textContent = 'Submit request';
+    btn.textContent = 'Send to Glasi';
     openOverlay('ov-request-pin-holder');
   }
 
@@ -2464,13 +2523,13 @@
       });
       if (error) throw error;
       closeOverlay('ov-request-pin-holder');
-      showToast('Request sent to Sam');
+      showToast('Request sent to Glasi');
       await loadPinHolders();
     } catch (e) {
       console.error('submitRequestPinHolder failed', e);
       errEl.textContent = 'Could not send: ' + (e.message || 'unknown');
       btn.disabled = false;
-      btn.textContent = 'Submit request';
+      btn.textContent = 'Send to Glasi';
     }
   }
 
@@ -2491,6 +2550,7 @@
     editPinTargetManagerId = managerId;
     document.getElementById('edit-pin-target-name').textContent = 'For: ' + name;
     document.getElementById('edit-pin-new').value = '';
+    document.getElementById('edit-pin-new-confirm').value = '';
     document.getElementById('edit-pin-error').textContent = '';
     const btn = document.getElementById('edit-pin-submit-btn');
     btn.disabled = false;
@@ -2504,7 +2564,9 @@
     const btn = document.getElementById('edit-pin-submit-btn');
     errEl.textContent = '';
     const newPin = document.getElementById('edit-pin-new').value.trim();
+    const newPinConfirm = document.getElementById('edit-pin-new-confirm').value.trim();
     if (!/^\d{4}$/.test(newPin)) { errEl.textContent = 'PIN must be exactly 4 digits.'; return; }
+    if (newPin !== newPinConfirm) { errEl.textContent = 'PINs do not match.'; return; }
     btn.disabled = true;
     btn.textContent = 'Setting...';
     try {
@@ -2523,12 +2585,15 @@
     }
   }
 
+  let lastRevokedName = null;
+
   function openConfirmRevoke(managerId, name) {
     revokeTargetManagerId = managerId;
+    lastRevokedName = name;
     const isLast = activePinHoldersCache.length <= 1;
     const msg = isLast
       ? 'You cannot revoke ' + name + ' because they are the only active PIN-holder for this bar. Add another PIN-holder first.'
-      : 'Revoke ' + name + '? They will lose access immediately and cannot log in.';
+      : 'Revoke ' + name + '? They will lose access immediately and their PIN will stop working.';
     document.getElementById('revoke-target-msg').textContent = msg;
     document.getElementById('revoke-error').textContent = '';
     const btn = document.getElementById('revoke-submit-btn');
@@ -2551,11 +2616,69 @@
       closeOverlay('ov-confirm-revoke');
       showToast('PIN-holder revoked');
       await loadPinHolders();
+      // F-34a (locked F1): surface the bar-password rotation hint after a
+      // PIN-holder is revoked. The hint is informational; not enforced.
+      showPasswordRotationHint(lastRevokedName || 'this PIN-holder');
     } catch (e) {
       console.error('revoke_pin_holder_self_serve failed', e);
       errEl.textContent = 'Could not revoke: ' + (e.message || 'unknown');
       btn.disabled = false;
       btn.textContent = 'Revoke';
+    }
+  }
+
+  function showPasswordRotationHint(revokedName) {
+    const el = document.getElementById('pin-holder-active');
+    if (!el) return;
+    // Replace any existing hint so consecutive revokes don't stack hints.
+    const existing = document.getElementById('pwd-rotation-hint');
+    if (existing) existing.remove();
+    const hint = document.createElement('div');
+    hint.id = 'pwd-rotation-hint';
+    hint.style.cssText = 'background:var(--amber-dim);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:14px;margin-top:14px;font-size:13px;color:var(--white);line-height:1.6;';
+    const safeName = escapeHtml(revokedName);
+    hint.innerHTML = "Heads up. If " + safeName + " shouldn't have access to the bar anymore, change your bar password too. "
+      + '<button onclick="openChangeBarPassword()" style="background:none;border:none;color:var(--ice);font-weight:600;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0;">Change Password</button>'
+      + ' <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--grey);cursor:pointer;font-family:inherit;float:right;" aria-label="Dismiss">&times;</button>';
+    el.appendChild(hint);
+  }
+
+  // F-34a (locked F1): change-bar-password modal. Calls Supabase auth
+  // updateUser({password}) which rotates the password on the auth.users
+  // row linked from bars.auth_user_id. Owner shares the new password
+  // with PIN-holders out of band.
+  function openChangeBarPassword() {
+    document.getElementById('change-pwd-new').value = '';
+    document.getElementById('change-pwd-new-confirm').value = '';
+    document.getElementById('change-pwd-error').textContent = '';
+    const btn = document.getElementById('change-pwd-submit-btn');
+    btn.disabled = false;
+    btn.textContent = 'Change password';
+    openOverlay('ov-change-bar-password');
+  }
+
+  async function submitChangeBarPassword() {
+    const errEl = document.getElementById('change-pwd-error');
+    const btn = document.getElementById('change-pwd-submit-btn');
+    errEl.textContent = '';
+    const newPwd = document.getElementById('change-pwd-new').value;
+    const newPwdConfirm = document.getElementById('change-pwd-new-confirm').value;
+    if (!newPwd || newPwd.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; return; }
+    if (newPwd !== newPwdConfirm) { errEl.textContent = 'Passwords do not match.'; return; }
+    btn.disabled = true;
+    btn.textContent = 'Changing...';
+    try {
+      const { data, error } = await sbAuth.auth.updateUser({ password: newPwd });
+      if (error) throw error;
+      closeOverlay('ov-change-bar-password');
+      showToast('Bar password changed');
+      const hint = document.getElementById('pwd-rotation-hint');
+      if (hint) hint.remove();
+    } catch (e) {
+      console.error('updateUser password failed', e);
+      errEl.textContent = 'Could not change password: ' + (e.message || 'unknown');
+      btn.disabled = false;
+      btn.textContent = 'Change password';
     }
   }
 
@@ -3065,8 +3188,13 @@
     pinHolderRequestsWs.onerror = (err) => { console.error('[pin_holder_requests ws] error', err); };
   }
 
+  // F-34a: realtime sub on bar_managers filtered by bar_id (was filtered by
+  // currentManager.auth_user_id pre-F-34a). Lock-UI fire dropped per locked
+  // decision 16; the revoked PIN-holder's PIN simply won't verify on next
+  // fire attempt. The bar's session continues; the Profile tab list refreshes
+  // passively if a PIN-holder is revoked elsewhere.
   function startBarManagersWatch() {
-    if (!currentManager || barManagersWs) return;
+    if (!currentBar || barManagersWs) return;
     const wsUrl = SUPABASE_URL.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
     barManagersWs = new WebSocket(wsUrl);
     let hb = null;
@@ -3075,7 +3203,8 @@
         topic: 'realtime:public:bar_managers',
         event: 'phx_join',
         payload: { config: { postgres_changes: [
-          { event: 'UPDATE', schema: 'public', table: 'bar_managers', filter: 'auth_user_id=eq.' + currentManager.auth_user_id }
+          { event: 'INSERT', schema: 'public', table: 'bar_managers', filter: 'bar_id=eq.' + currentBar.id },
+          { event: 'UPDATE', schema: 'public', table: 'bar_managers', filter: 'bar_id=eq.' + currentBar.id }
         ] } },
         ref: 'bmw1'
       }));
@@ -3089,30 +3218,12 @@
       try {
         const msg = JSON.parse(e.data);
         if (msg.event !== 'postgres_changes') return;
-        const rec = msg.payload && msg.payload.data && msg.payload.data.record;
-        if (rec && rec.id === currentManager.id && rec.revoked_at) {
-          lockUiForRevoke();
-        }
+        // Refresh the Profile-tab PIN-holders list passively. No lock-UI.
+        if (profileLoaded) loadPinHolders();
       } catch (err) { console.error('bar_managers realtime error', err); }
     };
     barManagersWs.onclose = () => { if (hb) clearInterval(hb); barManagersWs = null; };
     barManagersWs.onerror = (err) => { console.error('[bar_managers ws] error', err); };
-  }
-
-  function lockUiForRevoke() {
-    if (document.getElementById('revoke-lock-overlay')) return;
-    const wrap = document.createElement('div');
-    wrap.className = 'revoke-lock-overlay';
-    wrap.id = 'revoke-lock-overlay';
-    wrap.innerHTML = `
-      <div class="revoke-lock-card">
-        <div style="font-size:36px;margin-bottom:14px;color:var(--red);">&#9888;</div>
-        <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:10px;">Access revoked</div>
-        <div style="font-size:13px;color:var(--grey);line-height:1.6;margin-bottom:18px;">Your PIN-holder access has been revoked. Please sign in again to confirm your access.</div>
-        <button class="primary-btn" style="margin-top:0;" onclick="handleSignOut()">Sign out</button>
-      </div>
-    `;
-    document.body.appendChild(wrap);
   }
 </script>
 

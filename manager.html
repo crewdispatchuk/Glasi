@@ -1008,11 +1008,11 @@
     <div id="no-session-card" style="display:none;margin-bottom:24px;">
       <div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:20px;padding:32px 24px;text-align:center;">
         <div style="font-size:32px;margin-bottom:16px;">🕐</div>
-        <div style="font-size:16px;font-weight:600;color:var(--white);margin-bottom:8px;">No session active right now</div>
-        <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:20px;">If you think you'll need someone outside of your scheduled sessions, give us a call.</div>
+        <div style="font-size:16px;font-weight:600;color:var(--white);margin-bottom:8px;">Glasi isn't on call right now</div>
+        <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:20px;">Got an event coming up? Have Glasi on call from your Profile. Same-day emergency? Give us a call.</div>
         <a href="tel:07803856078" style="display:inline-block;background:var(--ice);color:var(--navy);text-decoration:none;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:700;font-family:'Inter',sans-serif;margin-bottom:20px;">07803856078</a>
         <div id="no-session-schedule-section" style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
-          <div style="font-size:10px;letter-spacing:2px;color:var(--grey);text-transform:uppercase;margin-bottom:6px;">Your scheduled sessions</div>
+          <div style="font-size:10px;letter-spacing:2px;color:var(--grey);text-transform:uppercase;margin-bottom:6px;">When Glasi is on call for you</div>
           <div style="font-size:14px;color:var(--white);" id="no-session-schedule">Friday 3pm to 8pm · Saturday 3pm to 8pm</div>
         </div>
       </div>
@@ -1120,9 +1120,10 @@
     </section>
 
     <section id="profile-proposed-sessions" class="profile-card">
-      <div class="profile-card-title">Your Proposed Sessions</div>
+      <div class="profile-card-title">Have Glasi on call for an event</div>
+      <div style="font-size:12px;color:var(--grey);line-height:1.6;margin-bottom:14px;">If you have a busy event coming up, let us know and we can get our Glasis on standby, in case you need them.</div>
       <div id="proposed-sessions-list"><div style="font-size:12px;color:var(--grey);">Loading...</div></div>
-      <button class="primary-btn" style="margin-top:14px;" onclick="openProposeSessionModal()">+ Propose a session</button>
+      <button class="primary-btn" style="margin-top:14px;" onclick="openProposeSessionModal()">Have Glasi on call</button>
     </section>
 
   </div><!-- /tab-body-profile -->
@@ -1156,18 +1157,18 @@
 
 <div id="ov-propose-session" class="overlay">
   <div class="modal">
-    <div class="modal-title">Propose a session</div>
-    <div class="modal-sub">Pick a date and time at least 24 hours from now. Sessions are 4 hours long. Sam will review and approve or decline.</div>
+    <div class="modal-title">Have Glasi on call</div>
+    <div class="modal-sub">Tell us about your event and we'll get Glasis on standby for that window. We need at least 24 hours notice to get workers ready.</div>
     <label class="field-label">Date</label>
     <input type="date" id="propose-date" class="field" />
     <label class="field-label">Start time</label>
     <input type="time" id="propose-time" class="field" step="1800" value="18:00" />
-    <label class="field-label">Reason note (optional)</label>
-    <textarea id="propose-reason" class="field" rows="3" placeholder="Anything Sam should know..." style="resize:none;"></textarea>
+    <label class="field-label">What's the event? (optional)</label>
+    <textarea id="propose-reason" class="field" rows="3" placeholder="Quiz night, sports screening, function..." style="resize:none;"></textarea>
     <div id="propose-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
     <div class="modal-actions">
       <button class="modal-cancel-btn" onclick="closeOverlay('ov-propose-session')">Cancel</button>
-      <button class="modal-confirm-btn" id="propose-submit-btn" onclick="submitProposeSession()">Submit</button>
+      <button class="modal-confirm-btn" id="propose-submit-btn" onclick="submitProposeSession()">Have Glasi on call</button>
     </div>
   </div>
 </div>
@@ -1573,8 +1574,8 @@
         } else if(record.status === 'scheduled' || record.status === 'declined' || record.status === 'cancelled') {
           // F-34: bar-proposal lifecycle. Refresh the Profile tab's proposed-sessions
           // section if it has been loaded; surface a toast on the relevant transition.
-          if(record.status === 'scheduled') showToast('Session approved by Sam');
-          else if(record.status === 'declined') showToast('Session proposal declined');
+          if(record.status === 'scheduled') showToast('Glasi is on call for your event');
+          else if(record.status === 'declined') showToast("We can't get Glasi on call for that one, see your Profile for details");
           if(profileLoaded) loadProposedSessions();
         }
       } catch(e) {}
@@ -2681,7 +2682,7 @@
       renderProposedSessions();
     } catch (e) {
       console.error('loadProposedSessions failed', e);
-      el.innerHTML = '<div style="font-size:12px;color:var(--red);">Could not load proposed sessions.</div>';
+      el.innerHTML = '<div style="font-size:12px;color:var(--red);">Could not load on-call requests.</div>';
     }
   }
 
@@ -2689,7 +2690,7 @@
     const el = document.getElementById('proposed-sessions-list');
     if (!el) return;
     if (!proposedSessionsCache.length) {
-      el.innerHTML = '<div style="font-size:12px;color:var(--grey);padding:6px 0;">No proposed sessions yet.</div>';
+      el.innerHTML = '<div style="font-size:12px;color:var(--grey);padding:6px 0;">No on-call requests yet.</div>';
       return;
     }
     el.innerHTML = proposedSessionsCache.map(s => {
@@ -2727,7 +2728,7 @@
     document.getElementById('propose-reason').value = '';
     const btn = document.getElementById('propose-submit-btn');
     btn.disabled = false;
-    btn.textContent = 'Submit';
+    btn.textContent = 'Have Glasi on call';
     openOverlay('ov-propose-session');
   }
 
@@ -2746,7 +2747,7 @@
       return;
     }
     btn.disabled = true;
-    btn.textContent = 'Submitting...';
+    btn.textContent = 'Sending...';
     try {
       const { data, error } = await sbAuth.rpc('propose_session_for_bar', {
         p_bar_id: currentBar.id,
@@ -2757,28 +2758,28 @@
       });
       if (error) throw error;
       closeOverlay('ov-propose-session');
-      showToast('Proposal sent to Sam');
+      showToast('On-call request sent');
       await loadProposedSessions();
     } catch (e) {
       console.error('propose_session_for_bar failed', e);
       const msg = (e && e.message) || '';
       if (/24 hours/i.test(msg)) errEl.textContent = 'Start must be at least 24 hours from now.';
-      else if (/already has a proposed or scheduled session/i.test(msg)) errEl.textContent = 'You already have a session proposed or scheduled for that date.';
-      else errEl.textContent = 'Could not submit: ' + msg;
+      else if (/already has a proposed or scheduled session/i.test(msg)) errEl.textContent = 'You already have an on-call request or confirmed booking for that date.';
+      else errEl.textContent = 'Could not send: ' + msg;
       btn.disabled = false;
-      btn.textContent = 'Submit';
+      btn.textContent = 'Have Glasi on call';
     }
   }
 
   async function confirmWithdrawProposal(sessionId) {
-    if (!confirm('Withdraw this proposed session?')) return;
+    if (!confirm('Withdraw this on-call request?')) return;
     try {
       const { data, error } = await sbAuth.rpc('withdraw_session_proposal', { p_session_id: sessionId });
       if (error) throw error;
       if (data !== true) {
-        alert('Could not withdraw. The session may already have been approved by Sam.');
+        alert('Could not withdraw. Glasi may already be confirmed on call for this one.');
       } else {
-        showToast('Proposal withdrawn');
+        showToast('On-call request withdrawn');
       }
       await loadProposedSessions();
     } catch (e) {

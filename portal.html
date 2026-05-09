@@ -4986,7 +4986,7 @@
       empty.style.display = 'block';
       empty.innerHTML = '<div class="sessions-empty-icon">👋</div>'
         + '<div class="sessions-empty-title">Dispatch cancelled</div>'
-        + '<div class="sessions-empty-sub">Sam has cancelled this dispatch. You have left tonight\'s session. We\'ll see you at the next one.</div>';
+        + '<div class="sessions-empty-sub">Glasi has cancelled this dispatch. You have left tonight\'s session. We\'ll see you at the next one.</div>';
     }
   }
 
@@ -6200,7 +6200,7 @@
   async function _loadDispatchedBarDetails(barId) {
     if(!barId || lastRenderedDispatchBarId === barId) return;
     try {
-      const barRows = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + barId + '&select=name,address,google_maps_link,manager_name', { headers: H }).then(r => r.json());
+      const barRows = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + barId + '&select=name,address,google_maps_link', { headers: H }).then(r => r.json());
       const bar = barRows?.[0];
       if(!bar) return;
       const venueEl = document.getElementById('dispatched-venue');
@@ -6216,10 +6216,11 @@
           mapsBtn.style.display = 'none';
         }
       }
-      // F-26: read manager name through shift_requests.bar_manager_id FK so
-      // the worker sees the actual submitter, not whichever name happens to
-      // be on bars.manager_name. Falls back to bars.manager_name (no-op
-      // decoration during transition) if bar_manager_id is null on this row.
+      // F-26 chain: read manager name through shift_requests.bar_manager_id
+      // FK so the worker sees the actual firer ("Ask for Aidan"). F-34a
+      // dropped the legacy bars.manager_name fallback (column gone); generic
+      // "the bar manager" is the only remaining fallback when the chain
+      // doesn't resolve.
       let managerName = null;
       if(currentSessionWorkerId) {
         try {
@@ -6233,9 +6234,9 @@
               if(mgrRows?.[0]?.name) managerName = mgrRows[0].name;
             }
           }
-        } catch(e) { /* fall through to bar.manager_name fallback */ }
+        } catch(e) { /* fall through to generic fallback */ }
       }
-      managerName = managerName || bar.manager_name || 'the bar manager';
+      managerName = managerName || 'the bar manager';
       const warningEl = document.querySelector('#live-dispatched .warning-box p');
       if(warningEl) warningEl.innerHTML = 'Share your live location with Glasi on <strong><a href="https://wa.me/447803856078" style="color:var(--amber);">07803856078</a></strong>, start heading to the venue and ask for <strong style="color:var(--white);">' + managerName + '</strong> who will have your clock-in code.';
       lastRenderedDispatchBarId = barId;

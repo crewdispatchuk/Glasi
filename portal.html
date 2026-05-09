@@ -2541,23 +2541,45 @@
           <div class="filled-card">Shift filled. Stand by for the next one.</div>
         </div>
 
-        <!-- Dispatched! -->
+        <!-- Dispatched! F-34b: two screens inside one container.
+             Screen 1 renders when departed_at IS NULL.
+             Screen 2 renders when departed_at IS NOT NULL AND clock_in_at IS NULL.
+             Clocked-in state replaces Screen 2's clock-in input area in place. -->
         <div id="live-dispatched" style="display:none;">
-          <div class="dispatched-card">
-            <div class="dispatched-title">You have been selected.</div>
-            <div class="dispatched-venue" id="dispatched-venue">The Woolhouse</div>
-            <div class="dispatched-address" id="dispatched-address">1 Bugle Street, Southampton SO14 2AL</div>
+
+          <!-- F-34b SCREEN 1: just-dispatched. Worker shares location, then confirms on the way. -->
+          <div id="dispatch-screen-1" style="display:none;">
+            <div class="dispatched-card">
+              <div class="dispatched-title">You have been selected.</div>
+            </div>
+            <div style="margin-top:16px;font-size:14px;color:var(--white);line-height:1.7;">
+              First, <a href="#" id="screen1-share-link" onclick="onShareLocationTap(event)" style="color:var(--ice);font-weight:600;text-decoration:underline;cursor:pointer;">share your live location with Glasi</a>.<br>
+              Then confirm you're on your way to <strong id="screen1-bar-name">the venue</strong>.
+            </div>
+            <div id="screen1-bar-address" style="margin-top:14px;font-size:13px;color:var(--grey);line-height:1.5;"></div>
+            <div style="margin-top:20px;">
+              <button id="screen1-confirm-btn" onclick="onConfirmOnTheWay()" class="primary-btn" style="background:var(--green);color:var(--navy);">CONFIRM I'M ON MY WAY</button>
+            </div>
+            <div id="screen1-error" style="font-size:12px;color:var(--red);margin-top:10px;min-height:16px;text-align:center;"></div>
           </div>
-          <div class="warning-box" style="margin-top:12px;">
-            <p id="dispatched-instructions">Share your live location with Glasi on <strong><a href="https://wa.me/447803856078" style="color:var(--amber);">07803856078</a></strong>, start heading to the venue and ask for <strong style="color:var(--white);">the bar manager</strong> who will have your clock-in code.</p>
-          </div>
-          <div id="leaving-section" style="margin-top:16px;">
-            <button onclick="openLeavingConfirm()" id="leaving-btn" class="primary-btn" style="background:var(--green);color:var(--navy);">I am leaving now</button>
-          </div>
-          <div id="leaving-confirmed" style="display:none;margin-top:16px;text-align:center;">
-            <div id="on-your-way-heading" style="font-size:14px;color:var(--green);font-weight:600;margin-bottom:6px;">On your way</div>
-            <div style="font-size:13px;color:var(--grey);line-height:1.6;margin-bottom:20px;">Head straight to the venue. Your clock-in code will be given to you by the bar manager on arrival. Enter it below as soon as you receive it.</div>
-            <div id="clockin-input-section">
+
+          <!-- F-34b SCREEN 2: on the way. Ask for {firer name}, Maps link, clock-in input. -->
+          <div id="dispatch-screen-2" style="display:none;">
+            <div class="dispatched-card">
+              <div class="dispatched-title">You're on your way.</div>
+            </div>
+            <div style="margin-top:14px;font-size:14px;color:var(--white);line-height:1.7;">
+              Ask for <strong id="screen2-firer-name" style="color:var(--white);">the bar manager</strong> when you arrive.<br>
+              They'll give you the clock-in code.
+            </div>
+            <div style="margin-top:18px;background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:16px;">
+              <div id="screen2-bar-name" style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:4px;"></div>
+              <div id="screen2-bar-address" style="font-size:13px;color:var(--grey);line-height:1.5;margin-bottom:10px;"></div>
+              <a id="screen2-maps-link" href="#" target="_blank" rel="noopener" style="font-size:13px;color:var(--ice);font-weight:600;text-decoration:underline;">Open in Google Maps &rarr;</a>
+            </div>
+
+            <!-- F-34b: clock-in input retained from the prior layout. -->
+            <div id="clockin-input-section" style="margin-top:20px;">
               <div style="font-size:11px;font-weight:600;letter-spacing:1px;color:var(--ice);text-transform:uppercase;margin-bottom:8px;text-align:left;">Clock-in Code</div>
               <div style="display:flex;gap:8px;">
                 <input type="text" id="worker-clockin-input" maxlength="6" placeholder="Enter code from bar manager" style="flex:1;background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:16px;color:var(--white);font-family:'Inter',sans-serif;outline:none;letter-spacing:4px;text-align:center;">
@@ -2565,8 +2587,9 @@
               </div>
               <div id="worker-clockin-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:16px;"></div>
             </div>
+
+            <!-- Clocked-in state. Replaces clockin-input-section once worker has clocked in. -->
             <div id="clockin-confirmed-section" style="display:none;margin-top:16px;">
-              <!-- Active shift state -->
               <div id="portal-onshift-card" style="background:rgba(74,222,128,0.08);border:2px solid rgba(74,222,128,0.3);border-radius:16px;padding:32px 24px;text-align:center;">
                 <div style="font-size:36px;margin-bottom:12px;">✓</div>
                 <div style="font-size:20px;font-weight:700;color:var(--green);margin-bottom:8px;">You are clocked in</div>
@@ -2574,7 +2597,6 @@
                 <div id="portal-shift-countdown" style="font-size:20px;font-weight:700;color:var(--amber);"></div>
               </div>
 
-              <!-- Shift ended state -- shown when timer hits zero -->
               <div id="portal-shift-ended-card" style="display:none;background:var(--navy-mid);border:1px solid var(--border);border-radius:16px;padding:28px 24px;">
                 <div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:6px;text-align:center;">Shift complete</div>
                 <div style="font-size:13px;color:var(--grey);text-align:center;margin-bottom:20px;">Enter the clock-out code from your bar manager.</div>
@@ -2585,18 +2607,19 @@
                   <a href="https://wa.me/447803856078?text=I%20cannot%20get%20my%20clock-out%20code" target="_blank" style="font-size:12px;color:var(--grey);text-decoration:underline;">Can't get my code?</a>
                 </div>
               </div>
-
             </div>
           </div>
 
-          <!-- Location confirmation overlay -->
-          <div id="leaving-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:100;align-items:center;justify-content:center;padding:24px;">
+          <!-- F-34b: soft-prompt modal. Fires when worker taps Confirm without first
+               tapping the inline Share Location link. Two outcomes: Back (stay on
+               Screen 1, no state change) or Yes I'm on my way (proceed). -->
+          <div id="confirm-no-share-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:100;align-items:center;justify-content:center;padding:24px;">
             <div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center;">
               <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:12px;">Before you go</div>
-              <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:24px;">Have you shared your live location with the Glasi team on WhatsApp? We need this to track your ETA to the venue.</div>
+              <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:24px;">You haven't shared your live location yet. Are you sure you want to confirm you're on your way?</div>
               <div style="display:flex;flex-direction:column;gap:10px;">
-                <button onclick="confirmLeaving()" style="background:var(--green);color:var(--navy);border:none;border-radius:10px;padding:14px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;">Yes, I have shared my location</button>
-                <button onclick="closeLeavingOverlay()" style="background:none;border:1px solid var(--border);color:var(--grey);border-radius:10px;padding:14px;font-size:14px;font-family:'Inter',sans-serif;cursor:pointer;">Not yet -- go back</button>
+                <button onclick="proceedConfirmOnTheWay()" style="background:var(--green);color:var(--navy);border:none;border-radius:10px;padding:14px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;">Yes, I'm on my way</button>
+                <button onclick="closeConfirmNoShareOverlay()" style="background:none;border:1px solid var(--border);color:var(--grey);border-radius:10px;padding:14px;font-size:14px;font-family:'Inter',sans-serif;cursor:pointer;">Back</button>
               </div>
             </div>
           </div>
@@ -4286,7 +4309,7 @@
 
     if(liveInvite) {
       // STATE 1: Live. Existing dispatch / clock-in / clock-out flow.
-      const swRows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?application_id=eq.' + currentWorker.id + '&session_id=eq.' + liveInvite.session_id + '&select=id,status,bar_id,shift_length_hours,departed_at,clock_in_at,dispatched_at', { headers: H }).then(r => r.json());
+      const swRows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?application_id=eq.' + currentWorker.id + '&session_id=eq.' + liveInvite.session_id + '&select=id,status,bar_id,shift_length_hours,departed_at,share_location_tapped_at,clock_in_at,dispatched_at', { headers: H }).then(r => r.json());
       const sw = swRows?.[0];
 
       // Live + in-flight (dispatched / onshift): the dispatch render
@@ -6135,23 +6158,91 @@
     });
   }
 
-  function openLeavingConfirm() {
-    const overlay = document.getElementById('leaving-overlay');
-    if(overlay) overlay.style.display = 'flex';
-  }
-
-  function closeLeavingOverlay() {
-    const overlay = document.getElementById('leaving-overlay');
-    if(overlay) overlay.style.display = 'none';
-  }
+  // F-34b: openLeavingConfirm / closeLeavingOverlay / confirmLeaving retired.
+  // Replaced by onShareLocationTap + onConfirmOnTheWay (Screen 1) +
+  // proceedConfirmOnTheWay + closeConfirmNoShareOverlay (Screen 1 soft prompt).
 
   let currentSessionWorkerId = null;
 
-  async function confirmLeaving() {
-    closeLeavingOverlay();
+  // F-34b: Screen 1 inline Share Location link tap. Opens WhatsApp deep-link
+  // in a new tab AND PATCHes share_location_tapped_at. The link's "already
+  // tapped" visual state is set on success and on any later re-render where
+  // the column is non-null.
+  async function onShareLocationTap(event) {
+    if(event && event.preventDefault) event.preventDefault();
+
+    // Step 1: open WhatsApp deep-link first. Browsers preserve the popup
+    // permission only inside a direct user-gesture click handler; the PATCH
+    // happens after but doesn't need popup permission.
+    try { window.open('https://wa.me/447803856078', '_blank'); } catch(e) { /* best-effort */ }
+
+    // If already tapped earlier, skip the PATCH (idempotent UX).
+    const link = document.getElementById('screen1-share-link');
+    if(link && link.getAttribute('data-tapped') === '1') return;
+
     if(!currentSessionWorkerId) return;
-    const btn = document.getElementById('leaving-btn');
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/session_workers?id=eq.' + currentSessionWorkerId, {
+        method: 'PATCH',
+        headers: { ...H, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ share_location_tapped_at: new Date().toISOString() })
+      });
+    } catch(e) {
+      console.error('share_location_tapped_at PATCH failed', e);
+      // Don't block the UX; the WhatsApp link already opened. The realtime
+      // echo will eventually surface the column if the PATCH succeeded.
+    }
+    setShareLinkTappedState(true);
+  }
+
+  function setShareLinkTappedState(tapped) {
+    const link = document.getElementById('screen1-share-link');
+    if(!link) return;
+    if(tapped) {
+      link.setAttribute('data-tapped', '1');
+      link.style.color = 'var(--grey)';
+      link.style.fontWeight = '500';
+      link.innerHTML = 'shared your live location with Glasi &check;';
+      link.title = 'Tap to re-open WhatsApp';
+    } else {
+      link.removeAttribute('data-tapped');
+      link.style.color = 'var(--ice)';
+      link.style.fontWeight = '600';
+      link.textContent = 'share your live location with Glasi';
+      link.removeAttribute('title');
+    }
+  }
+
+  // F-34b: Screen 1 CONFIRM I'M ON MY WAY tap. Two paths:
+  //   - share_location_tapped_at populated -> direct path
+  //   - share_location_tapped_at null -> soft-prompt overlay with [Back] / [Yes I'm on my way]
+  function onConfirmOnTheWay() {
+    const link = document.getElementById('screen1-share-link');
+    const tapped = link && link.getAttribute('data-tapped') === '1';
+    if(tapped) {
+      proceedConfirmOnTheWay();
+    } else {
+      const overlay = document.getElementById('confirm-no-share-overlay');
+      if(overlay) overlay.style.display = 'flex';
+    }
+  }
+
+  function closeConfirmNoShareOverlay() {
+    const overlay = document.getElementById('confirm-no-share-overlay');
+    if(overlay) overlay.style.display = 'none';
+  }
+
+  // F-34b: the post-prompt path. Order: state write THEN window.open (per
+  // locked spec). If the popup is blocked, the state still advances and the
+  // worker can tap the Maps link manually on Screen 2.
+  async function proceedConfirmOnTheWay() {
+    closeConfirmNoShareOverlay();
+    if(!currentSessionWorkerId) return;
+
+    const btn = document.getElementById('screen1-confirm-btn');
+    const errEl = document.getElementById('screen1-error');
     if(btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    if(errEl) errEl.textContent = '';
 
     const departedAt = new Date().toISOString();
     try {
@@ -6162,21 +6253,26 @@
       });
       if(!resp.ok) throw new Error('HTTP ' + resp.status);
     } catch(e) {
-      // Reset the button so the worker can retry. Stay on dispatched-fresh.
-      console.error('confirmLeaving failed', e);
-      if(btn) { btn.disabled = false; btn.textContent = 'I am leaving now'; }
-      alert('Could not confirm leaving. Try again or call 07803856078.');
+      console.error('proceedConfirmOnTheWay PATCH failed', e);
+      if(btn) { btn.disabled = false; btn.textContent = "CONFIRM I'M ON MY WAY"; }
+      if(errEl) errEl.textContent = 'Could not confirm. Try again or call 07803856078.';
       return;
     }
 
-    // Optimistic render. The realtime echo for this PATCH will arrive next
-    // and call renderEnRoute again with the persisted record — idempotent,
-    // so no flicker.
+    // Open Maps in a new tab. Falls back to auto-generated maps URL if the
+    // bar's google_maps_link is unset.
+    try {
+      const mapsLink = document.getElementById('screen2-maps-link');
+      const url = (mapsLink && mapsLink.href) ? mapsLink.href : null;
+      if(url) window.open(url, '_blank');
+    } catch(e) { /* best-effort; Maps link still tappable from Screen 2 */ }
+
+    // Optimistic render to Screen 2 ahead of the realtime echo.
     await renderEnRoute({
       id: currentSessionWorkerId,
       status: 'dispatched',
       departed_at: departedAt,
-      bar_id: null  // bar details cached by lastRenderedDispatchBarId; skip refetch
+      bar_id: null
     });
   }
 
@@ -6197,30 +6293,39 @@
   // realtime echo, overwriting left_at repeatedly. Now gated by this flag.
   let sessionInviteLeftAtMarked = false;
 
+  // F-34b: populates BOTH screens' DOM (Screen 1 inline bar-name + address;
+  // Screen 2 venue card + Maps link + firer name). The bar-id cache prevents
+  // duplicate fetches across realtime echoes; the populated DOM is reused
+  // when renderDispatchedFresh and renderEnRoute toggle visibility.
   async function _loadDispatchedBarDetails(barId) {
     if(!barId || lastRenderedDispatchBarId === barId) return;
     try {
       const barRows = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + barId + '&select=name,address,google_maps_link', { headers: H }).then(r => r.json());
       const bar = barRows?.[0];
       if(!bar) return;
-      const venueEl = document.getElementById('dispatched-venue');
-      const addrEl = document.getElementById('dispatched-address');
-      const mapsBtn = document.getElementById('dispatched-maps');
-      if(venueEl) venueEl.textContent = bar.name || '';
-      if(addrEl) addrEl.textContent = bar.address || '';
-      if(mapsBtn) {
-        if(bar.google_maps_link) {
-          mapsBtn.href = bar.google_maps_link;
-          mapsBtn.style.display = 'inline-block';
-        } else {
-          mapsBtn.style.display = 'none';
-        }
+
+      // Maps URL: prefer bars.google_maps_link; otherwise auto-generate from address.
+      const mapsHref = bar.google_maps_link
+        || (bar.address ? ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(bar.address)) : null);
+
+      // Screen 1: inline bar name + standalone address line.
+      const s1Name = document.getElementById('screen1-bar-name');
+      const s1Addr = document.getElementById('screen1-bar-address');
+      if(s1Name) s1Name.textContent = bar.name || 'the venue';
+      if(s1Addr) s1Addr.textContent = bar.address || '';
+
+      // Screen 2: venue card with name, address, and Maps link.
+      const s2Name = document.getElementById('screen2-bar-name');
+      const s2Addr = document.getElementById('screen2-bar-address');
+      const s2Maps = document.getElementById('screen2-maps-link');
+      if(s2Name) s2Name.textContent = bar.name || '';
+      if(s2Addr) s2Addr.textContent = bar.address || '';
+      if(s2Maps) {
+        if(mapsHref) { s2Maps.href = mapsHref; s2Maps.style.display = 'inline-block'; }
+        else { s2Maps.style.display = 'none'; }
       }
-      // F-26 chain: read manager name through shift_requests.bar_manager_id
-      // FK so the worker sees the actual firer ("Ask for Aidan"). F-34a
-      // dropped the legacy bars.manager_name fallback (column gone); generic
-      // "the bar manager" is the only remaining fallback when the chain
-      // doesn't resolve.
+
+      // F-26 chain: firer name via shift_requests.bar_manager_id -> bar_managers.name.
       let managerName = null;
       if(currentSessionWorkerId) {
         try {
@@ -6237,8 +6342,9 @@
         } catch(e) { /* fall through to generic fallback */ }
       }
       managerName = managerName || 'the bar manager';
-      const warningEl = document.querySelector('#live-dispatched .warning-box p');
-      if(warningEl) warningEl.innerHTML = 'Share your live location with Glasi on <strong><a href="https://wa.me/447803856078" style="color:var(--amber);">07803856078</a></strong>, start heading to the venue and ask for <strong style="color:var(--white);">' + managerName + '</strong> who will have your clock-in code.';
+      const s2Firer = document.getElementById('screen2-firer-name');
+      if(s2Firer) s2Firer.textContent = managerName;
+
       lastRenderedDispatchBarId = barId;
     } catch(e) { console.error('_loadDispatchedBarDetails failed', e); }
   }
@@ -6265,6 +6371,7 @@
     const disp = document.getElementById('live-dispatched'); if(disp) disp.style.display = 'block';
   }
 
+  // F-34b SCREEN 1 render: just-dispatched, departed_at IS NULL.
   async function renderDispatchedFresh(record) {
     if(awaitingDispatchConfirmation) { clearTimeout(awaitingDispatchConfirmation); awaitingDispatchConfirmation = null; }
     if(shiftTimerInterval) { clearInterval(shiftTimerInterval); shiftTimerInterval = null; }
@@ -6272,22 +6379,35 @@
 
     _showLiveDispatchedShell();
 
-    // Sub-state: dispatched-fresh — venue card + warning visible, leaving button visible.
-    const dispCard = document.querySelector('.dispatched-card'); if(dispCard) dispCard.style.display = 'block';
-    const warn = document.querySelector('#live-dispatched .warning-box'); if(warn) warn.style.display = 'block';
-    const leavingSection = document.getElementById('leaving-section'); if(leavingSection) leavingSection.style.display = 'block';
-    const leavingConfirmed = document.getElementById('leaving-confirmed'); if(leavingConfirmed) leavingConfirmed.style.display = 'none';
+    // Toggle screen visibility: Screen 1 visible, Screen 2 hidden.
+    const s1 = document.getElementById('dispatch-screen-1'); if(s1) s1.style.display = 'block';
+    const s2 = document.getElementById('dispatch-screen-2'); if(s2) s2.style.display = 'none';
 
-    // Reset the leaving button so a recall-then-redispatch cycle gives the
-    // worker a clickable button (not a stale disabled "Sending…").
-    const leavingBtn = document.getElementById('leaving-btn');
-    if(leavingBtn) { leavingBtn.disabled = false; leavingBtn.textContent = 'I am leaving now'; }
+    // Reset the Confirm button (recall-then-redispatch leaves a stale "Sending…"
+    // otherwise; idempotent reset on every entry).
+    const confirmBtn = document.getElementById('screen1-confirm-btn');
+    if(confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = "CONFIRM I'M ON MY WAY"; }
+    const errEl = document.getElementById('screen1-error');
+    if(errEl) errEl.textContent = '';
+
+    // Inline Share Location link state. If realtime payload includes
+    // share_location_tapped_at, use it; otherwise fetch fresh (rare path,
+    // e.g. on session resume into Screen 1 mid-flow).
+    let shareTapped = !!(record && record.share_location_tapped_at);
+    if(!shareTapped && currentSessionWorkerId) {
+      try {
+        const swRows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?id=eq.' + currentSessionWorkerId + '&select=share_location_tapped_at', { headers: H }).then(r => r.json());
+        if(swRows && swRows[0] && swRows[0].share_location_tapped_at) shareTapped = true;
+      } catch(e) { /* default to fresh state */ }
+    }
+    setShareLinkTappedState(shareTapped);
 
     if(record?.bar_id) await _loadDispatchedBarDetails(record.bar_id);
     await markSessionLeftAtOnce();
     stopWaitingTimers();
   }
 
+  // F-34b SCREEN 2 render: on the way, departed_at IS NOT NULL AND clock_in_at IS NULL.
   async function renderEnRoute(record) {
     if(awaitingDispatchConfirmation) { clearTimeout(awaitingDispatchConfirmation); awaitingDispatchConfirmation = null; }
     if(shiftTimerInterval) { clearInterval(shiftTimerInterval); shiftTimerInterval = null; }
@@ -6295,14 +6415,11 @@
 
     _showLiveDispatchedShell();
 
-    // Sub-state: en-route — venue card + warning still visible (manager name
-    // is useful en-route), leaving button hidden, leaving-confirmed shown,
-    // clock-in input ready.
-    const dispCard = document.querySelector('.dispatched-card'); if(dispCard) dispCard.style.display = 'block';
-    const warn = document.querySelector('#live-dispatched .warning-box'); if(warn) warn.style.display = 'block';
-    const leavingSection = document.getElementById('leaving-section'); if(leavingSection) leavingSection.style.display = 'none';
-    const leavingConfirmed = document.getElementById('leaving-confirmed'); if(leavingConfirmed) leavingConfirmed.style.display = 'block';
-    const heading = document.getElementById('on-your-way-heading'); if(heading) heading.style.display = 'block';
+    // Toggle screen visibility: Screen 2 visible, Screen 1 hidden.
+    const s1 = document.getElementById('dispatch-screen-1'); if(s1) s1.style.display = 'none';
+    const s2 = document.getElementById('dispatch-screen-2'); if(s2) s2.style.display = 'block';
+
+    // Show clock-in input; hide the clocked-in confirmation block.
     const clockinInput = document.getElementById('clockin-input-section'); if(clockinInput) clockinInput.style.display = 'block';
     const clockinConfirmed = document.getElementById('clockin-confirmed-section'); if(clockinConfirmed) clockinConfirmed.style.display = 'none';
 
@@ -6313,9 +6430,6 @@
     if(ciErr) ciErr.textContent = '';
 
     if(record?.bar_id) await _loadDispatchedBarDetails(record.bar_id);
-    // Don't fire markSessionLeftAtOnce here — by the time we're en-route,
-    // either renderDispatchedFresh ran first (and fired it) or we restored
-    // mid-flow (in which case checkForLiveSession set the flag pre-render).
     stopWaitingTimers();
   }
 
@@ -6326,13 +6440,10 @@
 
     _showLiveDispatchedShell();
 
-    // Sub-state: clocked-in — hide venue card, warning, on-your-way copy,
-    // and the clock-in input. Show the confirmed section + onshift card.
-    const dispCard = document.querySelector('.dispatched-card'); if(dispCard) dispCard.style.display = 'none';
-    const warn = document.querySelector('#live-dispatched .warning-box'); if(warn) warn.style.display = 'none';
-    const heading = document.getElementById('on-your-way-heading'); if(heading) heading.style.display = 'none';
-    const leavingSection = document.getElementById('leaving-section'); if(leavingSection) leavingSection.style.display = 'none';
-    const leavingConfirmed = document.getElementById('leaving-confirmed'); if(leavingConfirmed) leavingConfirmed.style.display = 'block';
+    // F-34b: clocked-in still lives inside Screen 2's container; hide Screen 1
+    // and the Screen 2 clock-in input, show the confirmed-shift card stack.
+    const s1 = document.getElementById('dispatch-screen-1'); if(s1) s1.style.display = 'none';
+    const s2 = document.getElementById('dispatch-screen-2'); if(s2) s2.style.display = 'block';
     const clockinInput = document.getElementById('clockin-input-section'); if(clockinInput) clockinInput.style.display = 'none';
     const clockinConfirmed = document.getElementById('clockin-confirmed-section'); if(clockinConfirmed) clockinConfirmed.style.display = 'block';
 
@@ -6476,9 +6587,11 @@
     if(tickerTimeout) { clearTimeout(tickerTimeout); tickerTimeout = null; }
     if(shiftTimerInterval) { clearInterval(shiftTimerInterval); shiftTimerInterval = null; }
 
-    // Reset dispatched screen
-    document.getElementById('dispatched-venue').textContent = '';
-    document.getElementById('dispatched-address').textContent = '';
+    // F-34b: reset dispatched screen DOM elements. Old #dispatched-venue
+    // / #dispatched-address ids retired; the Screen 1 / Screen 2 split
+    // populates its own ids which are cleared on next render via
+    // _loadDispatchedBarDetails (cache reset below).
+    lastRenderedDispatchBarId = null;
 
     // Reset session invite
     currentSessionInvite = null;

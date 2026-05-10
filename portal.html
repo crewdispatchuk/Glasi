@@ -1180,6 +1180,22 @@
       text-transform: uppercase;
     }
 
+    /* F-34e: firer-name pill on Screen 2's ask-for sentence. Filled ice
+       background with navy text reads as the visual anchor in the
+       sentence flow; sizing/shape matches the dashboard's badge
+       conventions (small pill, 8px radius). */
+    .firer-name-pill {
+      display: inline-block;
+      background: var(--ice);
+      color: var(--navy);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 8px;
+      line-height: 1.2;
+      vertical-align: baseline;
+    }
+
     /* SESSIONS TAB */
     .sessions-empty {
       text-align: center;
@@ -2580,7 +2596,7 @@
 
               <!-- F-34c: ask-for sentence nested inside outer card, below venue. -->
               <div style="font-size:14px;color:var(--white);line-height:1.7;text-align:left;">
-                Ask for <strong id="screen2-firer-name" style="color:var(--white);">the bar manager</strong> when you arrive.<br>
+                Ask for <span class="firer-name-pill" id="screen2-firer-name">the bar manager</span> when you arrive.<br>
                 They'll give you your clock-in code.
               </div>
             </div>

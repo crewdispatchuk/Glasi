@@ -2563,32 +2563,42 @@
             <div id="screen1-error" style="font-size:12px;color:var(--red);margin-top:10px;min-height:16px;text-align:center;"></div>
           </div>
 
-          <!-- F-34b SCREEN 2: on the way. Ask for {firer name}, Maps link, clock-in input. -->
+          <!-- F-34b SCREEN 2: on the way. F-34c: outer card now wraps the venue
+               card AND the ask-for sentence; clock-in section is a sibling below. -->
           <div id="dispatch-screen-2" style="display:none;">
-            <div class="dispatched-card">
-              <div class="dispatched-title">You're on your way.</div>
-            </div>
-            <div style="margin-top:14px;font-size:14px;color:var(--white);line-height:1.7;">
-              Ask for <strong id="screen2-firer-name" style="color:var(--white);">the bar manager</strong> when you arrive.<br>
-              They'll give you the clock-in code.
-            </div>
-            <div style="margin-top:18px;background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:16px;">
-              <div id="screen2-bar-name" style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:4px;"></div>
-              <div id="screen2-bar-address" style="font-size:13px;color:var(--grey);line-height:1.5;margin-bottom:10px;"></div>
-              <a id="screen2-maps-link" href="#" target="_blank" rel="noopener" style="font-size:13px;color:var(--ice);font-weight:600;text-decoration:underline;">Open in Google Maps &rarr;</a>
+            <!-- F-34c outer card: heading + nested venue + nested ask-for sentence. -->
+            <div id="screen2-outer-card" class="dispatched-card">
+              <div class="dispatched-title">You're on your way to</div>
+
+              <!-- F-34c: inner venue card nested inside outer card. text-align:left
+                   override because the outer .dispatched-card centres its children. -->
+              <div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;text-align:left;">
+                <div id="screen2-bar-name" style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:4px;"></div>
+                <div id="screen2-bar-address" style="font-size:13px;color:var(--grey);line-height:1.5;margin-bottom:10px;"></div>
+                <a id="screen2-maps-link" href="#" target="_blank" rel="noopener" style="font-size:13px;color:var(--ice);font-weight:600;text-decoration:underline;">Open in Google Maps &rarr;</a>
+              </div>
+
+              <!-- F-34c: ask-for sentence nested inside outer card, below venue. -->
+              <div style="font-size:14px;color:var(--white);line-height:1.7;text-align:left;">
+                Ask for <strong id="screen2-firer-name" style="color:var(--white);">the bar manager</strong> when you arrive.<br>
+                They'll give you your clock-in code.
+              </div>
             </div>
 
-            <!-- F-34b: clock-in input retained from the prior layout. -->
+            <!-- F-34c: clock-in section is now a SIBLING of the outer card,
+                 not nested inside it. Distinct operational block. -->
             <div id="clockin-input-section" style="margin-top:20px;">
               <div style="font-size:11px;font-weight:600;letter-spacing:1px;color:var(--ice);text-transform:uppercase;margin-bottom:8px;text-align:left;">Clock-in Code</div>
               <div style="display:flex;gap:8px;">
-                <input type="text" id="worker-clockin-input" maxlength="6" placeholder="Enter code from bar manager" style="flex:1;background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:16px;color:var(--white);font-family:'Inter',sans-serif;outline:none;letter-spacing:4px;text-align:center;">
+                <input type="text" id="worker-clockin-input" maxlength="6" placeholder="Enter code from the bar manager" style="flex:1;background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:16px;color:var(--white);font-family:'Inter',sans-serif;outline:none;letter-spacing:4px;text-align:center;">
                 <button id="worker-clockin-btn" onclick="workerClockIn()" style="background:var(--green);color:var(--navy);border:none;border-radius:8px;padding:12px 16px;font-size:13px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;">Confirm</button>
               </div>
               <div id="worker-clockin-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:16px;"></div>
             </div>
 
-            <!-- Clocked-in state. Replaces clockin-input-section once worker has clocked in. -->
+            <!-- Clocked-in state. F-34c: also a sibling of the outer card.
+                 renderClockedIn hides #screen2-outer-card so the only visible
+                 thing in the dispatch container is the clocked-in card stack. -->
             <div id="clockin-confirmed-section" style="display:none;margin-top:16px;">
               <div id="portal-onshift-card" style="background:rgba(74,222,128,0.08);border:2px solid rgba(74,222,128,0.3);border-radius:16px;padding:32px 24px;text-align:center;">
                 <div style="font-size:36px;margin-bottom:12px;">✓</div>
@@ -6345,6 +6355,13 @@
       const s2Firer = document.getElementById('screen2-firer-name');
       if(s2Firer) s2Firer.textContent = managerName;
 
+      // F-34c: dynamic clock-in input placeholder using the same firer
+      // name as the body sentence. Both should always agree because
+      // they come from the same chain. Fallback already baked into
+      // managerName above.
+      const ciInput = document.getElementById('worker-clockin-input');
+      if(ciInput) ciInput.placeholder = 'Enter code from ' + managerName;
+
       lastRenderedDispatchBarId = barId;
     } catch(e) { console.error('_loadDispatchedBarDetails failed', e); }
   }
@@ -6419,6 +6436,9 @@
     const s1 = document.getElementById('dispatch-screen-1'); if(s1) s1.style.display = 'none';
     const s2 = document.getElementById('dispatch-screen-2'); if(s2) s2.style.display = 'block';
 
+    // F-34c: outer "You're on your way to" card visible on en-route.
+    const outer = document.getElementById('screen2-outer-card'); if(outer) outer.style.display = 'block';
+
     // Show clock-in input; hide the clocked-in confirmation block.
     const clockinInput = document.getElementById('clockin-input-section'); if(clockinInput) clockinInput.style.display = 'block';
     const clockinConfirmed = document.getElementById('clockin-confirmed-section'); if(clockinConfirmed) clockinConfirmed.style.display = 'none';
@@ -6442,8 +6462,11 @@
 
     // F-34b: clocked-in still lives inside Screen 2's container; hide Screen 1
     // and the Screen 2 clock-in input, show the confirmed-shift card stack.
+    // F-34c: also hide the outer "You're on your way to" card so the only
+    // visible thing in the dispatch container is the clocked-in card stack.
     const s1 = document.getElementById('dispatch-screen-1'); if(s1) s1.style.display = 'none';
     const s2 = document.getElementById('dispatch-screen-2'); if(s2) s2.style.display = 'block';
+    const outer = document.getElementById('screen2-outer-card'); if(outer) outer.style.display = 'none';
     const clockinInput = document.getElementById('clockin-input-section'); if(clockinInput) clockinInput.style.display = 'none';
     const clockinConfirmed = document.getElementById('clockin-confirmed-section'); if(clockinConfirmed) clockinConfirmed.style.display = 'block';
 

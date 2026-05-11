@@ -2779,6 +2779,25 @@
     const path = currentBar.id + '/' + safeName;
     okEl.textContent = 'Uploading...';
 
+    // F-39 defence-in-depth: assert H.Authorization carries a user JWT, not the
+    // anon-key fallback that onAuthStateChange briefly resets to during token
+    // rotation. The actual F-39 upload 403 was caused by a storage RLS bug
+    // (workers-read policy JOINed auth.users which the authenticated role
+    // lacks SELECT on), but this assertion turns any future stale-Authorization
+    // class of bug into a clear user-facing message instead of a cryptic 403.
+    const anonBearer = 'Bearer ' + SUPABASE_ANON_KEY;
+    if (!H.Authorization || H.Authorization === anonBearer) {
+      const { data: refreshed } = await sbAuth.auth.getSession();
+      if (refreshed?.session?.access_token) {
+        H.Authorization = 'Bearer ' + refreshed.session.access_token;
+      }
+      if (!H.Authorization || H.Authorization === anonBearer) {
+        okEl.textContent = '';
+        errEl.textContent = 'Session expired. Sign in again and retry.';
+        return;
+      }
+    }
+
     try {
       const uploadResp = await fetch(
         SUPABASE_URL + '/storage/v1/object/' + encodeURIComponent('bar_hs_documents') + '/' + encodeURIComponent(currentBar.id) + '/' + encodeURIComponent(safeName),

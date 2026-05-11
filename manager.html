@@ -1582,12 +1582,38 @@
             document.getElementById('request-form').style.display = 'block';
           }
         } else if(record.status === 'closed') {
+          // F-38: closed branch defers to the in-flight predicate. If a
+          // dispatched / onshift worker exists for this bar, surface the
+          // clock-out reveal regardless of session status; the shift continues
+          // independently of the room being closed. Otherwise drop to
+          // no-session-card.
           const onActive = document.getElementById('active-status-card').style.display === 'block';
           if(!onActive) {
-            document.getElementById('request-form').style.display = 'none';
-            const pill = document.getElementById('request-form-pill');
-            if(pill) pill.style.display = 'none';
-            document.getElementById('no-session-card').style.display = 'block';
+            (async () => {
+              try {
+                const inFlightRows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?bar_id=eq.' + currentBar.id + '&status=in.(dispatched,onshift)&select=id,worker_name,dispatched_at,clock_in_code,clock_out_code,clock_in_at,status,shift_length_hours&order=id.desc&limit=1', { headers: H }).then(r => r.json());
+                const active = inFlightRows?.[0];
+                if(active) {
+                  if(active.status === 'dispatched') {
+                    showStatus('onway', active);
+                  } else if(active.status === 'onshift') {
+                    showStatus('onshift', active);
+                    const ensuredCode = await ensureClockOutCode(active);
+                    active.clock_out_code = ensuredCode;
+                    try {
+                      const shiftRows = await fetch(SUPABASE_URL + '/rest/v1/shifts?session_worker_id=eq.' + active.id + '&status=eq.onshift&select=clock_in_confirmed_at,shift_length_hours', { headers: H }).then(r => r.json());
+                      const shift = shiftRows?.[0];
+                      if(shift) startManagerShiftCountdown(ensuredCode, shift.shift_length_hours, shift.clock_in_confirmed_at);
+                    } catch(e) {}
+                  }
+                  return;
+                }
+              } catch(e) {}
+              document.getElementById('request-form').style.display = 'none';
+              const pill = document.getElementById('request-form-pill');
+              if(pill) pill.style.display = 'none';
+              document.getElementById('no-session-card').style.display = 'block';
+            })();
           }
         } else if(record.status === 'scheduled' || record.status === 'declined' || record.status === 'cancelled') {
           // F-34: bar-proposal lifecycle. Refresh the Profile tab's proposed-sessions
@@ -1711,8 +1737,11 @@
   async function checkForDispatchedWorker() {
     if(!currentBar) return;
 
-    const rows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?bar_id=eq.' + currentBar.id + '&status=in.(dispatched,onshift)&select=id,worker_name,dispatched_at,clock_in_code,clock_out_code,clock_in_at,status,shift_length_hours,sessions(status)', { headers: H }).then(r => r.json());
-    const active = rows?.find(r => r.sessions?.status === 'live');
+    // F-38: read session_workers.status only; do NOT gate on sessions.status.
+    // The session may be closed while the worker is still in-flight; the
+    // clock-out reveal must persist post-close until the worker clocks out.
+    const rows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?bar_id=eq.' + currentBar.id + '&status=in.(dispatched,onshift)&select=id,worker_name,dispatched_at,clock_in_code,clock_out_code,clock_in_at,status,shift_length_hours&order=id.desc&limit=1', { headers: H }).then(r => r.json());
+    const active = rows?.[0];
 
     if(!active) {
       // Check for pending requests

@@ -2742,7 +2742,13 @@
       return;
     }
     try {
-      const resp = await fetch(SUPABASE_URL + '/storage/v1/object/sign/bar_hs_documents/' + encodeURIComponent(stored), {
+      // F-39 smoke fix: encode each path segment separately so the slash
+      // stays literal. encodeURIComponent on the whole path encodes / to %2F;
+      // the sign endpoint then embeds the encoded form in the token, but the
+      // access endpoint decodes the URL before signature verification —
+      // mismatch yields InvalidSignature on every fetch of the signed URL.
+      const encodedPath = stored.split('/').map(encodeURIComponent).join('/');
+      const resp = await fetch(SUPABASE_URL + '/storage/v1/object/sign/bar_hs_documents/' + encodedPath, {
         method: 'POST',
         headers: { ...H, 'Content-Type': 'application/json' },
         body: JSON.stringify({ expiresIn: 600 })

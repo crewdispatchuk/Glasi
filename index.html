@@ -205,7 +205,7 @@
                 </div>
 
                 <div>
-                    <label class="text-sm font-medium mb-1 block text-gray-600">Referred by </label>
+                    <label class="text-sm font-medium mb-1 block text-gray-600">Referred by (optional)</label>
                     <input id="referred_by" type="text" class="form-input w-full px-4 py-3 bg-white">
                 </div>
 
@@ -276,27 +276,43 @@ form.addEventListener('submit', async (e) => {
     submitBtn.disabled = true;
     submitBtn.innerText = "Submitting...";
 
-    const payload = {
-        name: name,
-        phone: phone,
-        email: email,
-        postcode_full: postcode,
-        referred_by: referredBy || null
-    };
-
+    // SEC-02: anon INSERT against applications was replaced with the
+    // register_interest SECURITY DEFINER RPC. The RPC validates email shape
+    // server-side, ON-CONFLICTs against the partial unique index in
+    // paste-block 2.1, and refuses to overwrite a vetted/onboarded worker.
+    // Returns the new (or existing) row id as a bigint.
+    //
+    // referred_by is intentionally NOT transmitted to the RPC yet: the
+    // register_interest signature in Stage 2.2 only accepts 4 parameters
+    // (p_email, p_name, p_phone, p_postcode). A follow-up batch will
+    // extend the RPC with p_referred_by and re-add the field here. The
+    // "Referred by" form input stays visible so users keep filling it;
+    // the value is currently read into referredBy but not sent.
     try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/applications`, {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/register_interest`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                'Prefer': 'return=minimal'
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                p_email: email,
+                p_name: name,
+                p_phone: phone,
+                p_postcode: postcode
+            })
         });
 
         if (!res.ok) throw new Error();
+
+        const newId = await res.json();
+        if (typeof newId !== 'number') {
+            feedback.innerHTML = `<div class="text-red-500 text-sm">Something went wrong. Try again.</div>`;
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Register Interest";
+            return;
+        }
 
 feedback.innerHTML = `
     <div class="success-message text-green-600 text-sm">

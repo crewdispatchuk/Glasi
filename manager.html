@@ -926,18 +926,41 @@
           <div style="font-size:14px;color:var(--grey);margin-bottom:16px;">is on shift and working now.</div>
           <div style="font-size:18px;color:var(--amber);font-weight:600;margin-bottom:20px;" id="status-shift-countdown"></div>
           <div id="status-clockout-section">
-            <button onclick="revealStatusClockOut()" id="status-reveal-btn" style="background:none;border:1px solid var(--border);color:var(--grey);border-radius:10px;padding:12px 24px;font-size:13px;font-family:'Inter',sans-serif;cursor:pointer;">Reveal clock-out code</button>
-            <div id="status-early-clockout" style="display:none;margin-top:16px;text-align:left;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:18px 20px;">
-              <div style="font-size:14px;font-weight:700;color:var(--amber);margin-bottom:8px;">Need to end the shift early?</div>
-              <div style="font-size:13px;color:var(--white);line-height:1.6;margin-bottom:12px;">
-                Call Glasi on <a href="tel:07803856078" style="color:var(--ice);font-weight:600;text-decoration:none;">07803856078</a> to discuss.
-                By proceeding with an early clock-out, you remain bound to the full shift fee regardless of the actual clock-out time.
-                The clock-out code unlocks at <strong id="status-early-clockout-time" style="color:var(--white);">--:--</strong>.
+            <!-- Action buttons (Phase 1): disabled until effective_end - 1min;
+                 helper text "Available at HH:MM" while disabled. Aidan cannot
+                 reveal the clock-out code early; cannot extend early. -->
+            <div id="status-clockout-actions" style="display:flex;flex-direction:column;gap:10px;">
+              <button id="status-confirm-end-btn" onclick="openConfirmShiftEnd()"
+                style="background:var(--green);color:var(--navy);border:none;border-radius:10px;padding:14px 18px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;opacity:0.4;"
+                disabled>
+                Confirm shift end and reveal code
+              </button>
+              <button id="status-extend-btn" onclick="openRequestExtension()"
+                style="background:transparent;color:var(--white);border:1px solid var(--border);border-radius:10px;padding:13px 18px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;opacity:0.4;"
+                disabled>
+                Request extension
+              </button>
+              <div id="status-clockout-helper" style="font-size:12px;color:var(--grey);text-align:center;margin-top:4px;">
+                Available at <strong id="status-clockout-unlock-time" style="color:var(--white);">--:--</strong>
               </div>
             </div>
+
+            <!-- Pending extension waiting state. Replaces the action buttons
+                 while shift_extensions row is in 'pending' status. -->
+            <div id="status-extension-waiting" style="display:none;margin-top:8px;background:rgba(168,216,234,0.06);border:1px solid rgba(168,216,234,0.25);border-radius:12px;padding:16px 18px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:var(--ice);box-shadow:0 0 0 0 var(--ice);animation:pulse 2s infinite;"></span>
+                <div style="font-size:13px;font-weight:700;color:var(--white);" id="status-extension-waiting-title">Deciding...</div>
+              </div>
+              <div style="font-size:12px;color:var(--grey);" id="status-extension-waiting-time">5:00 remaining</div>
+            </div>
+
+            <!-- Revealed clock-out code. Shows when confirm_shift_end succeeds. -->
             <div id="status-clockout-code" style="display:none;margin-top:16px;">
-              <div style="font-size:11px;letter-spacing:2px;color:var(--grey);text-transform:uppercase;margin-bottom:8px;">Give this to your Glasi when their shift ends</div>
-              <div style="font-size:32px;font-weight:800;letter-spacing:10px;color:var(--white);font-family:'Inter',sans-serif;" id="status-clockout-display"></div>
+              <div style="font-size:11px;letter-spacing:2px;color:var(--grey);text-transform:uppercase;margin-bottom:8px;">Read this to your Glasi to finish their shift</div>
+              <div style="background:var(--white);color:var(--navy);border-radius:12px;padding:18px 14px;text-align:center;">
+                <div style="font-size:40px;font-weight:800;letter-spacing:14px;font-family:'Inter',sans-serif;" id="status-clockout-display"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -1261,6 +1284,62 @@
   </div>
 </div>
 
+<!-- Confirm shift end. Locks billing at the displayed elapsed hours/minutes;
+     server clamps to max(shift_length_hours, actual_worked_time). PIN field
+     verifies the firer at submit time. -->
+<div id="ov-confirm-shift-end" class="overlay">
+  <div class="modal">
+    <div class="modal-title">Confirm shift end</div>
+    <div class="modal-sub" id="confirm-end-summary">--</div>
+    <label class="field-label">Your PIN</label>
+    <input type="password" id="confirm-end-pin" class="field" maxlength="4" inputmode="numeric" pattern="[0-9]{4}"
+      autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
+      placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="letter-spacing:6px;" />
+    <div id="confirm-end-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" onclick="closeOverlay('ov-confirm-shift-end')">Cancel</button>
+      <button class="modal-confirm-btn" id="confirm-end-submit-btn" style="background:var(--green);color:var(--navy);" onclick="submitConfirmShiftEnd()">Confirm and reveal code</button>
+    </div>
+  </div>
+</div>
+
+<!-- Request extension. Stepper 15..60 step 5, default 30. PIN field
+     verifies the firer at submit time. -->
+<div id="ov-request-extension" class="overlay">
+  <div class="modal">
+    <div class="modal-title">Extend shift</div>
+    <div class="modal-sub">How long should the extension be?</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:20px 0 4px 0;">
+      <button id="ext-stepper-minus" onclick="stepExtension(-5)"
+        style="width:48px;height:48px;border:1px solid var(--border);background:var(--navy);color:var(--white);border-radius:10px;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;">-</button>
+      <div style="min-width:120px;text-align:center;">
+        <div id="ext-stepper-value" style="font-size:28px;font-weight:800;color:var(--white);font-family:'Inter',sans-serif;">30</div>
+        <div style="font-size:11px;color:var(--grey);letter-spacing:1px;text-transform:uppercase;">minutes</div>
+      </div>
+      <button id="ext-stepper-plus" onclick="stepExtension(5)"
+        style="width:48px;height:48px;border:1px solid var(--border);background:var(--navy);color:var(--white);border-radius:10px;font-size:20px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;">+</button>
+    </div>
+    <div style="font-size:11px;color:var(--grey);text-align:center;margin-bottom:14px;">15 to 60 minutes, in 5-min steps</div>
+    <label class="field-label">Your PIN</label>
+    <input type="password" id="extension-pin" class="field" maxlength="4" inputmode="numeric" pattern="[0-9]{4}"
+      autocomplete="off" data-lpignore="true" data-1p-ignore data-form-type="other"
+      placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="letter-spacing:6px;" />
+    <div id="extension-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" onclick="closeOverlay('ov-request-extension')">Cancel</button>
+      <button class="modal-confirm-btn" id="extension-submit-btn" style="background:var(--green);color:var(--navy);" onclick="submitRequestExtension()">Send request</button>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(168,216,234,0.55); }
+  70%  { box-shadow: 0 0 0 10px rgba(168,216,234,0); }
+  100% { box-shadow: 0 0 0 0 rgba(168,216,234,0); }
+}
+</style>
+
 <script>
   const SUPABASE_URL = "https://hweytbyrqvjsviydmacv.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3ZXl0YnlycXZqc3ZpeWRtYWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4Njg1MTUsImV4cCI6MjA4OTQ0NDUxNX0.lVT4oSC10l6fX6l89lop3UseGclQmBThWPBqkAlQaSo";
@@ -1451,9 +1530,11 @@
           const type = msg.payload?.data?.type;
           if(record && type === 'UPDATE') {
             if(record.status === 'dispatched') {
-              await checkForDispatchedWorker();
+              // Refresh the on-way status directly from the realtime record;
+              // it carries live_eta_minutes / live_eta_computed_at / arrived_at
+              // so showStatus can re-render the ETA line without a re-fetch.
+              showStatus('onway', record);
               loadPastRequests();
-              // Session is live -- show request form
               document.getElementById('no-session-card').style.display = 'none';
               document.getElementById('request-form').style.display = 'block';
             } else if(record.status === 'onshift') {
@@ -1591,7 +1672,7 @@
           if(!onActive) {
             (async () => {
               try {
-                const inFlightRows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?bar_id=eq.' + currentBar.id + '&status=in.(dispatched,onshift)&select=id,worker_name,dispatched_at,clock_in_code,clock_out_code,clock_in_at,status,shift_length_hours&order=id.desc&limit=1', { headers: H }).then(r => r.json());
+                const inFlightRows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?bar_id=eq.' + currentBar.id + '&status=in.(dispatched,onshift)&select=id,worker_name,dispatched_at,departed_at,clock_in_code,clock_out_code,clock_in_at,status,shift_length_hours,live_eta_minutes,live_eta_computed_at,arrived_at&order=id.desc&limit=1', { headers: H }).then(r => r.json());
                 const active = inFlightRows?.[0];
                 if(active) {
                   if(active.status === 'dispatched') {
@@ -1740,7 +1821,7 @@
     // F-38: read session_workers.status only; do NOT gate on sessions.status.
     // The session may be closed while the worker is still in-flight; the
     // clock-out reveal must persist post-close until the worker clocks out.
-    const rows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?bar_id=eq.' + currentBar.id + '&status=in.(dispatched,onshift)&select=id,worker_name,dispatched_at,clock_in_code,clock_out_code,clock_in_at,status,shift_length_hours&order=id.desc&limit=1', { headers: H }).then(r => r.json());
+    const rows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?bar_id=eq.' + currentBar.id + '&status=in.(dispatched,onshift)&select=id,worker_name,dispatched_at,departed_at,clock_in_code,clock_out_code,clock_in_at,status,shift_length_hours,live_eta_minutes,live_eta_computed_at,arrived_at&order=id.desc&limit=1', { headers: H }).then(r => r.json());
     const active = rows?.[0];
 
     if(!active) {
@@ -1803,12 +1884,37 @@
     if(state === 'onway' && sw) {
       document.getElementById('status-onway-name').textContent = sw.worker_name || '';
       document.getElementById('status-clockin-code').textContent = sw.clock_in_code || '----';
-      const dispMins = sw.dispatched_at ? Math.floor((Date.now() - new Date(sw.dispatched_at).getTime()) / 60000) : 0;
-      document.getElementById('status-onway-eta').textContent = 'Dispatched ' + dispMins + ' min ago';
+      // Live ETA + arrival surface from recompute-live-eta. Fallback to the
+      // "dispatched N min ago" string when no live signal is available yet.
+      const etaEl = document.getElementById('status-onway-eta');
+      const name = sw.worker_name || 'Worker';
+      let label = '', color = 'var(--grey)', italic = '', weight = '400';
+      if(sw.arrived_at) {
+        const arrMins = Math.max(0, Math.floor((Date.now() - new Date(sw.arrived_at).getTime())/60000));
+        label = name + ' arrived ' + arrMins + ' min ago';
+        color = 'var(--green)'; weight = '700';
+      } else if(sw.live_eta_minutes != null && sw.departed_at) {
+        const ageSec = sw.live_eta_computed_at
+          ? Math.floor((Date.now() - new Date(sw.live_eta_computed_at).getTime())/1000) : 0;
+        const stale = ageSec > 90;
+        label = name + ': walking, ETA ' + sw.live_eta_minutes + ' min' + (stale ? ' (stale)' : '');
+        if(stale) { color = 'var(--grey)'; italic = 'italic'; } else { color = 'var(--ice)'; weight = '600'; }
+      } else {
+        const dispMins = sw.dispatched_at ? Math.floor((Date.now() - new Date(sw.dispatched_at).getTime()) / 60000) : 0;
+        label = 'Dispatched ' + dispMins + ' min ago';
+      }
+      etaEl.textContent = label;
+      etaEl.style.color = color;
+      etaEl.style.fontStyle = italic;
+      etaEl.style.fontWeight = weight;
     }
 
     if(state === 'onshift' && sw) {
       document.getElementById('status-onshift-name').textContent = sw.worker_name || '';
+      // PART 4: track active on-shift worker, compute effective end time
+      // including accepted extensions, wire the clock-out action buttons,
+      // and subscribe to shift_extensions realtime for this sw.
+      _initClockOutFlow(sw);
     }
 
     if(state !== 'finding') stopPendingRequestExpiry();
@@ -1908,36 +2014,44 @@
   // gate early reveals.
   let managerShiftEndTime = null;
 
+  // PART 4 redesign: replaced per-second "Shift ends in 1h 23:45" countdown
+  // with static "Shift ends at HH:MM" matching the worker side. Auto-reveal
+  // on natural shift end is removed; the new reveal path is Aidan's explicit
+  // Confirm action via confirm_shift_end RPC. effectiveEndAt is the source
+  // of truth; _renderShiftEndStatic re-runs when extensions are accepted.
   function startManagerShiftCountdown(clockOutCode, shiftLengthHours, clockInAt) {
     managerClockOutCode = clockOutCode;
-    managerShiftEndTime = (clockInAt && shiftLengthHours)
-      ? new Date(new Date(clockInAt).getTime() + parseFloat(shiftLengthHours) * 3600000)
-      : null;
-    if(managerShiftInterval) clearInterval(managerShiftInterval);
-
-    function update() {
-      const el = document.getElementById('status-shift-countdown');
-      if(!el) return;
-      const clockIn = new Date(clockInAt);
-      const shiftMs = parseFloat(shiftLengthHours) * 3600000;
-      const endTime = new Date(clockIn.getTime() + shiftMs);
-      const remainingMs = endTime.getTime() - Date.now();
-      if(remainingMs > 0) {
-        const h = Math.floor(remainingMs / 3600000);
-        const m = Math.floor((remainingMs % 3600000) / 60000);
-        const s = Math.floor((remainingMs % 60000) / 1000);
-        el.textContent = 'Shift ends in ' + (h > 0 ? h + 'h ' : '') + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
-        el.style.color = remainingMs < 600000 ? 'var(--red)' : 'var(--amber)';
-      } else {
-        el.textContent = 'Shift complete';
-        el.style.color = 'var(--grey)';
-        clearInterval(managerShiftInterval);
-        revealClockOutCode(); // bypass the early-clockout guard on natural shift end
-        const subText2 = document.getElementById('status-shift-countdown'); if(subText2) { subText2.textContent = 'Shift is complete. Please give your Glasi the clock-out code.'; subText2.style.color = 'var(--grey)'; subText2.style.fontSize = '13px'; subText2.style.fontWeight = '400'; }
-      }
+    if(managerShiftInterval) { clearInterval(managerShiftInterval); managerShiftInterval = null; }
+    // _activeEffectiveEndAt is the canonical end (includes accepted
+    // extensions). If it isn't populated yet (e.g. legacy caller), fall
+    // back to clock_in_at + shift_length_hours.
+    if(!_activeEffectiveEndAt && clockInAt && shiftLengthHours) {
+      _activeEffectiveEndAt = new Date(
+        new Date(clockInAt).getTime() + parseFloat(shiftLengthHours) * 3600000
+      );
     }
-    update();
-    managerShiftInterval = setInterval(update, 1000);
+    managerShiftEndTime = _activeEffectiveEndAt;
+    _renderShiftEndStatic();
+  }
+
+  // Writes the static "Shift ends at HH:MM" text into #status-shift-countdown.
+  // Called by startManagerShiftCountdown and by the accepted-extension realtime
+  // branch in _onShiftExtensionEvent so the displayed end time tracks the
+  // current effectiveEndAt.
+  function _renderShiftEndStatic() {
+    const el = document.getElementById('status-shift-countdown');
+    if(!el) return;
+    if(!_activeEffectiveEndAt) {
+      el.textContent = '';
+      return;
+    }
+    const hh = String(_activeEffectiveEndAt.getHours()).padStart(2, '0');
+    const mm = String(_activeEffectiveEndAt.getMinutes()).padStart(2, '0');
+    el.textContent = 'Shift ends at ' + hh + ':' + mm;
+    el.style.color = 'var(--white)';
+    el.style.fontSize = '18px';
+    el.style.fontWeight = '600';
+    managerShiftEndTime = _activeEffectiveEndAt;
   }
 
   let managerRating = 0;
@@ -2023,6 +2137,377 @@
     if(clockInAt) startManagerShiftCountdown(clockOutCode, shiftLengthHours, clockInAt);
   }
   function revealManagerClockOut() { revealStatusClockOut(); }
+
+  // ==========================================================================
+  // PART 4: Clock-out flow (Confirm + Extend, PIN-verified RPCs).
+  // ==========================================================================
+  // Module-scoped state for the active on-shift worker. _initClockOutFlow is
+  // called from showStatus('onshift', sw). One bar / one on-shift worker at
+  // a time in v1, so we just track the latest active sw.
+  let _activeOnShiftSw = null;            // session_workers row
+  let _activeAcceptedExtensions = [];     // [{extension_minutes, responded_at}]
+  let _activeEffectiveEndAt = null;       // computed Date
+  let _activePendingExtensionId = null;   // current pending shift_extensions.id
+  let _shiftExtensionsWs = null;
+  let _clockoutButtonsInterval = null;
+  let _extensionWaitingInterval = null;
+
+  async function _initClockOutFlow(sw) {
+    _activeOnShiftSw = sw;
+    _activeAcceptedExtensions = [];
+    _activeEffectiveEndAt = null;
+    _activePendingExtensionId = null;
+
+    // Reset UI from any prior shift.
+    const codeBlock = document.getElementById('status-clockout-code');
+    if(codeBlock) codeBlock.style.display = 'none';
+    const actions = document.getElementById('status-clockout-actions');
+    if(actions) actions.style.display = 'flex';
+    _hideExtensionWaiting();
+
+    // Already-confirmed case (page reload after Aidan confirmed): reveal the
+    // code immediately. Server-side session_workers.clock_out_confirmed_at
+    // is set; only the worker code submission flips status to completed.
+    if(sw.clock_out_confirmed_at) {
+      _revealClockOutCodeBlock(sw.clock_out_code || '----');
+    }
+
+    // Fetch any accepted extensions for this session_worker. Determines the
+    // effective shift end time (Interp 2: latest accept time + minutes).
+    try {
+      const rows = await fetch(SUPABASE_URL +
+        '/rest/v1/shift_extensions?session_worker_id=eq.' + sw.id +
+        '&status=eq.accepted&select=extension_minutes,responded_at&order=responded_at.desc',
+        { headers: H }).then(r => r.json());
+      _activeAcceptedExtensions = Array.isArray(rows) ? rows : [];
+    } catch(e) {}
+
+    // Pending extension (page reload while a request is in flight).
+    try {
+      const rows = await fetch(SUPABASE_URL +
+        '/rest/v1/shift_extensions?session_worker_id=eq.' + sw.id +
+        '&status=eq.pending&select=id,extension_minutes,requested_at&order=id.desc&limit=1',
+        { headers: H }).then(r => r.json());
+      if(rows && rows[0]) {
+        _activePendingExtensionId = rows[0].id;
+        _showExtensionWaiting(rows[0]);
+      }
+    } catch(e) {}
+
+    _recomputeEffectiveEnd();
+    _renderShiftEndStatic();
+    _refreshClockoutButtons();
+    if(_clockoutButtonsInterval) clearInterval(_clockoutButtonsInterval);
+    _clockoutButtonsInterval = setInterval(_refreshClockoutButtons, 15000);
+
+    _subscribeShiftExtensions(sw.id);
+  }
+
+  function _recomputeEffectiveEnd() {
+    const sw = _activeOnShiftSw;
+    if(!sw || !sw.clock_in_at) { _activeEffectiveEndAt = null; return; }
+    if(_activeAcceptedExtensions.length > 0) {
+      // Latest by responded_at (already ordered desc on fetch; also keep
+      // safe on realtime push by sorting).
+      const sorted = [..._activeAcceptedExtensions].sort((a, b) =>
+        new Date(b.responded_at).getTime() - new Date(a.responded_at).getTime());
+      const latest = sorted[0];
+      _activeEffectiveEndAt = new Date(
+        new Date(latest.responded_at).getTime() + latest.extension_minutes * 60000
+      );
+    } else {
+      const shiftMs = parseFloat(sw.shift_length_hours || 0) * 3600000;
+      _activeEffectiveEndAt = new Date(new Date(sw.clock_in_at).getTime() + shiftMs);
+    }
+  }
+
+  function _refreshClockoutButtons() {
+    const confirmBtn = document.getElementById('status-confirm-end-btn');
+    const extendBtn  = document.getElementById('status-extend-btn');
+    const helper     = document.getElementById('status-clockout-helper');
+    const unlockEl   = document.getElementById('status-clockout-unlock-time');
+    if(!confirmBtn || !extendBtn || !_activeEffectiveEndAt) return;
+
+    // Hide buttons entirely when the code has already been revealed (the
+    // code block carries the next-step affordance).
+    const codeBlock = document.getElementById('status-clockout-code');
+    if(codeBlock && codeBlock.style.display === 'block') {
+      document.getElementById('status-clockout-actions').style.display = 'none';
+      return;
+    }
+    document.getElementById('status-clockout-actions').style.display = 'flex';
+
+    // Disable while a pending extension is in flight.
+    if(_activePendingExtensionId) {
+      confirmBtn.disabled = true; extendBtn.disabled = true;
+      confirmBtn.style.opacity = '0.4'; extendBtn.style.opacity = '0.4';
+      if(helper) helper.style.display = 'none';
+      return;
+    }
+
+    const unlockAt = new Date(_activeEffectiveEndAt.getTime() - 60000);
+    const unlocked = Date.now() >= unlockAt.getTime();
+    confirmBtn.disabled = !unlocked;
+    extendBtn.disabled  = !unlocked;
+    confirmBtn.style.opacity = unlocked ? '1' : '0.4';
+    extendBtn.style.opacity  = unlocked ? '1' : '0.4';
+    if(helper) {
+      helper.style.display = unlocked ? 'none' : 'block';
+      if(unlockEl) {
+        const hh = String(unlockAt.getHours()).padStart(2,'0');
+        const mm = String(unlockAt.getMinutes()).padStart(2,'0');
+        unlockEl.textContent = hh + ':' + mm;
+      }
+    }
+  }
+
+  function openConfirmShiftEnd() {
+    const sw = _activeOnShiftSw;
+    if(!sw) return;
+    if(_activePendingExtensionId) return;
+    if(!_activeEffectiveEndAt || Date.now() < _activeEffectiveEndAt.getTime() - 60000) return;
+
+    const elapsedMs = Date.now() - new Date(sw.clock_in_at).getTime();
+    const totalMins = Math.max(0, Math.floor(elapsedMs / 60000));
+    const hh = Math.floor(totalMins / 60);
+    const mm = totalMins % 60;
+    const name = (sw.worker_name || 'The worker').split(' ')[0];
+    const hoursLabel = hh > 0 ? (hh + ' hour' + (hh === 1 ? '' : 's') + ' ' + mm + ' minutes') : (mm + ' minutes');
+    const summary = name + ' worked ' + hoursLabel + ' (clock-in to now). You will be invoiced for ' + hoursLabel + '. Proceed?';
+    document.getElementById('confirm-end-summary').textContent = summary;
+    document.getElementById('confirm-end-pin').value = '';
+    document.getElementById('confirm-end-error').textContent = '';
+    openOverlay('ov-confirm-shift-end');
+  }
+
+  // Stage 6.3: shared PIN-error friendly mapper. Used by every PIN-RPC
+  // catch handler. The four wrapper RPCs (fire_shift_request,
+  // confirm_shift_end, request_shift_extension, verify_bar_manager_pin)
+  // route their PIN check through _pin_check_and_log which RAISES with
+  // the strings matched below. set_bar_manager_pin also raises the same
+  // shape and collision strings.
+  //
+  // Returns a friendly string if msg matches a known PIN error, else NULL.
+  // Caller falls through to its function-specific branches or generic
+  // fallback when null is returned.
+  function pinErrorFriendly(msg) {
+    if (!msg) return null;
+    if (/PIN does not match/i.test(msg)) return 'Incorrect PIN. Please try again.';
+    if (/PIN entry temporarily disabled/i.test(msg)) return 'PIN entry locked. Too many wrong attempts. Try again in 15 minutes.';
+    if (/PIN must be exactly 4 digits/i.test(msg)) return 'PIN must be exactly 4 digits.';
+    if (/PIN is already in use at this bar/i.test(msg)) return 'That PIN is already used at this bar. Please pick a different one.';
+    return null;
+  }
+
+  async function submitConfirmShiftEnd() {
+    const sw = _activeOnShiftSw;
+    if(!sw) return;
+    const pin = (document.getElementById('confirm-end-pin').value || '').trim();
+    const errEl = document.getElementById('confirm-end-error');
+    const btn = document.getElementById('confirm-end-submit-btn');
+    if(!/^\d{4}$/.test(pin)) { errEl.textContent = 'Enter your 4-digit PIN.'; return; }
+    btn.disabled = true; btn.textContent = 'Confirming...';
+    try {
+      const { error } = await sbAuth.rpc('confirm_shift_end', {
+        p_session_worker_id: sw.id,
+        p_pin: pin
+      });
+      if(error) throw error;
+      closeOverlay('ov-confirm-shift-end');
+      // Re-fetch sw for the latest clock_out_code (and confirmed_at echo).
+      try {
+        const rows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?id=eq.' + sw.id +
+          '&select=clock_out_code,clock_out_confirmed_at', { headers: H }).then(r => r.json());
+        const fresh = rows && rows[0];
+        if(fresh) {
+          sw.clock_out_code = fresh.clock_out_code;
+          sw.clock_out_confirmed_at = fresh.clock_out_confirmed_at;
+        }
+      } catch(e) {}
+      _revealClockOutCodeBlock(sw.clock_out_code || '----');
+      _refreshClockoutButtons();
+    } catch(e) {
+      const msg = (e && e.message) || '';
+      const friendly = pinErrorFriendly(msg);
+      errEl.textContent = friendly || 'Could not confirm. Try again.';
+      btn.disabled = false; btn.textContent = 'Confirm and reveal code';
+    }
+  }
+
+  function _revealClockOutCodeBlock(code) {
+    const block = document.getElementById('status-clockout-code');
+    const display = document.getElementById('status-clockout-display');
+    if(display) display.textContent = code || '----';
+    if(block) block.style.display = 'block';
+    const actions = document.getElementById('status-clockout-actions');
+    if(actions) actions.style.display = 'none';
+  }
+
+  let _extensionMinutes = 30;
+  function openRequestExtension() {
+    const sw = _activeOnShiftSw;
+    if(!sw) return;
+    if(_activePendingExtensionId) return;
+    if(!_activeEffectiveEndAt || Date.now() < _activeEffectiveEndAt.getTime() - 60000) return;
+    _extensionMinutes = 30;
+    document.getElementById('ext-stepper-value').textContent = '30';
+    document.getElementById('extension-pin').value = '';
+    document.getElementById('extension-error').textContent = '';
+    _updateStepperButtons();
+    openOverlay('ov-request-extension');
+  }
+
+  function stepExtension(delta) {
+    const next = _extensionMinutes + delta;
+    if(next < 15 || next > 60) return;
+    _extensionMinutes = next;
+    document.getElementById('ext-stepper-value').textContent = String(next);
+    _updateStepperButtons();
+  }
+
+  function _updateStepperButtons() {
+    const minusBtn = document.getElementById('ext-stepper-minus');
+    const plusBtn  = document.getElementById('ext-stepper-plus');
+    if(minusBtn) { minusBtn.disabled = _extensionMinutes <= 15; minusBtn.style.opacity = _extensionMinutes <= 15 ? '0.4' : '1'; }
+    if(plusBtn)  { plusBtn.disabled  = _extensionMinutes >= 60; plusBtn.style.opacity  = _extensionMinutes >= 60 ? '0.4' : '1'; }
+  }
+
+  async function submitRequestExtension() {
+    const sw = _activeOnShiftSw;
+    if(!sw) return;
+    const pin = (document.getElementById('extension-pin').value || '').trim();
+    const errEl = document.getElementById('extension-error');
+    const btn = document.getElementById('extension-submit-btn');
+    if(!/^\d{4}$/.test(pin)) { errEl.textContent = 'Enter your 4-digit PIN.'; return; }
+    btn.disabled = true; btn.textContent = 'Sending...';
+    try {
+      const { error } = await sbAuth.rpc('request_shift_extension', {
+        p_session_worker_id: sw.id,
+        p_pin: pin,
+        p_extension_minutes: _extensionMinutes
+      });
+      if(error) throw error;
+      closeOverlay('ov-request-extension');
+      // Pending state is shown via realtime INSERT echo from trigger B2.
+    } catch(e) {
+      const msg = (e && e.message) || '';
+      const friendly = pinErrorFriendly(msg);
+      errEl.textContent = friendly || 'Could not send. Try again.';
+      btn.disabled = false; btn.textContent = 'Send request';
+    }
+  }
+
+  function _subscribeShiftExtensions(swId) {
+    if(_shiftExtensionsWs) {
+      try { _shiftExtensionsWs.close(); } catch(e) {}
+      _shiftExtensionsWs = null;
+    }
+    const wsUrl = SUPABASE_URL.replace('https://', 'wss://') +
+      '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
+    const ws = new WebSocket(wsUrl);
+    _shiftExtensionsWs = ws;
+    let hb = null;
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        topic: 'realtime:public:shift_extensions',
+        event: 'phx_join',
+        payload: { config: { postgres_changes: [
+          { event: 'INSERT', schema: 'public', table: 'shift_extensions', filter: 'session_worker_id=eq.' + swId },
+          { event: 'UPDATE', schema: 'public', table: 'shift_extensions', filter: 'session_worker_id=eq.' + swId }
+        ] } },
+        ref: '1'
+      }));
+      hb = setInterval(() => {
+        if(ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
+        }
+      }, 30000);
+    };
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if(msg.event === 'postgres_changes') {
+          const record = msg.payload?.data?.record;
+          const type = msg.payload?.data?.type;
+          if(record) _onShiftExtensionEvent(record, type);
+        }
+      } catch(err) {}
+    };
+    ws.onclose = () => { if(hb) clearInterval(hb); };
+  }
+
+  function _onShiftExtensionEvent(record, type) {
+    if(!_activeOnShiftSw || record.session_worker_id !== _activeOnShiftSw.id) return;
+    if(type === 'INSERT' && record.status === 'pending') {
+      _activePendingExtensionId = record.id;
+      _showExtensionWaiting(record);
+      _refreshClockoutButtons();
+      return;
+    }
+    if(type !== 'UPDATE') return;
+    if(record.id !== _activePendingExtensionId && record.status !== 'accepted') return;
+
+    if(record.status === 'accepted') {
+      // Push into local accepted list and recompute effective end.
+      _activeAcceptedExtensions.push({
+        extension_minutes: record.extension_minutes,
+        responded_at: record.responded_at,
+      });
+      _recomputeEffectiveEnd();
+      _renderShiftEndStatic();
+      if(_activeEffectiveEndAt) {
+        const hh = String(_activeEffectiveEndAt.getHours()).padStart(2,'0');
+        const mm = String(_activeEffectiveEndAt.getMinutes()).padStart(2,'0');
+        const name = (_activeOnShiftSw.worker_name || 'Worker').split(' ')[0];
+        showToast(name + ' accepted the extension. Shift now ends at ' + hh + ':' + mm);
+      }
+      _activePendingExtensionId = null;
+      _hideExtensionWaiting();
+      _refreshClockoutButtons();
+    } else if(record.status === 'declined' || record.status === 'expired') {
+      const name = (_activeOnShiftSw.worker_name || 'Worker').split(' ')[0];
+      showToast(name + ' declined the extension. Original shift end still applies.');
+      _activePendingExtensionId = null;
+      _hideExtensionWaiting();
+      _refreshClockoutButtons();
+    }
+  }
+
+  function _showExtensionWaiting(record) {
+    const box = document.getElementById('status-extension-waiting');
+    const titleEl = document.getElementById('status-extension-waiting-title');
+    const timeEl = document.getElementById('status-extension-waiting-time');
+    if(!box) return;
+    const name = (_activeOnShiftSw?.worker_name || 'Worker').split(' ')[0];
+    const minutes = record.extension_minutes;
+    if(titleEl) titleEl.textContent = name + ' deciding (' + minutes + ' min extension)...';
+    box.style.display = 'block';
+    document.getElementById('status-clockout-actions').style.display = 'none';
+
+    const startedAt = new Date(record.requested_at || Date.now()).getTime();
+    const expiresAt = startedAt + 5 * 60000;
+    function tick() {
+      const remainingMs = expiresAt - Date.now();
+      if(remainingMs <= 0) {
+        if(timeEl) timeEl.textContent = '0:00 remaining';
+        clearInterval(_extensionWaitingInterval);
+        return;
+      }
+      const totalSecs = Math.ceil(remainingMs / 1000);
+      const m = Math.floor(totalSecs / 60);
+      const s = String(totalSecs % 60).padStart(2, '0');
+      if(timeEl) timeEl.textContent = m + ':' + s + ' remaining';
+    }
+    tick();
+    if(_extensionWaitingInterval) clearInterval(_extensionWaitingInterval);
+    _extensionWaitingInterval = setInterval(tick, 1000);
+  }
+
+  function _hideExtensionWaiting() {
+    const box = document.getElementById('status-extension-waiting');
+    if(box) box.style.display = 'none';
+    if(_extensionWaitingInterval) { clearInterval(_extensionWaitingInterval); _extensionWaitingInterval = null; }
+  }
 
   function watchDispatchedWorker(swId) {
     stopWorkerWatch();
@@ -2213,8 +2698,12 @@
       const msg = (e && e.message) || '';
       // Clear PIN on any failure so the next attempt re-types from scratch.
       if(pinInput) pinInput.value = '';
-      if(/PIN does not match/i.test(msg)) {
-        if(errorEl) errorEl.textContent = 'Incorrect PIN. Try again.';
+      // PIN-family errors (mismatch, lockout, bad shape, collision) map
+      // via the shared helper. Falls through to fire-specific branches
+      // (No live session, Not authorised) and generic fallback.
+      const friendly = pinErrorFriendly(msg);
+      if(friendly) {
+        if(errorEl) errorEl.textContent = friendly;
       } else if(/No live session/i.test(msg)) {
         if(errorEl) errorEl.textContent = 'Glasi is not on call right now.';
       } else if(/Not authorised/i.test(msg)) {
@@ -2608,7 +3097,9 @@
       showToast('PIN updated');
     } catch (e) {
       console.error('set_bar_manager_pin failed', e);
-      errEl.textContent = 'Could not set PIN: ' + (e.message || 'unknown');
+      const msg = (e && e.message) || 'unknown';
+      const friendly = pinErrorFriendly(msg);
+      errEl.textContent = friendly || ('Could not set PIN: ' + msg);
       btn.disabled = false;
       btn.textContent = 'Set PIN';
     }

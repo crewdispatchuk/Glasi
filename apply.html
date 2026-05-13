@@ -517,37 +517,39 @@ form.addEventListener('submit', async (e) => {
   submitBtn.disabled = true;
   submitBtn.innerText = "Submitting...";
 
-  const payload = {
-    age_group: ageGroup,
-    hospitality_experience: toBool(hospitalityExperience),
-    uk_work_right: toBool(ukWorkRight),
-    has_black_clothing: toBool(hasBlackClothing),
-    has_transport: toBool(hasTransport),
-    physically_able: toBool(physicallyAble),
-    speaks_english: toBool(speaksEnglish),
-    agrees_work_standard: toBool(agreesWorkStandard),
-    reliability_notes: reliabilityNotes || null,
-    available_hours: availableHours,
-    worker_status: 'applied'
-  };
-
+  // SEC-02: anon PATCH against applications was replaced with the
+  // submit_application SECURITY DEFINER RPC. Server-side the RPC enforces
+  // email regex, AND active = true, AND worker_status = 'registered'
+  // before promoting the row to 'applied'. The RPC returns boolean true
+  // on a successful promotion, boolean false if no matching row exists.
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/applications?email=eq.${encodeURIComponent(email)}`, {
-      method: 'PATCH',
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/submit_application`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Prefer': 'return=representation'
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        p_email: email,
+        p_age_group: ageGroup,
+        p_hospitality_experience: toBool(hospitalityExperience),
+        p_uk_work_right: toBool(ukWorkRight),
+        p_has_black_clothing: toBool(hasBlackClothing),
+        p_has_transport: toBool(hasTransport),
+        p_physically_able: toBool(physicallyAble),
+        p_speaks_english: toBool(speaksEnglish),
+        p_agrees_work_standard: toBool(agreesWorkStandard),
+        p_reliability_notes: reliabilityNotes || null,
+        p_available_hours: availableHours
+      })
     });
 
     if (!res.ok) throw new Error();
 
-    const data = await res.json();
+    const ok = await res.json();
 
-    if (!data || data.length === 0) {
+    if (ok !== true) {
       feedback.innerHTML = `<div class="text-red-500 text-sm">We couldn't find your registration. Please use the same email you signed up with.</div>`;
       submitBtn.disabled = false;
       submitBtn.innerText = "Submit";

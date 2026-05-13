@@ -3183,33 +3183,48 @@
     btnEl.disabled = true;
     btnEl.textContent = 'Claiming...';
     try {
-      // Update last_login_claim_at first to lock the slot. Server-side gating
-      // is the proper long-term solution; portal-side check is acceptable for
-      // current scale (tripwire logged in BUILD_STATE).
-      const claimAt = new Date().toISOString();
-      const upResp = await fetch(SUPABASE_URL + '/rest/v1/applications?id=eq.' + currentWorker.id, {
-        method: 'PATCH',
-        headers: { ...H, 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ last_login_claim_at: claimAt })
-      });
-      if(!upResp.ok) throw new Error('claim slot lock failed');
-      currentWorker.last_login_claim_at = claimAt;
-
-      // F-32 follow-up: spawn the +X float NOW, while the button is still
-      // visible. If we passed originEl through to awardPointsImmediate, its
-      // setTimeout would fire after the awaits below resolved, by which time
-      // f32RenderClaimButton has hidden the button (display:none) and
-      // getBoundingClientRect would return 0,0,0,0. Floating from the screen
-      // corner is invisible to the user.
+      // SEC-N1 Stage 7: worker_claim_daily_login (RPC) atomically
+      // updates applications.last_login_claim_at and inserts the
+      // daily_login_claim ledger row server-side. UK day-start gating
+      // is enforced inside the function (date_trunc on Europe/London
+      // tz); returns {ok:true, claimed:false, reason:'already_claimed_today'}
+      // if the slot was already taken. The Stage 1 trigger recomputes
+      // applications.{total_points, tier, hourly_rate} from the new
+      // ledger row.
+      //
+      // Spawn the +X float NOW, while the button is still visible.
+      // f32RenderClaimButton below hides the button on success; if we
+      // floated after, getBoundingClientRect would return 0,0,0,0.
       f32SpawnFloat(btnEl, '+5');
 
-      await awardPointsImmediate(currentWorker.id, [{
-        amount: 5,
-        reason: 'daily_login_claim',
-        notes: 'Daily login claim'
-      }], { /* no originEl: float already spawned above */ });
+      const resp = await fetch(SUPABASE_URL + '/rest/v1/rpc/worker_claim_daily_login', {
+        method: 'POST',
+        headers: { ...H, 'Content-Type': 'application/json' },
+        body: '{}'
+      });
+      const data = await resp.json().catch(() => null);
+      if(!resp.ok || !data || data.ok !== true) {
+        throw new Error('claim failed: ' + (data?.error || resp.status));
+      }
+      if(data.claimed === true) {
+        // Mirror the post-trigger applications state into currentWorker
+        // so the ring renders the new tier / total without an extra
+        // fetch. last_login_claim_at is set server-side to now().
+        currentWorker.last_login_claim_at = new Date().toISOString();
+        const newTotal = parseInt(data.new_total);
+        const newTier = parseInt(data.new_tier);
+        if(!isNaN(newTotal)) currentWorker.total_points = newTotal;
+        if(!isNaN(newTier)) {
+          const oldTier = parseInt(currentWorker.tier) || 1;
+          currentWorker.tier = newTier;
+          if(newTier !== oldTier) {
+            currentWorker.hourly_rate = [12.71, 13.71, 14.71, 15.71, 16.71][newTier - 1];
+          }
+        }
+      }
+      // claimed=false (already_claimed_today) is a silent no-op; the
+      // float already spawned is misleading but harmless once on screen.
 
-      // Refresh ring overlay state
       f32RenderTierRing();
       await f32RenderTodaySummary();
       f32RenderClaimButton();
@@ -5633,6 +5648,7 @@
       try {
         await awardPointsImmediate(currentWorker.id, awards, {
           sessionId,
+          shiftRequestId: requestId,
           originEl: originBtn || ctx.cardEl
         });
       } catch(e) { console.warn('[handleAvailable] awardPointsImmediate failed', e); }
@@ -5663,6 +5679,7 @@
           sourceId: requestId
         }], {
           sessionId,
+          shiftRequestId: requestId,
           originEl: originBtn || ctx.cardEl
         });
       } catch(e) { console.warn('[handlePass] awardPointsImmediate failed', e); }
@@ -5781,113 +5798,54 @@
     return 1;
   }
 
-  // F-32: portalAwardPoints renamed awardPointsImmediate. Now applies the
-  // hourly_rate atomic update on tier promotion (mirror of dashboard awardPoints
-  // F-31 follow-up fix). Also fires the +X UI float on each award via
-  // f32SpawnFloat when an originEl is provided in opts.
+  // SEC-N1 Stage 7 (2026-05-13): points writes route through the
+  // worker_award_points_immediate SECURITY DEFINER RPC. The Stage 1
+  // trigger on points_ledger recomputes applications.{total_points,
+  // tier, hourly_rate}; this function mirrors the post-trigger state
+  // locally into currentWorker for instant UI refresh. The RPC handles
+  // per-reason idempotency server-side (keyed by application_id +
+  // session_id for joined_session, or application_id + shift_request_id
+  // for responded_* reasons). Admitted reasons: joined_session (+5),
+  // responded_available (+15), responded_available_quick (+15),
+  // responded_pass (+1). daily_login_claim has its own dedicated RPC
+  // (worker_claim_daily_login); completed_shift / arrived_* go through
+  // worker_clock_out as part of the atomic clock-out transaction.
   async function awardPointsImmediate(applicationId, awards, opts) {
     if(!Array.isArray(awards)) awards = [awards];
     const valid = awards.filter(a => a && a.amount !== 0);
     if(!valid.length) return null;
 
-    // F-32 follow-up: per-reason idempotency check is per-session belt-and-
-    // braces for session-scoped reasons. Day-scoped reasons (daily_login_claim)
-    // skip this check; their gating lives on applications.last_login_claim_at
-    // (column-side gate, canonical day-scope mechanism). Without this skip,
-    // the idempotency filter trips on yesterday's daily_login_claim row (whose
-    // session_id IS NULL, matching the empty session_id filter) and silently
-    // drops today's award.
-    //
-    // Additional hardening: even for session-scoped reasons, the fetch is
-    // skipped if opts.sessionId is missing/null/empty. Without a real session
-    // id to filter on, the URL becomes `session_id=eq.` which PostgREST
-    // rejects with 400, and the JSON error response then crashes the .map
-    // call. Skipping the fetch trades the idempotency guard for not breaking;
-    // the write still happens. Caller-side bug (missing sessionId on a
-    // session-scoped writer) surfaces as a console warning.
-    const DAY_SCOPED_REASONS = new Set(['daily_login_claim']);
-    const dayScoped = valid.filter(a => DAY_SCOPED_REASONS.has(a.reason));
-    const sessionScoped = valid.filter(a => !DAY_SCOPED_REASONS.has(a.reason));
-    const sessionIdRaw = opts?.sessionId;
-    const hasValidSessionId = sessionIdRaw !== undefined && sessionIdRaw !== null && sessionIdRaw !== '';
+    const awardsJsonb = valid.map(a => ({ reason: a.reason, amount: a.amount }));
+    const sessionId = opts?.sessionId ?? valid[0]?.sessionId ?? null;
+    const shiftRequestId = opts?.shiftRequestId ?? null;
 
-    let filtered = [...dayScoped]; // day-scoped awards bypass idempotency
-    if(sessionScoped.length) {
-      if(!hasValidSessionId) {
-        console.warn('[awardPointsImmediate] session-scoped award fired without opts.sessionId; skipping idempotency check. Reasons:', sessionScoped.map(a => a.reason));
-        filtered = filtered.concat(sessionScoped);
-      } else {
-        const existing = await fetch(SUPABASE_URL + '/rest/v1/points_ledger?application_id=eq.' + applicationId + '&session_id=eq.' + encodeURIComponent(sessionIdRaw) + '&select=reason', { headers: H }).then(r => r.json()).catch(() => []);
-        const existingReasons = new Set((Array.isArray(existing) ? existing : []).map(r => r.reason));
-        filtered = filtered.concat(sessionScoped.filter(a => !existingReasons.has(a.reason)));
-      }
-    }
-    if(!filtered.length) {
-      const appRows = await fetch(SUPABASE_URL + '/rest/v1/applications?id=eq.' + applicationId + '&select=total_points,tier', { headers: H }).then(r => r.json());
-      const app = appRows[0] || {};
-      return { newTotal: parseInt(app.total_points) || 0, newTier: parseInt(app.tier) || 1, promoted: false, oldTier: parseInt(app.tier) || 1 };
-    }
-
-    const ledgerRows = filtered.map(a => ({
-      application_id: applicationId,
-      amount: a.amount,
-      reason: a.reason,
-      session_id: a.sessionId || opts?.sessionId || null,
-      shift_id: a.shiftId || opts?.shiftId || null,
-      source_type: a.sourceType || opts?.sourceType || null,
-      source_id: a.sourceId || opts?.sourceId || null,
-      awarded_by: a.awardedBy || opts?.awardedBy || 'portal',
-      metadata: a.metadata || null,
-      notes: a.notes || null
-    }));
-    await fetch(SUPABASE_URL + '/rest/v1/points_ledger', {
-      method: 'POST',
-      headers: { ...H, 'Prefer': 'return=minimal' },
-      body: JSON.stringify(ledgerRows)
-    });
-
-    const appRows = await fetch(SUPABASE_URL + '/rest/v1/applications?id=eq.' + applicationId + '&select=total_points,tier', { headers: H }).then(r => r.json());
-    const app = appRows[0];
-    if(!app) return null;
-
-    const oldTotal = parseInt(app.total_points) || 0;
-    const oldTier = parseInt(app.tier) || 1;
-    const delta = filtered.reduce((s, a) => s + a.amount, 0);
-    const newTotal = oldTotal + delta;
-    const newTier = pointsToTier(newTotal);
-
-    const updates = { total_points: newTotal };
-    if(newTier !== oldTier) {
-      updates.tier = newTier;
-      // F-32 / F-31 follow-up parity: keep applications.hourly_rate in lockstep
-      // with tier on promotion. CORE Phase 5 "Worker tier and rates" requires
-      // atomic tier + hourly_rate update.
-      updates.hourly_rate = [12.71, 13.71, 14.71, 15.71, 16.71][newTier - 1];
-    }
-    await fetch(SUPABASE_URL + '/rest/v1/applications?id=eq.' + applicationId, {
-      method: 'PATCH',
-      headers: { ...H, 'Prefer': 'return=minimal' },
-      body: JSON.stringify(updates)
-    });
-
-    if(newTier > oldTier) {
-      await fetch(SUPABASE_URL + '/rest/v1/points_ledger', {
+    let data = null;
+    try {
+      const resp = await fetch(SUPABASE_URL + '/rest/v1/rpc/worker_award_points_immediate', {
         method: 'POST',
-        headers: { ...H, 'Prefer': 'return=minimal' },
+        headers: { ...H, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          application_id: applicationId,
-          amount: 0,
-          reason: 'tier_promoted',
-          session_id: opts?.sessionId || null,
-          awarded_by: opts?.awardedBy || 'portal',
-          metadata: { from_tier: oldTier, to_tier: newTier, points_at_promotion: newTotal },
-          notes: 'Auto-promotion from points threshold'
+          p_awards: awardsJsonb,
+          p_session_id: sessionId,
+          p_shift_request_id: shiftRequestId
         })
       });
+      data = await resp.json().catch(() => null);
+      if(!resp.ok || !data || data.ok !== true) {
+        console.warn('[awardPointsImmediate] RPC rejected:', data?.error, data?.message);
+        return null;
+      }
+    } catch(e) {
+      console.warn('[awardPointsImmediate] RPC threw:', e);
+      return null;
     }
 
-    // F-32: keep currentWorker in sync so the ring reflects the new state.
+    const newTotal = parseInt(data.new_total) || 0;
+    const newTier = parseInt(data.new_tier) || 1;
+
+    let oldTier = newTier;
     if(currentWorker && Number(currentWorker.id) === Number(applicationId)) {
+      oldTier = parseInt(currentWorker.tier) || 1;
       currentWorker.total_points = newTotal;
       if(newTier !== oldTier) {
         currentWorker.tier = newTier;
@@ -5898,7 +5856,7 @@
     // F-32: spawn UI floats for each award (only if originEl provided in opts).
     // Animation is decoration; if it fails to render, points still apply.
     if(opts?.originEl && typeof f32SpawnFloat === 'function') {
-      filtered.forEach((a, i) => {
+      valid.forEach((a, i) => {
         const label = a.floatLabel || ((a.amount >= 0 ? '+' : '') + a.amount);
         setTimeout(() => f32SpawnFloat(opts.originEl, label), i * 200);
       });
@@ -6119,22 +6077,27 @@
     if(btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
     if(errorEl) errorEl.textContent = '';
 
+    // SEC-N1 Stage 7: worker_submit_feedback (RPC) handles caller-
+    // resolution, ownership, state check (status='completed'), input
+    // validation (stars 1-5, comment <= 500 chars), and strict-once-
+    // only insert (per Q3 lock): returns the existing feedback_id
+    // idempotently if the worker submits a second time. Server derives
+    // session_id / shift_request_id / shift_id / bar_id from the
+    // session_worker_id chain.
     try {
-      const resp = await fetch(SUPABASE_URL + '/rest/v1/shift_feedback', {
+      const resp = await fetch(SUPABASE_URL + '/rest/v1/rpc/worker_submit_feedback', {
         method: 'POST',
-        headers: { ...H, 'Prefer': 'return=minimal' },
+        headers: { ...H, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          application_id: currentWorker.id,
-          session_id: ctx.sessionId,
-          session_worker_id: ctx.sessionWorkerId,
-          shift_request_id: ctx.shiftRequestId,
-          shift_id: ctx.shiftId,
-          bar_id: ctx.barId,
-          stars: postShiftRating,
-          comment: comment
+          p_session_worker_id: ctx.sessionWorkerId || postShiftSwId,
+          p_stars: postShiftRating,
+          p_comment: comment
         })
       });
-      if(!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json().catch(() => null);
+      if(!resp.ok || !data || data.ok !== true) {
+        throw new Error(data?.error || ('HTTP ' + resp.status));
+      }
     } catch(e) {
       if(btn) { btn.disabled = false; btn.textContent = 'Submit feedback'; }
       if(errorEl) errorEl.textContent = 'Could not submit feedback. Try again or email hello@glasi.co.uk.';
@@ -6193,144 +6156,90 @@
     // flow twice. Reset on every error path below.
     if(btn) { btn.disabled = true; btn.textContent = 'Confirming…'; }
 
-    let sw;
-    try {
-      const rows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?id=eq.' + currentSessionWorkerId + '&select=clock_out_code,shift_length_hours,application_id,session_id,bar_id,shift_request_id', { headers: H }).then(r => r.json());
-      sw = rows?.[0];
-    } catch(e) {
-      if(errorEl) errorEl.textContent = 'Network error. Try again.';
-      if(btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
-      return;
-    }
-    if(!sw) {
-      if(errorEl) errorEl.textContent = 'Could not find your shift. Please contact hello@glasi.co.uk.';
-      if(btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
-      return;
-    }
-    if(sw.clock_out_code && code !== sw.clock_out_code) {
-      if(errorEl) errorEl.textContent = 'Incorrect code. Please check with the bar manager.';
-      if(btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
-      return;
-    }
-
-    const now = new Date().toISOString();
-    const hourlyRate = currentWorker?.hourly_rate || 12.71;
-    const shiftHours = parseFloat(sw.shift_length_hours || 2);
-    const totalEarned = Math.round(shiftHours * hourlyRate * 100) / 100;
-
-    // Pre-shift snapshots for the post-shift animation. Captured before any
-    // ledger or applications writes.
+    // Pre-shift snapshots for the post-shift animation. Captured before
+    // any writes so the animation reads the correct pre/post values
+    // even after the cache mirror updates from the RPC response.
     const preShiftTotal = parseInt(currentWorker?.total_points) || 0;
     const preShiftTier = parseInt(currentWorker?.tier) || pointsToTier(preShiftTotal);
 
-    // Speed bonus is the legacy direct-write pattern. Locked spec is +30 for
-    // under-30s response, awarded at response time, not clock-out. Kept as-is
-    // here pending the awardPoints-on-portal refactor in BUILD_STATE item 14.
-    let speedBonus = 0;
+    // SEC-N1 Stage 7: worker_clock_out (RPC) handles caller-resolution,
+    // ownership, state check (status='onshift'), clock_out_code match,
+    // atomic shifts UPDATE (status='completed', clock_out_confirmed_at,
+    // total_earned, actual_arrival_minutes), points_ledger inserts
+    // (completed_shift +60 always; arrived_early +40 OR arrived_on_time
+    // +25 conditional on dispatched_at + clock_in_at +
+    // expected_arrival_minutes delta), and session_workers UPDATE to
+    // status='completed'. The Stage 1 trigger recomputes applications.{
+    // total_points, tier, hourly_rate} from the ledger. Idempotent if
+    // already completed. Returns {ok, shift_id, total_earned, awards,
+    // new_total, new_tier}.
+    //
+    // Speed bonus removed: legacy direct-write pattern superseded by
+    // CORE-locked responded_available_quick (+15 at response time, not
+    // clock-out). The responded_available_quick award fires inside
+    // handleAvailable via worker_award_points_immediate.
+    let data = null;
     try {
-      const responseRows = await fetch(SUPABASE_URL + '/rest/v1/shift_responses?application_id=eq.' + currentWorker.id + '&session_id=eq.' + sw.session_id + '&order=created_at.desc&limit=1&select=response_time', { headers: H }).then(r => r.json());
-      const responseTimeSecs = responseRows?.[0]?.response_time;
-      if(responseTimeSecs != null) {
-        if(responseTimeSecs <= 30) speedBonus = 20;
-        else if(responseTimeSecs <= 60) speedBonus = 15;
-        else if(responseTimeSecs <= 120) speedBonus = 10;
-      }
-    } catch(e) {}
-
-    // 1. Lookup the shift row id (needed for ledger.shift_id) before patching.
-    let shiftId = null;
-    try {
-      const shiftLookup = await fetch(SUPABASE_URL + '/rest/v1/shifts?session_worker_id=eq.' + currentSessionWorkerId + '&status=eq.onshift&order=id.desc&limit=1&select=id', { headers: H }).then(r => r.json());
-      shiftId = shiftLookup?.[0]?.id || null;
-    } catch(e) {}
-
-    // 2. Patch the shift to completed.
-    try {
-      const shiftResp = await fetch(SUPABASE_URL + '/rest/v1/shifts?session_worker_id=eq.' + currentSessionWorkerId + '&status=eq.onshift', {
-        method: 'PATCH',
-        headers: { ...H, 'Prefer': 'return=minimal' },
+      const resp = await fetch(SUPABASE_URL + '/rest/v1/rpc/worker_clock_out', {
+        method: 'POST',
+        headers: { ...H, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          status: 'completed',
-          clock_out_confirmed_at: now,
-          total_earned: totalEarned
+          p_session_worker_id: currentSessionWorkerId,
+          p_code: code
         })
       });
-      if(!shiftResp.ok) throw new Error('shifts PATCH HTTP ' + shiftResp.status);
+      data = await resp.json().catch(() => null);
+      if(!resp.ok || !data || data.ok !== true) {
+        const errCode = data?.error;
+        const errMsg = data?.message;
+        let userMsg = 'Could not record clock-out. Try again or call 07803856078.';
+        if(errCode === 'wrong_code') userMsg = errMsg || 'Incorrect code. Please check with the bar manager.';
+        else if(errCode === 'no_code') userMsg = errMsg || 'Clock-out code not yet revealed.';
+        else if(errCode === 'wrong_state') userMsg = errMsg || 'Not in an on-shift state.';
+        else if(errCode === 'not_yours' || errCode === 'not_found' || errCode === 'no_shift') userMsg = 'Could not find your shift. Please contact hello@glasi.co.uk.';
+        else if(errCode === 'not_a_worker') userMsg = 'Session error. Please contact hello@glasi.co.uk.';
+        if(errorEl) errorEl.textContent = userMsg;
+        if(btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
+        return;
+      }
     } catch(e) {
-      console.error('workerClockOut shift patch failed', e);
+      console.error('workerClockOut failed', e);
       if(errorEl) errorEl.textContent = 'Could not record clock-out. Try again or call 07803856078.';
       if(btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
       return;
     }
 
-    // 3. Compute arrival timing for ledger using clock_in_at vs dispatched_at.
-    let arrivalReason = null, arrivalAmount = 0;
-    try {
-      const swFullRows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?id=eq.' + currentSessionWorkerId + '&select=dispatched_at,expected_arrival_minutes,clock_in_at', { headers: H }).then(r => r.json());
-      const swFull = swFullRows?.[0];
-      if(swFull?.dispatched_at && swFull?.expected_arrival_minutes && swFull?.clock_in_at) {
-        const actualMins = Math.round((new Date(swFull.clock_in_at) - new Date(swFull.dispatched_at)) / 60000);
-        const delta = actualMins - parseFloat(swFull.expected_arrival_minutes);
-        if(delta < 0) { arrivalReason = 'arrived_early'; arrivalAmount = 40; }
-        else if(delta <= 2) { arrivalReason = 'arrived_on_time'; arrivalAmount = 25; }
+    // Mirror the post-trigger applications state into currentWorker so
+    // the post-shift surface renders the new tier / total without an
+    // extra fetch. The Stage 1 trigger already updated the row server-
+    // side; we replicate the same values locally.
+    const newTotal = parseInt(data.new_total);
+    const newTier = parseInt(data.new_tier);
+    if(currentWorker && !isNaN(newTotal)) currentWorker.total_points = newTotal;
+    if(currentWorker && !isNaN(newTier)) {
+      const oldTier = parseInt(currentWorker.tier) || preShiftTier;
+      currentWorker.tier = newTier;
+      if(newTier !== oldTier) {
+        currentWorker.hourly_rate = [12.71, 13.71, 14.71, 15.71, 16.71][newTier - 1];
       }
-    } catch(e) {}
-
-    let awardResult = null;
-    try {
-      // 4. Locked-spec ledger awards via portalAwardPoints. Updates total_points
-      // cache and writes tier_promoted ledger row if a threshold was crossed.
-      const ledgerAwards = [{ amount: 60, reason: 'completed_shift', shiftId: shiftId }];
-      if(arrivalReason) ledgerAwards.push({ amount: arrivalAmount, reason: arrivalReason, shiftId: shiftId });
-      awardResult = await portalAwardPoints(currentWorker.id, ledgerAwards, { sessionId: sw.session_id });
-
-      // 5. Speed bonus stays as a direct total_points write for now. Re-check
-      // tier afterwards in case the bonus pushed across a threshold.
-      if(speedBonus > 0) {
-        const newTotal = (awardResult?.newTotal || preShiftTotal) + speedBonus;
-        const updates = { total_points: newTotal };
-        const newTier = pointsToTier(newTotal);
-        if(newTier > (awardResult?.newTier || preShiftTier)) updates.tier = newTier;
-        await fetch(SUPABASE_URL + '/rest/v1/applications?id=eq.' + currentWorker.id, {
-          method: 'PATCH',
-          headers: { ...H, 'Prefer': 'return=minimal' },
-          body: JSON.stringify(updates)
-        });
-        currentWorker.total_points = newTotal;
-        currentWorker.tier = updates.tier || awardResult?.newTier || preShiftTier;
-      } else {
-        currentWorker.total_points = awardResult?.newTotal || preShiftTotal;
-        currentWorker.tier = awardResult?.newTier || preShiftTier;
-      }
-
-      // 6. Patch session_workers last so the realtime UPDATE fires after the
-      // ledger and applications writes have landed.
-      const swResp = await fetch(SUPABASE_URL + '/rest/v1/session_workers?id=eq.' + currentSessionWorkerId, {
-        method: 'PATCH',
-        headers: { ...H, 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ status: 'completed' })
-      });
-      if(!swResp.ok) throw new Error('session_workers PATCH HTTP ' + swResp.status);
-    } catch(e) {
-      // The shifts row is already 'completed' from step 2 above. Surface the
-      // error and re-enable the button so the worker can retry — the retry
-      // is safe because portalAwardPoints is per-reason idempotent and the
-      // session_workers PATCH is the same target value either way.
-      console.error('workerClockOut failed', e);
-      if(errorEl) errorEl.textContent = 'Could not finalise clock-out. Try again or call 07803856078.';
-      if(btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
-      return;
     }
 
-    // 7. Hand off to the unified post-shift screen with explicit snapshots so
-    // the animation reads the correct pre/post values.
-    const postShiftTotal = currentWorker.total_points;
-    const postShiftTier = currentWorker.tier;
+    // Look up session_id / bar_id / shift_request_id for the post-shift
+    // screen handoff. The RPC doesn't return them, but the row is now
+    // status='completed' so worker_select_own admits the SELECT.
+    let sw = null;
+    try {
+      const rows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?id=eq.' + currentSessionWorkerId + '&select=session_id,bar_id,shift_request_id', { headers: H }).then(r => r.json());
+      sw = rows?.[0] || null;
+    } catch(e) {}
+
+    const postShiftTotal = currentWorker?.total_points ?? preShiftTotal;
+    const postShiftTier = currentWorker?.tier ?? preShiftTier;
     await showPostShiftScreen({
       id: currentSessionWorkerId,
-      session_id: sw.session_id,
-      bar_id: sw.bar_id || null,
-      shift_request_id: sw.shift_request_id || null
+      session_id: sw?.session_id || null,
+      bar_id: sw?.bar_id || null,
+      shift_request_id: sw?.shift_request_id || null
     }, {
       preShiftTotal,
       postShiftTotal,
@@ -6349,63 +6258,41 @@
     if(!code) { if(errorEl) errorEl.textContent = 'Please enter the code from the bar manager.'; return; }
     if(!currentSessionWorkerId) { if(errorEl) errorEl.textContent = 'Session error. Please contact hello@glasi.co.uk.'; return; }
 
-    // Lock the button before the validation fetch so a fast double-tap can't
+    // Lock the button before the RPC call so a fast double-tap can't
     // submit twice. Reset on every error path below + the optimistic render
     // helper resets it on idempotent re-entry.
     if(btn) { btn.disabled = true; btn.textContent = 'Confirming…'; }
 
-    let sw;
+    // SEC-N1 Stage 7: worker_clock_in (RPC) handles caller-resolution,
+    // ownership, state check (status='dispatched'), clock_in_code match,
+    // server-derived hourly_rate + glasi_ref, atomic INSERT into shifts,
+    // and UPDATE session_workers to status='onshift'. Idempotent if
+    // already onshift. Returns {ok, shift_id, glasi_ref, clock_in_at}
+    // on success.
+    let data = null;
     try {
-      const rows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?id=eq.' + currentSessionWorkerId + '&select=id,clock_in_code,session_id,bar_id,shift_length_hours,shift_request_id', { headers: H }).then(r => r.json());
-      sw = rows?.[0];
-    } catch(e) {
-      if(errorEl) errorEl.textContent = 'Network error. Try again.';
-      if(btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
-      return;
-    }
-
-    if(!sw) {
-      if(errorEl) errorEl.textContent = 'Could not find your shift. Please contact hello@glasi.co.uk.';
-      if(btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
-      return;
-    }
-    if(sw.clock_in_code && code !== sw.clock_in_code) {
-      if(errorEl) errorEl.textContent = 'Incorrect code. Please check with the bar manager.';
-      if(btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
-      return;
-    }
-
-    const now = new Date().toISOString();
-    const shiftRef = 'GS' + String(Date.now()).slice(-6);
-
-    try {
-      // 1. Patch session_workers → onshift, clock_in_at, clock_in_code.
-      const swResp = await fetch(SUPABASE_URL + '/rest/v1/session_workers?id=eq.' + currentSessionWorkerId, {
-        method: 'PATCH',
-        headers: { ...H, 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ status: 'onshift', clock_in_at: now, clock_in_code: code })
-      });
-      if(!swResp.ok) throw new Error('session_workers PATCH HTTP ' + swResp.status);
-
-      // 2. Create shifts row. If this fails after the session_workers PATCH
-      // succeeded, the row is in onshift but no shift exists — workerClockOut
-      // will fail later. Surface the error so the worker can call us.
-      const shiftResp = await fetch(SUPABASE_URL + '/rest/v1/shifts', {
+      const resp = await fetch(SUPABASE_URL + '/rest/v1/rpc/worker_clock_in', {
         method: 'POST',
-        headers: { ...H, 'Prefer': 'return=minimal' },
+        headers: { ...H, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          session_id: sw.session_id,
-          session_worker_id: currentSessionWorkerId,
-          bar_id: sw.bar_id,
-          shift_request_id: sw.shift_request_id,
-          shift_length_hours: sw.shift_length_hours,
-          clock_in_confirmed_at: now,
-          status: 'onshift',
-          glasi_ref: shiftRef,
-          hourly_rate: currentWorker?.hourly_rate || 12.71
+          p_session_worker_id: currentSessionWorkerId,
+          p_code: code
         })
       });
-      if(!shiftResp.ok) throw new Error('shifts POST HTTP ' + shiftResp.status);
+      data = await resp.json().catch(() => null);
+      if(!resp.ok || !data || data.ok !== true) {
+        const errCode = data?.error;
+        const errMsg = data?.message;
+        let userMsg = 'Could not clock in. Call 07803856078.';
+        if(errCode === 'wrong_code') userMsg = errMsg || 'Incorrect code. Please check with the bar manager.';
+        else if(errCode === 'no_code') userMsg = errMsg || 'Clock-in code not yet generated.';
+        else if(errCode === 'wrong_state') userMsg = errMsg || 'Not in a dispatched state.';
+        else if(errCode === 'not_yours' || errCode === 'not_found') userMsg = 'Could not find your shift. Please contact hello@glasi.co.uk.';
+        else if(errCode === 'not_a_worker') userMsg = 'Session error. Please contact hello@glasi.co.uk.';
+        if(errorEl) errorEl.textContent = userMsg;
+        if(btn) { btn.disabled = false; btn.textContent = 'Confirm'; }
+        return;
+      }
     } catch(e) {
       console.error('workerClockIn failed', e);
       if(errorEl) errorEl.textContent = 'Could not clock in. Call 07803856078.';
@@ -6413,20 +6300,28 @@
       return;
     }
 
-    // Start the countdown directly with the values we just wrote — saves
-    // renderClockedIn from re-fetching the shift row (it checks
-    // shiftCountdownInterval and skips the fetch if already running).
-    startShiftCountdown(now, sw.shift_length_hours || 2);
+    // The RPC doesn't return session_id / bar_id / shift_request_id /
+    // shift_length_hours. Look them up for the renderClockedIn handoff
+    // and the countdown start. The row is now status='onshift' so
+    // worker_select_own admits the SELECT.
+    let sw = null;
+    try {
+      const rows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?id=eq.' + currentSessionWorkerId + '&select=session_id,bar_id,shift_length_hours,shift_request_id,clock_in_at', { headers: H }).then(r => r.json());
+      sw = rows?.[0] || null;
+    } catch(e) {}
 
-    // Optimistic render. Realtime echo from the session_workers PATCH lands
-    // here too, idempotent.
+    const clockInAt = sw?.clock_in_at || data.clock_in_at || new Date().toISOString();
+    if(sw?.shift_length_hours) startShiftCountdown(clockInAt, sw.shift_length_hours);
+
+    // Optimistic render. Realtime echo from the session_workers UPDATE
+    // (driven server-side by the RPC) lands here too, idempotent.
     await renderClockedIn({
       id: currentSessionWorkerId,
       status: 'onshift',
-      clock_in_at: now,
-      bar_id: sw.bar_id,
-      session_id: sw.session_id,
-      shift_request_id: sw.shift_request_id
+      clock_in_at: clockInAt,
+      bar_id: sw?.bar_id || null,
+      session_id: sw?.session_id || null,
+      shift_request_id: sw?.shift_request_id || null
     });
   }
 
@@ -6444,26 +6339,17 @@
     if(event && event.preventDefault) event.preventDefault();
 
     // Step 1: open WhatsApp deep-link first. Browsers preserve the popup
-    // permission only inside a direct user-gesture click handler; the PATCH
-    // happens after but doesn't need popup permission.
+    // permission only inside a direct user-gesture click handler.
     try { window.open('https://wa.me/447803856078', '_blank'); } catch(e) { /* best-effort */ }
 
-    // If already tapped earlier, skip the PATCH (idempotent UX).
-    const link = document.getElementById('screen1-share-link');
-    if(link && link.getAttribute('data-tapped') === '1') return;
-
-    if(!currentSessionWorkerId) return;
-    try {
-      await fetch(SUPABASE_URL + '/rest/v1/session_workers?id=eq.' + currentSessionWorkerId, {
-        method: 'PATCH',
-        headers: { ...H, 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ share_location_tapped_at: new Date().toISOString() })
-      });
-    } catch(e) {
-      console.error('share_location_tapped_at PATCH failed', e);
-      // Don't block the UX; the WhatsApp link already opened. The realtime
-      // echo will eventually surface the column if the PATCH succeeded.
-    }
+    // SEC-N1 Stage 7: the share_location_tapped_at column is now written
+    // server-side by worker_confirm_departed (the proceedConfirmOnTheWay
+    // RPC call), which sets BOTH departed_at AND share_location_tapped_at
+    // atomically. The intermediate "share-link tapped but not yet on-the-
+    // way confirmed" state is no longer recorded in the DB (was a small
+    // dashboard decoration; primary signal is departed_at). The link's
+    // visual "already tapped" state is still set locally so the worker
+    // sees the same UX through the rest of Screen 1.
     setShareLinkTappedState(true);
   }
 
@@ -6516,20 +6402,28 @@
     if(btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
     if(errEl) errEl.textContent = '';
 
-    const departedAt = new Date().toISOString();
+    // SEC-N1 Stage 7: worker_confirm_departed (RPC) handles caller-
+    // resolution, ownership, state check (status='dispatched'), and the
+    // atomic UPDATE on session_workers (departed_at +
+    // share_location_tapped_at via COALESCE). Idempotent if already
+    // departed.
     try {
-      const resp = await fetch(SUPABASE_URL + '/rest/v1/session_workers?id=eq.' + currentSessionWorkerId, {
-        method: 'PATCH',
-        headers: { ...H, 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ departed_at: departedAt })
+      const resp = await fetch(SUPABASE_URL + '/rest/v1/rpc/worker_confirm_departed', {
+        method: 'POST',
+        headers: { ...H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_session_worker_id: currentSessionWorkerId })
       });
-      if(!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json().catch(() => null);
+      if(!resp.ok || !data || data.ok !== true) {
+        throw new Error(data?.error || ('HTTP ' + resp.status));
+      }
     } catch(e) {
-      console.error('proceedConfirmOnTheWay PATCH failed', e);
+      console.error('proceedConfirmOnTheWay RPC failed', e);
       if(btn) { btn.disabled = false; btn.textContent = "CONFIRM I'M ON MY WAY"; }
       if(errEl) errEl.textContent = 'Could not confirm. Try again or call 07803856078.';
       return;
     }
+    const departedAt = new Date().toISOString();
 
     // Open Maps in a new tab. Falls back to auto-generated maps URL if the
     // bar's google_maps_link is unset.
@@ -6780,32 +6674,38 @@
 
   async function confirmLeaveSession() {
     const selected = document.querySelector('input[name="leave-reason"]:checked');
-    const reason = selected ? selected.value : 'No reason given';
 
-    // Write left_at and reason to session_invites
+    // SEC-N1 Stage 7: worker_leave_session (RPC) admits the four
+    // machine-code reasons matching the Flutter LeaveReason enum
+    // (Stage 6, locked decision A). The radio button display values
+    // map to those codes here. RPC handles caller-resolution, invite
+    // ownership, the session_invites UPDATE (left_at + rejoin_reason)
+    // and the session_workers flip to status='left' with
+    // left_reason='voluntary' atomically.
+    const REASON_MAP = {
+      'I have somewhere to be': 'somewhereToBe',
+      'I am not feeling well':  'notFeelingWell',
+      'Something has come up':  'somethingCameUp',
+      'Other':                  'other'
+    };
+    const radioValue = selected ? selected.value : 'Other';
+    const reasonCode = REASON_MAP[radioValue] || 'other';
+
     if(currentSessionInvite) {
       try {
-        await fetch(SUPABASE_URL + '/rest/v1/session_invites?id=eq.' + currentSessionInvite.id, {
-          method: 'PATCH',
-          headers: { ...H, 'Prefer': 'return=minimal' },
-          body: JSON.stringify({ left_at: new Date().toISOString(), rejoin_reason: reason })
+        await fetch(SUPABASE_URL + '/rest/v1/rpc/worker_leave_session', {
+          method: 'POST',
+          headers: { ...H, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            p_session_invite_id: currentSessionInvite.id,
+            p_reason: reasonCode
+          })
         });
-      } catch(e) {}
-    }
-
-    // F-38 L14: also flip session_workers.status='left' with left_reason='voluntary'
-    // (constant per CHECK; narrative text remains on session_invites.rejoin_reason).
-    // Scoped to status='in_session' so the leave button cannot accidentally
-    // unwind a dispatched / onshift / completed worker. The leave button is
-    // only surfaced from the in_session waiting room screen, but defensive.
-    if(currentSessionInvite && currentWorker) {
-      try {
-        await fetch(SUPABASE_URL + '/rest/v1/session_workers?application_id=eq.' + currentWorker.id + '&session_id=eq.' + currentSessionInvite.session_id + '&status=eq.in_session', {
-          method: 'PATCH',
-          headers: { ...H, 'Prefer': 'return=minimal' },
-          body: JSON.stringify({ status: 'left', left_reason: 'voluntary' })
-        });
-      } catch(e) {}
+      } catch(e) {
+        console.error('worker_leave_session RPC failed', e);
+        // Best-effort: the UI still proceeds to the goodbye surface
+        // (locked F-34b pattern); the worker's intent was clear.
+      }
     }
 
     stopRealtime();

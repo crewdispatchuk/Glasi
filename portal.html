@@ -1180,16 +1180,15 @@
       text-transform: uppercase;
     }
 
-    /* F-34e: firer-name pill on Screen 2's ask-for sentence. Filled ice
-       background with navy text reads as the visual anchor in the
-       sentence flow; sizing/shape matches the dashboard's badge
-       conventions (small pill, 8px radius). */
+    /* Firer-name pill on Screen 2's ask-for sentence. Solid green background
+       with navy text carries the dispatch surface's green theme and reads as
+       the visual anchor in the sentence flow. */
     .firer-name-pill {
       display: inline-block;
-      background: var(--ice);
+      background: var(--green);
       color: var(--navy);
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
       padding: 3px 10px;
       border-radius: 8px;
       line-height: 1.2;
@@ -1447,27 +1446,21 @@
       color: var(--white);
       margin-bottom: 4px;
     }
+    .shift-post-card-v6 .spc-address {
+      font-size: 12px;
+      color: var(--grey);
+      margin-bottom: 6px;
+    }
     .shift-post-card-v6 .spc-detail {
       font-size: 13px;
       color: var(--grey);
-      margin-bottom: 10px;
-    }
-    .shift-post-card-v6 .spc-eta {
-      font-size: 12px;
-      color: var(--white);
-      background: rgba(168,216,234,0.08);
-      border: 1px solid rgba(168,216,234,0.25);
-      border-radius: 8px;
-      padding: 8px 12px;
       margin-bottom: 14px;
-      font-family: 'Inter', sans-serif;
     }
-    .shift-post-card-v6 .spc-disclaimer {
-      font-size: 11px;
+    .shift-post-card-v6 .spc-quick-response {
+      font-size: 13px;
       color: var(--grey);
       line-height: 1.5;
-      margin-bottom: 14px;
-      font-style: italic;
+      margin-bottom: 18px;
     }
     .shift-post-card-v6 .spc-buttons {
       display: flex;
@@ -1492,23 +1485,33 @@
       color: var(--grey);
       border: 1px solid var(--border) !important;
     }
-    .shift-post-card-v6.is-responded .spc-buttons,
-    .shift-post-card-v6.is-closed .spc-buttons,
     .shift-post-card-v6.is-responded::before,
     .shift-post-card-v6.is-closed::before {
       display: none;
     }
-    .shift-post-card-v6 .spc-status-msg {
-      display: none;
+    .shift-post-card-v6 .spc-responded-copy {
       font-size: 13px;
       color: var(--grey);
-      line-height: 1.6;
-      margin-top: 4px;
+      line-height: 1.5;
+      margin-bottom: 18px;
     }
-    .shift-post-card-v6.is-responded .spc-status-msg,
-    .shift-post-card-v6.is-closed .spc-status-msg {
-      display: block;
+    .shift-post-card-v6 .spc-pill-available,
+    .shift-post-card-v6 .spc-pill-pass {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: var(--navy);
+      border: 1px solid var(--border);
+      color: var(--white);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
     }
+    .shift-post-card-v6 .spc-pill-available { color: var(--green); }
+    .shift-post-card-v6 .spc-pill-pass { color: var(--grey); }
 
     .shift-buttons {
       display: flex;
@@ -2426,12 +2429,14 @@
     <!-- SESSIONS TAB -->
     <div id="tab-sessions" style="display:none;">
 
-      <!-- STATE 3: scheduled invite, pending response -->
+      <!-- STATE 3: scheduled invite, pending response.
+           Bar identity hidden until shift_request fires (disclosure invariant).
+           Date / time stays visible as the worker-facing time anchor. -->
       <div id="sessions-pending-response" style="display:none;">
         <div class="session-invite-card">
           <div class="session-invite-label">Session Invite</div>
-          <div class="session-invite-headline">You've been invited to a session</div>
           <div class="session-invite-when" id="pending-session-when">—</div>
+          <div class="session-invite-headline">Are you available? Accept the invite to join so you can see when requests come in.</div>
           <div class="session-invite-actions">
             <button id="invite-yes-btn" class="session-invite-yes" onclick="confirmAttendance()">Yes I'm in</button>
             <button id="invite-no-btn" class="session-invite-no" onclick="declineAttendance()">No I'll pass</button>
@@ -2443,25 +2448,28 @@
       <!-- STATE: live session, worker pre-confirmed via accept/decline,
            not yet through prejoin. Shown when attendance_confirmed='confirmed'
            and sessions.status='live'. Click → enterPrejoin → prejoin checks
-           → live session. -->
+           → live session.
+           Bar identity hidden until shift_request fires (disclosure invariant). -->
       <div id="sessions-live-confirmed-join" style="display:none;">
         <div class="session-live-confirmed-card">
           <div class="session-live-confirmed-label">
             <span class="live-dot"></span>
             <span>Session live</span>
           </div>
-          <div class="session-live-confirmed-headline">Session is live</div>
-          <div class="session-live-confirmed-zone" id="live-confirmed-zone">—</div>
+          <div class="session-live-confirmed-headline">Session is live. Join so you can respond to requests.</div>
           <button class="session-live-confirmed-btn" onclick="joinConfirmedSession()">Join Session</button>
         </div>
       </div>
 
-      <!-- STATE 2: scheduled invite, confirmed, waiting for go-live -->
+      <!-- STATE 2: scheduled invite, confirmed, waiting for go-live.
+           Bar identity hidden until shift_request fires (disclosure invariant).
+           Headline is set dynamically by renderSessionsScheduledState using
+           the worker's first name + the session start time. -->
       <div id="sessions-confirmed-waiting" style="display:none;">
         <div class="session-confirmed-card">
           <div class="session-confirmed-label">Confirmed</div>
-          <div class="session-confirmed-headline">Session not live yet. We'll let you know when it's time.</div>
-          <div class="session-confirmed-when" id="confirmed-session-when">—</div>
+          <div class="session-confirmed-headline" id="confirmed-headline">Thanks, see you soon.</div>
+          <div class="session-confirmed-sub" style="font-size:13px;color:var(--grey);margin-top:6px;">You'll get a push when we go live.</div>
         </div>
       </div>
 
@@ -2527,18 +2535,23 @@
         <div class="live-header">
           <div class="live-dot"></div>
           <span class="live-text">Session Live</span>
-          <span class="live-sub" id="live-zone">Southampton City Centre</span>
+          <!-- Bar identity / zone hidden until shift_request fires
+               (disclosure invariant). #live-zone element kept for JS
+               compatibility but visually suppressed. -->
+          <span class="live-sub" id="live-zone" style="display:none;"></span>
         </div>
 
-        <!-- Waiting for shift -->
+        <!-- Waiting for shift.
+             Single locked copy line; cycling ticker removed (the #live-ticker
+             element is kept for JS compatibility but hidden). -->
         <div id="live-waiting" class="waiting-card">
           <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;">
             <div class="live-dot"></div>
             <div style="font-size:13px;color:var(--green);font-weight:600;">Connected</div>
           </div>
-          <div class="waiting-title">You are in the session</div>
-          <div class="waiting-sub">Stay on this page. When a shift becomes available it will appear here. Respond as quickly as you can.</div>
-          <div id="live-ticker" style="margin-top:20px;font-size:12px;color:var(--grey);font-style:italic;min-height:18px;transition:opacity 0.5s;"></div>
+          <div class="waiting-title">You're in</div>
+          <div class="waiting-sub">We'll alert you the moment a bar needs support.</div>
+          <div id="live-ticker" style="display:none;"></div>
           <div style="margin-top:16px;font-size:11px;color:var(--grey);">Session time: <span id="live-elapsed">00:00</span></div>
           <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px;">
             <button onclick="openLeaveSession()" style="background:none;border:1px solid var(--border);color:var(--grey);border-radius:8px;padding:10px 20px;font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;width:100%;">Leave Session</button>
@@ -2605,10 +2618,11 @@
                 <a id="screen2-maps-link" href="#" target="_blank" rel="noopener" style="font-size:13px;color:var(--ice);font-weight:600;text-decoration:underline;">Open in Google Maps &rarr;</a>
               </div>
 
-              <!-- F-34c: ask-for sentence nested inside outer card, below venue. -->
+              <!-- Ask-for sentence nested inside outer card, below venue.
+                   Two-line locked copy; pill carries the dispatch green theme. -->
               <div style="font-size:14px;color:var(--white);line-height:1.7;text-align:left;">
-                Ask for <span class="firer-name-pill" id="screen2-firer-name">the bar manager</span> when you arrive.<br>
-                They'll give you your clock-in code.
+                When you arrive at the venue, head to the bar and ask for <span class="firer-name-pill" id="screen2-firer-name">the bar manager</span>.<br>
+                They have your clock-in code and instructions.
               </div>
             </div>
 
@@ -2617,27 +2631,37 @@
             <div id="clockin-input-section" style="margin-top:20px;">
               <div style="font-size:11px;font-weight:600;letter-spacing:1px;color:var(--ice);text-transform:uppercase;margin-bottom:8px;text-align:left;">Clock-in Code</div>
               <div style="display:flex;gap:8px;">
-                <input type="text" id="worker-clockin-input" maxlength="6" placeholder="Enter code from the bar manager" style="flex:1;background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:16px;color:var(--white);font-family:'Inter',sans-serif;outline:none;letter-spacing:4px;text-align:center;">
+                <input type="text" id="worker-clockin-input" maxlength="4" placeholder="----" style="flex:1;background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:16px;color:var(--white);font-family:'Inter',sans-serif;outline:none;letter-spacing:4px;text-align:center;">
                 <button id="worker-clockin-btn" onclick="workerClockIn()" style="background:var(--green);color:var(--navy);border:none;border-radius:8px;padding:12px 16px;font-size:13px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;">Confirm</button>
               </div>
               <div id="worker-clockin-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:16px;"></div>
             </div>
 
-            <!-- Clocked-in state. F-34c: also a sibling of the outer card.
-                 renderClockedIn hides #screen2-outer-card so the only visible
-                 thing in the dispatch container is the clocked-in card stack. -->
+            <!-- Clocked-in state. Bar info + status read as one card per
+                 phase; the clock-out action area is a sibling shown only
+                 in Phase 2. Matches the Flutter ClockedInSurface layout. -->
             <div id="clockin-confirmed-section" style="display:none;margin-top:16px;">
-              <div id="portal-onshift-card" style="background:rgba(74,222,128,0.08);border:2px solid rgba(74,222,128,0.3);border-radius:16px;padding:32px 24px;text-align:center;">
-                <div style="font-size:36px;margin-bottom:12px;">✓</div>
-                <div style="font-size:20px;font-weight:700;color:var(--green);margin-bottom:8px;">You are clocked in</div>
-                <div style="font-size:14px;color:var(--grey);line-height:1.7;margin-bottom:16px;">Work hard, be helpful, enjoy it. Every shift builds your tier and your rate.</div>
-                <div id="portal-shift-countdown" style="font-size:20px;font-weight:700;color:var(--amber);"></div>
+              <div id="portal-onshift-card" style="background:var(--navy-mid);border:1px solid var(--border);border-radius:16px;padding:20px 18px;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:3px;color:var(--ice);text-transform:uppercase;margin-bottom:10px;">On Shift At</div>
+                <div id="clockedin-bar-name-onshift" style="font-size:22px;font-weight:800;color:var(--white);"></div>
+                <div id="clockedin-bar-addr-onshift" style="font-size:13px;color:var(--grey);margin-top:4px;"></div>
+                <div style="height:1px;background:var(--border);margin:14px 0;"></div>
+                <div style="font-size:11px;font-weight:800;letter-spacing:3px;color:var(--green);text-transform:uppercase;margin-bottom:8px;">On Shift</div>
+                <div id="portal-shift-end-time" style="font-size:16px;font-weight:600;color:var(--white);">Shift ends at --:--</div>
               </div>
 
-              <div id="portal-shift-ended-card" style="display:none;background:var(--navy-mid);border:1px solid var(--border);border-radius:16px;padding:28px 24px;">
-                <div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:6px;text-align:center;">Shift complete</div>
-                <div style="font-size:13px;color:var(--grey);text-align:center;margin-bottom:20px;">Enter the clock-out code from your bar manager.</div>
-                <input type="text" id="worker-clockout-input" maxlength="6" placeholder="Clock-out code" style="width:100%;background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:20px;color:var(--white);font-family:'Inter',sans-serif;outline:none;letter-spacing:6px;text-align:center;margin-bottom:10px;">
+              <div id="portal-shift-ended-card" style="display:none;background:var(--navy-mid);border:1px solid var(--border);border-radius:16px;padding:20px 18px;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:3px;color:var(--ice);text-transform:uppercase;margin-bottom:10px;">Venue</div>
+                <div id="clockedin-bar-name-ended" style="font-size:22px;font-weight:800;color:var(--white);"></div>
+                <div id="clockedin-bar-addr-ended" style="font-size:13px;color:var(--grey);margin-top:4px;"></div>
+                <div style="height:1px;background:var(--border);margin:14px 0;"></div>
+                <div style="font-size:11px;font-weight:800;letter-spacing:3px;color:var(--green);text-transform:uppercase;margin-bottom:8px;">Shift Complete</div>
+                <div style="font-size:14px;color:var(--white);line-height:1.5;">Ask the bar manager for your clock-out code.</div>
+              </div>
+
+              <div id="portal-shift-clockout-action" style="display:none;margin-top:16px;padding:0 16px;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;margin-bottom:8px;">Clock-Out Code</div>
+                <input type="text" id="worker-clockout-input" maxlength="4" placeholder="----" style="width:100%;background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:20px;color:var(--white);font-family:'Inter',sans-serif;outline:none;letter-spacing:4px;text-align:center;margin-bottom:10px;">
                 <button id="worker-clockout-btn" onclick="workerClockOut()" style="width:100%;background:var(--ice);color:var(--navy);border:none;border-radius:8px;padding:14px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;margin-bottom:12px;">Confirm</button>
                 <div id="worker-clockout-error" style="font-size:12px;color:var(--red);margin-bottom:8px;min-height:16px;text-align:center;"></div>
                 <div style="text-align:center;">
@@ -2813,6 +2837,16 @@
     if(error || !data?.session) {
       errorEl.textContent = /invalid/i.test(error?.message || '') ? 'Incorrect email or password.' : 'Sign-in failed. Try again.';
       return;
+    }
+
+    // SEC-21: explicit JWT swap before the next fetch. The
+    // onAuthStateChange listener at the top of this script also performs
+    // this swap, but the listener may fire after the await returns; an
+    // explicit swap here removes the race. Under Stage 4's tight RLS on
+    // applications, the anon JWT returns zero rows; only the worker's
+    // user JWT lets the fetch resolve their onboarded row.
+    if (data?.session?.access_token) {
+      H.Authorization = 'Bearer ' + data.session.access_token;
     }
 
     // Auth succeeded. Verify the worker is onboarded before letting them
@@ -4492,23 +4526,31 @@
     const dt = s.scheduled_start
       ? new Date(s.scheduled_start)
       : (s.session_date ? new Date(s.session_date + 'T' + (s.start_time || '18:00:00')) : null);
+    // whenStr: date + time, no bar set / zone. Bar identity is hidden until
+    // shift_request fires (disclosure invariant).
     const whenStr = dt
       ? dt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
         + ' at ' + dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
       : 'Date TBC';
-    const loc = describeSessionLocation(s);
-    const fullStr = whenStr + (loc ? ' at ' + loc : '');
+    const timeOnly = dt
+      ? dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
+      : '';
+    const firstName = (currentWorker?.name || '').split(/\s+/)[0] || 'there';
 
     if(invite.attendance_confirmed === 'confirmed') {
       const el = document.getElementById('sessions-confirmed-waiting');
-      const whenEl = document.getElementById('confirmed-session-when');
-      if(whenEl) whenEl.textContent = fullStr;
+      const headlineEl = document.getElementById('confirmed-headline');
+      if(headlineEl) {
+        headlineEl.textContent = timeOnly
+          ? `Thanks ${firstName}, see you at ${timeOnly}.`
+          : `Thanks ${firstName}, see you soon.`;
+      }
       if(el) el.style.display = 'block';
     } else {
       // pending
       const el = document.getElementById('sessions-pending-response');
       const whenEl = document.getElementById('pending-session-when');
-      if(whenEl) whenEl.textContent = fullStr;
+      if(whenEl) whenEl.textContent = whenStr;
       // Reset response buttons + error in case this is a re-render after
       // a failed PATCH.
       const yesBtn = document.getElementById('invite-yes-btn');
@@ -4720,8 +4762,8 @@
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
-    const zoneEl = document.getElementById('live-confirmed-zone');
-    if(zoneEl) zoneEl.textContent = describeSessionLocation(invite.sessions);
+    // Bar identity / zone slot retired from this surface per the disclosure
+    // invariant; describeSessionLocation no longer called here.
     const card = document.getElementById('sessions-live-confirmed-join');
     if(card) card.style.display = 'block';
   }
@@ -5275,23 +5317,53 @@
     })[c]);
   }
 
-  function renderShiftPostCard(record, walkingMinutes, barName, barAddress) {
+  function renderShiftPostCard(record, walkingMinutes, barName, barAddress, existingResponse) {
+    // UX invariant: the eligibility window is not shown to the worker.
+    // Visible urgency = audio ping + the quick-response copy below. The
+    // detail line matches the Flutter format: "Xh shift · N min walk".
+    //
+    // If existingResponse is 'available' or 'pass', the card builds in the
+    // responded form (RESPONSE LOGGED header, no buttons, pill at the bottom).
+    // This is how the bootstrap rehydrates responded cards on page reload.
+    const responded = existingResponse === 'available' || existingResponse === 'pass';
     const card = document.createElement('div');
-    card.className = 'shift-post-card-v6 is-open';
+    card.className = 'shift-post-card-v6 ' + (responded ? 'is-responded' : 'is-open');
     card.dataset.requestId = String(record.id);
+    const hours = record.shift_length_hours || 2;
+    const hoursLabel = (hours === Math.trunc(hours)) ? (hours + 'h') : (hours.toFixed(1) + 'h');
+
+    const headerLabel = responded ? 'Response Logged' : 'Shift Available';
+    let body;
+    if(responded) {
+      const copy = existingResponse === 'available'
+        ? "Thanks for saying you're available. We're picking the best person and will let you know in a few minutes. It could be you."
+        : "Thanks for letting us know. It doesn't matter that you're not available, being responsive is what counts.";
+      const pillClass = existingResponse === 'available' ? 'spc-pill-available' : 'spc-pill-pass';
+      const pillText = existingResponse === 'available'
+        ? '✓ Available, response logged'
+        : '✗ Passed, response logged';
+      body =
+          '<div class="spc-responded-copy">' + escapeHtml(copy) + '</div>'
+        + '<div class="' + pillClass + '">' + pillText + '</div>';
+    } else {
+      body =
+          '<div class="spc-quick-response">This request needs a quick response. Faster responses are more likely to be dispatched. Tap pass if you can\'t, just let us know.</div>'
+        + '<div class="spc-buttons">'
+        + '<button class="spc-available">I\'m available</button>'
+        + '<button class="spc-pass">I\'ll pass</button>'
+        + '</div>';
+    }
+
     card.innerHTML =
-        '<div class="spc-label">Shift Available</div>'
+        '<div class="spc-label">' + headerLabel + '</div>'
       + '<div class="spc-venue">' + escapeHtml(barName || 'Venue') + '</div>'
-      + '<div class="spc-detail">' + escapeHtml(barAddress || '') + (barAddress ? ' · ' : '') + (record.shift_length_hours || 2) + ' hours</div>'
-      + '<div class="spc-eta">Your walk: ' + walkingMinutes + ' min from your address</div>'
-      + '<div class="spc-disclaimer">Responding does not guarantee you will be selected. We will notify you immediately if you are chosen.</div>'
-      + '<div class="spc-buttons">'
-      + '<button class="spc-available">I\'m available</button>'
-      + '<button class="spc-pass">I\'ll pass</button>'
-      + '</div>'
-      + '<div class="spc-status-msg"></div>';
-    card.querySelector('.spc-available').addEventListener('click', () => handleAvailable(record.id));
-    card.querySelector('.spc-pass').addEventListener('click', () => handlePass(record.id));
+      + (barAddress ? '<div class="spc-address">' + escapeHtml(barAddress) + '</div>' : '')
+      + '<div class="spc-detail">' + hoursLabel + ' shift · ' + walkingMinutes + ' min walk</div>'
+      + body;
+    if(!responded) {
+      card.querySelector('.spc-available').addEventListener('click', () => handleAvailable(record.id));
+      card.querySelector('.spc-pass').addEventListener('click', () => handlePass(record.id));
+    }
     return card;
   }
 
@@ -5331,10 +5403,13 @@
         } catch(e) {}
       }
 
-      // Eligibility (c) — already responded to this request. No double-respond.
+      // Stack-of-cards model: already-responded requests are NOT filtered
+      // out. The card renders in responded form (pill + responded copy) so
+      // the worker sees their response history during the session.
+      let existingResponse = null;
       try {
-        const existing = await fetch(SUPABASE_URL + '/rest/v1/shift_responses?shift_request_id=eq.' + record.id + '&application_id=eq.' + currentWorker.id + '&select=id', { headers: H }).then(r => r.json());
-        if(existing && existing.length > 0) return;
+        const rows = await fetch(SUPABASE_URL + '/rest/v1/shift_responses?shift_request_id=eq.' + record.id + '&application_id=eq.' + currentWorker.id + '&round_number=eq.1&select=response', { headers: H }).then(r => r.json());
+        if(rows && rows[0]) existingResponse = rows[0].response;
       } catch(e) {}
 
       // Eligibility (a) — walking_minutes < 30 from signup postcode. Workers
@@ -5360,7 +5435,7 @@
         if(bars && bars[0]) { barName = bars[0].name; barAddress = bars[0].address || ''; }
       } catch(e) {}
 
-      const cardEl = renderShiftPostCard(record, walkingMinutes, barName, barAddress);
+      const cardEl = renderShiftPostCard(record, walkingMinutes, barName, barAddress, existingResponse);
       const container = document.getElementById('live-shift-posts-container');
       if(!container) return;
       container.appendChild(cardEl);
@@ -5371,12 +5446,18 @@
 
       const ctx = {
         record, cardEl, walkingMinutes, windowSeconds, postedAtMs,
-        timerHandle: null, pingHandle: null, hasResponded: false
+        timerHandle: null, pingHandle: null,
+        hasResponded: existingResponse === 'available' || existingResponse === 'pass'
       };
       activeRequests.set(record.id, ctx);
 
-      startCardTimer(ctx, remainingSecs);
-      startCardPings(ctx);
+      // Awaiting cards get the internal expiry timer + ping loop. Responded
+      // cards skip both: the request closes server-side and the realtime
+      // UPDATE handler removes the card from the stack.
+      if(!ctx.hasResponded) {
+        startCardTimer(ctx, remainingSecs);
+        startCardPings(ctx);
+      }
     } finally {
       _showingShiftPost.delete(record.id);
     }
@@ -5394,13 +5475,15 @@
         ctx.timerHandle = null;
         stopCardPings(ctx);
         if(!ctx.hasResponded) {
-          // Worker did not take a final action. F-04 will write the no_response
-          // row + penalty when the request closes server-side. F-03 just
-          // transitions UX to the closing state.
-          transitionCardToClosed(ctx, 'expired');
+          // Stack-of-cards model: expired cards just disappear from the
+          // worker's screen. F-04 still writes the no_response row + penalty
+          // when the request closes server-side; this is the UX side only.
+          closeCard(ctx.record.id, 'silent');
         }
-        // If the worker had already responded, the card is in the responded
-        // state already; no further UX change here.
+        // If the worker had already responded, the card stays in the stack
+        // until the underlying shift_request transitions to
+        // dispatched/expired/cancelled and handleActiveRequestUpdate removes
+        // it (also silent).
       }
     }, 1000);
   }
@@ -5418,14 +5501,25 @@
     if(!ctx.cardEl) return;
     ctx.cardEl.classList.remove('is-open');
     ctx.cardEl.classList.add('is-responded');
-    const msg = ctx.cardEl.querySelector('.spc-status-msg');
-    if(msg) {
-      if(type === 'available') {
-        msg.textContent = "Thanks for saying you're available. We will let you know who we have selected very shortly.";
-      } else if(type === 'pass') {
-        msg.textContent = "Thanks for letting us know. You're still in the session for the next request.";
-      }
-    }
+    // Header text swaps; the body region rebuilds with responded copy + pill.
+    const label = ctx.cardEl.querySelector('.spc-label');
+    if(label) label.textContent = 'Response Logged';
+    const quick = ctx.cardEl.querySelector('.spc-quick-response');
+    if(quick) quick.remove();
+    const buttons = ctx.cardEl.querySelector('.spc-buttons');
+    if(buttons) buttons.remove();
+    // Avoid duplicating on a re-entry (e.g. realtime echo).
+    if(ctx.cardEl.querySelector('.spc-responded-copy')) return;
+    const copy = document.createElement('div');
+    copy.className = 'spc-responded-copy';
+    copy.textContent = type === 'available'
+      ? "Thanks for saying you're available. We're picking the best person and will let you know in a few minutes. It could be you."
+      : "Thanks for letting us know. It doesn't matter that you're not available, being responsive is what counts.";
+    const pill = document.createElement('div');
+    pill.className = type === 'available' ? 'spc-pill-available' : 'spc-pill-pass';
+    pill.textContent = type === 'available' ? '✓ Available, response logged' : '✗ Passed, response logged';
+    ctx.cardEl.appendChild(copy);
+    ctx.cardEl.appendChild(pill);
   }
 
   function transitionCardToClosed(ctx, reason) {
@@ -5471,7 +5565,7 @@
     const postedAtMs = ctx ? ctx.postedAtMs : null;
     const responseSecs = postedAtMs ? Math.round((Date.now() - postedAtMs) / 1000) : null;
     try {
-      await fetch(SUPABASE_URL + '/rest/v1/shift_responses', {
+      const resp = await fetch(SUPABASE_URL + '/rest/v1/shift_responses', {
         method: 'POST',
         headers: { ...H, 'Prefer': 'return=minimal' },
         body: JSON.stringify({
@@ -5482,21 +5576,29 @@
           response_seconds: responseSecs
         })
       });
-    } catch(e) {}
+      // 409 = duplicate key on shift_responses_unique_per_round
+      // (shift_request_id, application_id, round_number=1). A row already
+      // exists; the optimistic DOM flip in handleAvailable / handlePass is
+      // the correct end state, so treat as success.
+      if(resp.status === 409) {
+        console.log('[recordResponse] 409 swallowed for request', requestId);
+      }
+    } catch(e) {
+      console.warn('[recordResponse] network failure for request', requestId, e);
+    }
   }
 
   async function handleAvailable(requestId) {
     const ctx = activeRequests.get(requestId);
     if(!ctx || ctx.hasResponded) return;
     ctx.hasResponded = true;
+    // Optimistic flip: swap the awaiting body for the responded pill body
+    // immediately so the worker can't tap again and gets instant feedback.
     const originBtn = ctx.cardEl ? ctx.cardEl.querySelector('button') : null;
-    if(ctx.cardEl) {
-      ctx.cardEl.querySelectorAll('button').forEach(b => b.disabled = true);
-    }
+    transitionCardToResponded(ctx, 'available');
     stopCardPings(ctx);
     if(ctx.timerHandle) { clearInterval(ctx.timerHandle); ctx.timerHandle = null; }
     await recordResponse(requestId, 'available');
-    transitionCardToResponded(ctx, 'available');
 
     // F-32: real-time points writers via awardPointsImmediate.
     // Base +15 for I'm Available, plus conditional +15 quick-response bonus
@@ -5541,14 +5643,12 @@
     const ctx = activeRequests.get(requestId);
     if(!ctx || ctx.hasResponded) return;
     ctx.hasResponded = true;
+    // Optimistic flip; see handleAvailable for rationale.
     const originBtn = ctx.cardEl ? ctx.cardEl.querySelector('button') : null;
-    if(ctx.cardEl) {
-      ctx.cardEl.querySelectorAll('button').forEach(b => b.disabled = true);
-    }
+    transitionCardToResponded(ctx, 'pass');
     stopCardPings(ctx);
     if(ctx.timerHandle) { clearInterval(ctx.timerHandle); ctx.timerHandle = null; }
     await recordResponse(requestId, 'pass');
-    transitionCardToResponded(ctx, 'pass');
 
     // F-32: responded_pass +1. No quick-bonus variant (engagement-with-work
     // earns the speed bonus, not declining-with-speed).
@@ -5578,15 +5678,12 @@
     if(!record) return;
     const ctx = activeRequests.get(record.id);
     if(!ctx) return;
-    if(record.status === 'dispatched') {
-      // Someone got the shift. If it was us, the self-dispatch path runs in
-      // parallel via the session_workers UPDATE. Until that disambiguates,
-      // mark this card as filled; if we ARE the dispatched worker, the
-      // self-dispatch path will silently remove this card and renderDispatchedFresh
-      // takes over.
-      transitionCardToClosed(ctx, 'filled');
-    } else if(record.status === 'expired' || record.status === 'cancelled') {
-      closeCard(record.id, 'expired');
+    // Stack-of-cards model: dispatched / expired / cancelled all silently
+    // drop the card from the stack. If the worker IS the dispatched one,
+    // the parallel session_workers UPDATE flips to renderDispatchedFresh
+    // and that surface takes over.
+    if(record.status === 'dispatched' || record.status === 'expired' || record.status === 'cancelled') {
+      closeCard(record.id, 'silent');
     }
   }
 
@@ -5644,34 +5741,33 @@
     workerShiftLength = shiftLengthHours;
     if(shiftCountdownInterval) clearInterval(shiftCountdownInterval);
 
-    function update() {
-      const el = document.getElementById('portal-shift-countdown');
-      if(!el) return;
-      const clockIn = new Date(clockInAt);
-      const shiftMs = parseFloat(shiftLengthHours) * 3600000;
-      const endTime = new Date(clockIn.getTime() + shiftMs);
+    // Set the static "Shift ends at HH:MM" label once, in local time. The
+    // worker does not see a per-second countdown (UX invariant: state
+    // transitions, not numerical progress).
+    const clockIn = new Date(clockInAt);
+    const shiftMs = parseFloat(shiftLengthHours) * 3600000;
+    const endTime = new Date(clockIn.getTime() + shiftMs);
+    const hh = String(endTime.getHours()).padStart(2, '0');
+    const mm = String(endTime.getMinutes()).padStart(2, '0');
+    const endLabel = document.getElementById('portal-shift-end-time');
+    if(endLabel) endLabel.textContent = 'Shift ends at ' + hh + ':' + mm;
+
+    // Internal tick at 30s checks whether the shift has ended so the on-shift
+    // card swaps to the ended card and the clock-out action area reveals.
+    // No visible numbers tick.
+    function check() {
       const remainingMs = endTime.getTime() - Date.now();
-
-      if(remainingMs > 0) {
-        const totalSecs = Math.floor(remainingMs / 1000);
-        const h = Math.floor(totalSecs / 3600);
-        const m = Math.floor((totalSecs % 3600) / 60);
-        const s = totalSecs % 60;
-        el.textContent = 'Shift ends in ' + (h > 0 ? h + 'h ' : '') + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
-        el.style.color = remainingMs < 600000 ? 'var(--red)' : 'var(--amber)';
-      } else {
-        el.textContent = '';
-        // Show shift ended card
-        const onshiftCard = document.getElementById('portal-onshift-card');
-        if(onshiftCard) onshiftCard.style.display = 'none';
-        const endedCard = document.getElementById('portal-shift-ended-card');
-        if(endedCard) endedCard.style.display = 'block';
-        clearInterval(shiftCountdownInterval);
-      }
+      if(remainingMs > 0) return;
+      const onshiftCard = document.getElementById('portal-onshift-card');
+      if(onshiftCard) onshiftCard.style.display = 'none';
+      const endedCard = document.getElementById('portal-shift-ended-card');
+      if(endedCard) endedCard.style.display = 'block';
+      const actionEl = document.getElementById('portal-shift-clockout-action');
+      if(actionEl) actionEl.style.display = 'block';
+      clearInterval(shiftCountdownInterval);
     }
-
-    update();
-    shiftCountdownInterval = setInterval(update, 1000);
+    check();
+    shiftCountdownInterval = setInterval(check, 30000);
   }
 
   let postShiftRating = 0;
@@ -6644,7 +6740,18 @@
     if(!completeEl || completeEl.style.display !== 'block') {
       const onshiftCard = document.getElementById('portal-onshift-card'); if(onshiftCard) onshiftCard.style.display = 'block';
       const endedCard = document.getElementById('portal-shift-ended-card'); if(endedCard) endedCard.style.display = 'none';
+      const actionEl = document.getElementById('portal-shift-clockout-action'); if(actionEl) actionEl.style.display = 'none';
     }
+
+    // Mirror the bar name + address from the (now-hidden) screen2 venue card
+    // into both phase variants so the unified card reads as a coherent block.
+    const barName = document.getElementById('screen2-bar-name')?.textContent || '';
+    const barAddr = document.getElementById('screen2-bar-address')?.textContent || '';
+    const setIf = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
+    setIf('clockedin-bar-name-onshift', barName);
+    setIf('clockedin-bar-addr-onshift', barAddr);
+    setIf('clockedin-bar-name-ended',   barName);
+    setIf('clockedin-bar-addr-ended',   barAddr);
 
     // Start the shift countdown if not already running. workerClockIn
     // starts it directly with known clock_in_at; the realtime/restore paths

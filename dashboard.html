@@ -3229,15 +3229,22 @@ async function tryRestoreSession() {
     } catch(e) { workerBarDistances = []; }
   }
 
-  // Restore GS refs from shifts table
+  // Restore GS refs from shifts table. SEC-N10 (14 May 2026): also pull
+  // clock_out_confirmed_at + total_earned + status into the worker cache so
+  // computeRequestPill and the Completed-panel render path have the full
+  // picture on hard-refresh. Previously these fields were populated only via
+  // the realtime UPDATE handler on status='completed', leaving the boot
+  // path blind to completed shifts.
   try {
-    const activeShifts = await sbGet('shifts', '?session_id=eq.'+session.id+'&select=session_worker_id,glasi_ref,clock_in_confirmed_at,shift_length_hours&order=id.desc');
+    const activeShifts = await sbGet('shifts', '?session_id=eq.'+session.id+'&select=session_worker_id,glasi_ref,clock_in_confirmed_at,shift_length_hours,clock_out_confirmed_at,total_earned,status&order=id.desc');
     activeShifts.forEach(s => {
       const worker = liveSessionOps.workers.find(w => w.sessionWorkerId === s.session_worker_id);
       if(worker) {
         worker.gsRef = s.glasi_ref;
         worker.clockInAt = s.clock_in_confirmed_at;
         if(s.shift_length_hours) worker.shiftLength = String(s.shift_length_hours);
+        if(s.clock_out_confirmed_at) worker.clockOutAt = s.clock_out_confirmed_at;
+        if(s.total_earned != null) worker.totalEarned = s.total_earned;
       }
     });
   } catch(e) {}
@@ -4355,11 +4362,16 @@ function computeRequestPill(r, sw) {
       }
       return { slug: 'dispatched', label: 'Dispatched' };
     }
-    if(sw.status === 'onshift' || (sw.clockInAt && !sw.clockOutAt)) {
-      return { slug: 'onshift', label: 'On Shift' };
-    }
+    // SEC-N10 (14 May 2026): check 'completed' BEFORE 'onshift' so a worker
+    // whose session_workers.status='completed' but whose clockOutAt happens
+    // to be null in the cache (e.g., stale boot path) still renders as
+    // Completed rather than falling into the (clockInAt && !clockOutAt)
+    // → 'On Shift' short-circuit.
     if(sw.status === 'completed' || sw.clockOutAt) {
       return { slug: 'completed', label: 'Completed' };
+    }
+    if(sw.status === 'onshift' || (sw.clockInAt && !sw.clockOutAt)) {
+      return { slug: 'onshift', label: 'On Shift' };
     }
     // sw.status in ('cancelled','no_show','left','session_ended') falls through
   }
@@ -4777,6 +4789,61 @@ function renderRoom() {
         '</div>';
     }).join('');
   }
+
+  // SEC-N10 (14 May 2026): Completed section — surfaces workers who clocked
+  // out during this session. Without this panel, completed workers vanish
+  // from the live console entirely (worker.status='completed' is excluded
+  // from the in_session and invited filters, and shift_requests cascading
+  // to 'completed' removes the request card too). This restores operational
+  // visibility into the session's finished shifts.
+  const completed = liveSessionOps.workers.filter(w => w.status === 'completed');
+  const completedSection = document.getElementById('completed-section');
+  const completedGrid = document.getElementById('completed-grid');
+  if(completedGrid && completedSection) {
+    if(!completed.length) {
+      completedSection.style.display = 'none';
+      completedGrid.innerHTML = '';
+    } else {
+      completedSection.style.display = 'block';
+      completedGrid.innerHTML = completed.map(w => renderCompletedCard(w)).join('');
+    }
+  }
+}
+
+// SEC-N10: card template for a completed worker. Surfaces: name + bar +
+// glasi_ref, clock-in / clock-out times, hours worked, total earned, and
+// (when SEC-N9 Batch 2 shift_feedback sub lands) feedback rating.
+function renderCompletedCard(w) {
+  const tier = w.tier != null ? 'T' + w.tier : '';
+  const barName = w.bar || (w.barRecord && w.barRecord.name) || (bars && bars.find(b => b.id === w.bar_id)?.name) || '';
+  const refLabel = w.gsRef ? (' · ' + w.gsRef) : '';
+  const metaTop = [barName, refLabel].filter(Boolean).join('');
+  const clockInFmt = w.clockInAt ? fmtHm(w.clockInAt) : '—';
+  const clockOutFmt = w.clockOutAt ? fmtHm(w.clockOutAt) : '—';
+  let hoursStr = '';
+  if(w.clockInAt && w.clockOutAt) {
+    const ms = new Date(w.clockOutAt).getTime() - new Date(w.clockInAt).getTime();
+    const hrs = ms / 3600000;
+    hoursStr = (Math.round(hrs * 10) / 10) + 'h';
+  } else if(w.shiftLength) {
+    hoursStr = parseFloat(w.shiftLength) + 'h';
+  }
+  const earnedStr = (w.totalEarned != null) ? ('£' + parseFloat(w.totalEarned).toFixed(2)) : '';
+  const ratingStr = (w.feedbackRating != null)
+    ? ('<span style="color:var(--amber);">' + '★'.repeat(w.feedbackRating) + '</span>')
+    : '';
+  const metaRow = [hoursStr, earnedStr].filter(Boolean).join(' · ');
+  return '<div class="worker-card" style="border-color:var(--grey);opacity:0.85;" id="wc-'+w.id+'">'+
+    '<div class="wc-status-dot" style="background:var(--grey);"></div>'+
+    '<div class="wc-left">'+
+      '<div class="wc-name">'+w.name+(tier?' <span style="color:var(--grey);font-size:11px;">'+tier+'</span>':'')+'</div>'+
+      '<div class="wc-meta" style="color:var(--grey);">'+metaTop+'</div>'+
+      '<div class="wc-meta" style="color:var(--grey);">'+clockInFmt+' → '+clockOutFmt+(metaRow?' · '+metaRow:'')+'</div>'+
+    '</div>'+
+    '<div class="wc-right">'+
+      (ratingStr || '<div class="wc-idle" style="color:var(--grey);">DONE</div>')+
+    '</div>'+
+    '</div>';
 }
 
 function confirmWorkerArrival(wid) {
@@ -7182,9 +7249,15 @@ function renderRequestCards() {
               if(countdownEl.textContent !== 'Shift complete') {
                 countdownEl.textContent = 'Shift complete';
                 countdownEl.style.color = 'var(--grey)';
-                // Auto-reveal clock-out code -- only once
+                // Auto-reveal clock-out code -- only once, and ONLY while
+                // the worker is still onshift. SEC-N10 (14 May 2026): adding
+                // !clockOutAt guard so the auto-reveal stops re-injecting
+                // the clock-out code + End Shift input after the worker has
+                // already clocked out.
                 const dispWorker2 = liveSessionOps.workers.find(w => Number(w.shiftRequestId) === Number(r.id)) || liveSessionOps.workers.find(w => w.status === 'onshift');
-                if(dispWorker2?.clockOutCode) revealClockOutCode(r.id, dispWorker2.clockOutCode);
+                if(dispWorker2?.clockOutCode && !dispWorker2?.clockOutAt && dispWorker2?.status !== 'completed') {
+                  revealClockOutCode(r.id, dispWorker2.clockOutCode);
+                }
               }
             }
           } else if(countdownEl.textContent === 'Calculating...' && dispWorker?.sessionWorkerId) {
@@ -8975,6 +9048,15 @@ function renderLiveRoom() {
         <div id="invited-section">
           <div class="request-section-label" style="color:var(--amber);">Expected Tonight</div>
           <div class="worker-grid" id="invited-grid"></div>
+        </div>
+
+        <!-- SEC-N10 (14 May 2026): completed shifts this session. Surfaces
+             workers who clocked out so the live console doesn't lose them
+             once shift_requests.status='completed' filters their card from
+             the requests column. -->
+        <div id="completed-section" style="display:none;">
+          <div class="request-section-label" style="color:var(--grey);">Completed</div>
+          <div class="worker-grid" id="completed-grid"></div>
         </div>
       </div>
     </div>

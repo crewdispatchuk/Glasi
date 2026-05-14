@@ -1356,11 +1356,105 @@
   // factory call on the right is the library entry point.
   const sbAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Keep H.Authorization in sync with Supabase JS's automatic token
-  // refresh. Without this, an in-the-background token rotation would leave
-  // REST fetches sending an expired JWT.
-  sbAuth.auth.onAuthStateChange((_event, session) => {
+  // SEC-N9 (14 May 2026): realtime WebSocket registry. Each entry is
+  // {ws, topic} so the onAuthStateChange handler can push refreshed JWTs
+  // to every live channel when Supabase JS rotates the token. Channels
+  // need access_token in phx_join (and refreshed mid-connection) so
+  // realtime evaluates RLS as the authenticated role (bottle.of.beer)
+  // rather than anon.
+  const mgrWsRegistry = new Set();
+  async function mgrPushAccessTokenToAllWs() {
+    const { data } = await sbAuth.auth.getSession();
+    const token = data?.session?.access_token;
+    if(!token) return;
+    for(const entry of mgrWsRegistry) {
+      if(entry.ws?.readyState !== WebSocket.OPEN) continue;
+      try {
+        entry.ws.send(JSON.stringify({
+          topic: entry.topic,
+          event: 'access_token',
+          payload: { access_token: token },
+          ref: 'tok' + Date.now()
+        }));
+      } catch(e) { /* channel will reconnect via its own onclose path */ }
+    }
+  }
+
+  // SEC-N9: shared realtime WebSocket helper. Adds (a) access_token in
+  // phx_join, (b) exponential-backoff reconnect on close, (c) registration
+  // with mgrWsRegistry so mid-connection token refresh fans out. Returns a
+  // handle with .close() that stops reconnect attempts and closes the WS.
+  // Callers store the handle in their existing xxxWs vars; truthy checks
+  // and .close() calls keep working.
+  function mgrMakeRealtimeWs(topic, pgChanges, onRecord) {
+    let ws = null;
+    let hb = null;
+    let retry = 0;
+    let retryTimer = null;
+    let closed = false;
+
+    function connect() {
+      if(closed) return;
+      const wsUrl = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
+      ws = new WebSocket(wsUrl);
+      ws.onopen = async () => {
+        const { data } = await sbAuth.auth.getSession();
+        const accessToken = data?.session?.access_token;
+        const payload = { config: { postgres_changes: pgChanges } };
+        if(accessToken) payload.access_token = accessToken;
+        try {
+          ws.send(JSON.stringify({ topic, event: 'phx_join', payload, ref: '1' }));
+        } catch(e) { return; }
+        mgrWsRegistry.add({ws, topic});
+        retry = 0;
+        hb = setInterval(() => {
+          if(ws?.readyState === WebSocket.OPEN) {
+            try { ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' })); } catch(e) {}
+          }
+        }, 30000);
+      };
+      ws.onmessage = async (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if(msg.event !== 'postgres_changes') return;
+          const record = msg.payload?.data?.record;
+          const old = msg.payload?.data?.old_record;
+          const type = msg.payload?.data?.type;
+          await onRecord(record, type, old);
+        } catch(err) { /* swallow malformed; channel keeps running */ }
+      };
+      ws.onclose = () => {
+        if(hb) { clearInterval(hb); hb = null; }
+        for(const entry of mgrWsRegistry) { if(entry.ws === ws) mgrWsRegistry.delete(entry); }
+        ws = null;
+        if(closed) return;
+        retry = Math.min(retry + 1, 6);
+        const delay = Math.min(1000 * Math.pow(2, retry - 1), 30000);
+        console.warn('[mgr realtime] topic=' + topic + ' dropped; reconnect in ' + delay + 'ms (attempt ' + retry + ')');
+        retryTimer = setTimeout(() => { retryTimer = null; connect(); }, delay);
+      };
+      ws.onerror = (err) => { console.error('[mgr realtime] error topic=' + topic, err); };
+    }
+
+    connect();
+
+    return {
+      close() {
+        closed = true;
+        if(retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+        if(ws) { try { ws.close(); } catch(e) {} ws = null; }
+      }
+    };
+  }
+
+  // Keep H.Authorization in sync with Supabase JS's automatic token refresh.
+  // Also push the refreshed token to every open realtime channel so they
+  // re-evaluate RLS under the new JWT (SEC-N9).
+  sbAuth.auth.onAuthStateChange((event, session) => {
     H.Authorization = 'Bearer ' + (session?.access_token || SUPABASE_ANON_KEY);
+    if(event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+      mgrPushAccessTokenToAllWs();
+    }
   });
 
   let currentBar = null;
@@ -1504,64 +1598,40 @@
 
   function startBarRealtime() {
     stopWorkerWatch();
-    const wsUrl = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
-    dispatchedWorkerWs = new WebSocket(wsUrl);
-    let hb = null;
-
-    dispatchedWorkerWs.onopen = () => {
-      dispatchedWorkerWs.send(JSON.stringify({
-        topic: 'realtime:public:session_workers',
-        event: 'phx_join',
-        payload: { config: { postgres_changes: [{ event: 'UPDATE', schema: 'public', table: 'session_workers', filter: 'bar_id=eq.' + currentBar.id }] } },
-        ref: '1'
-      }));
-      hb = setInterval(() => {
-        if(dispatchedWorkerWs?.readyState === WebSocket.OPEN) {
-          dispatchedWorkerWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
+    dispatchedWorkerWs = mgrMakeRealtimeWs(
+      'realtime:public:session_workers',
+      [{ event: 'UPDATE', schema: 'public', table: 'session_workers', filter: 'bar_id=eq.' + currentBar.id }],
+      async (record, type) => {
+        if(type !== 'UPDATE' || !record) return;
+        if(record.status === 'dispatched') {
+          // Refresh the on-way status directly from the realtime record;
+          // it carries live_eta_minutes / live_eta_computed_at / arrived_at
+          // so showStatus can re-render the ETA line without a re-fetch.
+          showStatus('onway', record);
+          loadPastRequests();
+          document.getElementById('no-session-card').style.display = 'none';
+          document.getElementById('request-form').style.display = 'block';
+        } else if(record.status === 'onshift') {
+          showStatus('onshift', record);
+          // Same workaround as in checkForDispatchedWorker: ensure the
+          // clock_out_code is populated before the countdown starts.
+          const ensuredCode = await ensureClockOutCode(record);
+          record.clock_out_code = ensuredCode;
+          startManagerShiftCountdown(ensuredCode, record.shift_length_hours, record.clock_in_at);
+          loadPastRequests();
+        } else if(record.status === 'completed') {
+          if(managerShiftInterval) clearInterval(managerShiftInterval);
+          currentShiftWorkerIdForRating = record.id;
+          showStatus('complete');
+          loadPastRequests();
+        } else if(record.status === 'cancelled') {
+          // En-route emergency cancellation. Persist until manager dismisses.
+          if(managerShiftInterval) clearInterval(managerShiftInterval);
+          showStatus('cancelled');
+          loadPastRequests();
         }
-      }, 30000);
-    };
-
-    dispatchedWorkerWs.onmessage = async (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if(msg.event === 'postgres_changes') {
-          const record = msg.payload?.data?.record;
-          const type = msg.payload?.data?.type;
-          if(record && type === 'UPDATE') {
-            if(record.status === 'dispatched') {
-              // Refresh the on-way status directly from the realtime record;
-              // it carries live_eta_minutes / live_eta_computed_at / arrived_at
-              // so showStatus can re-render the ETA line without a re-fetch.
-              showStatus('onway', record);
-              loadPastRequests();
-              document.getElementById('no-session-card').style.display = 'none';
-              document.getElementById('request-form').style.display = 'block';
-            } else if(record.status === 'onshift') {
-              showStatus('onshift', record);
-              // Same workaround as in checkForDispatchedWorker: ensure the
-              // clock_out_code is populated before the countdown starts.
-              const ensuredCode = await ensureClockOutCode(record);
-              record.clock_out_code = ensuredCode;
-              startManagerShiftCountdown(ensuredCode, record.shift_length_hours, record.clock_in_at);
-              loadPastRequests();
-            } else if(record.status === 'completed') {
-              if(managerShiftInterval) clearInterval(managerShiftInterval);
-              currentShiftWorkerIdForRating = record.id;
-              showStatus('complete');
-              loadPastRequests();
-            } else if(record.status === 'cancelled') {
-              // En-route emergency cancellation. Persist until manager dismisses.
-              if(managerShiftInterval) clearInterval(managerShiftInterval);
-              showStatus('cancelled');
-              loadPastRequests();
-            }
-          }
-        }
-      } catch(e) {}
-    };
-
-    dispatchedWorkerWs.onclose = () => { if(hb) clearInterval(hb); };
+      }
+    );
   }
 
   // F-37: split sessions watch into two subs.
@@ -1579,98 +1649,56 @@
   let sessionBarsWatchWs = null;
   let mySessionIds = new Set();
 
-  function startSessionsWatch() {
+  async function startSessionsWatch() {
     if(!currentBar) return;
-    // Bootstrap mySessionIds from current session_bars rows for this bar.
-    fetch(SUPABASE_URL + '/rest/v1/session_bars?bar_id=eq.' + currentBar.id + '&select=session_id', { headers: H })
-      .then(r => r.json())
-      .then(rows => {
-        mySessionIds = new Set((rows || []).map(r => r.session_id));
-      })
-      .catch(() => {});
 
-    // Sub A: session_bars filtered by bar_id (INSERT + DELETE).
+    // SEC-N9 boot race fix: register sub A (session_bars) FIRST so events
+    // arriving during the bootstrap fetch are absorbed via the realtime
+    // handler. Then fetch + MERGE into mySessionIds (not overwrite) so a
+    // race-window INSERT isn't clobbered by the bootstrap reply.
     if(!sessionBarsWatchWs) {
-      const wsUrl = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
-      sessionBarsWatchWs = new WebSocket(wsUrl);
-      let hbA = null;
-      sessionBarsWatchWs.onopen = () => {
-        sessionBarsWatchWs.send(JSON.stringify({
-          topic: 'realtime:public:session_bars',
-          event: 'phx_join',
-          payload: { config: { postgres_changes: [
-            { event: 'INSERT', schema: 'public', table: 'session_bars', filter: 'bar_id=eq.' + currentBar.id },
-            { event: 'DELETE', schema: 'public', table: 'session_bars', filter: 'bar_id=eq.' + currentBar.id }
-          ] } },
-          ref: 'sbA1'
-        }));
-        hbA = setInterval(() => {
-          if(sessionBarsWatchWs?.readyState === WebSocket.OPEN) {
-            sessionBarsWatchWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
-          }
-        }, 30000);
-      };
-      sessionBarsWatchWs.onmessage = (e) => {
-        try {
-          const msg = JSON.parse(e.data);
-          if(msg.event !== 'postgres_changes') return;
-          const type = msg.payload?.data?.type;
-          const record = msg.payload?.data?.record || msg.payload?.data?.old_record;
-          if(!record || record.bar_id !== currentBar.id) return;
-          if(type === 'INSERT') mySessionIds.add(record.session_id);
-          else if(type === 'DELETE') mySessionIds.delete(record.session_id);
-        } catch(_e) {}
-      };
-      sessionBarsWatchWs.onclose = () => { if(hbA) clearInterval(hbA); sessionBarsWatchWs = null; };
+      sessionBarsWatchWs = mgrMakeRealtimeWs(
+        'realtime:public:session_bars',
+        [
+          { event: 'INSERT', schema: 'public', table: 'session_bars', filter: 'bar_id=eq.' + currentBar.id },
+          { event: 'DELETE', schema: 'public', table: 'session_bars', filter: 'bar_id=eq.' + currentBar.id }
+        ],
+        (record, type, old) => {
+          const row = record || old;
+          if(!row || row.bar_id !== currentBar.id) return;
+          if(type === 'INSERT') mySessionIds.add(row.session_id);
+          else if(type === 'DELETE') mySessionIds.delete(row.session_id);
+        }
+      );
     }
 
     // Sub B: sessions UPDATE unfiltered; client-side filter on mySessionIds.
-    if(sessionsWatchWs) return;
-    const wsUrl = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
-    sessionsWatchWs = new WebSocket(wsUrl);
-    let hb = null;
-
-    sessionsWatchWs.onopen = () => {
-      sessionsWatchWs.send(JSON.stringify({
-        topic: 'realtime:public:sessions',
-        event: 'phx_join',
-        payload: { config: { postgres_changes: [{ event: 'UPDATE', schema: 'public', table: 'sessions' }] } },
-        ref: 'sw1'
-      }));
-      hb = setInterval(() => {
-        if(sessionsWatchWs?.readyState === WebSocket.OPEN) {
-          sessionsWatchWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
-        }
-      }, 30000);
-    };
-
-    sessionsWatchWs.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if(msg.event !== 'postgres_changes') return;
-        const record = msg.payload?.data?.record;
-        if(!record) return;
-        // F-37 client-side filter: only react to sessions whose bar_set includes our bar.
-        if(!mySessionIds.has(record.id)) return;
-        if(record.status === 'live') {
-          document.getElementById('no-session-card').style.display = 'none';
-          const onActiveLive = document.getElementById('active-status-card').style.display === 'block';
-          if(!onActiveLive) {
-            const pill = document.getElementById('request-form-pill');
-            if(pill) pill.style.display = 'none';
-            const cancel = document.getElementById('request-form-cancel');
-            if(cancel) cancel.style.display = 'none';
-            document.getElementById('request-form').style.display = 'block';
-          }
-        } else if(record.status === 'closed') {
-          // F-38: closed branch defers to the in-flight predicate. If a
-          // dispatched / onshift worker exists for this bar, surface the
-          // clock-out reveal regardless of session status; the shift continues
-          // independently of the room being closed. Otherwise drop to
-          // no-session-card.
-          const onActive = document.getElementById('active-status-card').style.display === 'block';
-          if(!onActive) {
-            (async () => {
+    if(!sessionsWatchWs) {
+      sessionsWatchWs = mgrMakeRealtimeWs(
+        'realtime:public:sessions',
+        [{ event: 'UPDATE', schema: 'public', table: 'sessions' }],
+        async (record, type) => {
+          if(type !== 'UPDATE' || !record) return;
+          // F-37 client-side filter: only react to sessions whose bar_set includes our bar.
+          if(!mySessionIds.has(record.id)) return;
+          if(record.status === 'live') {
+            document.getElementById('no-session-card').style.display = 'none';
+            const onActiveLive = document.getElementById('active-status-card').style.display === 'block';
+            if(!onActiveLive) {
+              const pill = document.getElementById('request-form-pill');
+              if(pill) pill.style.display = 'none';
+              const cancel = document.getElementById('request-form-cancel');
+              if(cancel) cancel.style.display = 'none';
+              document.getElementById('request-form').style.display = 'block';
+            }
+          } else if(record.status === 'closed') {
+            // F-38: closed branch defers to the in-flight predicate. If a
+            // dispatched / onshift worker exists for this bar, surface the
+            // clock-out reveal regardless of session status; the shift continues
+            // independently of the room being closed. Otherwise drop to
+            // no-session-card.
+            const onActive = document.getElementById('active-status-card').style.display === 'block';
+            if(!onActive) {
               try {
                 const inFlightRows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?bar_id=eq.' + currentBar.id + '&status=in.(dispatched,onshift)&select=id,worker_name,dispatched_at,departed_at,clock_in_code,clock_out_code,clock_in_at,status,shift_length_hours,live_eta_minutes,live_eta_computed_at,arrived_at&order=id.desc&limit=1', { headers: H }).then(r => r.json());
                 const active = inFlightRows?.[0];
@@ -1694,19 +1722,25 @@
               const pill = document.getElementById('request-form-pill');
               if(pill) pill.style.display = 'none';
               document.getElementById('no-session-card').style.display = 'block';
-            })();
+            }
+          } else if(record.status === 'scheduled' || record.status === 'declined' || record.status === 'cancelled') {
+            // F-34: bar-proposal lifecycle. Refresh the Profile tab's proposed-sessions
+            // section if it has been loaded; surface a toast on the relevant transition.
+            if(record.status === 'scheduled') showToast('Glasi is on call for your event');
+            else if(record.status === 'declined') showToast("We can't get Glasi on call for that one, see your Profile for details");
+            if(profileLoaded) loadProposedSessions();
           }
-        } else if(record.status === 'scheduled' || record.status === 'declined' || record.status === 'cancelled') {
-          // F-34: bar-proposal lifecycle. Refresh the Profile tab's proposed-sessions
-          // section if it has been loaded; surface a toast on the relevant transition.
-          if(record.status === 'scheduled') showToast('Glasi is on call for your event');
-          else if(record.status === 'declined') showToast("We can't get Glasi on call for that one, see your Profile for details");
-          if(profileLoaded) loadProposedSessions();
         }
-      } catch(e) {}
-    };
+      );
+    }
 
-    sessionsWatchWs.onclose = () => { if(hb) clearInterval(hb); sessionsWatchWs = null; };
+    // SEC-N9: bootstrap mySessionIds AFTER subs registered. MERGE into the
+    // Set so any race-window INSERT events that already populated entries
+    // are preserved (not overwritten by the bootstrap reply).
+    try {
+      const rows = await fetch(SUPABASE_URL + '/rest/v1/session_bars?bar_id=eq.' + currentBar.id + '&select=session_id', { headers: H }).then(r => r.json());
+      for(const r of (rows || [])) mySessionIds.add(r.session_id);
+    } catch(e) { /* sub will reconcile on next event */ }
   }
 
   let shiftRequestsWs = null;
@@ -1715,33 +1749,13 @@
 
   function subscribeToShiftRequestsForManager() {
     if(!currentBar || shiftRequestsWs) return;
-    const wsUrl = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
-    shiftRequestsWs = new WebSocket(wsUrl);
-    let hb = null;
-
-    shiftRequestsWs.onopen = () => {
-      shiftRequestsWs.send(JSON.stringify({
-        topic: 'realtime:public:shift_requests',
-        event: 'phx_join',
-        payload: { config: { postgres_changes: [
-          { event: 'INSERT', schema: 'public', table: 'shift_requests', filter: 'bar_id=eq.' + currentBar.id },
-          { event: 'UPDATE', schema: 'public', table: 'shift_requests', filter: 'bar_id=eq.' + currentBar.id }
-        ] } },
-        ref: 'sr1'
-      }));
-      hb = setInterval(() => {
-        if(shiftRequestsWs?.readyState === WebSocket.OPEN) {
-          shiftRequestsWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
-        }
-      }, 30000);
-    };
-
-    shiftRequestsWs.onmessage = async (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if(msg.event !== 'postgres_changes') return;
-        const record = msg.payload?.data?.record;
-        const type = msg.payload?.data?.type;
+    shiftRequestsWs = mgrMakeRealtimeWs(
+      'realtime:public:shift_requests',
+      [
+        { event: 'INSERT', schema: 'public', table: 'shift_requests', filter: 'bar_id=eq.' + currentBar.id },
+        { event: 'UPDATE', schema: 'public', table: 'shift_requests', filter: 'bar_id=eq.' + currentBar.id }
+      ],
+      async (record, type) => {
         if(!record) return;
 
         // Always refresh Recent Requests so the sonar pulse and status text
@@ -1770,10 +1784,8 @@
             }
           }
         }
-      } catch(err) { console.error('shift_requests realtime error:', err); }
-    };
-
-    shiftRequestsWs.onclose = () => { if(hb) clearInterval(hb); shiftRequestsWs = null; };
+      }
+    );
   }
 
   function startPendingRequestExpiry(requestId, postedAt) {
@@ -2405,38 +2417,14 @@
       try { _shiftExtensionsWs.close(); } catch(e) {}
       _shiftExtensionsWs = null;
     }
-    const wsUrl = SUPABASE_URL.replace('https://', 'wss://') +
-      '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
-    const ws = new WebSocket(wsUrl);
-    _shiftExtensionsWs = ws;
-    let hb = null;
-    ws.onopen = () => {
-      ws.send(JSON.stringify({
-        topic: 'realtime:public:shift_extensions',
-        event: 'phx_join',
-        payload: { config: { postgres_changes: [
-          { event: 'INSERT', schema: 'public', table: 'shift_extensions', filter: 'session_worker_id=eq.' + swId },
-          { event: 'UPDATE', schema: 'public', table: 'shift_extensions', filter: 'session_worker_id=eq.' + swId }
-        ] } },
-        ref: '1'
-      }));
-      hb = setInterval(() => {
-        if(ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
-        }
-      }, 30000);
-    };
-    ws.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if(msg.event === 'postgres_changes') {
-          const record = msg.payload?.data?.record;
-          const type = msg.payload?.data?.type;
-          if(record) _onShiftExtensionEvent(record, type);
-        }
-      } catch(err) {}
-    };
-    ws.onclose = () => { if(hb) clearInterval(hb); };
+    _shiftExtensionsWs = mgrMakeRealtimeWs(
+      'realtime:public:shift_extensions',
+      [
+        { event: 'INSERT', schema: 'public', table: 'shift_extensions', filter: 'session_worker_id=eq.' + swId },
+        { event: 'UPDATE', schema: 'public', table: 'shift_extensions', filter: 'session_worker_id=eq.' + swId }
+      ],
+      (record, type) => { if(record) _onShiftExtensionEvent(record, type); }
+    );
   }
 
   function _onShiftExtensionEvent(record, type) {
@@ -2514,40 +2502,20 @@
 
   function watchDispatchedWorker(swId) {
     stopWorkerWatch();
-    const wsUrl = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
-    dispatchedWorkerWs = new WebSocket(wsUrl);
-    let hb = null;
-
-    dispatchedWorkerWs.onopen = () => {
-      dispatchedWorkerWs.send(JSON.stringify({
-        topic: 'realtime:public:session_workers',
-        event: 'phx_join',
-        payload: { config: { postgres_changes: [{ event: 'UPDATE', schema: 'public', table: 'session_workers', filter: 'id=eq.' + swId }] } },
-        ref: '1'
-      }));
-      hb = setInterval(() => {
-        if(dispatchedWorkerWs?.readyState === WebSocket.OPEN) {
-          dispatchedWorkerWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
+    dispatchedWorkerWs = mgrMakeRealtimeWs(
+      'realtime:public:session_workers',
+      [{ event: 'UPDATE', schema: 'public', table: 'session_workers', filter: 'id=eq.' + swId }],
+      (record, type) => {
+        if(type !== 'UPDATE' || !record) return;
+        if(record.status === 'onshift') {
+          // Worker clocked in - update display
+          document.getElementById('worker-eta-display').textContent = 'Clocked in';
+        } else if(record.status === 'completed') {
+          document.getElementById('worker-en-route').style.display = 'none';
         }
-      }, 30000);
-    };
+      }
+    );
 
-    dispatchedWorkerWs.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if(msg.event === 'postgres_changes') {
-          const record = msg.payload?.data?.record;
-          if(record?.status === 'onshift') {
-            // Worker clocked in -- update display
-            document.getElementById('worker-eta-display').textContent = 'Clocked in';
-          } else if(record?.status === 'completed') {
-            document.getElementById('worker-en-route').style.display = 'none';
-          }
-        }
-      } catch(e) {}
-    };
-
-    dispatchedWorkerWs.onclose = () => { if(hb) clearInterval(hb); };
   }
 
   function stopWorkerWatch() {
@@ -3699,41 +3667,21 @@
   // ---------------------------------------------------------------
   function startPinHolderRequestsWatch() {
     if (!currentBar || pinHolderRequestsWs) return;
-    const wsUrl = SUPABASE_URL.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
-    pinHolderRequestsWs = new WebSocket(wsUrl);
-    let hb = null;
-    pinHolderRequestsWs.onopen = () => {
-      pinHolderRequestsWs.send(JSON.stringify({
-        topic: 'realtime:public:pin_holder_requests',
-        event: 'phx_join',
-        payload: { config: { postgres_changes: [
-          { event: 'INSERT', schema: 'public', table: 'pin_holder_requests', filter: 'bar_id=eq.' + currentBar.id },
-          { event: 'UPDATE', schema: 'public', table: 'pin_holder_requests', filter: 'bar_id=eq.' + currentBar.id },
-          { event: 'DELETE', schema: 'public', table: 'pin_holder_requests', filter: 'bar_id=eq.' + currentBar.id }
-        ] } },
-        ref: 'phr1'
-      }));
-      hb = setInterval(() => {
-        if (pinHolderRequestsWs && pinHolderRequestsWs.readyState === WebSocket.OPEN) {
-          pinHolderRequestsWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
-        }
-      }, 30000);
-    };
-    pinHolderRequestsWs.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if (msg.event !== 'postgres_changes') return;
-        const rec = msg.payload && msg.payload.data && msg.payload.data.record;
-        const oldRec = msg.payload && msg.payload.data && msg.payload.data.old_record;
-        if (rec && oldRec && rec.status !== oldRec.status) {
-          if (rec.status === 'approved') showToast('PIN-holder request approved');
-          else if (rec.status === 'declined') showToast('PIN-holder request declined');
+    pinHolderRequestsWs = mgrMakeRealtimeWs(
+      'realtime:public:pin_holder_requests',
+      [
+        { event: 'INSERT', schema: 'public', table: 'pin_holder_requests', filter: 'bar_id=eq.' + currentBar.id },
+        { event: 'UPDATE', schema: 'public', table: 'pin_holder_requests', filter: 'bar_id=eq.' + currentBar.id },
+        { event: 'DELETE', schema: 'public', table: 'pin_holder_requests', filter: 'bar_id=eq.' + currentBar.id }
+      ],
+      (record, type, old) => {
+        if (record && old && record.status !== old.status) {
+          if (record.status === 'approved') showToast('PIN-holder request approved');
+          else if (record.status === 'declined') showToast('PIN-holder request declined');
         }
         loadPinHolders();
-      } catch (err) { console.error('pin_holder_requests realtime error', err); }
-    };
-    pinHolderRequestsWs.onclose = () => { if (hb) clearInterval(hb); pinHolderRequestsWs = null; };
-    pinHolderRequestsWs.onerror = (err) => { console.error('[pin_holder_requests ws] error', err); };
+      }
+    );
   }
 
   // F-34a: realtime sub on bar_managers filtered by bar_id (was filtered by
@@ -3743,35 +3691,17 @@
   // passively if a PIN-holder is revoked elsewhere.
   function startBarManagersWatch() {
     if (!currentBar || barManagersWs) return;
-    const wsUrl = SUPABASE_URL.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
-    barManagersWs = new WebSocket(wsUrl);
-    let hb = null;
-    barManagersWs.onopen = () => {
-      barManagersWs.send(JSON.stringify({
-        topic: 'realtime:public:bar_managers',
-        event: 'phx_join',
-        payload: { config: { postgres_changes: [
-          { event: 'INSERT', schema: 'public', table: 'bar_managers', filter: 'bar_id=eq.' + currentBar.id },
-          { event: 'UPDATE', schema: 'public', table: 'bar_managers', filter: 'bar_id=eq.' + currentBar.id }
-        ] } },
-        ref: 'bmw1'
-      }));
-      hb = setInterval(() => {
-        if (barManagersWs && barManagersWs.readyState === WebSocket.OPEN) {
-          barManagersWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
-        }
-      }, 30000);
-    };
-    barManagersWs.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if (msg.event !== 'postgres_changes') return;
+    barManagersWs = mgrMakeRealtimeWs(
+      'realtime:public:bar_managers',
+      [
+        { event: 'INSERT', schema: 'public', table: 'bar_managers', filter: 'bar_id=eq.' + currentBar.id },
+        { event: 'UPDATE', schema: 'public', table: 'bar_managers', filter: 'bar_id=eq.' + currentBar.id }
+      ],
+      () => {
         // Refresh the Profile-tab PIN-holders list passively. No lock-UI.
         if (profileLoaded) loadPinHolders();
-      } catch (err) { console.error('bar_managers realtime error', err); }
-    };
-    barManagersWs.onclose = () => { if (hb) clearInterval(hb); barManagersWs = null; };
-    barManagersWs.onerror = (err) => { console.error('[bar_managers ws] error', err); };
+      }
+    );
   }
 </script>
 

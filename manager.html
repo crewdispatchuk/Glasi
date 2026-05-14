@@ -1764,7 +1764,10 @@
             stopPendingRequestExpiry();
             showFindingState(record);
           } else if(record.status === 'dispatched' || record.status === 'completed' || record.status === 'cancelled') {
-            if(record.id === pendingRequestId) stopPendingRequestExpiry();
+            if(record.id === pendingRequestId) {
+              stopPendingRequestExpiry();
+              if(record.status === 'cancelled') showStatus('cancelled');
+            }
           }
         }
       } catch(err) { console.error('shift_requests realtime error:', err); }

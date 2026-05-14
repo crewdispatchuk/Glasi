@@ -3061,10 +3061,14 @@ async function tryRestoreSession() {
   const session = openSessions[0];
   liveSessionOps.sessionId = session.id;
 
-  // restore zone
-  const zone = ZONES.find(z => z.dbId === session.zone_id);
-  if(!zone) return false;
-  activeZone = zone;
+  // F-37: zone-based session scheduling deprecated; multi-bar sessions
+  // (scheduled via session_bars) may have zone_id NULL. Tolerate null
+  // zone_id and zone-not-found; activeZone stays null in that case and
+  // the live-room render path reads from session_bars / bars[] instead.
+  if(session.zone_id) {
+    const zone = ZONES.find(z => z.dbId === session.zone_id);
+    if(zone) activeZone = zone;
+  }
 
   // load bars if needed
   if(!bars.length) {
@@ -3100,7 +3104,7 @@ async function tryRestoreSession() {
       workerPhone: s.session_workers?.worker_phone||'',
       bar: bars.find(b=>b.id===s.bar_id)?.name||'',
       barRecord: bars.find(b=>b.id===s.bar_id)||null,
-      zone: zone.name,
+      zone: activeZone?.name || '',
       requestTime: s.requested_at,
       requestMessage: '',
       dispatchedAt: s.accepted_at,

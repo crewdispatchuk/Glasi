@@ -1846,11 +1846,45 @@ const H = { 'Content-Type':'application/json', 'apikey':KEY, 'Authorization':`Be
 // authenticated user. apikey stays as the anon key always.
 const sbAuth = window.supabase.createClient(SB, KEY);
 
-// Keep H.Authorization in sync with Supabase JS's automatic token
-// refresh. Without this, an in-the-background token rotation would leave
-// REST fetches sending an expired JWT.
-sbAuth.auth.onAuthStateChange((_event, session) => {
+// SEC-N9 (14 May 2026): realtime WebSocket registry. Each entry is
+// {ws, topic} so the onAuthStateChange handler can push refreshed JWTs to
+// all live channels when Supabase JS rotates the token. Channels need
+// access_token in the phx_join payload (and refreshed mid-connection) so
+// realtime evaluates RLS as the authenticated role rather than anon.
+const wsTopicRegistry = new Set();
+function registerWsTopic(ws, topic) {
+  wsTopicRegistry.add({ws, topic});
+}
+function unregisterWs(ws) {
+  for(const entry of wsTopicRegistry) {
+    if(entry.ws === ws) wsTopicRegistry.delete(entry);
+  }
+}
+async function pushAccessTokenToAllWs() {
+  const { data } = await sbAuth.auth.getSession();
+  const token = data?.session?.access_token;
+  if(!token) return;
+  for(const {ws, topic} of wsTopicRegistry) {
+    if(ws.readyState !== WebSocket.OPEN) continue;
+    try {
+      ws.send(JSON.stringify({
+        topic,
+        event: 'access_token',
+        payload: { access_token: token },
+        ref: 'tok' + Date.now()
+      }));
+    } catch(e) { /* channel will reconnect via its own onclose path */ }
+  }
+}
+
+// Keep H.Authorization in sync with Supabase JS's automatic token refresh.
+// Also push the refreshed token to every open realtime channel so they
+// re-evaluate RLS under the new JWT.
+sbAuth.auth.onAuthStateChange((event, session) => {
   H.Authorization = 'Bearer ' + (session?.access_token || KEY);
+  if(event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+    pushAccessTokenToAllWs();
+  }
 });
 
 let ZONES = []; // loaded from Supabase on login
@@ -3902,20 +3936,13 @@ const liveSessionOps = {
     if(this.sessionId === sessionId && this._subs.length) return;
     if(this._subs.length) await this.stop();
     this.sessionId = sessionId;
-
-    // Round 4: bootstrap invites cache before realtime sub registers (avoids
-    // INSERT/UPDATE race against the initial fetch). Joined applications
-    // fields the modal needs: name, phone, email, postcode_full.
-    try {
-      const inviteRows = await sbGet('session_invites',
-        '?session_id=eq.' + sessionId
-        + '&select=id,session_id,application_id,attendance_confirmed,attendance_confirmed_at,joined_at,left_at,last_invite_sent_at,created_at,applications(id,name,phone,email,postcode_full)'
-      );
-      this.invites = inviteRows || [];
-    } catch(e) {
-      console.error('[liveSessionOps.start] invites bootstrap failed', e);
-      this.invites = [];
-    }
+    // SEC-N9 (14 May 2026): reset the invites cache so the bootstrap merge
+    // below starts from a clean slate, then register subs FIRST, then
+    // bootstrap. Realtime events arriving during the bootstrap window land
+    // in the cache via the handlers (find + Object.assign idempotency
+    // absorbs duplicates); bootstrap backfills any rows that existed
+    // pre-subscription which wouldn't have fired INSERT events.
+    this.invites = [];
 
     this._addSub('invites', () => makeRealtimeWs(
       'realtime:public:session_invites',
@@ -4046,6 +4073,25 @@ const liveSessionOps = {
       },
       () => this._onSubDrop('requests')
     ));
+
+    // SEC-N9 (14 May 2026): bootstrap fetches AFTER realtime subs are
+    // registered. Closes the boot race where INSERT/UPDATE events firing
+    // during the bootstrap window were lost. Handlers are idempotent
+    // (find + Object.assign), so any duplicate row from a race-window
+    // event merges cleanly into the bootstrap-populated cache.
+    try {
+      const inviteRows = await sbGet('session_invites',
+        '?session_id=eq.' + sessionId
+        + '&select=id,session_id,application_id,attendance_confirmed,attendance_confirmed_at,joined_at,left_at,last_invite_sent_at,created_at,applications(id,name,phone,email,postcode_full)'
+      );
+      for(const row of (inviteRows || [])) {
+        const existing = this.invites.find(i => i.id === row.id);
+        if(!existing) this.invites.push(row);
+        else { const nested = existing.applications; Object.assign(existing, row); existing.applications = nested || row.applications; }
+      }
+    } catch(e) {
+      console.error('[liveSessionOps.start] invites bootstrap failed', e);
+    }
 
     this.emit('session:started', { sessionId });
   },
@@ -4496,13 +4542,22 @@ function makeRealtimeWs(topic, pgChanges, onRecord, onClose) {
   const ws = new WebSocket(wsUrl);
   let hb = null;
 
-  ws.onopen = () => {
+  ws.onopen = async () => {
+    // SEC-N9: include access_token in phx_join so realtime evaluates RLS
+    // as the authenticated role. Without it, the channel runs as anon and
+    // Stage 4 RLS would filter every operational event for authenticated
+    // tables (sessions, session_workers, session_invites, etc.).
+    const { data } = await sbAuth.auth.getSession();
+    const accessToken = data?.session?.access_token;
+    const payload = { config: { postgres_changes: pgChanges } };
+    if(accessToken) payload.access_token = accessToken;
     ws.send(JSON.stringify({
       topic: topic,
       event: 'phx_join',
-      payload: { config: { postgres_changes: pgChanges } },
+      payload,
       ref: '1'
     }));
+    registerWsTopic(ws, topic);
     hb = setInterval(() => {
       if(ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
     }, 30000);
@@ -4519,7 +4574,7 @@ function makeRealtimeWs(topic, pgChanges, onRecord, onClose) {
     } catch(err) { console.error('Realtime WS error:', err); }
   };
 
-  ws.onclose = (e) => { if(hb) clearInterval(hb); if(onClose) onClose(e); };
+  ws.onclose = (e) => { if(hb) clearInterval(hb); unregisterWs(ws); if(onClose) onClose(e); };
   ws.onerror = (e) => { console.error('Realtime WS error:', e); };
   return ws;
 }
@@ -8746,30 +8801,47 @@ async function approvePinHolderRequest(requestId) {
 // Realtime: pin_holder_requests INSERT/UPDATE + sessions UPDATE for proposed
 // transitions. Drives badge count + inbox refresh on Sam's dashboard so he
 // sees new proposals as they arrive. Toast on insert.
+let proposedInboxRetry = 0;
+let proposedInboxRetryTimer = null;
+
 function startProposedInboxRealtime() {
   if(proposedInboxWs) return;
+  if(proposedInboxRetryTimer) { clearTimeout(proposedInboxRetryTimer); proposedInboxRetryTimer = null; }
   const wsUrl = SB.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + KEY + '&vsn=1.0.0';
   proposedInboxWs = new WebSocket(wsUrl);
   let hb = null;
-  proposedInboxWs.onopen = () => {
+  proposedInboxWs.onopen = async () => {
+    // SEC-N9: include access_token in each phx_join so realtime evaluates
+    // RLS as the authenticated role (Sam). Anon connection would be
+    // filtered out by Stage 4 RLS on sessions and pin_holder_requests.
+    const { data } = await sbAuth.auth.getSession();
+    const accessToken = data?.session?.access_token;
+    const buildPayload = (changes) => {
+      const p = { config: { postgres_changes: changes } };
+      if(accessToken) p.access_token = accessToken;
+      return p;
+    };
     proposedInboxWs.send(JSON.stringify({
       topic: 'realtime:public:pin_holder_requests',
       event: 'phx_join',
-      payload: { config: { postgres_changes: [
+      payload: buildPayload([
         { event: 'INSERT', schema: 'public', table: 'pin_holder_requests' },
         { event: 'UPDATE', schema: 'public', table: 'pin_holder_requests' }
-      ] } },
+      ]),
       ref: 'pix1'
     }));
+    registerWsTopic(proposedInboxWs, 'realtime:public:pin_holder_requests');
     proposedInboxWs.send(JSON.stringify({
       topic: 'realtime:public:sessions',
       event: 'phx_join',
-      payload: { config: { postgres_changes: [
+      payload: buildPayload([
         { event: 'INSERT', schema: 'public', table: 'sessions' },
         { event: 'UPDATE', schema: 'public', table: 'sessions' }
-      ] } },
+      ]),
       ref: 'pix2'
     }));
+    registerWsTopic(proposedInboxWs, 'realtime:public:sessions');
+    proposedInboxRetry = 0;
     hb = setInterval(() => {
       if(proposedInboxWs && proposedInboxWs.readyState === WebSocket.OPEN) {
         proposedInboxWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
@@ -8796,7 +8868,19 @@ function startProposedInboxRealtime() {
       loadProposedTab();
     } catch(err) { console.error('proposedInboxWs error', err); }
   };
-  proposedInboxWs.onclose = () => { if(hb) clearInterval(hb); proposedInboxWs = null; };
+  proposedInboxWs.onclose = () => {
+    if(hb) clearInterval(hb);
+    unregisterWs(proposedInboxWs);
+    proposedInboxWs = null;
+    // SEC-N9: exponential backoff reconnect (1s, 2s, 4s, 8s, 16s, 30s cap).
+    proposedInboxRetry = Math.min(proposedInboxRetry + 1, 6);
+    const delay = Math.min(1000 * Math.pow(2, proposedInboxRetry - 1), 30000);
+    console.warn('proposedInboxWs dropped; reconnect in ' + delay + 'ms (attempt ' + proposedInboxRetry + ')');
+    proposedInboxRetryTimer = setTimeout(() => {
+      proposedInboxRetryTimer = null;
+      startProposedInboxRealtime();
+    }, delay);
+  };
   proposedInboxWs.onerror = (err) => { console.error('[proposedInboxWs] error', err); };
 }
 

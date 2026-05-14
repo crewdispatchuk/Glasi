@@ -675,6 +675,9 @@
 
     .rc-dispatched-row { font-size: 12px; color: var(--grey); background: rgba(168,216,234,0.06); border-left: 2px solid var(--ice); padding: 6px 10px; border-radius: 4px; margin-bottom: 10px; }
     .rc-dispatched-row strong { color: var(--white); font-weight: 600; }
+    .rc-live-eta { display: inline-block; margin-left: 8px; font-size: 11px; color: var(--ice); font-weight: 600; }
+    .rc-live-eta.stale { color: var(--grey); font-style: italic; font-weight: 400; }
+    .rc-live-eta.arrived { color: var(--green); font-weight: 700; }
 
     .rc-body { display: flex; flex-direction: column; row-gap: 4px; }
     .rc-timestamp-row { display: flex; justify-content: space-between; font-size: 11px; line-height: 1.6; }
@@ -3072,7 +3075,7 @@ async function tryRestoreSession() {
   // load session workers and requests in parallel
   const [swData, reqData] = await Promise.all([
     sbGet('session_workers',
-      '?session_id=eq.'+session.id+'&select=id,application_id,worker_name,worker_phone,status,clock_in_code,clock_out_code,clock_in_at,dispatched_at,departed_at,share_location_tapped_at,bar_id,shift_length_hours,shift_request_id,expected_arrival_minutes'
+      '?session_id=eq.'+session.id+'&select=id,application_id,worker_name,worker_phone,status,clock_in_code,clock_out_code,clock_in_at,dispatched_at,departed_at,share_location_tapped_at,bar_id,shift_length_hours,shift_request_id,expected_arrival_minutes,live_eta_minutes,live_eta_computed_at,arrived_at'
     ),
     sbGet('shift_requests',
       '?session_id=eq.'+session.id+'&order=request_time.asc&select=*,bars(name),bar_managers(name)'
@@ -3138,6 +3141,10 @@ async function tryRestoreSession() {
       dispatchedAt: sw.dispatched_at,
       departedAt: sw.departed_at || null,
       shareLocationTappedAt: sw.share_location_tapped_at || null,
+      // Live ETA + geofence arrival (recompute-live-eta Edge Function).
+      liveEtaMinutes: sw.live_eta_minutes,
+      liveEtaComputedAt: sw.live_eta_computed_at || null,
+      arrivedAt: sw.arrived_at || null,
       clockInAt: sw.clock_in_at,
       clockInCode: sw.clock_in_code || null,
       gsRef: null, // restored from shifts table below
@@ -3972,6 +3979,11 @@ const liveSessionOps = {
           if(record.share_location_tapped_at) worker.shareLocationTappedAt = record.share_location_tapped_at;
           if(record.status) worker.status = record.status;
           if(record.clock_in_at) worker.clockInAt = record.clock_in_at;
+          // Live ETA + arrival surface via realtime. Always assign (including
+          // explicit null transitions) so a stale value is never sticky.
+          worker.liveEtaMinutes    = record.live_eta_minutes;
+          worker.liveEtaComputedAt = record.live_eta_computed_at;
+          worker.arrivedAt         = record.arrived_at;
           if(record.status === 'completed') {
             try {
               const shiftRows = await sbGet('shifts', '?session_worker_id=eq.'+worker.sessionWorkerId+'&select=total_earned,clock_out_confirmed_at');
@@ -5502,6 +5514,22 @@ async function awardPointsImmediate(applicationId, awards, opts = {}) {
   const valid = awards.filter(a => a && a.amount !== 0);
   if(!valid.length) return null;
 
+  // SEC-N1 Stage 7.5 (2026-05-14): the Stage 1 trigger on
+  // points_ledger (points_ledger_recompute_applications_trg)
+  // recomputes applications.total_points / tier / hourly_rate from
+  // SUM(amount) on every INSERT, and writes a tier_promoted ledger
+  // row when a threshold is crossed. This helper used to also do
+  // those recompute writes manually, which double-counted the
+  // delta because the SELECT-after-INSERT picked up the trigger's
+  // already-applied value. Fix: snapshot the pre-INSERT tier so we
+  // can compute `promoted`, INSERT the ledger rows, then SELECT the
+  // post-trigger applications row and return the trigger-written
+  // values. No more manual UPDATE on applications. No more manual
+  // tier_promoted INSERT.
+  const preRows = await sbGet('applications', '?id=eq.'+applicationId+'&select=total_points,tier');
+  const preApp = preRows[0];
+  const oldTier = preApp ? (parseInt(preApp.tier) || 1) : 1;
+
   const ledgerRows = valid.map(a => ({
     application_id: applicationId,
     amount: a.amount,
@@ -5517,38 +5545,15 @@ async function awardPointsImmediate(applicationId, awards, opts = {}) {
   }));
   await sbPost('points_ledger', ledgerRows);
 
-  const appRows = await sbGet('applications', '?id=eq.'+applicationId+'&select=total_points,tier');
-  const app = appRows[0];
-  if(!app) return null;
-
-  const oldTotal = parseInt(app.total_points) || 0;
-  const oldTier = parseInt(app.tier) || 1;
-  const delta = valid.reduce((s, a) => s + a.amount, 0);
-  const newTotal = oldTotal + delta;
-  const newTier = pointsToTier(newTotal);
-
-  const updates = { total_points: newTotal };
-  if(newTier !== oldTier) {
-    updates.tier = newTier;
-    // F-31 follow-up: keep applications.hourly_rate in lockstep with tier on
-    // promotion so the rate snapshot at the next dispatch reflects the new
-    // tier. CORE Phase 5 "Worker tier and rates" requires atomic tier +
-    // hourly_rate update.
-    updates.hourly_rate = [12.71, 13.71, 14.71, 15.71, 16.71][newTier - 1];
-  }
-  await sbPatch('applications', '?id=eq.'+applicationId, updates);
-
-  if(newTier > oldTier) {
-    await sbPost('points_ledger', {
-      application_id: applicationId,
-      amount: 0,
-      reason: 'tier_promoted',
-      session_id: opts.sessionId || null,
-      awarded_by: opts.awardedBy || 'system',
-      metadata: { from_tier: oldTier, to_tier: newTier, points_at_promotion: newTotal },
-      notes: 'Auto-promotion from points threshold'
-    });
-  }
+  // Read post-trigger state. The Stage 1 trigger has already updated
+  // total_points, tier, hourly_rate, and (if a threshold was crossed)
+  // inserted a tier_promoted ledger row. Mirror the trigger-written
+  // values back to the caller.
+  const postRows = await sbGet('applications', '?id=eq.'+applicationId+'&select=total_points,tier');
+  const postApp = postRows[0];
+  if(!postApp) return null;
+  const newTotal = parseInt(postApp.total_points) || 0;
+  const newTier = parseInt(postApp.tier) || 1;
 
   return { newTotal, newTier, promoted: newTier > oldTier, oldTier };
 }
@@ -5809,39 +5814,202 @@ function downloadSessionReports(reports) {
   });
 }
 
+// F-38 in-flight modal helpers. Surfaced when close_session or
+// force_close_other_live_sessions returns IN_FLIGHT. Lists each in-flight
+// worker with two affordances: lift the existing dispatch-tile clock-out
+// reveal (revealClockOutCode), or open the existing cancel dispatch flow
+// (openCancelDispatch). After all workers wrap, Sam re-clicks Close and the
+// RPC runs again.
+function f38DismissInflightModal() {
+  const m = document.getElementById('f38-inflight-modal');
+  if(m) m.remove();
+}
+
+function f38RevealAndDismiss(requestId, code) {
+  f38DismissInflightModal();
+  if(typeof revealClockOutCode === 'function' && requestId) revealClockOutCode(requestId, code || '');
+}
+
+function f38CancelAndDismiss(localWorkerId) {
+  f38DismissInflightModal();
+  if(typeof openCancelDispatch === 'function' && localWorkerId) openCancelDispatch(localWorkerId);
+}
+
+async function f38EnrichInflight(workers) {
+  if(!Array.isArray(workers) || !workers.length) return workers || [];
+  const ids = workers.map(w => w.session_worker_id).filter(Boolean);
+  if(!ids.length) return workers;
+  try {
+    const rows = await sbGet('session_workers', '?id=in.('+ids.join(',')+')&select=id,clock_out_code,shift_request_id');
+    const codeMap = {};
+    (rows || []).forEach(r => { codeMap[r.id] = r; });
+    return workers.map(w => ({
+      ...w,
+      clock_out_code: codeMap[w.session_worker_id]?.clock_out_code || null,
+      shift_request_id: w.shift_request_id || codeMap[w.session_worker_id]?.shift_request_id || null
+    }));
+  } catch(e) { return workers; }
+}
+
+function f38ParseInflightError(errorText) {
+  try {
+    const obj = (typeof errorText === 'string') ? JSON.parse(errorText) : errorText;
+    const message = obj?.message || '';
+    const detail  = obj?.details || obj?.detail || '';
+    if(typeof message !== 'string' || message.indexOf('IN_FLIGHT') < 0) return null;
+    if(!detail) return [];
+    return JSON.parse(detail);
+  } catch(e) { return null; }
+}
+
+function f38ShowInflightModal(workers, retryFn) {
+  f38DismissInflightModal();
+  const overlay = document.createElement('div');
+  overlay.id = 'f38-inflight-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;';
+
+  const card = document.createElement('div');
+  card.style.cssText = 'background:var(--navy-mid);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:520px;width:100%;max-height:80vh;overflow:auto;';
+
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:16px;font-weight:700;color:var(--white);margin-bottom:6px;';
+  title.textContent = 'Cannot close yet';
+  card.appendChild(title);
+
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:13px;color:var(--grey);margin-bottom:20px;line-height:1.6;';
+  const n = workers.length;
+  sub.textContent = (n === 1)
+    ? '1 worker is still in flight. Clock them out or cancel before closing.'
+    : n + ' workers are still in flight. Clock them out or cancel before closing.';
+  card.appendChild(sub);
+
+  const list = document.createElement('div');
+  list.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-bottom:20px;';
+  workers.forEach(w => {
+    const row = document.createElement('div');
+    row.style.cssText = 'background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
+
+    const info = document.createElement('div');
+    info.style.cssText = 'flex:1 1 auto;min-width:0;';
+    const sessionLabel = w.session_id ? (' · session ' + w.session_id) : '';
+    info.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--white);">'
+      + (w.worker_name || ('Worker #' + (w.session_worker_id || '?')))
+      + '</div><div style="font-size:11px;color:var(--grey);">'
+      + (w.status || '') + sessionLabel + '</div>';
+    row.appendChild(info);
+
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:6px;';
+
+    const liveWorker = (typeof liveSessionOps !== 'undefined' && liveSessionOps && Array.isArray(liveSessionOps.workers))
+      ? liveSessionOps.workers.find(x => Number(x.sessionWorkerId) === Number(w.session_worker_id))
+      : null;
+    const reqId = w.shift_request_id || liveWorker?.shiftRequestId || null;
+    const code  = w.clock_out_code || liveWorker?.clockOutCode || '';
+
+    if(w.status === 'onshift' && reqId) {
+      const coBtn = document.createElement('button');
+      coBtn.style.cssText = 'background:var(--ice);color:var(--navy);border:none;border-radius:6px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;';
+      coBtn.textContent = 'Reveal clock-out';
+      coBtn.onclick = () => f38RevealAndDismiss(reqId, code);
+      actions.appendChild(coBtn);
+    }
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.style.cssText = 'background:none;color:var(--red);border:1px solid var(--red);border-radius:6px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;';
+    cancelBtn.textContent = 'Cancel worker';
+    cancelBtn.onclick = () => {
+      const localId = liveWorker?.id;
+      if(localId) f38CancelAndDismiss(localId);
+      else alert('Worker not in current live console. Switch to the live session, then cancel.');
+    };
+    actions.appendChild(cancelBtn);
+
+    row.appendChild(actions);
+    list.appendChild(row);
+  });
+  card.appendChild(list);
+
+  const footer = document.createElement('div');
+  footer.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.style.cssText = 'background:none;color:var(--grey);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:12px;cursor:pointer;';
+  closeBtn.textContent = 'Close modal';
+  closeBtn.onclick = f38DismissInflightModal;
+  footer.appendChild(closeBtn);
+
+  if(typeof retryFn === 'function') {
+    const retryBtn = document.createElement('button');
+    retryBtn.style.cssText = 'background:var(--ice);color:var(--navy);border:none;border-radius:8px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;';
+    retryBtn.textContent = 'Retry close';
+    retryBtn.onclick = () => { f38DismissInflightModal(); retryFn(); };
+    footer.appendChild(retryBtn);
+  }
+  card.appendChild(footer);
+
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+}
+
 async function confirmCloseSession() {
   if(!confirm('Close this session? Make sure all shifts are completed first.')) return;
+
+  const sessionId = liveSessionOps.sessionId;
+  if(!sessionId) return;
+
+  // F-38: close via close_session RPC. Server-side hard-block if any
+  // session_workers row is dispatched/onshift; bulk-flips remaining
+  // in_session workers to session_ended atomically (CORE L761).
+  let rpcResp;
+  try {
+    const { data: { session: authSession } } = await sbAuth.auth.getSession();
+    const token = authSession?.access_token || KEY;
+    rpcResp = await fetch(SB + '/rest/v1/rpc/close_session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ p_session_id: sessionId })
+    });
+  } catch(e) {
+    alert('Close failed: ' + (e.message || 'network error'));
+    return;
+  }
+
+  if(!rpcResp.ok) {
+    const text = await rpcResp.text();
+    const inflight = f38ParseInflightError(text);
+    if(Array.isArray(inflight) && inflight.length) {
+      const enriched = await f38EnrichInflight(inflight);
+      f38ShowInflightModal(enriched, () => confirmCloseSession());
+      return;
+    }
+    alert('Close failed: ' + text);
+    return;
+  }
+
+  // RPC succeeded; session is now closed. Tear down the live console.
   clearInterval(sessionTimerInterval);
   clearInterval(shiftCountdownInterval);
   clearInterval(requestTimerInterval);
 
-  // capture session data before clearing
   const sessionShifts = [...shifts];
   const sessionZone = activeZone;
-  const sessionId = liveSessionOps.sessionId;
   const sessionRequests = [...liveSessionOps.requests];
 
-  // write end_time and status to sessions table
-  if(sessionId) await sbPatch('sessions', '?id=eq.'+sessionId, { end_time: new Date().toLocaleTimeString('en-GB', {timeZone:'Europe/London', hour12:false}), status: 'closed' });
-
-  // run reliability and points before clearing state
   await updateWorkerReliabilityScores();
   const reports = await generateSessionReports();
   await updateWorkerPoints();
 
-  // clear session state (liveSessionOps clears liveSessionOps.workers, liveSessionOps.requests, liveSessionOps.sessionId)
   await liveSessionOps.stop();
   selectedRequestId = null;
   selectedWorkerId = null;
   setupWorkers=[]; shifts=[];
 
-  // F-37: navigate to top-level Sessions screen, History sub-tab, with the
-  // just-closed session pre-opened.
   showScreen('sessions');
   setActiveNav('sessions');
   switchSessionsTab('history', { sessionId });
 
-  // offer worker reports download
   if(reports && reports.length) {
     // Session reports available in portal and shifts screen
   }
@@ -6749,7 +6917,26 @@ function renderRequestCards() {
       +   '<span class="req-card-elapsed'+elapsedClass+'" id="relapsed-'+r.id+'">'+formatElapsed(totalSecs)+'</span>'
       + '</div>'
       + (dispWorker
-          ? '<div class="rc-dispatched-row">Dispatched: <strong>'+dispWorker.name+'</strong></div>'
+          ? '<div class="rc-dispatched-row">Dispatched: <strong>'+dispWorker.name+'</strong>'
+            + (function(){
+                // Live ETA + arrival surface from recompute-live-eta. Stale
+                // ETA (computed > 90s ago) renders italic+grey. After
+                // clock-in, drop the live tail entirely.
+                if(!dispWorker || dispWorker.clockInAt) return '';
+                if(dispWorker.arrivedAt) {
+                  const mins = Math.max(0, Math.floor((Date.now() - new Date(dispWorker.arrivedAt).getTime())/60000));
+                  return ' <span class="rc-live-eta arrived">arrived '+mins+'m ago</span>';
+                }
+                if(dispWorker.liveEtaMinutes != null && dispWorker.departedAt) {
+                  const ageSec = dispWorker.liveEtaComputedAt
+                    ? Math.floor((Date.now() - new Date(dispWorker.liveEtaComputedAt).getTime())/1000)
+                    : 0;
+                  const staleCls = ageSec > 90 ? ' stale' : '';
+                  return ' <span class="rc-live-eta'+staleCls+'">walking, ETA '+dispWorker.liveEtaMinutes+' min'+(staleCls?' (stale)':'')+'</span>';
+                }
+                return '';
+              })()
+            + '</div>'
           : '')
       + '<div class="rc-body">'
       +   '<div class="rc-timestamp-row"><span class="rc-ts-label">Requested at</span><span class="rc-ts-value">'+requestedFmt+'</span></div>'
@@ -8956,19 +9143,82 @@ async function createScheduledSession() {
 async function goLiveSession(sessionId) {
   if(!confirm('Go live with this session now? Workers with confirmed attendance will be able to join.')) return;
 
-  // 1. Close any other live sessions first
+  // F-38 L9 / scheduled_end pre-fill: compute min(bars.closing_time) across
+  // the session's bar set. Sam can override before confirming.
+  let sessionRow = null;
+  let defaultCloseStr = '';
   try {
-    const otherLive = await sbGet('sessions', '?status=eq.live&id=not.eq.'+sessionId+'&select=id');
-    for(const s of otherLive) {
-      await sbPatch('sessions', '?id=eq.'+s.id, { status: 'closed', end_time: new Date().toLocaleTimeString('en-GB', {hour12:false}) });
+    const sessRows = await sbGet('sessions', '?id=eq.'+sessionId+'&select=session_date,session_bars(bars(id,closing_time))');
+    sessionRow = sessRows?.[0] || null;
+    if(sessionRow?.session_bars) {
+      const closeTimes = sessionRow.session_bars
+        .map(sb => sb?.bars?.closing_time)
+        .filter(t => typeof t === 'string' && t);
+      if(closeTimes.length) {
+        const minClose = closeTimes.slice().sort()[0]; // 'HH:MM:SS' lexicographic sort matches chronological
+        defaultCloseStr = minClose.slice(0, 5);
+      }
     }
-  } catch(e) {}
+  } catch(e) { /* fall through; Sam can leave end blank */ }
 
-  // 2. Set this session live
-  await sbPatch('sessions', '?id=eq.'+sessionId, {
+  const promptDefault = defaultCloseStr || '';
+  const overrideStr = prompt(
+    'Scheduled end time (24h HH:MM). Leave blank to use bar close time' + (defaultCloseStr ? (' (' + defaultCloseStr + ')') : '') + '.',
+    promptDefault
+  );
+  if(overrideStr === null) return; // Sam cancelled
+
+  let scheduledEndIso = null;
+  const trimmed = (overrideStr || '').trim();
+  const useStr = trimmed || defaultCloseStr;
+  if(useStr) {
+    if(!/^\d{2}:\d{2}$/.test(useStr)) {
+      alert('Invalid time format. Use HH:MM (e.g. 20:00).');
+      return;
+    }
+    if(sessionRow?.session_date) {
+      // Build a wall-clock timestamp on the session_date in local time, then
+      // convert to ISO. Session dates are local Europe/London; the worker
+      // and bar both operate in GB timezone.
+      try {
+        scheduledEndIso = new Date(sessionRow.session_date + 'T' + useStr + ':00').toISOString();
+      } catch(e) { scheduledEndIso = null; }
+    }
+  }
+
+  // F-38 L10: cascade close via RPC. Hard-blocks if any other live session
+  // has dispatched/onshift workers; surfaces the IN_FLIGHT modal.
+  try {
+    const { data: { session: authSession } } = await sbAuth.auth.getSession();
+    const token = authSession?.access_token || KEY;
+    const cascadeResp = await fetch(SB + '/rest/v1/rpc/force_close_other_live_sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ p_keep_session_id: sessionId })
+    });
+    if(!cascadeResp.ok) {
+      const text = await cascadeResp.text();
+      const inflight = f38ParseInflightError(text);
+      if(Array.isArray(inflight) && inflight.length) {
+        const enriched = await f38EnrichInflight(inflight);
+        f38ShowInflightModal(enriched, () => goLiveSession(sessionId));
+        return;
+      }
+      alert('Could not close prior live sessions: ' + text);
+      return;
+    }
+  } catch(e) {
+    alert('Could not close prior live sessions: ' + (e.message || 'network error'));
+    return;
+  }
+
+  // Cascade succeeded; flip this session live.
+  const goLivePatch = {
     status: 'live',
     start_time: new Date().toLocaleTimeString('en-GB', {hour12:false})
-  });
+  };
+  if(scheduledEndIso) goLivePatch.scheduled_end = scheduledEndIso;
+  await sbPatch('sessions', '?id=eq.'+sessionId, goLivePatch);
 
   liveSessionOps.sessionId = sessionId;
   liveSessionStart = Date.now();
@@ -9067,7 +9317,26 @@ async function loadLiveSessionWorkers(sessionId) {
 
 async function cancelScheduledSession(sessionId) {
   if(!confirm('Cancel this session? This cannot be undone.')) return;
-  await sbPatch('sessions', '?id=eq.'+sessionId, { status: 'closed', end_time: new Date().toLocaleTimeString('en-GB', {hour12:false}) });
+
+  // F-38 L11: server-side gate refuses if status != 'scheduled'. Replaces the
+  // direct PATCH which would happily close a live session by accident.
+  try {
+    const { data: { session: authSession } } = await sbAuth.auth.getSession();
+    const token = authSession?.access_token || KEY;
+    const resp = await fetch(SB + '/rest/v1/rpc/cancel_scheduled_session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ p_session_id: sessionId })
+    });
+    if(!resp.ok) {
+      const text = await resp.text();
+      alert('Could not cancel: ' + text);
+      return;
+    }
+  } catch(e) {
+    alert('Could not cancel: ' + (e.message || 'network error'));
+    return;
+  }
   await loadSessionsList();
 }
 

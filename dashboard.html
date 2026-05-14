@@ -3055,11 +3055,18 @@ async function loadWorkerFunnel() {
 
 async function tryRestoreSession() {
   // check for open session today
-  const openSessions = await sbGet('sessions', '?status=eq.live&order=id.desc&limit=1');
+  const openSessions = await sbGet('sessions', '?status=eq.live&order=id.desc&limit=1&select=*,session_bars(bars(id,name,address,google_maps_link,status))');
   if(!openSessions.length) return false;
 
   const session = openSessions[0];
   liveSessionOps.sessionId = session.id;
+
+  // F-37: liveSessionLabel feeds the live console header in place of
+  // activeZone.name; liveSessionBars feeds the dispatch UI. Both are also
+  // set in goLiveSession at the go-live moment; this restore-path mirror
+  // closes the hard-refresh gap surfaced 14 May 2026.
+  liveSessionBars = (session.session_bars || []).map(sb => sb && sb.bars).filter(Boolean);
+  liveSessionLabel = describeBarSet(session) || 'Live session';
 
   // F-37: zone-based session scheduling deprecated; multi-bar sessions
   // (scheduled via session_bars) may have zone_id NULL. Tolerate null

@@ -784,6 +784,7 @@
     <button class="sidebar-nav-item" id="sidebar-nav-sessions" onclick="safeNavigate(goToSessions)">Sessions</button>
     <button class="sidebar-nav-item" id="sidebar-nav-shifts"   onclick="safeNavigate(goToShifts)">Shifts</button>
     <button class="sidebar-nav-item" id="sidebar-nav-billing"  onclick="safeNavigate(goToBilling)">Billing</button>
+    <button class="sidebar-nav-item" id="sidebar-nav-documents" onclick="safeNavigate(goToDocuments)">Documents</button>
     <button class="sidebar-nav-item" id="sidebar-nav-settings" onclick="safeNavigate(goToSettings)">Settings</button>
   </nav>
 
@@ -871,6 +872,29 @@
 </div>
 
 <!-- SHIFTS SCREEN -->
+<!-- Manager App Batch 2: Bar documents surface (Sam-side approval queue + per-bar status + walkthrough upload). -->
+<div id="screen-documents" class="screen">
+  <div style="padding:32px 24px;max-width:980px;margin:0 auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div>
+        <div class="page-title">Bar documents</div>
+        <div class="page-sub">Approval queue + per-bar H&amp;S + Glasi walkthrough management.</div>
+      </div>
+      <button class="ghost-btn" onclick="showScreen('home')">Back</button>
+    </div>
+
+    <div style="margin-bottom:24px;">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--grey);font-weight:600;margin-bottom:10px;">APPROVAL QUEUE</div>
+      <div id="docs-approval-queue"></div>
+    </div>
+
+    <div>
+      <div style="font-size:10px;letter-spacing:2px;color:var(--grey);font-weight:600;margin-bottom:10px;">PER-BAR DOCUMENT STATUS</div>
+      <div id="docs-bar-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- F-30: Shifts page (paired unit primitive, operationally framed) -->
 <div id="screen-shifts" class="screen">
   <div class="history-screen">
@@ -11269,6 +11293,190 @@ async function f33WriteAuditAtDispatch(requestId, dispatchedAppId) {
   } catch(e) {
     console.error('[f33WriteAuditAtDispatch] failed (best-effort)', e);
   }
+}
+
+// =============================================================================
+// Manager App Batch 2 (15 May 2026): Bar documents surface for Sam.
+//   - Approval queue: pending bar_hs documents across every bar.
+//   - Per-bar status: active + pending + walkthrough rolled up.
+//   - Walkthrough upload (Sam-side, auto-approved via upload_bar_document RPC).
+// =============================================================================
+
+function goToDocuments() {
+  showScreen('documents');
+  setActiveNav('documents');
+  renderDocumentsScreen();
+}
+
+async function renderDocumentsScreen() {
+  const queueEl = document.getElementById('docs-approval-queue');
+  const listEl = document.getElementById('docs-bar-list');
+  if (!queueEl || !listEl) return;
+  queueEl.innerHTML = '<div class="empty">Loading…</div>';
+  listEl.innerHTML = '';
+
+  try {
+    const [barsRes, docsRes] = await Promise.all([
+      sbAuth.from('bars').select('id, name').order('name'),
+      sbAuth.from('bar_documents')
+        .select('id, bar_id, document_type, document_url, document_format, version, uploaded_at, uploaded_by, approval_status, approved_at, rejection_reason, is_active')
+        .order('uploaded_at', { ascending: false })
+    ]);
+    if (barsRes.error) throw barsRes.error;
+    if (docsRes.error) throw docsRes.error;
+    const bars = barsRes.data || [];
+    const docs = docsRes.data || [];
+
+    // Approval queue: every pending row, oldest first so Sam sees the
+    // longest-waiting bar at the top.
+    const pending = docs.filter(d => d.approval_status === 'pending')
+      .sort((a, b) => new Date(a.uploaded_at) - new Date(b.uploaded_at));
+    if (pending.length === 0) {
+      queueEl.innerHTML = '<div class="empty">No documents pending review.</div>';
+    } else {
+      queueEl.innerHTML = pending.map(d => {
+        const bar = bars.find(b => b.id === d.bar_id) || { name: 'Bar ' + d.bar_id };
+        const uploadedStr = new Date(d.uploaded_at).toLocaleString('en-GB');
+        return `
+          <div style="padding:14px 16px;background:var(--navy-mid);border:1px solid var(--amber);border-radius:10px;margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+              <div>
+                <div style="font-size:14px;font-weight:700;color:var(--white);">${bar.name}</div>
+                <div style="font-size:11px;color:var(--grey);margin-top:2px;">
+                  ${d.document_type === 'glasi_walkthrough' ? 'Walkthrough' : "Bar's H&S"} · v${d.version} · uploaded ${uploadedStr}
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="ghost-btn" onclick="viewDocument(${d.id}, '${d.document_url.replace(/'/g, '\\\'')}')">View</button>
+                <button class="small-ice-btn" onclick="approveDoc(${d.id})">Approve</button>
+                <button class="ghost-btn" style="border-color:rgba(239,68,68,0.4);color:var(--red);" onclick="rejectDoc(${d.id})">Reject</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Per-bar list.
+    if (bars.length === 0) {
+      listEl.innerHTML = '<div class="empty">No bars onboarded yet.</div>';
+      return;
+    }
+    listEl.innerHTML = bars.map(bar => {
+      const barDocs = docs.filter(d => d.bar_id === bar.id);
+      const hsActive = barDocs.find(d => d.document_type === 'bar_hs' && d.is_active && d.approval_status === 'approved');
+      const hsPending = barDocs.find(d => d.document_type === 'bar_hs' && d.approval_status === 'pending');
+      const wtActive = barDocs.find(d => d.document_type === 'glasi_walkthrough' && d.is_active && d.approval_status === 'approved');
+      const hsLabel = hsActive
+        ? `Active v${hsActive.version}` + (hsPending ? ` · v${hsPending.version} pending` : '')
+        : (hsPending ? `Pending v${hsPending.version}` : 'Not uploaded');
+      const wtLabel = wtActive ? `Active v${wtActive.version}` : 'Not uploaded by Glasi';
+      return `
+        <div style="padding:16px;background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+            <div style="flex:1 1 auto;">
+              <div style="font-size:14px;font-weight:700;color:var(--white);">${bar.name}</div>
+              <div style="font-size:11px;color:var(--grey);margin-top:4px;">H&amp;S: ${hsLabel}</div>
+              <div style="font-size:11px;color:var(--grey);margin-top:2px;">Walkthrough: ${wtLabel}</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              ${hsActive ? `<button class="ghost-btn" onclick="viewDocument(${hsActive.id}, '${hsActive.document_url.replace(/'/g, '\\\'')}')">View H&amp;S</button>` : ''}
+              ${wtActive ? `<button class="ghost-btn" onclick="viewDocument(${wtActive.id}, '${wtActive.document_url.replace(/'/g, '\\\'')}')">View walkthrough</button>` : ''}
+              <button class="small-ice-btn" onclick="uploadWalkthroughForBar(${bar.id})">${wtActive ? 'Replace walkthrough' : 'Upload walkthrough'}</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    console.error('[renderDocumentsScreen] failed', e);
+    queueEl.innerHTML = '<div class="empty">Could not load documents. Check console.</div>';
+    listEl.innerHTML = '';
+  }
+}
+
+async function viewDocument(docId, path) {
+  // Authenticated download → object URL → open in new tab. Works for both PDF
+  // (browser viewer) and video formats.
+  try {
+    const { data, error } = await sbAuth.storage.from('bar-documents').download(path);
+    if (error) throw error;
+    const url = URL.createObjectURL(data);
+    window.open(url, '_blank');
+  } catch (e) {
+    alert('Could not open document: ' + (e?.message || e));
+  }
+}
+
+async function approveDoc(docId) {
+  if (!confirm('Approve this document and activate it for workers?')) return;
+  try {
+    const { error } = await sbAuth.rpc('approve_bar_document', {
+      p_document_id: docId,
+      p_approve: true,
+      p_rejection_reason: null
+    });
+    if (error) throw error;
+    await renderDocumentsScreen();
+  } catch (e) {
+    alert('Approval failed: ' + (e?.message || e));
+  }
+}
+
+async function rejectDoc(docId) {
+  const reason = prompt('Reason for rejection? Visible to the bar manager.');
+  if (reason === null) return;
+  if (!reason.trim()) {
+    alert('Please provide a reason.');
+    return;
+  }
+  try {
+    const { error } = await sbAuth.rpc('approve_bar_document', {
+      p_document_id: docId,
+      p_approve: false,
+      p_rejection_reason: reason.trim()
+    });
+    if (error) throw error;
+    await renderDocumentsScreen();
+  } catch (e) {
+    alert('Rejection failed: ' + (e?.message || e));
+  }
+}
+
+async function uploadWalkthroughForBar(barId) {
+  // Open a file picker, upload to bar-documents storage at <barId>/walkthrough-<ts>.<ext>,
+  // call upload_bar_document RPC with document_type='glasi_walkthrough' (auto-approves).
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.pdf,.mp4,.mov,application/pdf,video/mp4,video/quicktime';
+  input.onchange = async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const extMatch = file.name.match(/\.([^.]+)$/);
+    const ext = (extMatch ? extMatch[1] : 'pdf').toLowerCase();
+    const format = (ext === 'mp4' || ext === 'mov') ? 'video' : 'pdf';
+    const ts = Date.now();
+    const path = `${barId}/walkthrough-${ts}.${ext}`;
+    try {
+      const { error: upErr } = await sbAuth.storage.from('bar-documents').upload(path, file, {
+        contentType: file.type || (format === 'video' ? `video/${ext}` : 'application/pdf'),
+        upsert: false
+      });
+      if (upErr) throw upErr;
+      const { error: rpcErr } = await sbAuth.rpc('upload_bar_document', {
+        p_bar_id: barId,
+        p_document_type: 'glasi_walkthrough',
+        p_document_url: path,
+        p_document_format: format
+      });
+      if (rpcErr) throw rpcErr;
+      alert('Walkthrough uploaded and activated.');
+      await renderDocumentsScreen();
+    } catch (e) {
+      alert('Upload failed: ' + (e?.message || e));
+    }
+  };
+  input.click();
 }
 
 </script>

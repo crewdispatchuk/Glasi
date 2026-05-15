@@ -207,6 +207,42 @@
     .lc-requests-col, .lc-workers-col { min-width: 0; }
     .lc-workers-col #invited-section { margin-top: 24px; }
 
+    /* Phase 3 Batch 6: engagement timeline slide-in pane. */
+    .engagement-timeline-pane {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: 420px; max-width: 100vw;
+      background: var(--navy-mid); border-left: 1px solid var(--border);
+      box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+      z-index: 1500;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .engagement-timeline-pane .etp-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 4px;
+      flex-shrink: 0; position: relative;
+    }
+    .engagement-timeline-pane .etp-title { font-size: 15px; font-weight: 700; color: var(--white); }
+    .engagement-timeline-pane .etp-sub { font-size: 11px; color: var(--grey); }
+    .engagement-timeline-pane .etp-close { position: absolute; top: 12px; right: 16px; font-size: 11px; }
+    .engagement-timeline-pane .etp-list {
+      flex: 1; overflow-y: auto; padding: 12px 16px;
+      display: flex; flex-direction: column-reverse; gap: 8px;
+    }
+    .engagement-timeline-pane .etp-event {
+      background: var(--navy); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; font-size: 12px;
+    }
+    .engagement-timeline-pane .etp-event-confirmed     { border-left: 3px solid var(--green); }
+    .engagement-timeline-pane .etp-event-forfeit       { border-left: 3px solid var(--red); }
+    .engagement-timeline-pane .etp-event-pending       { border-left: 3px solid var(--ice); }
+    .engagement-timeline-pane .etp-event-ledger        { border-left: 3px solid var(--amber); }
+    .engagement-timeline-pane .etp-event-tier-promoted { border-left: 3px solid #C084FC; }
+    .engagement-timeline-pane .etp-event-time { font-family: JetBrains Mono, monospace; font-size: 10px; color: var(--grey); }
+    .engagement-timeline-pane .etp-event-worker { font-weight: 600; color: var(--white); margin-right: 6px; }
+    .engagement-timeline-pane .etp-event-amount { font-family: JetBrains Mono, monospace; font-weight: 700; }
+    .engagement-timeline-pane .etp-event-reason { color: var(--white); }
+    .engagement-timeline-pane .etp-event-forfeit-reason { color: var(--grey); font-style: italic; font-size: 11px; margin-top: 4px; }
+
     /* Paired dispatch: request card + chain connector + worker card, side by side.
        Cards meet visually via removed inner borders + connector top/bottom borders.
        Chain motif is a 4px-on/4px-off ice-blue repeating-linear-gradient against navy. */
@@ -4100,10 +4136,15 @@ const liveSessionOps = {
       console.error('[liveSessionOps.start] invites bootstrap failed', e);
     }
 
+    // Phase 3 Batch 6: wire engagement timeline realtime for this session.
+    startEngagementTimelineRealtime(sessionId);
+
     this.emit('session:started', { sessionId });
   },
 
   async stop() {
+    // Phase 3 Batch 6: tear down engagement timeline realtime first.
+    stopEngagementTimelineRealtime();
     for(const sub of this._subs) {
       if(sub.retryTimer) { clearTimeout(sub.retryTimer); sub.retryTimer = null; }
       try { sub.ws?.close(); } catch(e) {}
@@ -4581,7 +4622,8 @@ function makeRealtimeWs(topic, pgChanges, onRecord, onClose) {
       if(msg.event === 'postgres_changes') {
         const record = msg.payload?.data?.record;
         const type = msg.payload?.data?.type;
-        if(record) await onRecord(record, type);
+        const table = msg.payload?.data?.table;
+        if(record) await onRecord(record, type, table);
       }
     } catch(err) { console.error('Realtime WS error:', err); }
   };
@@ -4589,6 +4631,138 @@ function makeRealtimeWs(topic, pgChanges, onRecord, onClose) {
   ws.onclose = (e) => { if(hb) clearInterval(hb); unregisterWs(ws); if(onClose) onClose(e); };
   ws.onerror = (e) => { console.error('Realtime WS error:', e); };
   return ws;
+}
+
+// Phase 3 Batch 6: live engagement timeline. Subscribes to session_basket
+// (INSERT + UPDATE) and points_ledger (INSERT) filtered to the live session.
+// Slide-in pane in the live console, toggled by the Timeline button.
+let engagementTimelineWs = null;
+const engagementTimelineEvents = [];
+
+function startEngagementTimelineRealtime(sessionId) {
+  if(engagementTimelineWs) { try { engagementTimelineWs.close(); } catch(e) {} }
+  if(!sessionId) return;
+  engagementTimelineEvents.length = 0;
+  engagementTimelineWs = makeRealtimeWs(
+    'realtime:public:engagement_timeline_' + sessionId,
+    [
+      { event: 'INSERT', schema: 'public', table: 'session_basket', filter: 'session_id=eq.' + sessionId },
+      { event: 'UPDATE', schema: 'public', table: 'session_basket', filter: 'session_id=eq.' + sessionId },
+      { event: 'INSERT', schema: 'public', table: 'points_ledger',  filter: 'session_id=eq.' + sessionId }
+    ],
+    async (record, type, table) => { handleEngagementTimelineEvent(table, type, record); }
+  );
+}
+
+function stopEngagementTimelineRealtime() {
+  if(engagementTimelineWs) { try { engagementTimelineWs.close(); } catch(e) {} }
+  engagementTimelineWs = null;
+  engagementTimelineEvents.length = 0;
+}
+
+function toggleEngagementTimelinePane() {
+  const pane = document.getElementById('engagement-timeline-pane');
+  if(!pane) return;
+  pane.style.display = (pane.style.display === 'none') ? 'flex' : 'none';
+}
+
+function handleEngagementTimelineEvent(table, type, record) {
+  if(!record) return;
+  const now = Date.now();
+  let kind, reason, amount, forfeitReason, displayTime;
+
+  if(table === 'session_basket') {
+    const status = record.status;
+    if(type === 'INSERT' && status === 'pending') {
+      kind = 'pending';
+      reason = record.reason;
+      amount = record.amount;
+      displayTime = record.created_at || record.captured_at || now;
+    } else if(type === 'UPDATE' && status === 'confirmed') {
+      kind = 'confirmed';
+      reason = record.reason;
+      amount = record.amount;
+      displayTime = record.resolved_at || record.updated_at || now;
+    } else if(type === 'UPDATE' && status === 'forfeit') {
+      kind = 'forfeit';
+      reason = record.reason;
+      amount = record.amount;
+      forfeitReason = record.forfeit_reason || '';
+      displayTime = record.resolved_at || record.updated_at || now;
+    } else {
+      return;
+    }
+  } else if(table === 'points_ledger' && type === 'INSERT') {
+    kind = (record.reason === 'tier_promoted') ? 'tier_promoted' : 'ledger';
+    reason = record.reason;
+    amount = record.amount;
+    displayTime = record.awarded_at || now;
+  } else {
+    return;
+  }
+
+  const appId = Number(record.application_id);
+  const worker = liveSessionOps.workers?.find(w => Number(w.applicationId) === appId);
+  const workerName = worker?.name || ('Worker #' + appId);
+
+  engagementTimelineEvents.push({
+    ts: new Date(displayTime).getTime(),
+    kind, table, type, reason, amount, forfeitReason,
+    workerName, appId,
+    basketId: table === 'session_basket' ? record.id : null,
+    ledgerId: table === 'points_ledger' ? record.id : null
+  });
+
+  if(engagementTimelineEvents.length > 200) {
+    engagementTimelineEvents.splice(0, engagementTimelineEvents.length - 200);
+  }
+  renderEngagementTimelineList();
+}
+
+function renderEngagementTimelineList() {
+  const list = document.getElementById('engagement-timeline-list');
+  if(!list) return;
+  if(!engagementTimelineEvents.length) {
+    list.innerHTML = '<div class="empty">Waiting for engagement events...</div>';
+    return;
+  }
+
+  const sorted = engagementTimelineEvents.slice().sort((a, b) => a.ts - b.ts);
+  list.innerHTML = sorted.map(ev => {
+    const t = new Date(ev.ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const reasonLabel = f31ReasonLabel(ev.reason);
+    let kindLabel, kindClass, amountSpan;
+    if(ev.kind === 'pending') {
+      kindLabel = 'Basket pending';
+      kindClass = 'etp-event-pending';
+      amountSpan = '<span class="etp-event-amount" style="color:var(--ice);">+' + ev.amount + '</span>';
+    } else if(ev.kind === 'confirmed') {
+      kindLabel = 'Basket confirmed';
+      kindClass = 'etp-event-confirmed';
+      amountSpan = '<span class="etp-event-amount" style="color:var(--green);">+' + ev.amount + ' to ledger</span>';
+    } else if(ev.kind === 'forfeit') {
+      kindLabel = 'Basket forfeit';
+      kindClass = 'etp-event-forfeit';
+      amountSpan = '<span class="etp-event-amount" style="color:var(--red);">−' + ev.amount + ' forfeited</span>';
+    } else if(ev.kind === 'tier_promoted') {
+      kindLabel = 'Tier promotion';
+      kindClass = 'etp-event-tier-promoted';
+      amountSpan = '<span class="etp-event-amount" style="color:#C084FC;">+' + ev.amount + '</span>';
+    } else {
+      kindLabel = ev.reason === 'manual_correction' ? 'Manual correction' : 'Direct ledger write';
+      kindClass = 'etp-event-ledger';
+      const sign = ev.amount >= 0 ? '+' : '';
+      amountSpan = '<span class="etp-event-amount" style="color:' + (ev.amount >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + sign + ev.amount + '</span>';
+    }
+
+    return '<div class="etp-event ' + kindClass + '">'
+      + '<div class="etp-event-time">' + t + ' &middot; ' + kindLabel + '</div>'
+      + '<div style="margin-top:4px;"><span class="etp-event-worker">' + (ev.workerName.replaceAll('<','&lt;').replaceAll('>','&gt;')) + '</span>'
+      + '<span class="etp-event-reason">' + reasonLabel + '</span> '
+      + amountSpan + '</div>'
+      + (ev.forfeitReason ? '<div class="etp-event-forfeit-reason">' + ev.forfeitReason.replaceAll('<','&lt;').replaceAll('>','&gt;') + '</div>' : '')
+      + '</div>';
+  }).join('');
 }
 
 let scheduleRealtimeWs = null;
@@ -5585,24 +5759,22 @@ async function updateWorkerReliabilityScores() {
 
 
 // -- POINTS SYSTEM CONSTANTS ------------------------------------------------
-// Locked spec. No further changes without Sam's explicit instruction.
-// F-32: I'm Available +15 base, +15 quick-response bonus (within first 25%
-// of personal window). I'll Pass +1 (no quick-response variant; engagement-
-// with-work earns the speed bonus, declining-fast does not). Selected for
-// shift +20 is awarded separately at dispatch time, not here.
+// Phase 3 basket model (Batch 6 of engagement redesign). Magnitudes per
+// ENGAGEMENT_SYSTEM_TARGET_DESIGN.md § 2 and CORE.md Phase 5 § 5.2.A.
+// Every value here is the basket amount written at capture time; confirmation
+// (basket -> ledger) or forfeit (no ledger write) happens via the engagement
+// triggers + worker_clock_in / worker_clock_out RPCs. Direct ledger writes
+// from dashboard are now limited to manual_correction (F-31 dispute flow,
+// admin-authored only) and instagram_follow (one-time admin verification).
 const POINTS = {
-  joined:               5,
-  declined:             1,    // I'll Pass.
-  accepted:            15,    // I'm Available (base).
-  speedBonus30:        15,    // Quick-response bonus on I'm Available within first 25% of personal window.
-  speedBonus60:         0,    // Deprecated by F-32 locked spec; kept at 0 for legacy session-end sweep compatibility.
-  speedBonus120:        0,    // Deprecated by F-32 locked spec; kept at 0.
-  selectedForShift:    20,    // Awarded at dispatch time, separate from response action.
-  completedShift:      60,
-  arrivedEarly:        40,
-  arrivedOnTime:       25,
-  followInstagram:     50,    // One time, verified at onboarding.
-  postAndTagInstagram: 15     // Per post, max one submission per calendar day, claim and verify model.
+  joinSession:         10,   // Confirmed if worker stays 60+ min AND responds to every request received.
+  respondAvailable:    10,   // Confirmed if not dispatched OR dispatched + clocked in.
+  respondPass:          1,   // Confirmed unless 5 consecutive passes trip the kick gate.
+  arrived:              5,   // Confirmed instantly on geofence cross after dispatch.
+  clockIn:             30,   // Confirmed instantly on successful clock-in.
+  clockOut:            10,   // Confirmed instantly on successful clock-out.
+  fiveStarFeedback:    10,   // Confirmed when bar manager rates worker 5 stars on shifts.bar_rating.
+  instagramFollow:     50    // One-time, admin-verified at onboarding, direct ledger write (no basket).
 };
 
 const TIER_THRESHOLDS = [0, 250, 650, 1500, 3500];
@@ -5693,259 +5865,6 @@ async function awardPointsImmediate(applicationId, awards, opts = {}) {
 
 // F-32: legacy alias. Kept for one batch so unmigrated callers still work.
 const awardPoints = awardPointsImmediate;
-
-// Per-shift ledger writes for the worker who just clocked out. Covers the
-// completed_shift +60 plus arrived_early +40 / arrived_on_time +25 from the
-// locked spec. Called from confirmClockOut on the dashboard side; the portal's
-// workerClockOut writes the same reasons via portalAwardPoints. Per-reason
-// idempotency keeps both paths safe to run in either order.
-async function awardShiftCompletionPoints(worker) {
-  if(!worker?.applicationId || !worker?.sessionWorkerId) return null;
-
-  const shiftRows = await sbGet('shifts',
-    '?session_worker_id=eq.'+worker.sessionWorkerId+'&order=id.desc&limit=1&select=id,clock_in_confirmed_at,accepted_at,expected_arrival_minutes');
-  const shift = shiftRows[0];
-  if(!shift) return null;
-
-  const awards = [{ amount: POINTS.completedShift, reason: 'completed_shift', shiftId: shift.id }];
-
-  // Arrival timing mirrors calculateSessionPoints so dashboard- and portal-
-  // driven clock-outs land identical ledger amounts.
-  if(shift.clock_in_confirmed_at && shift.accepted_at && shift.expected_arrival_minutes) {
-    const actualMins = Math.round((new Date(shift.clock_in_confirmed_at) - new Date(shift.accepted_at)) / 60000);
-    const delta = actualMins - shift.expected_arrival_minutes;
-    if(delta < 0) awards.push({ amount: POINTS.arrivedEarly, reason: 'arrived_early', shiftId: shift.id });
-    else if(delta <= 2) awards.push({ amount: POINTS.arrivedOnTime, reason: 'arrived_on_time', shiftId: shift.id });
-  }
-
-  // Per-reason idempotency. Skip awards already in the ledger.
-  const existing = await sbGet('points_ledger',
-    '?application_id=eq.'+worker.applicationId+'&session_id=eq.'+liveSessionOps.sessionId+'&select=reason');
-  const existingReasons = new Set((existing || []).map(r => r.reason));
-  const filtered = awards.filter(a => !existingReasons.has(a.reason));
-  if(!filtered.length) return null;
-
-  const result = await awardPoints(worker.applicationId, filtered, { sessionId: liveSessionOps.sessionId });
-
-  // Sync in-memory allWorkers cache so the dashboard UI reflects the change.
-  const workerApp = (typeof allWorkers !== 'undefined') ? allWorkers.find(a => a.id === worker.applicationId) : null;
-  if(workerApp && result) {
-    workerApp.total_points = result.newTotal;
-    if(result.promoted) workerApp.tier = result.newTier;
-  }
-  return result;
-}
-
-// F-32: BREAKDOWN_REASON_MAP retired. Engagement reasons (joined_session,
-// responded_available, responded_available_quick, responded_pass) now fire
-// in real time via the worker portal awardPointsImmediate path, not from the
-// session-end sweep. The map is kept dead-coded for one batch so the legacy
-// updateWorkerPoints sweep doesn't error if anything still calls it; remove
-// after F-33. New entries reflect the post-F-32 vocabulary (under_30s
-// renamed to quick).
-const BREAKDOWN_REASON_MAP = {
-  'Joined session': 'joined_session',
-  'Accepted shift': 'responded_available',
-  'Response quick': 'responded_available_quick',
-  'Responded (declined)': 'responded_pass',
-  'Completed shift': 'completed_shift',
-  'Arrived early': 'arrived_early',
-  'Arrived on time': 'arrived_on_time'
-};
-
-async function calculateSessionPoints(applicationId, sessionId) {
-  let base = 0;
-  const breakdown = [];
-
-  // Get session_workers row for this worker in this session
-  const swRows = await sbGet('session_workers', '?application_id=eq.'+applicationId+'&session_id=eq.'+sessionId+'&select=status,expected_arrival_minutes,actual_arrival_minutes');
-  const sw = swRows[0];
-  if(!sw) return { points: 0, breakdown: [] };
-
-  const joined = ['in_session','dispatched','completed'].includes(sw.status);
-
-  // Joined session
-  if(joined) {
-    base += POINTS.joined;
-    breakdown.push({ action: 'Joined session', pts: POINTS.joined });
-  }
-
-  // Response from session_chat_log
-  const chatRows = await sbGet('session_chat_log', '?application_id=eq.'+applicationId+'&session_id=eq.'+sessionId+'&select=shift_responded,shift_response_seconds');
-  const chat = chatRows[0];
-  if(chat) {
-    if(chat.shift_responded) {
-      // F-32: real-time writers on the worker portal now fire responded_available
-      // and responded_available_quick at the moment of response, sourced from the
-      // worker's tap, not from session_chat_log (which is Zoom-parser-fed and
-      // unreliable). The session-end sweep below remains as a defensive
-      // backfill: if the real-time write somehow failed (portal offline, etc.),
-      // the chat-log inference fills the gap. The under_30s vs first-25%-of-window
-      // distinction is preserved per CORE Phase 3, but the sweep approximates
-      // with the legacy seconds threshold since it can't reconstruct each
-      // worker's personal window from a chat row alone.
-      const wasDispatched = sw.status === 'dispatched' || sw.status === 'completed';
-      if(wasDispatched) {
-        base += POINTS.accepted;
-        breakdown.push({ action: 'Accepted shift', pts: POINTS.accepted });
-        const secs = chat.shift_response_seconds;
-        if(secs != null && secs < 30) {
-          base += POINTS.speedBonus30;
-          breakdown.push({ action: 'Response quick', pts: POINTS.speedBonus30 });
-        }
-      } else {
-        base += POINTS.declined;
-        breakdown.push({ action: 'Responded (declined)', pts: POINTS.declined });
-      }
-    }
-  }
-
-  // Shift completion and arrival
-  const swIdRows = await sbGet('session_workers', '?application_id=eq.'+applicationId+'&session_id=eq.'+sessionId+'&select=id');
-  if(swIdRows.length) {
-    const swId = swIdRows[0].id;
-    const shiftRows = await sbGet('shifts', '?session_worker_id=eq.'+swId+'&select=status,expected_arrival_minutes,clock_in_confirmed_at,accepted_at');
-    const shift = shiftRows[0];
-    if(shift && shift.status === 'completed') {
-      base += POINTS.completedShift;
-      breakdown.push({ action: 'Completed shift', pts: POINTS.completedShift });
-      // Arrival
-      if(shift.clock_in_confirmed_at && shift.accepted_at && shift.expected_arrival_minutes) {
-        const actualMins = Math.round((new Date(shift.clock_in_confirmed_at) - new Date(shift.accepted_at)) / 60000);
-        const delta = actualMins - shift.expected_arrival_minutes;
-        if(delta < 0) {
-          base += POINTS.arrivedEarly;
-          breakdown.push({ action: 'Arrived early', pts: POINTS.arrivedEarly });
-        } else if(delta <= 2) {
-          base += POINTS.arrivedOnTime;
-          breakdown.push({ action: 'Arrived on time', pts: POINTS.arrivedOnTime });
-        }
-      }
-    }
-  }
-
-  return { base, breakdown };
-}
-
-async function updateWorkerPoints() {
-  // Per-reason idempotent. Shift-completion + arrival are written at clock-out
-  // (confirmClockOut on dashboard, workerClockOut on portal). This catches
-  // anything calculateSessionPoints derives that wasn't already in the ledger,
-  // typically joined_session and the legacy session_chat_log response inferences.
-  const appIds = [...new Set(liveSessionOps.workers.map(w => w.applicationId).filter(Boolean))];
-  for(const appId of appIds) {
-    const { breakdown } = await calculateSessionPoints(appId, liveSessionOps.sessionId);
-
-    const existing = await sbGet('points_ledger',
-      '?application_id=eq.'+appId+'&session_id=eq.'+liveSessionOps.sessionId+'&select=reason,amount');
-    const existingReasons = new Set((existing || []).map(r => r.reason));
-
-    // F-32: drop unmapped-fallback writes. manual_adjustment was removed from
-    // the CHECK vocabulary; if a breakdown label maps to nothing, skip the
-    // write entirely and log to console for diagnosis (rather than emitting a
-    // CHECK violation at INSERT).
-    const awards = (breakdown || [])
-      .filter(b => b.pts !== 0)
-      .map(b => {
-        const reason = BREAKDOWN_REASON_MAP[b.action];
-        if(!reason) {
-          console.warn('[updateWorkerPoints] unmapped breakdown label, skipping:', b.action);
-          return null;
-        }
-        return { amount: b.pts, reason };
-      })
-      .filter(a => a && !existingReasons.has(a.reason));
-
-    if(awards.length) {
-      await awardPoints(appId, awards, { sessionId: liveSessionOps.sessionId });
-    }
-
-    // points_earned = sum of all ledger entries for this (worker, session),
-    // not just the awards written this run.
-    const ledger = (awards.length)
-      ? await sbGet('points_ledger', '?application_id=eq.'+appId+'&session_id=eq.'+liveSessionOps.sessionId+'&select=amount')
-      : (existing || []);
-    const totalEarned = (ledger || []).reduce((s, r) => s + (parseInt(r.amount) || 0), 0);
-
-    if(totalEarned !== 0 || awards.length) {
-      await sbPatch('session_workers',
-        '?application_id=eq.'+appId+'&session_id=eq.'+liveSessionOps.sessionId,
-        { points_earned: totalEarned });
-    }
-  }
-}
-
-async function generateSessionReports() {
-  const appIds = [...new Set(liveSessionOps.workers.map(w => w.applicationId).filter(Boolean))];
-  const reports = [];
-
-  for(const appId of appIds) {
-    const sw = liveSessionOps.workers.find(w => w.applicationId === appId);
-    if(!sw) continue;
-
-    const appRows = await sbGet('applications', '?id=eq.'+appId+'&select=name,phone,reliability_score,total_points,tier');
-    const app = appRows[0];
-    if(!app) continue;
-
-    const { base, breakdown } = await calculateSessionPoints(appId, liveSessionOps.sessionId);
-    const earned = base;
-    const newTotal = (parseInt(app.total_points) || 0) + earned;
-    const currentTier = pointsToTier(newTotal);
-    const toNext = pointsToNextTier(newTotal);
-    const nextThreshold = TIER_THRESHOLDS[currentTier] || null;
-    const prevThreshold = TIER_THRESHOLDS[currentTier - 1] || 0;
-    const progress = nextThreshold ? Math.round(((newTotal - prevThreshold) / (nextThreshold - prevThreshold)) * 100) : 100;
-
-    reports.push({ name: app.name, phone: app.phone, earned, breakdown, newTotal, currentTier, toNext, progress });
-  }
-
-  return reports;
-}
-
-function downloadSessionReports(reports) {
-  reports.forEach(r => {
-    const tierRate = [12.71,13.71,14.71,15.71,16.71][r.currentTier-1];
-    const nextTierRate = r.currentTier < 5 ? [12.71,13.71,14.71,15.71,16.71][r.currentTier] : null;
-
-    let lines = [
-      'GLASI SESSION REPORT',
-      '====================',
-      '',
-      'Hi ' + r.name + ',',
-      '',
-      "Thanks for joining tonight. Here's your update.",
-      '',
-      'TIER ' + r.currentTier + ' - ' + r.newTotal + ' points',
-      r.newTotal + ' / ' + (TIER_THRESHOLDS[r.currentTier] || r.newTotal) + ' points',
-      r.toNext > 0 ? 'Next tier in ' + r.toNext + ' points' : 'Maximum tier reached',
-      '',
-      'TONIGHT YOU EARNED: +' + r.earned + ' points',
-    ];
-
-    if(r.breakdown.length) {
-      r.breakdown.forEach(b => lines.push('  ' + b.action + ': +' + b.pts + 'pts'));
-    } else {
-      lines.push('  You were invited but did not join this session.');
-    }
-
-    lines = lines.concat([
-      '',
-      'Current rate: £' + tierRate + '/hr',
-      nextTierRate ? ('Tier ' + (r.currentTier+1) + ' rate: £' + nextTierRate + '/hr') : '',
-      '',
-      'Keep showing up and the shifts will come.',
-      '',
-      'Glasi',
-      'glasi.co.uk'
-    ]);
-
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'glasi-report-' + r.name.replace(/\s+/g,'-').toLowerCase() + '.txt';
-    a.click();
-  });
-}
 
 // F-38 in-flight modal helpers. Surfaced when close_session or
 // force_close_other_live_sessions returns IN_FLIGHT. Lists each in-flight
@@ -6131,8 +6050,11 @@ async function confirmCloseSession() {
   const sessionRequests = [...liveSessionOps.requests];
 
   await updateWorkerReliabilityScores();
-  const reports = await generateSessionReports();
-  await updateWorkerPoints();
+  // Phase 3 Batch 6: generateSessionReports + updateWorkerPoints + the dormant
+  // reports-array consumer all retired. Session-end engagement points now flow
+  // through the basket model (trigger-driven capture + resolve helpers at
+  // end-of-engagement). Worker-facing after-session report is the Phase 3 § 6
+  // surface, not a dashboard-side text dump.
 
   await liveSessionOps.stop();
   selectedRequestId = null;
@@ -6142,10 +6064,6 @@ async function confirmCloseSession() {
   showScreen('sessions');
   setActiveNav('sessions');
   switchSessionsTab('history', { sessionId });
-
-  if(reports && reports.length) {
-    // Session reports available in portal and shifts screen
-  }
 }
 
 function dismissReport() {
@@ -6701,19 +6619,10 @@ async function dispatchWorker(applicationId, requestId) {
   // Legacy responseWindow timer cleanup retired in CORE v6 F-03 (the timers
   // were no-op shims after recycle unwire; F-03 removes them entirely).
 
-  // Award +20 points for being selected (writes to ledger, updates cache, logs tier promotion if crossed)
-  const result = await awardPoints(worker.applicationId, {
-    amount: POINTS.selectedForShift,
-    reason: 'selected_for_shift',
-    sessionId: liveSessionOps.sessionId,
-    sourceType: 'shift_request',
-    sourceId: requestId
-  });
-  const workerApp = allWorkers.find(w => w.id === worker.applicationId);
-  if(workerApp && result) {
-    workerApp.total_points = result.newTotal;
-    if(result.promoted) workerApp.tier = result.newTier;
-  }
+  // Phase 3 (Batch 6 of engagement redesign): dispatch is no longer a points-rewarded
+  // event. The worker's pending respond_available basket from earlier confirms via
+  // worker_clock_in (+10), and arrived (+5) / clock_in (+30) / clock_out (+10)
+  // baskets capture the rest of the flow. selected_for_shift retired.
 
   // 3. Update local state
   worker.status = 'dispatched';
@@ -6745,104 +6654,6 @@ async function dispatchWorker(applicationId, requestId) {
     f33WriteAuditAtDispatch(requestId, worker.applicationId);
   }
 
-  // F-32: no-response sweep. Fires after dispatch closes the request. Penalises
-  // in-session workers eligible for this request (within 30min) who never
-  // took a final action AND had at least 75% of their personal window OR a
-  // fully-expired window. Lenient when request closed early on a short window.
-  await f32NoResponseSweep(requestId, request.bar_id, request.posted_at || request.request_time);
-}
-
-// F-32: no-response sweep — penalty writer for in-session workers who didn't
-// engage with a request that closed (dispatch / cancel / auto-expire).
-// Writes both a shift_responses row (response='no_response') and a
-// points_ledger row (reason='no_response', amount=-5) per eligible worker.
-// Gating per CORE Phase 3 5 May 2026 update:
-//   - If worker's full personal window elapsed: write penalty.
-//   - Else if elapsed >= 75% of window AND window >= 5min: write penalty.
-//   - Else (closed early on short window): skip (forgive).
-async function f32NoResponseSweep(requestId, barId, postedAt) {
-  if(!requestId || !postedAt) return;
-  const postedAtMs = new Date(postedAt).getTime();
-  if(!Number.isFinite(postedAtMs)) return;
-  const elapsedSecs = (Date.now() - postedAtMs) / 1000;
-
-  try {
-    // 1. In-session workers in the current session, excluding those who got
-    // dispatched on this request (their session_workers.status would have
-    // moved away from in_session by now).
-    const sessionId = liveSessionOps.sessionId;
-    if(!sessionId) return;
-    const swRows = await sbGet('session_workers',
-      '?session_id=eq.'+sessionId+'&select=application_id,status');
-    const eligibleAppIds = swRows
-      .filter(s => s.status === 'in_session')
-      .map(s => Number(s.application_id))
-      .filter(Boolean);
-    if(!eligibleAppIds.length) return;
-
-    // 2. Walking minutes for each eligible worker against this bar.
-    const distRows = await sbGet('worker_bar_distances',
-      '?application_id=in.('+eligibleAppIds.join(',')+')&bar_id=eq.'+barId+'&select=application_id,walking_minutes');
-    const walkByApp = new Map((distRows || []).map(d => [Number(d.application_id), parseFloat(d.walking_minutes)]));
-
-    // 3. Existing shift_responses for this request (skip workers who responded).
-    const responseRows = await sbGet('shift_responses',
-      '?shift_request_id=eq.'+requestId+'&select=application_id');
-    const respondedSet = new Set((responseRows || []).map(r => Number(r.application_id)));
-
-    // 4. Apply gating per worker, collect rows to write.
-    const respRows = [];
-    const ledgerRows = [];
-    for(const appId of eligibleAppIds) {
-      if(respondedSet.has(appId)) continue;
-      const walkMins = walkByApp.get(appId);
-      if(!Number.isFinite(walkMins) || walkMins >= 30) continue; // not eligible for this request
-      const windowSecs = (30 - walkMins) * 60;
-      const windowExpired = elapsedSecs >= windowSecs;
-      const seventyFiveOnLongWindow = (elapsedSecs / windowSecs >= 0.75) && (windowSecs >= 300);
-      if(!(windowExpired || seventyFiveOnLongWindow)) continue;
-      respRows.push({
-        shift_request_id: requestId,
-        application_id: appId,
-        response: 'no_response',
-        responded_at: new Date().toISOString(),
-        response_seconds: Math.round(elapsedSecs)
-      });
-      ledgerRows.push({
-        application_id: appId,
-        amount: -5,
-        reason: 'no_response',
-        session_id: sessionId,
-        source_type: 'shift_request',
-        source_id: requestId,
-        awarded_by: 'system',
-        notes: 'No response when window had elapsed'
-      });
-    }
-
-    if(respRows.length) {
-      try { await sbPost('shift_responses', respRows); } catch(e) { console.warn('[f32NoResponseSweep] shift_responses POST failed', e); }
-    }
-    if(ledgerRows.length) {
-      // Each worker's penalty is one row. Use awardPointsImmediate per worker
-      // so total_points + tier (and potential demotion later) stay in sync.
-      for(const row of ledgerRows) {
-        try {
-          await awardPointsImmediate(row.application_id, [{
-            amount: row.amount,
-            reason: row.reason,
-            sessionId: row.session_id,
-            sourceType: row.source_type,
-            sourceId: row.source_id,
-            notes: row.notes,
-            awardedBy: 'system'
-          }], { sessionId: row.session_id });
-        } catch(e) { console.warn('[f32NoResponseSweep] awardPointsImmediate failed', e); }
-      }
-    }
-  } catch(e) {
-    console.error('[f32NoResponseSweep] failed', e);
-  }
 }
 
 async function confirmClockIn(requestId, applicationId) {
@@ -6927,17 +6738,14 @@ async function confirmClockOut(requestId) {
 
   const now = new Date().toISOString();
 
-  // Patch shifts first so the row is in 'completed' state when
-  // awardShiftCompletionPoints reads timing fields off it.
+  // Phase 3: shift completion points now flow through worker_clock_out RPC
+  // (writes session_basket clock_out +10, instant confirm). Arrival timing
+  // bonuses (arrived_early, arrived_on_time) retired; flat arrived +5 fires
+  // earlier on geofence cross via engagement_basket_on_arrival_trigger.
   await sbPatch('shifts', '?session_worker_id=eq.'+worker.sessionWorkerId+'&status=eq.onshift', {
     status: 'completed',
     clock_out_confirmed_at: now
   });
-
-  // Award shift-completion + arrival to the ledger now (not at session close).
-  // Idempotent per-reason: if the portal's portalAwardPoints already wrote
-  // these for this worker+session, this is a no-op.
-  await awardShiftCompletionPoints(worker);
 
   // Patch session_workers last so realtime UPDATE for portal/manager fires
   // after ledger and shift writes have landed.
@@ -6969,10 +6777,6 @@ async function removeRequest(requestId) {
   renderRequestCards();
   renderRoom();
 
-  // F-32: no-response sweep on cancel close.
-  if(barId && postedAt) {
-    f32NoResponseSweep(requestId, barId, postedAt);
-  }
 }
 
 function openAddNotes(requestId) {
@@ -7218,9 +7022,6 @@ function renderRequestCards() {
           r.status = 'expired';
           sbPatch('shift_requests', '?id=eq.'+r.id, { status: 'expired' });
           renderRequestCards();
-          // F-32: no-response sweep on auto-expire close. All eligible workers
-          // who didn't respond get the penalty (the full window has elapsed).
-          f32NoResponseSweep(r.id, r.bar_id, r.posted_at || r.request_time);
         }
       }
 
@@ -8283,13 +8084,14 @@ async function loadSessionDetail(sessionId) {
 
   // Fetch session data. F-31: ledgerRows + swRows added for the new
   // WORKERS · POINTS section.
-  const [sessionArr, requests, sessionShifts, invites, ledgerRows, swRows] = await Promise.all([
+  const [sessionArr, requests, sessionShifts, invites, ledgerRows, swRows, basketRows] = await Promise.all([
     sbGet('sessions', '?id=eq.'+sessionId+'&select=id,session_date,start_time,end_time,zone_id,zones(name)'),
     sbGet('shift_requests', '?session_id=eq.'+sessionId+'&select=*,bars(name)'),
     sbGet('shifts', '?session_id=eq.'+sessionId+'&select=*,session_workers(worker_name,application_id,dispatched_at,departed_at,clock_in_at)'),
     sbGet('session_invites', '?session_id=eq.'+sessionId+'&select=application_id,attendance_confirmed,joined_at'),
     sbGet('points_ledger', '?session_id=eq.'+sessionId+'&order=awarded_at.asc&select=id,application_id,amount,reason,shift_id,source_type,source_id,awarded_at,awarded_by,metadata,notes,correction_for_event_id'),
-    sbGet('session_workers', '?session_id=eq.'+sessionId+'&select=id,application_id,worker_name,status,points_earned,applications(id,name,tier)')
+    sbGet('session_workers', '?session_id=eq.'+sessionId+'&select=id,application_id,worker_name,status,points_earned,applications(id,name,tier)'),
+    sbGet('session_basket', '?session_id=eq.'+sessionId+'&order=created_at.asc&select=id,application_id,reason,amount,status,source_type,source_id,created_at,resolved_at,forfeit_reason')
   ]);
 
   const session = sessionArr[0];
@@ -8325,8 +8127,14 @@ async function loadSessionDetail(sessionId) {
           if(!ledgerByApp.has(id)) ledgerByApp.set(id, []);
           ledgerByApp.get(id).push(r);
         }
+        const basketByApp = new Map();
+        for(const b of (basketRows || [])) {
+          const id = Number(b.application_id);
+          if(!basketByApp.has(id)) basketByApp.set(id, []);
+          basketByApp.get(id).push(b);
+        }
         if(!swRows || swRows.length === 0) return '<div class="empty">No workers in this session.</div>';
-        return swRows.map(sw => renderSessionWorkerPointsRow(sw, ledgerByApp.get(Number(sw.application_id)) || [], sessionId)).join('');
+        return swRows.map(sw => renderSessionWorkerPointsRow(sw, ledgerByApp.get(Number(sw.application_id)) || [], sessionId, basketByApp.get(Number(sw.application_id)) || [])).join('');
       })()
 
     // Shifts list
@@ -9013,6 +8821,7 @@ function renderLiveRoom() {
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="font-size:12px;color:var(--ice);" id="live-session-elapsed">00:00</div>
+          <button class="ghost-btn" id="engagement-timeline-toggle" onclick="toggleEngagementTimelinePane()" title="Toggle engagement timeline (basket events + ledger writes, real-time)">Timeline</button>
           <button class="ghost-btn" style="color:var(--red);border-color:rgba(248,113,113,0.3);" onclick="confirmCloseSession()">Close</button>
         </div>
       </div>
@@ -9058,6 +8867,18 @@ function renderLiveRoom() {
           <div class="request-section-label" style="color:var(--grey);">Completed</div>
           <div class="worker-grid" id="completed-grid"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Phase 3 Batch 6: engagement timeline slide-in pane. -->
+    <div id="engagement-timeline-pane" class="engagement-timeline-pane" style="display:none;">
+      <div class="etp-header">
+        <div class="etp-title">Engagement Timeline</div>
+        <div class="etp-sub">Live basket events and ledger writes for this session.</div>
+        <button class="ghost-btn etp-close" onclick="toggleEngagementTimelinePane()">Close</button>
+      </div>
+      <div id="engagement-timeline-list" class="etp-list">
+        <div class="empty">Waiting for engagement events...</div>
       </div>
     </div>
   `;
@@ -9212,7 +9033,7 @@ async function renderSessionsHistory() {
       s.status === 'proposed' ? 'var(--amber)' :
       'var(--amber)';
     const barLabel = describeBarSet(s);
-    return `<div class="zone-card" style="margin-bottom:12px;padding:14px 18px;cursor:pointer;" onclick="openSessionDetail(${s.id})">
+    return `<div class="zone-card" style="margin-bottom:12px;padding:14px 18px;cursor:pointer;" onclick="loadSessionDetail(${s.id})">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
         <div>
           <div style="font-weight:600;color:var(--white);font-size:13px;">${dateStr} at ${timeStr}</div>
@@ -9529,170 +9350,6 @@ async function openInviteWorkers(sessionId) {
 }
 
 let currentInviteSessionId = null;
-
-async function openSessionDetail(sessionId) {
-  // clear report store for this session
-  Object.keys(_reportStore).forEach(k => delete _reportStore[k]);
-  showScreen('session-detail');
-  setActiveNav('sessions');
-
-  // F-37: load session with its bar set via FK embed.
-  const sessions = await sbGet('sessions', '?id=eq.'+sessionId+'&select=*,session_bars(bars(id,name))');
-  const session = sessions[0];
-  if(!session) return;
-
-  const date = session.session_date ? new Date(session.session_date).toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '';
-  const barLabel = describeBarSet(session) || 'No bars assigned';
-
-  document.getElementById('session-detail-title').textContent = date.toUpperCase();
-  document.getElementById('session-detail-sub').textContent = barLabel + (session.start_time ? '  |  ' + session.start_time.slice(0,5) + ' - ' + (session.end_time ? session.end_time.slice(0,5) : 'open') : '');
-
-  const workers = document.getElementById('session-detail-workers');
-  workers.innerHTML = '<div class="empty">Loading workers...</div>';
-
-  const swRows = await sbGet('session_workers', '?session_id=eq.'+sessionId+'&select=*');
-  if(!swRows.length) { workers.innerHTML = '<div class="empty">No workers found for this session.</div>'; return; }
-
-  // load applications for each worker
-  const appIds = swRows.map(w => w.application_id).filter(Boolean);
-  const apps = appIds.length ? await sbGet('applications', '?id=in.('+appIds.join(',')+')&select=id,name,email,phone,tier,total_points,reliability_score') : [];
-
-  // load chat log for response data
-  const chatLogs = await sbGet('session_chat_log', '?session_id=eq.'+sessionId+'&select=*');
-
-  const tierRates = [12.71,13.71,14.71,15.71,16.71];
-
-  workers.innerHTML = swRows.map(sw => {
-    const app = apps.find(a => Number(a.id) === Number(sw.application_id));
-    const chat = chatLogs.find(c => Number(c.application_id) === Number(sw.application_id));
-    const name = app ? app.name : sw.worker_name || 'Unknown';
-    const joined = ['in_session','dispatched','completed'].includes(sw.status);
-    const dispatched = ['dispatched','completed'].includes(sw.status);
-    const completed = sw.status === 'completed';
-    const pts = sw.points_earned || 0;
-    const totalPts = app ? (parseInt(app.total_points) || 0) : 0;
-    const tier = app ? (parseInt(app.tier) || 1) : 1;
-    const reliability = app ? parseFloat(app.reliability_score || 0) : 0;
-    const toNext = pointsToNextTier(totalPts);
-    const nextThresholdPts = TIER_THRESHOLDS[tier] || null;
-    const prevThresholdPts = TIER_THRESHOLDS[tier-1] || 0;
-    const progress = nextThresholdPts ? Math.round(((totalPts - prevThresholdPts) / (nextThresholdPts - prevThresholdPts)) * 100) : 100;
-
-    // build breakdown
-    const lines = [];
-    if(joined) lines.push('Joined session: +'+POINTS.joined+'pts');
-    if(chat && chat.shift_responded) {
-      if(dispatched) {
-        lines.push('Accepted shift: +'+POINTS.accepted+'pts');
-        if(chat.shift_response_seconds != null) {
-          const s = chat.shift_response_seconds;
-          if(s < 30) lines.push('Speed bonus (<30s): +'+POINTS.speedBonus30+'pts');
-          else if(s < 60) lines.push('Speed bonus (<60s): +'+POINTS.speedBonus60+'pts');
-          else if(s < 120) lines.push('Speed bonus (<120s): +'+POINTS.speedBonus120+'pts');
-        }
-      } else {
-        lines.push('Responded (declined): +'+POINTS.declined+'pts');
-      }
-    }
-    if(completed) {
-      lines.push('Completed shift: +'+POINTS.completedShift+'pts');
-      if(sw.actual_arrival_minutes != null && sw.expected_arrival_minutes != null) {
-        const delta = sw.actual_arrival_minutes - sw.expected_arrival_minutes;
-        if(delta < 0) lines.push('Arrived early: +'+POINTS.arrivedEarly+'pts');
-        else if(delta <= 2) lines.push('Arrived on time: +'+POINTS.arrivedOnTime+'pts');
-      }
-    }
-
-    const statusColour = joined ? (completed ? 'var(--green)' : dispatched ? 'var(--ice)' : 'var(--amber)') : 'var(--grey)';
-    const statusLabel = completed ? 'COMPLETED' : dispatched ? 'DISPATCHED' : joined ? 'JOINED' : 'DID NOT JOIN';
-
-    // build HTML email snippet
-    const progressBar = `<div style="background:#dce8f5;border-radius:999px;height:10px;width:100%;margin:4px 0;"><div style="background:#a8c6e8;border-radius:999px;height:10px;width:${progress}%;min-width:4px;"></div></div>`;
-    const tierRate = tierRates[tier-1];
-    const nextTierRate = tier < 5 ? tierRates[tier] : null;
-
-    const emailSnippet = `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;">
-<div style="background:#0d1117;border-radius:16px 16px 0 0;padding:24px;text-align:center;">
-<div style="display:inline-block;border:1.5px solid #e6edf3;border-radius:6px;padding:8px 22px;">
-<span style="font-size:22px;letter-spacing:8px;color:#e6edf3;">GLASI</span>
-</div>
-</div>
-<div style="background:#fff;padding:28px 32px;">
-<p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi ${name},</p>
-<p style="margin:0 0 16px;font-size:15px;color:#374151;">Thanks for joining tonight. Here's your session update.</p>
-<div style="background:#f0f6fc;border-left:3px solid #a8c6e8;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 20px;">
-<p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#0d1117;letter-spacing:0.5px;text-transform:uppercase;">Tier ${tier}</p>
-${progressBar}
-<p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#0d1117;">${totalPts} / ${nextThresholdPts || totalPts} points</p>
-<p style="margin:0;font-size:13px;color:#6b7280;">${toNext > 0 ? 'Next tier in '+toNext+' points' : 'Maximum tier reached'}</p>
-</div>
-<p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#0d1117;">Tonight you earned: +${pts} points</p>
-${lines.length
-  ? '<ul style="margin:0 0 12px;padding-left:18px;color:#6b7280;font-size:13px;">'+lines.map(l=>'<li style="margin-bottom:4px;">'+l+'</li>').join('')+'</ul>'
-    + (dispatched
-        ? '<p style="font-size:14px;color:#374151;margin:0 0 16px;">Every session you join moves you closer to a higher tier. Accepting shifts moves you further. And your performance on the night, how fast you respond and how promptly you arrive, has the biggest impact of all. Higher tiers mean higher pay. Keep performing like tonight and you will move through them quickly.</p>'
-        : '<p style="font-size:14px;color:#374151;margin:0 0 16px;">We know you were ready and wanted to work tonight. We cannot dispatch everyone, but we do notice. Making yourself available still earns you points toward your next tier. The more you show up, the higher your tier climbs. And a higher tier means higher pay when you do get a shift. Keep showing up.</p>')
-  : '<p style="font-size:14px;color:#374151;margin:0 0 16px;">We know you were ready and wanted to work tonight. We cannot dispatch everyone, but we do notice. Making yourself available still earns you points toward your next tier. The more you show up, the higher your tier climbs. And a higher tier means higher pay when you do get a shift. Keep showing up.</p>'}
-<p style="font-size:14px;color:#374151;margin:0 0 4px;">Current rate: <strong>£${tierRate}/hr</strong></p>
-${nextTierRate ? '<p style="font-size:13px;color:#6b7280;margin:0 0 4px;">Tier '+(tier+1)+' pays £'+nextTierRate+'/hr.</p>' : ''}
-<p style="font-size:14px;color:#374151;margin:16px 0 0;">Glasi<br><span style="color:#9ca3af;font-size:12px;">glasi.co.uk</span></p>
-</div>
-<div style="background:#0d1117;border-radius:0 0 16px 16px;padding:16px;text-align:center;">
-<p style="margin:0;font-size:11px;color:#4b5563;">hello@glasi.co.uk &nbsp;·&nbsp; glasi.co.uk</p>
-</div>
-</div>`;
-
-    _reportStore['report_'+sw.application_id+'_'+sessionId] = emailSnippet;
-    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-        <div>
-          <div style="font-weight:600;color:var(--white);font-size:15px;">${name}</div>
-          <div style="color:var(--grey);font-size:12px;margin-top:2px;">${app ? app.email || '' : ''}</div>
-        </div>
-        <div style="text-align:right;">
-          <span style="font-size:11px;font-weight:600;letter-spacing:1px;color:${statusColour};">${statusLabel}</span>
-          <div style="color:var(--grey);font-size:11px;margin-top:2px;">Tier ${tier} &nbsp;·&nbsp; ${reliability ? reliability.toFixed(1)+'% reliability' : 'No score yet'}</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:24px;margin-bottom:12px;flex-wrap:wrap;">
-        <div style="text-align:center;">
-          <div style="font-size:22px;font-weight:700;color:var(--ice);">+${pts}</div>
-          <div style="font-size:10px;color:var(--grey);letter-spacing:1px;">PTS TONIGHT</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:22px;font-weight:700;color:var(--white);">${totalPts}</div>
-          <div style="font-size:10px;color:var(--grey);letter-spacing:1px;">TOTAL PTS</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:22px;font-weight:700;color:var(--green);">${toNext > 0 ? toNext : '-'}</div>
-          <div style="font-size:10px;color:var(--grey);letter-spacing:1px;">TO NEXT TIER</div>
-        </div>
-      </div>
-      ${lines.length ? '<div style="margin-bottom:12px;">'+lines.map(l=>'<div style="font-size:12px;color:var(--grey);margin-bottom:2px;">'+l+'</div>').join('')+'</div>' : ''}
-      <button onclick="copyWorkerReport(this,'report_${sw.application_id}_${sessionId}')" style="background:var(--ice-dim);border:1px solid var(--border);color:var(--ice);border-radius:8px;padding:8px 16px;font-size:12px;cursor:pointer;width:100%;">Copy Email Report</button>
-    </div>`;
-  }).join('');
-}
-
-const _reportStore = {};
-
-function copyWorkerReport(btn, reportId) {
-  const html = _reportStore[reportId] || '';
-  if(!html) { btn.textContent = 'No report found'; return; }
-  // open in new tab -- select all, copy, paste into Gmail
-  const fullPage = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:40px;background:#f0f4f8;}</style></head><body>' + html + '</body></html>';
-  const win = window.open('', '_blank');
-  if(win) {
-    win.document.write(fullPage);
-    win.document.close();
-    btn.textContent = 'Opened in new tab';
-    btn.style.color = 'var(--green)';
-    setTimeout(() => { btn.textContent = 'Copy Email Report'; btn.style.color = 'var(--ice)'; }, 2000);
-  } else {
-    btn.textContent = 'Allow popups and try again';
-    setTimeout(() => { btn.textContent = 'Copy Email Report'; }, 3000);
-  }
-}
 
 
 // CORE v5 invite flow. Per-worker View / Send buttons. Send is the ONLY path
@@ -10900,24 +10557,27 @@ async function saveNewSubscription() {
 // event, never mutations.
 // ============================================================================
 
-// F-32: friendly labels for the post-F-32 reason vocabulary (14 reasons).
+// Phase 3 Batch 6: friendly labels for points_ledger.reason.
 // Tripwire: this map must stay in sync with the portal REASON_LABELS map AND
-// with the points_ledger CHECK constraint. All three must agree.
+// with the points_ledger CHECK constraint. Phase 3 transitional state: CHECK
+// is EXPANDED (22 values) until Batch 9.2 SHRINK (12 values). Map matches the
+// EXPANDED state until Batch 9.3 cleanup (legacy 10 dropped once Batch 9.1
+// wipe deletes any pre-Phase-3 test rows).
 const POINTS_REASON_LABELS = {
+  // Phase 3 (added Batch 6)
+  join_session:                     'Joined session',
+  respond_available:                "I'm available",
+  respond_pass:                     "I'll pass",
+  arrived:                          'Arrived at bar',
+  clock_in:                         'Clocked in',
+  clock_out:                        'Clocked out',
+  five_star_feedback:               '5-star bar feedback',
+  instagram_follow:                 'Instagram follow',
+  // Survives Batch 9.2 SHRINK
   genesis:                          'Joined Glasi',
-  joined_session:                   'Joined session',
-  selected_for_shift:               'Selected for shift',
-  responded_available:              'Responded available',
-  responded_available_quick:        'Quick response',
-  responded_pass:                   "I'll pass",
-  completed_shift:                  'Completed shift',
-  arrived_early:                    'Arrived early',
-  arrived_on_time:                  'Arrived on time',
-  no_response:                      'No response',
   no_show:                          'No-show',
   manual_correction:                'Manual correction',
-  tier_promoted:                    'Tier promotion',
-  daily_login_claim:                'Daily login'
+  tier_promoted:                    'Tier promotion'
 };
 
 function f31ReasonLabel(reason) {
@@ -10962,6 +10622,15 @@ async function loadShiftPoints(p) {
     linked.sort((a, b) => new Date(a.awarded_at) - new Date(b.awarded_at));
   }
 
+  // Phase 3 Batch 6: fetch session_basket entries scoped to this shift.
+  const basketOrParts = ['and(source_type.eq.shift,source_id.eq.' + shiftId + ')'];
+  if(requestId) basketOrParts.push('and(source_type.eq.shift_request,source_id.eq.' + requestId + ')');
+  let baskets = await sbGet('session_basket',
+    '?application_id=eq.' + appId
+    + '&or=(' + basketOrParts.join(',') + ')'
+    + '&order=created_at.asc'
+    + '&select=id,reason,amount,status,source_type,source_id,created_at,resolved_at,forfeit_reason');
+
   const [beforeRows, afterRows] = await Promise.all([
     postedAt
       ? sbGet('points_ledger', '?application_id=eq.' + appId + '&awarded_at=lt.' + encodeURIComponent(postedAt) + '&select=amount')
@@ -10976,16 +10645,19 @@ async function loadShiftPoints(p) {
 
   target.innerHTML = renderShiftPointsBlock({
     appId, shiftId, requestId, sessionId,
-    beforeTotal, afterTotal, linkedDelta, linked
+    beforeTotal, afterTotal, linkedDelta, linked, baskets
   });
 }
 
 function renderShiftPointsBlock(ctx) {
-  const { appId, shiftId, requestId, sessionId, beforeTotal, afterTotal, linkedDelta, linked } = ctx;
+  const { appId, shiftId, requestId, sessionId, beforeTotal, afterTotal, linkedDelta, linked, baskets } = ctx;
 
   const summary = '<div class="pu-detail-row"><span class="l">Points before shift</span><span class="v">' + beforeTotal + '</span></div>'
     + '<div class="pu-detail-row"><span class="l">Points after shift</span><span class="v">' + (afterTotal != null ? afterTotal : '—') + '</span></div>'
     + '<div class="pu-detail-row"><span class="l">Net for this shift</span><span class="v" style="color:' + (linkedDelta >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (linkedDelta >= 0 ? '+' : '') + linkedDelta + '</span></div>';
+
+  // Phase 3 Batch 6: basket section.
+  const basketSection = renderBasketBreakdown(baskets);
 
   const rows = linked.length
     ? '<table class="history-table" style="margin-top:14px;"><thead><tr>'
@@ -11003,21 +10675,55 @@ function renderShiftPointsBlock(ctx) {
   const ctxArg = JSON.stringify({ appId, shiftId, requestId: requestId || null, sessionId: sessionId || null, source: 'shift_detail' });
   const addBtn = '<button class="rc-action-btn" style="margin-top:14px;" onclick=\'openCorrectionModal(' + ctxArg + ')\'>+ Add Correction</button>';
 
-  return summary + rows + addBtn;
+  return summary + basketSection + rows + addBtn;
+}
+
+// Phase 3 Batch 6: render a session_basket breakdown grouped by status.
+function renderBasketBreakdown(baskets) {
+  if(!baskets || !baskets.length) return '';
+  const confirmed = baskets.filter(b => b.status === 'confirmed');
+  const pending   = baskets.filter(b => b.status === 'pending');
+  const forfeit   = baskets.filter(b => b.status === 'forfeit');
+
+  const renderRow = (b, color) => '<div class="pu-detail-row">'
+    + '<span class="l">' + f31ReasonLabel(b.reason)
+    + (b.status === 'forfeit' && b.forfeit_reason ? ' <span style="color:var(--grey);font-size:11px;font-style:italic;">(' + String(b.forfeit_reason).replaceAll('<','&lt;').replaceAll('>','&gt;') + ')</span>' : '')
+    + '</span>'
+    + '<span class="v" style="color:' + color + ';font-family:JetBrains Mono,monospace;">'
+    + (b.status === 'forfeit' ? '−' : '+') + (parseInt(b.amount) || 0)
+    + '</span></div>';
+
+  let html = '<div style="margin-top:14px;font-size:11px;font-weight:600;letter-spacing:2px;color:var(--grey);text-transform:uppercase;">Basket</div>';
+  if(confirmed.length) {
+    html += '<div style="margin-top:8px;font-size:11px;color:var(--green);">CONFIRMED</div>';
+    html += confirmed.map(b => renderRow(b, 'var(--green)')).join('');
+  }
+  if(pending.length) {
+    html += '<div style="margin-top:8px;font-size:11px;color:var(--ice);">PENDING (awaiting end-of-engagement)</div>';
+    html += pending.map(b => renderRow(b, 'var(--ice)')).join('');
+  }
+  if(forfeit.length) {
+    html += '<div style="margin-top:8px;font-size:11px;color:var(--red);">FORFEIT (no points written)</div>';
+    html += forfeit.map(b => renderRow(b, 'var(--red)')).join('');
+  }
+  return html;
 }
 
 // ---- F-31 session detail extension -----------------------------------------
 // Renders one row per session_worker showing total points earned in this
 // session, expandable to a per-row breakdown plus an Add Correction button.
 
-function renderSessionWorkerPointsRow(sw, rows, sessionId) {
+function renderSessionWorkerPointsRow(sw, rows, sessionId, baskets) {
   const app = sw.applications || {};
   const name = app.name || sw.worker_name || 'Unknown';
   const tier = app.tier != null ? 'Tier ' + app.tier : '';
   const total = rows.reduce((s, r) => s + (parseInt(r.amount) || 0), 0);
   const statusLabel = (sw.status || '').replace('_', ' ');
 
-  const breakdown = rows.length
+  const basketSection = renderBasketBreakdown(baskets);
+
+  const breakdown = (basketSection || '')
+    + (rows.length
     ? '<table class="history-table" style="margin-top:10px;"><thead><tr>'
       + '<th>When</th><th>Reason</th><th>Amount</th><th>Awarded by</th><th>Notes</th></tr></thead><tbody>'
       + rows.map(r => '<tr>'
@@ -11028,7 +10734,7 @@ function renderSessionWorkerPointsRow(sw, rows, sessionId) {
           + '<td><span style="font-size:11px;color:var(--grey);">' + (r.notes ? String(r.notes).replaceAll('<','&lt;').replaceAll('>','&gt;') : '') + '</span></td>'
           + '</tr>').join('')
       + '</tbody></table>'
-    : '<div class="empty" style="margin-top:10px;">No points_ledger rows for this worker in this session.</div>';
+    : '<div class="empty" style="margin-top:10px;">No points_ledger rows for this worker in this session.</div>');
 
   const totalSlug = total > 0 ? 'onshift' : (total < 0 ? 'expired' : 'pending');
   const ctxArg = JSON.stringify({ appId: sw.application_id, sessionId: sessionId, source: 'session_detail' });

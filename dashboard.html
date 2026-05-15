@@ -4136,6 +4136,20 @@ const liveSessionOps = {
       console.error('[liveSessionOps.start] invites bootstrap failed', e);
     }
 
+    // Phase 3 Batch 10 smoke fix (15 May 2026): bootstrap workers array from
+    // DB after realtime subs are registered. Without this, liveSessionOps.workers
+    // stays empty across the session lifetime, and `pendingInRangeFor(worker)`
+    // (the render helper that draws response cells) iterates over zero workers
+    // — meaning no shift_response can ever surface in the live console, even
+    // though the response:new realtime event fires and lands in
+    // liveSessionResponses correctly. SEC-N9 pattern: subs first, bootstrap
+    // after (handlers are idempotent against the race window).
+    try {
+      await loadLiveSessionWorkers(sessionId);
+    } catch(e) {
+      console.error('[liveSessionOps.start] workers bootstrap failed', e);
+    }
+
     // Phase 3 Batch 6: wire engagement timeline realtime for this session.
     startEngagementTimelineRealtime(sessionId);
 

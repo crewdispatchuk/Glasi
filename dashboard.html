@@ -4796,6 +4796,17 @@ const liveSessionOps = {
           if(record.share_location_tapped_at) worker.shareLocationTappedAt = record.share_location_tapped_at;
           if(record.status) worker.status = record.status;
           if(record.clock_in_at) worker.clockInAt = record.clock_in_at;
+          // Phase 1-3 follow-up 8 (18 May 2026): bipartite view's dispatched-
+          // line lookup keys on worker.shiftRequestId, but the previous
+          // realtime handler never copied it from the record. Same for the
+          // dispatched-detail surface (clock-in code form, cancel button,
+          // bar name resolution) which reads bar_id / dispatched_at /
+          // shift_request_id / shift_length_hours. Mirror the columns
+          // tryRestoreSession + loadLiveSessionWorkers already select.
+          if(record.shift_request_id != null) worker.shiftRequestId = record.shift_request_id;
+          if(record.bar_id != null)           worker.bar_id          = record.bar_id;
+          if(record.dispatched_at)            worker.dispatchedAt    = record.dispatched_at;
+          if(record.shift_length_hours != null) worker.shiftLength   = record.shift_length_hours;
           // Live ETA + arrival surface via realtime. Always assign (including
           // explicit null transitions) so a stale value is never sticky.
           worker.liveEtaMinutes    = record.live_eta_minutes;
@@ -7384,14 +7395,22 @@ async function dispatchWorker(applicationId, requestId) {
   // worker_clock_in (+10), and arrived (+5) / clock_in (+30) / clock_out (+10)
   // baskets capture the rest of the flow. selected_for_shift retired.
 
-  // 3. Update local state
+  // 3. Update local state. Phase 1-3 follow-up 8 (18 May 2026): include
+  // shiftRequestId + clockOutCode + bar_id so the bipartite view's
+  // dispatchedBySwReq lookup (keyed on worker.shiftRequestId) finds this
+  // worker on the very next render — otherwise the dispatched green line
+  // never draws because the cache stays null on the field the line code
+  // filters by. Mirrors the DB PATCH columns one-for-one.
   worker.status = 'dispatched';
   worker.bar = request._barName;
   worker.barRecord = bars.find(b => b.id === barId) || null;
+  worker.bar_id = barId;
   worker.dispatchedAt = now;
   worker.shiftLength = shiftLength;
   worker.gsRef = gsRef;
   worker.clockInCode = clockInCode;
+  worker.clockOutCode = clockOutCode;
+  worker.shiftRequestId = requestId;
 
   const req = liveSessionOps.requests.find(r => r.id === requestId);
   if(req) req.status = 'dispatched';

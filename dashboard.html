@@ -895,14 +895,20 @@
     .bv-expand-reqs {
       display: flex; flex-direction: column; gap: 4px;
     }
+    /* Phase 1-3 follow-up 6 (18 May 2026): per-request card wraps the
+       top summary row and (optionally) an inset block showing the engine's
+       reasoning for THIS worker on THIS request. */
+    .bv-expand-req-card {
+      background: var(--navy);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
     .bv-expand-req-row {
       display: grid;
       grid-template-columns: 1fr auto auto;
       gap: 14px;
       padding: 7px 12px;
-      background: var(--navy);
-      border: 1px solid var(--border);
-      border-radius: 4px;
       font-size: 12px;
       align-items: center;
     }
@@ -914,6 +920,33 @@
     .bv-expand-req-resp {
       font-family: 'Inter', sans-serif; font-size: 11px;
       text-align: right; white-space: nowrap;
+    }
+    .bv-expand-rank-block {
+      border-top: 1px solid var(--border);
+      background: rgba(0,0,0,0.18);
+      padding: 8px 12px;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .bv-expand-rank-line { margin-bottom: 3px; }
+    .bv-expand-rank-badge {
+      display: inline-block;
+      padding: 2px 9px; border-radius: 999px;
+      background: rgba(168,216,234,0.18); color: var(--ice);
+      font-size: 9px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
+      font-family: 'Inter', sans-serif;
+    }
+    .bv-expand-rank-row {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 8px;
+      font-size: 11px;
+    }
+    .bv-expand-rank-row > span:first-child  { color: var(--grey); letter-spacing: 0.5px; }
+    .bv-expand-rank-row > span:nth-child(2) { color: var(--white); font-family: 'JetBrains Mono', monospace; }
+    .bv-expand-rank-narrative {
+      margin-top: 6px;
+      font-size: 11px; font-style: italic;
+      color: var(--ice); line-height: 1.45;
     }
 
     /* Visual cue: expanded row gets a slightly brighter background tone. */
@@ -9851,10 +9884,21 @@ function bvOnBarRowClick(barId) {
 }
 
 function bvOnWorkerRowClick(appId) {
-  bvExpansion = bvIsWorkerExpanded(appId) ? null : { type: 'worker', id: Number(appId) };
+  const opening = !bvIsWorkerExpanded(appId);
+  bvExpansion = opening ? { type: 'worker', id: Number(appId) } : null;
   bvRenderBars();    // collapse any expanded bar row
   bvRenderWorkers();
   bvRenderLines();   // worker column heights changed, recompute endpoints
+  // Phase 1-3 follow-up 6 (18 May 2026): if opening, fire a fresh
+  // f33_compute_ranking pass so the engine breakdown is current — quiet
+  // sessions (no realtime events for a while) would otherwise show stale
+  // rankedAll. The promise resolution re-renders workers when the panel
+  // is still open. Cheap; one RPC per pending request, fire and forget.
+  if(opening && typeof f33RecomputeAllPending === 'function') {
+    f33RecomputeAllPending().then(() => {
+      if(bvIsWorkerExpanded(appId)) bvRenderWorkers();
+    }).catch(() => {});
+  }
 }
 
 function bvRenderBars() {
@@ -10190,10 +10234,32 @@ function bvRenderWorkerExpandDetail(row) {
       respLabel = '<span style="color:var(--grey);">Window ' + m + ':' + s + ' remaining</span>';
     }
 
-    reqRows.push('<div class="bv-expand-req-row">'
-      + '<span class="bv-expand-req-bar">' + escapeBvHtml(barName) + '</span>'
-      + '<span class="bv-expand-req-dist">' + (walkMins != null ? walkMins + ' min walk' : '–') + '</span>'
-      + '<span class="bv-expand-req-resp">' + respLabel + '</span>'
+    // Phase 1-3 follow-up 6 (18 May 2026): surface the engine's reasoning
+    // for THIS worker on THIS request when the engine has ranked them.
+    // Read from liveSessionRecommendations.rankedAll (populated by
+    // f33RecomputeRecommendation on every realtime event) — no new RPC.
+    // Skipped for dispatched requests (rank is moot) and for workers not
+    // in rankedAll (passed / no_response / not in_session / out of catchment).
+    let rankBlock = '';
+    if(r.status === 'pending') {
+      const rec = (typeof liveSessionRecommendations !== 'undefined')
+        ? liveSessionRecommendations.get(r.id)
+        : null;
+      if(rec && Array.isArray(rec.rankedAll) && rec.rankedAll.length) {
+        const myRank = rec.rankedAll.find(x => Number(x.application_id) === appId);
+        if(myRank) {
+          rankBlock = bvRenderRankingInset(myRank, rec.rankedAll.length);
+        }
+      }
+    }
+
+    reqRows.push('<div class="bv-expand-req-card">'
+      + '<div class="bv-expand-req-row">'
+      +   '<span class="bv-expand-req-bar">' + escapeBvHtml(barName) + '</span>'
+      +   '<span class="bv-expand-req-dist">' + (walkMins != null ? walkMins + ' min walk' : '–') + '</span>'
+      +   '<span class="bv-expand-req-resp">' + respLabel + '</span>'
+      + '</div>'
+      + rankBlock
       + '</div>');
   }
 
@@ -10210,6 +10276,42 @@ function bvRenderWorkerExpandDetail(row) {
         ? '<div class="bv-expand-section-label">Active requests</div>'
           + '<div class="bv-expand-reqs">' + reqRows.join('') + '</div>'
         : '<div class="bv-expand-section-label" style="color:var(--grey);font-style:italic;">No active requests right now.</div>')
+    + '</div>';
+}
+
+// Engine ranking inset block for the expanded worker detail. Renders the
+// per-worker-per-request breakdown: rank, reliability (+ effective if
+// time-decayed), deficit Q/D, walking, tier, narrative. Reads the row
+// returned by f33_compute_ranking via liveSessionRecommendations.rankedAll.
+function bvRenderRankingInset(rankRow, totalRanked) {
+  const rank      = rankRow.rank != null ? rankRow.rank : '?';
+  const total     = totalRanked != null ? totalRanked : '?';
+  const rel       = rankRow.reliability_score != null ? Math.round(parseFloat(rankRow.reliability_score)) + '%' : null;
+  const effRel    = rankRow.effective_reliability_score != null ? Math.round(parseFloat(rankRow.effective_reliability_score)) + '%' : null;
+  const showEff   = effRel != null && effRel !== rel;
+  const qrc       = (rankRow.quick_response_count != null) ? rankRow.quick_response_count : null;
+  const dc        = (rankRow.dispatch_count       != null) ? rankRow.dispatch_count       : null;
+  const deficit   = (rankRow.deficit              != null) ? rankRow.deficit              : null;
+  const walking   = (rankRow.walking_minutes      != null) ? rankRow.walking_minutes      : null;
+  const tier      = (rankRow.tier                 != null) ? rankRow.tier                 : null;
+  const breakdown = rankRow.recommendation_breakdown || {};
+  const narrative = breakdown.narrative || rankRow.narrative || null;
+  // Q/D when both available, otherwise fall back to the deficit integer.
+  const deficitLabel = (qrc != null && dc != null)
+    ? (qrc + 'Q / ' + dc + 'D' + (deficit != null ? ' = ' + (deficit >= 0 ? '+' : '') + deficit : ''))
+    : (deficit != null ? (deficit >= 0 ? '+' : '') + deficit : '–');
+
+  const row = (label, value) => '<div class="bv-expand-rank-row">'
+    + '<span>' + label + '</span><span>' + value + '</span>'
+    + '</div>';
+
+  return '<div class="bv-expand-rank-block">'
+    + '<div class="bv-expand-rank-line"><span class="bv-expand-rank-badge">Rank ' + rank + ' of ' + total + '</span></div>'
+    + row('Reliability', (rel != null ? rel : '–') + (showEff ? ' <span style="color:var(--grey);">(effective ' + effRel + ')</span>' : ''))
+    + row('Deficit',     deficitLabel)
+    + row('Walking',     walking != null ? (walking + ' min') : '–')
+    + row('Tier',        tier != null ? tier : '–')
+    + (narrative ? '<div class="bv-expand-rank-narrative">"' + escapeBvHtml(narrative) + '"</div>' : '')
     + '</div>';
 }
 

@@ -938,6 +938,41 @@
     }
     .bv-bar-action-btn:hover { color: var(--ice); border-color: var(--ice); }
     .bv-bar-action-btn.danger:hover { color: var(--red); border-color: rgba(239,68,68,0.4); }
+    /* Phase 1-3 follow-up 15 (18 May 2026): primary retry button (auto-
+       cancelled no-replacement requests). Ice-on-navy filled style to
+       read as a recommended next action, not just another tertiary
+       option. */
+    .bv-bar-action-btn.primary {
+      background: var(--ice); color: var(--navy); border-color: var(--ice);
+      font-weight: 700;
+    }
+    .bv-bar-action-btn.primary:hover { opacity: 0.88; }
+
+    /* "No replacement found" callout panel inside the bar expand panel —
+       red-tinted card explaining why the request didn't re-fill itself
+       and pointing at the retry button below. */
+    .bv-bar-detail-no-replacement {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .bv-bar-detail-no-replacement-icon {
+      width: 24px; height: 24px; flex: 0 0 24px;
+      border-radius: 50%;
+      background: rgba(239,68,68,0.18);
+      color: var(--red);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px;
+    }
+    .bv-bar-detail-no-replacement-title {
+      font-size: 13px; font-weight: 700; color: var(--red);
+      margin-bottom: 4px;
+    }
+    .bv-bar-detail-no-replacement-body {
+      font-size: 12px; color: var(--grey); line-height: 1.5;
+    }
 
     .bv-worker-detail-row {
       font-size: 12px; color: var(--grey); line-height: 1.55;
@@ -10299,11 +10334,67 @@ function bvRenderBarDetailRow(b, req) {
     + '</div>'
     + codeStats
     + notesBlock
+    // Phase 1-3 follow-up 15 (18 May 2026): retry button shown only when
+    // the request was auto-cancelled with no replacement found. Other
+    // cancellations (Sam-clicked Remove, user-cancelled) don't get the
+    // retry — they were intentional.
+    + (req.status === 'cancelled' && req.cancellation_reason === 'no_replacement_found'
+        ? '<div class="bv-bar-detail-no-replacement">'
+          +   '<div class="bv-bar-detail-no-replacement-icon">!</div>'
+          +   '<div>'
+          +     '<div class="bv-bar-detail-no-replacement-title">No replacement found</div>'
+          +     '<div class="bv-bar-detail-no-replacement-body">The previously dispatched worker did not move toward the bar and no candidate was within reach of the remaining budget. Tap retry to repost with a fresh 30-minute timer.</div>'
+          +   '</div>'
+          + '</div>'
+        : '')
     + '<div class="bv-bar-detail-actions">'
-    +   '<button class="bv-bar-action-btn" onclick="event.stopPropagation();openAddNotes(' + req.id + ')">' + notesLabel + '</button>'
-    +   '<button class="bv-bar-action-btn danger" onclick="event.stopPropagation();removeRequest(' + req.id + ')">Remove request</button>'
+    +   (req.status === 'cancelled' && req.cancellation_reason === 'no_replacement_found'
+          ? '<button class="bv-bar-action-btn primary" onclick="event.stopPropagation();bvRetryRequest(' + req.id + ')">Retry request (fresh 30 min)</button>'
+          : '')
+    +   (req.status !== 'cancelled' && req.status !== 'completed'
+          ? '<button class="bv-bar-action-btn" onclick="event.stopPropagation();openAddNotes(' + req.id + ')">' + notesLabel + '</button>'
+            + '<button class="bv-bar-action-btn danger" onclick="event.stopPropagation();removeRequest(' + req.id + ')">Remove request</button>'
+          : '')
     + '</div>'
     + '</div>';
+}
+
+// Phase 1-3 follow-up 15 (18 May 2026): retry path for an auto-cancelled
+// "no_replacement_found" request. Calls the server-side RPC which resets
+// status to pending with a fresh posted_at and fans out push notifications
+// to in-catchment workers. Realtime UPDATE on shift_requests will then
+// propagate the new state into the bipartite view automatically.
+async function bvRetryRequest(requestId) {
+  const req = liveSessionOps.requests.find(r => Number(r.id) === Number(requestId));
+  if(!req) { alert('Request not found.'); return; }
+  if(!confirm('Retry this request? It will be reposted to all eligible workers in catchment with a fresh 30-minute timer.')) return;
+  try {
+    const res = await sbAuth.rpc('retry_cancelled_request', { p_shift_request_id: requestId });
+    if(res.error) throw res.error;
+    if(!res.data || res.data.ok !== true) {
+      alert('Retry failed: ' + (res.data && res.data.error ? res.data.error : 'unknown'));
+      return;
+    }
+    // Local-state nudge so the bipartite view repaints immediately without
+    // waiting on the realtime UPDATE round-trip; realtime will reconcile
+    // any remaining drift moments later.
+    const localReq = liveSessionOps.requests.find(r => Number(r.id) === Number(requestId));
+    if(localReq) {
+      localReq.status = 'pending';
+      localReq.cancellation_reason = null;
+      localReq.is_urgent = false;
+      localReq.urgent_phase = null;
+      localReq.failed_dispatch_session_worker_id = null;
+      localReq.posted_at = new Date().toISOString();
+      localReq.request_time = localReq.posted_at;
+      localReq.original_posted_at = null;
+    }
+    // Collapse the bar expansion now that the retry has fired.
+    if(typeof bvExpansion !== 'undefined' && bvExpansion && bvExpansion.type === 'bar') bvExpansion = null;
+    renderLiveRoom();
+  } catch(e) {
+    alert('Retry failed: ' + (e && e.message ? e.message : 'unknown'));
+  }
 }
 
 function bvUpdateBarElapsedCounters() {

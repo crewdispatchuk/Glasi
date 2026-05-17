@@ -783,6 +783,13 @@
       background: transparent;
       transition: background 0.12s, box-shadow 0.2s, opacity 0.2s;
     }
+
+    /* Phase 1-3 follow-up 5 (18 May 2026): bar rows are visual hubs.
+       Multiple worker lines converge on a single bar row; taller cells
+       give the lines breathing room before they meet the bar. Worker
+       rows stay at the natural cell height. Display:contents row has no
+       own box; min-height applies to the descendant cells. */
+    .bv-bar-row > .bv-cell { min-height: 72px; }
     .bv-cell-name {
       border-right: 1px solid var(--border);
       justify-content: flex-start;
@@ -798,8 +805,9 @@
 
     /* Cursor + hover propagate via the row wrapper to its cells. */
     .bv-bar-row    .bv-cell { cursor: pointer; }
-    .bv-worker-row .bv-cell { cursor: default; }
-    .bv-bar-row:hover .bv-cell { background: rgba(168,216,234,0.06); }
+    .bv-worker-row .bv-cell { cursor: pointer; }  /* Phase 1-3 follow-up 5: worker rows are click-to-expand */
+    .bv-bar-row:hover .bv-cell,
+    .bv-worker-row:hover .bv-cell { background: rgba(168,216,234,0.06); }
     .bv-bar-row.is-actions-expanded .bv-cell { background: rgba(168,216,234,0.10); }
 
     /* Active-state indicators: left inset shadow on the name cell.
@@ -845,6 +853,72 @@
       font-size: 12px; color: var(--grey); line-height: 1.55;
       text-align: right;
     }
+
+    /* Phase 1-3 follow-up 5 (18 May 2026): click-to-expand worker detail
+       sub-row. Sibling row below the worker's thin row (and below the
+       dispatched detail row when present). Spans both columns. Line
+       endpoints stay anchored to the thin row above. */
+    .bv-worker-expand-row {
+      grid-column: 1 / -1;
+      background: rgba(0,0,0,0.28);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 18px;
+      text-align: left;
+    }
+    .bv-expand-panel {
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .bv-expand-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .bv-expand-stat {
+      background: var(--navy);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+    }
+    .bv-expand-stat-label {
+      font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--grey); font-weight: 600; margin-bottom: 4px;
+    }
+    .bv-expand-stat-value {
+      font-size: 13px; color: var(--white); font-weight: 600;
+      font-family: 'Inter', sans-serif;
+    }
+    .bv-expand-stat-value strong { color: var(--ice); font-weight: 700; }
+    .bv-expand-section-label {
+      font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--ice); font-weight: 700;
+    }
+    .bv-expand-reqs {
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .bv-expand-req-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 14px;
+      padding: 7px 12px;
+      background: var(--navy);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 12px;
+      align-items: center;
+    }
+    .bv-expand-req-bar  { color: var(--white); font-weight: 600; }
+    .bv-expand-req-dist {
+      color: var(--grey);
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    }
+    .bv-expand-req-resp {
+      font-family: 'Inter', sans-serif; font-size: 11px;
+      text-align: right; white-space: nowrap;
+    }
+
+    /* Visual cue: expanded row gets a slightly brighter background tone. */
+    .bv-worker-row.is-expanded > .bv-cell { background: rgba(168,216,234,0.08); }
+    .bv-worker-row > .bv-cell { cursor: pointer; }
 
     /* Worker row state styling — cells inherit the row class via descendant
        selectors. Display:contents row has no own box; state visuals live
@@ -9753,21 +9827,34 @@ function bvActiveRequestForBar(barId) {
     && (r.status === 'pending' || r.status === 'dispatched'));
 }
 
-// Live Dashboard Redesign Phase 1-3 follow-up (18 May 2026): bar row is now
-// a thin 2-column grid row (Name | Status). Active bars expand a sibling
-// action sub-row on click. Tracking which bars are expanded via the
-// module-level bvBarActionsExpanded Set so the state survives re-renders.
-const bvBarActionsExpanded = new Set();
+// Phase 1-3 follow-up 5 (18 May 2026): unified single-expansion model.
+// Only one row is expanded at a time across BOTH the bars table and the
+// workers table. Clicking any row collapses any currently-expanded row
+// in either table and expands the clicked one. Clicking the already-
+// expanded row collapses it. State: `null` | { type:'bar'|'worker', id }.
+let bvExpansion = null;
+
+function bvIsBarExpanded(barId) {
+  return !!(bvExpansion && bvExpansion.type === 'bar' && Number(bvExpansion.id) === Number(barId));
+}
+function bvIsWorkerExpanded(appId) {
+  return !!(bvExpansion && bvExpansion.type === 'worker' && Number(bvExpansion.id) === Number(appId));
+}
 
 function bvOnBarRowClick(barId) {
   const req = bvActiveRequestForBar(barId);
   if(!req) return; // idle bars have no actions; click is a no-op
-  if(bvBarActionsExpanded.has(barId)) bvBarActionsExpanded.delete(barId);
-  else bvBarActionsExpanded.add(barId);
+  bvExpansion = bvIsBarExpanded(barId) ? null : { type: 'bar', id: Number(barId) };
   bvRenderBars();
-  // Bar column height changed (action sub-row added/removed). Recompute
-  // line endpoints so the SVG follows the new bar-row positions.
-  bvRenderLines();
+  bvRenderWorkers(); // collapse any expanded worker row
+  bvRenderLines();   // row heights changed, recompute endpoints
+}
+
+function bvOnWorkerRowClick(appId) {
+  bvExpansion = bvIsWorkerExpanded(appId) ? null : { type: 'worker', id: Number(appId) };
+  bvRenderBars();    // collapse any expanded bar row
+  bvRenderWorkers();
+  bvRenderLines();   // worker column heights changed, recompute endpoints
 }
 
 function bvRenderBars() {
@@ -9778,17 +9865,18 @@ function bvRenderBars() {
     listEl.innerHTML = '<div class="bv-empty">No bars in this session yet.</div>';
     return;
   }
-  // Drop any expanded bar IDs that are no longer in the session.
-  const seenIds = new Set(barsList.map(b => Number(b.id)));
-  for(const id of [...bvBarActionsExpanded]) {
-    if(!seenIds.has(id)) bvBarActionsExpanded.delete(id);
+  // Phase 1-3 follow-up 5: drop expansion if the expanded bar is no
+  // longer in the session.
+  if(bvExpansion && bvExpansion.type === 'bar') {
+    const seenIds = new Set(barsList.map(b => Number(b.id)));
+    if(!seenIds.has(Number(bvExpansion.id))) bvExpansion = null;
   }
 
   listEl.innerHTML = barsList.map(b => {
     const req = bvActiveRequestForBar(b.id);
     const isActive = !!req;
     const isDispatched = isActive && req.status === 'dispatched';
-    const isExpanded = bvBarActionsExpanded.has(Number(b.id));
+    const isExpanded = bvIsBarExpanded(b.id);
 
     // Phase 1-3 follow-up 4: when a bar has a dispatched-state request,
     // the bar row's left-edge accent should follow the worker's flow state
@@ -9991,6 +10079,13 @@ function bvRenderWorkers() {
     listEl.innerHTML = '<div class="bv-empty">No workers invited yet.</div>';
     return;
   }
+  // Phase 1-3 follow-up 5: drop worker expansion if the expanded worker
+  // is no longer present (e.g. they left the session).
+  if(bvExpansion && bvExpansion.type === 'worker') {
+    const seenIds = new Set(rows.map(r => Number(r.applicationId)));
+    if(!seenIds.has(Number(bvExpansion.id))) bvExpansion = null;
+  }
+
   listEl.innerHTML = rows.map(row => {
     const info = bvWorkerStatusInfo(row);
     const move = bvMovementStateFor(row);
@@ -10011,22 +10106,111 @@ function bvRenderWorkers() {
     }
 
     const hasDetail = !!detailHtml;
-    const rowHtml = '<div class="bv-worker-row ' + info.rowCls + moveCls + (hasDetail ? ' has-detail' : '') + '" id="bv-worker-' + row.applicationId + '" data-app-id="' + row.applicationId + '" data-sw-id="' + (w ? (w.sessionWorkerId || '') : '') + '">'
+    const isExpanded = bvIsWorkerExpanded(row.applicationId);
+    const rowHtml = '<div class="bv-worker-row ' + info.rowCls + moveCls + (hasDetail ? ' has-detail' : '') + (isExpanded ? ' is-expanded' : '') + '" id="bv-worker-' + row.applicationId + '" data-app-id="' + row.applicationId + '" data-sw-id="' + (w ? (w.sessionWorkerId || '') : '') + '" onclick="bvOnWorkerRowClick(' + row.applicationId + ')">'
       + '<div class="bv-cell bv-cell-name"><span class="bv-name-text">' + escapeBvHtml(row.name) + '</span></div>'
       + '<div class="bv-cell bv-cell-status"><span class="bv-worker-pill ' + info.pillCls + '">' + info.pill + '</span></div>'
       + '</div>';
+    // Order: thin row, then (optionally) the always-visible dispatched
+    // detail sub-row, then (optionally) the click-toggled expand panel.
+    // Line endpoints stay anchored to the thin row regardless of which
+    // sub-rows render, so SVG geometry is unaffected by expansion.
+    let out = rowHtml;
     if(hasDetail) {
-      // Sibling detail sub-row. Carries the dispatched detail block,
-      // movement-state border continuation, etc. Line endpoints stay on
-      // the parent thin row (bv-worker-<appId>), so SVG line geometry is
-      // unaffected by detail row height.
-      return rowHtml
-        + '<div class="bv-worker-detail-row' + moveCls + '" id="bv-worker-detail-' + row.applicationId + '" data-app-id="' + row.applicationId + '">'
-        + detailHtml
-        + '</div>';
+      out += '<div class="bv-worker-detail-row' + moveCls + '" id="bv-worker-detail-' + row.applicationId + '" data-app-id="' + row.applicationId + '">'
+           + detailHtml
+           + '</div>';
     }
-    return rowHtml;
+    if(isExpanded) {
+      out += '<div class="bv-worker-expand-row" id="bv-worker-expand-' + row.applicationId + '" data-app-id="' + row.applicationId + '">'
+           + bvRenderWorkerExpandDetail(row)
+           + '</div>';
+    }
+    return out;
   }).join('');
+}
+
+// Click-expand worker detail (Phase 1-3 follow-up 5, 18 May 2026).
+// Always-derivable from existing liveSessionOps state — no new RPC.
+// Shows tier + postcode + reliability snapshot + per-active-request
+// eligibility, response state (with response_seconds), or remaining
+// window. Reads workerBarDistances for catchment + walking minutes.
+function bvRenderWorkerExpandDetail(row) {
+  const tierLabel = row.tier ? 'Tier ' + row.tier : '–';
+  const postcode  = row.postcode_full || '–';
+  const rel       = row.reliability_score != null ? Math.round(parseFloat(row.reliability_score)) + '%' : '–';
+  const rate      = row.hourly_rate != null ? '£' + parseFloat(row.hourly_rate).toFixed(2) + '/hr' : '–';
+  const joinedAt  = row.joinedAt ? fmtHm(row.joinedAt) : '–';
+  const totalPts  = (row.worker && row.worker.total_points != null) ? row.worker.total_points : '–';
+
+  const summaryCard = (label, value) => '<div class="bv-expand-stat">'
+    + '<div class="bv-expand-stat-label">' + escapeBvHtml(label) + '</div>'
+    + '<div class="bv-expand-stat-value">' + value + '</div>'
+    + '</div>';
+
+  const appId = Number(row.applicationId);
+  const reqRows = [];
+  for(const r of liveSessionOps.requests) {
+    if(r.status !== 'pending' && r.status !== 'dispatched') continue;
+    const barName = r._barName
+                 || ((typeof bars !== 'undefined' && bars.find(b => Number(b.id) === Number(r.bar_id)) || {}).name)
+                 || ('Bar #' + r.bar_id);
+    const dist = (typeof workerBarDistances !== 'undefined')
+      ? workerBarDistances.find(d => Number(d.application_id) === appId && Number(d.bar_id) === Number(r.bar_id))
+      : null;
+    const walkMins = dist ? dist.walking_minutes : null;
+    const inCatchment = walkMins != null && walkMins < 30;
+    const responses = (typeof liveSessionResponses !== 'undefined') ? (liveSessionResponses.get(r.id) || []) : [];
+    const myResp = responses.find(x => Number(x.application_id) === appId) || null;
+
+    let respLabel;
+    if(r.status === 'dispatched') {
+      const w = row.worker;
+      if(w && Number(w.shiftRequestId) === Number(r.id)) {
+        respLabel = '<span style="color:var(--green);">Dispatched to this bar</span>';
+      } else {
+        respLabel = '<span style="color:var(--grey);">–</span>';
+      }
+    } else if(!inCatchment) {
+      respLabel = '<span style="color:var(--grey);">Out of catchment</span>';
+    } else if(myResp && myResp.response === 'available') {
+      respLabel = '<span style="color:var(--ice);">Available · ' + (myResp.response_seconds != null ? myResp.response_seconds + 's' : '') + '</span>';
+    } else if(myResp && myResp.response === 'pass') {
+      respLabel = '<span style="color:var(--grey);">Passed · ' + (myResp.response_seconds != null ? myResp.response_seconds + 's' : '') + '</span>';
+    } else if(myResp) {
+      respLabel = '<span style="color:var(--grey);">' + escapeBvHtml(myResp.response) + '</span>';
+    } else {
+      // No response yet: compute window remaining
+      const windowSecs = (30 - (walkMins || 0)) * 60;
+      const postedAt = r.posted_at ? new Date(r.posted_at).getTime() : Date.now();
+      const elapsedSec = Math.floor((Date.now() - postedAt) / 1000);
+      const remaining = Math.max(0, windowSecs - elapsedSec);
+      const m = Math.floor(remaining / 60);
+      const s = String(remaining % 60).padStart(2, '0');
+      respLabel = '<span style="color:var(--grey);">Window ' + m + ':' + s + ' remaining</span>';
+    }
+
+    reqRows.push('<div class="bv-expand-req-row">'
+      + '<span class="bv-expand-req-bar">' + escapeBvHtml(barName) + '</span>'
+      + '<span class="bv-expand-req-dist">' + (walkMins != null ? walkMins + ' min walk' : '–') + '</span>'
+      + '<span class="bv-expand-req-resp">' + respLabel + '</span>'
+      + '</div>');
+  }
+
+  return '<div class="bv-expand-panel">'
+    + '<div class="bv-expand-stats">'
+    +   summaryCard('Tier',        tierLabel)
+    +   summaryCard('Postcode',    escapeBvHtml(postcode))
+    +   summaryCard('Reliability', '<strong>' + rel + '</strong>')
+    +   summaryCard('Rate',        rate)
+    +   summaryCard('Joined',      joinedAt)
+    +   summaryCard('Total points', totalPts)
+    + '</div>'
+    + (reqRows.length
+        ? '<div class="bv-expand-section-label">Active requests</div>'
+          + '<div class="bv-expand-reqs">' + reqRows.join('') + '</div>'
+        : '<div class="bv-expand-section-label" style="color:var(--grey);font-style:italic;">No active requests right now.</div>')
+    + '</div>';
 }
 
 function bvRenderDispatchedDetail(w, move) {
@@ -10217,6 +10401,13 @@ function bvRenderLines() {
 
     // Pending: fanout to eligible workers.
     const responses = liveSessionResponses.get(req.id) || [];
+    // Phase 1-3 follow-up 5 (18 May 2026): recommendation line is meaningful
+    // only when there's a CHOICE to be made — i.e. >= 2 Available responses.
+    // With 0 or 1 available responses, the engine's pick is either nothing or
+    // forced. Suppress the green-recommend glow until the count crosses 2 so
+    // the visual is quiet during the early window.
+    const availableCount = responses.filter(x => x && x.response === 'available').length;
+    const recAllowed = availableCount >= 2;
     if(typeof workerBarDistances === 'undefined') continue;
     for(const w of liveSessionOps.workers) {
       if(!w || w.status !== 'in_session') continue;
@@ -10229,7 +10420,7 @@ function bvRenderLines() {
       let cls;
       if(myResp && myResp.response === 'pass') continue;
       if(myResp && myResp.response === 'no_response') continue;
-      if(recAppId === appId) cls = 'bv-line-recommend';
+      if(recAllowed && recAppId === appId) cls = 'bv-line-recommend';
       else if(myResp && myResp.response === 'available') cls = 'bv-line-available';
       else cls = 'bv-line-pending';
       paths.push({ cls, barPt, wpt, reqId: req.id, appId, kind: cls });

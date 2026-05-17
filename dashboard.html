@@ -701,16 +701,27 @@
     }
     .bv-view-toggle:hover { color: var(--ice); border-color: var(--ice); }
 
+    /* Phase 1-3 follow-up 3 (18 May 2026): fully content-driven sizing.
+       Bars + workers are pinned to the left/right edges of the live
+       console via flex space-between; the gap between them grows or
+       shrinks naturally with the viewport AND with the tables' own
+       widths. Tables size to max-content per column; nothing carries
+       a fixed pixel width or column ratio. */
     .bv-grid {
       position: relative;
-      display: grid;
-      grid-template-columns: minmax(220px, 1fr) minmax(200px, 1.2fr) minmax(220px, 1fr);
-      gap: 0;
-      align-items: start;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
       min-height: 200px;
+      width: 100%;
     }
-    .bv-bar-col, .bv-worker-col { display: flex; flex-direction: column; min-width: 0; z-index: 2; }
-    .bv-spacer { min-height: 200px; }
+    .bv-bar-col, .bv-worker-col {
+      flex: 0 0 auto;     /* don't flex, take content width */
+      min-width: 0;
+      z-index: 2;
+    }
+    .bv-spacer { display: none; }  /* Phase 1-3 follow-up 3: spacer retired, flex space-between handles the centre */
     .bv-col-header { display: none; }  /* Phase 1-3 follow-up 2: column heading is now inside the table header row */
 
     /* ============================================================
@@ -729,68 +740,75 @@
                .bv-cell.bv-cell-status (cell)
              .bv-bar-actions-row / .bv-worker-detail-row (full-width sub-row)
        ============================================================ */
+    /* Table is the single grid that owns all column tracks. Header row,
+       tbody, and individual data rows are `display: contents` so their
+       cells become direct grid items. With `grid-template-columns:
+       max-content max-content`, each column sizes to the widest cell
+       across header + every data row. Adding longer names or more
+       columns later requires no width tuning. */
     .bv-table {
+      display: grid;
+      grid-template-columns: max-content max-content;
+      width: max-content;       /* whole table shrink-wraps its content */
       background: var(--navy-mid);
       border: 1px solid var(--border);
       border-radius: 8px;
       overflow: hidden;
     }
-    .bv-table-header {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      background: rgba(0,0,0,0.22);
-      border-bottom: 1px solid var(--border);
-    }
+    .bv-table-header { display: contents; }
+    .bv-tbody        { display: contents; }
+    .bv-bar-row, .bv-worker-row { display: contents; }
+
     .bv-th {
       padding: 9px 14px;
       font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
       font-weight: 700; color: var(--grey);
       font-family: 'Inter', sans-serif;
+      background: rgba(0,0,0,0.22);
+      border-bottom: 1px solid var(--border);
     }
     .bv-th-name   { border-right: 1px solid var(--border); text-align: left; }
-    .bv-th-status { text-align: right; min-width: 130px; }
+    .bv-th-status { text-align: right; }
 
-    .bv-tbody { display: flex; flex-direction: column; }
-
-    /* Data rows — no individual radius/outer border; live inside .bv-table. */
-    .bv-bar-row, .bv-worker-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      min-height: 48px;
+    /* Data row cells. padding lives on each cell so the vertical column
+       divider (border-right on .bv-cell-name) runs the full cell height
+       cleanly. Horizontal padding kept tight per spec ("too much
+       horizontal padding" in the previous shipped layout). */
+    .bv-cell {
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      min-width: 0;
       border-bottom: 1px solid var(--border);
       background: transparent;
       transition: background 0.12s, box-shadow 0.2s, opacity 0.2s;
     }
-    .bv-bar-row { cursor: pointer; }
-    .bv-worker-row { cursor: default; }
-    .bv-bar-row:hover { background: rgba(168,216,234,0.06); }
-    .bv-bar-row.is-actions-expanded { background: rgba(168,216,234,0.10); }
-    .bv-bar-row.is-active   .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(168,216,234,0.65); }
-    .bv-bar-row.is-active.urgent   .bv-cell-name { box-shadow: inset 3px 0 0 0 var(--amber); }
-    .bv-bar-row.is-active.critical .bv-cell-name { box-shadow: inset 3px 0 0 0 var(--red); }
-    .bv-bar-row.is-dispatched .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(168,216,234,0.45); }
-    .bv-bar-row.is-onshift    .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.45); }
-
-    /* Cells: padding lives on the cell, not the row, so the column-divider
-       border-right runs the full row height. */
-    .bv-cell {
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      min-width: 0;
-    }
     .bv-cell-name {
       border-right: 1px solid var(--border);
       justify-content: flex-start;
+      cursor: inherit;
     }
     .bv-cell-status {
       justify-content: flex-end;
-      min-width: 130px;
     }
     .bv-cell-name .bv-name-text {
       font-size: 14px; font-weight: 600; color: var(--white);
       min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
+
+    /* Cursor + hover propagate via the row wrapper to its cells. */
+    .bv-bar-row    .bv-cell { cursor: pointer; }
+    .bv-worker-row .bv-cell { cursor: default; }
+    .bv-bar-row:hover .bv-cell { background: rgba(168,216,234,0.06); }
+    .bv-bar-row.is-actions-expanded .bv-cell { background: rgba(168,216,234,0.10); }
+
+    /* Active-state indicators: left inset shadow on the name cell.
+       Same colour scheme as the previous layout; no fixed widths. */
+    .bv-bar-row.is-active           .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(168,216,234,0.65); }
+    .bv-bar-row.is-active.urgent    .bv-cell-name { box-shadow: inset 3px 0 0 0 var(--amber); }
+    .bv-bar-row.is-active.critical  .bv-cell-name { box-shadow: inset 3px 0 0 0 var(--red); }
+    .bv-bar-row.is-dispatched       .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(168,216,234,0.45); }
+    .bv-bar-row.is-onshift          .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.45); }
 
     .bv-bar-elapsed {
       font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
@@ -802,13 +820,16 @@
       color: var(--grey); font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
     }
 
-    /* Bar actions sub-row — appears below the bar row when Sam clicks to
-       expand. Full row width (spans both columns); no column divider on
-       a sub-row (it's an annotation, not a data row). */
-    .bv-bar-actions-row {
+    /* Sub-rows span the whole grid (grid-column: 1 / -1). They live as
+       direct grid items thanks to display:contents on .bv-tbody, so
+       their grid-column rule still applies. */
+    .bv-bar-actions-row, .bv-worker-detail-row {
+      grid-column: 1 / -1;
       background: rgba(0,0,0,0.18);
       border-bottom: 1px solid var(--border);
       padding: 8px 14px;
+    }
+    .bv-bar-actions-row {
       display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
     }
     .bv-bar-action-btn {
@@ -819,16 +840,24 @@
     .bv-bar-action-btn:hover { color: var(--ice); border-color: var(--ice); }
     .bv-bar-action-btn.danger:hover { color: var(--red); border-color: rgba(239,68,68,0.4); }
 
-    /* Worker row state styling — uses the cell-left inset shadow trick so
-       the column-divider border-right stays clean across all states. */
-    .bv-worker-row.is-not-joined { opacity: 0.5; }
-    .bv-worker-row.is-left       { opacity: 0.55; text-decoration: line-through; }
-    .bv-worker-row.is-cancelled  { opacity: 0.55; text-decoration: line-through; }
-    .bv-worker-row.is-completed  { opacity: 0.75; }
+    .bv-worker-detail-row {
+      font-size: 12px; color: var(--grey); line-height: 1.55;
+      text-align: right;
+    }
+
+    /* Worker row state styling — cells inherit the row class via descendant
+       selectors. Display:contents row has no own box; state visuals live
+       on the cells. */
+    .bv-worker-row.is-not-joined .bv-cell { opacity: 0.55; }
+    .bv-worker-row.is-left       .bv-cell { opacity: 0.6; text-decoration: line-through; }
+    .bv-worker-row.is-cancelled  .bv-cell { opacity: 0.6; text-decoration: line-through; }
+    .bv-worker-row.is-completed  .bv-cell { opacity: 0.78; }
     .bv-worker-row.is-dispatched .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(168,216,234,0.5); }
     .bv-worker-row.is-onshift    .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.5); }
-    .bv-worker-row.movement-nudge1 { box-shadow: inset 0 0 0 2px rgba(245,158,11,0.6); }
-    .bv-worker-row.movement-nudge2 { box-shadow: inset 0 0 0 2px rgba(239,68,68,0.65); }
+    .bv-worker-row.movement-nudge1 .bv-cell { background-color: rgba(245,158,11,0.13); }
+    .bv-worker-row.movement-nudge2 .bv-cell { background-color: rgba(239,68,68,0.16); }
+    .bv-worker-detail-row.movement-nudge1 { background-color: rgba(245,158,11,0.13); }
+    .bv-worker-detail-row.movement-nudge2 { background-color: rgba(239,68,68,0.16); }
 
     .bv-worker-pill {
       display: inline-block; padding: 3px 10px; border-radius: 999px;
@@ -845,21 +874,12 @@
     .bv-worker-pill.is-cancelled  { background: rgba(239,68,68,0.18);   color: var(--red); }
     .bv-worker-pill.is-no-show    { background: rgba(239,68,68,0.18);   color: var(--red); }
 
-    /* Worker detail sub-row — appears for dispatched / onshift workers.
-       Full row width (spans both columns); no column divider on a sub-row. */
-    .bv-worker-detail-row {
-      background: rgba(0,0,0,0.18);
-      border-bottom: 1px solid var(--border);
-      padding: 10px 14px;
-      font-size: 12px; color: var(--grey); line-height: 1.55;
-      text-align: right;
-    }
-    .bv-worker-detail-row.movement-nudge1 { box-shadow: inset 0 0 0 2px rgba(245,158,11,0.6); }
-    .bv-worker-detail-row.movement-nudge2 { box-shadow: inset 0 0 0 2px rgba(239,68,68,0.65); }
-
-    /* Drop the bottom border on the last row in tbody so the table's
-       outer border is the visual termination. */
-    .bv-tbody > *:last-child { border-bottom: none; }
+    /* Drop the bottom border on the last row's cells so the table's outer
+       border terminates cleanly. Handles both data-row last (cascade to
+       cells) and sub-row last (apply to the sub-row itself). */
+    .bv-tbody > *:last-child .bv-cell { border-bottom: none; }
+    .bv-tbody > .bv-bar-actions-row:last-child,
+    .bv-tbody > .bv-worker-detail-row:last-child { border-bottom: none; }
 
     .bv-worker-detail {
       font-size: 12px; color: var(--grey); line-height: 1.55;
@@ -922,8 +942,9 @@
     }
 
     .bv-empty {
+      grid-column: 1 / -1;  /* Phase 1-3 follow-up 3: span both columns under display:contents tbody */
       text-align: center; padding: 32px 20px; color: var(--grey); font-size: 13px; line-height: 1.7;
-      background: var(--navy-mid); border: 1px solid var(--border); border-radius: 10px;
+      background: transparent;
     }
 
     .bv-session-tabs {
@@ -9567,7 +9588,6 @@ function renderBipartiteView() {
             <div id="bv-bar-list" class="bv-tbody"></div>
           </div>
         </div>
-        <div class="bv-spacer" aria-hidden="true"></div>
         <div class="bv-worker-col">
           <div class="bv-table bv-workers-table">
             <div class="bv-table-header" role="row">
@@ -10001,18 +10021,24 @@ function bvRenderLines() {
 
   const paths = [];
 
-  // Build lookups.
+  // Build lookups. Phase 1-3 follow-up 3 (18 May 2026): row wrappers are
+  // `display: contents` so they have no own box; getBoundingClientRect on
+  // the row returns 0,0,0,0. Read geometry from the row's child cells
+  // instead: first cell gives the vertical position, last cell's right
+  // edge gives the bar's outgoing x; first cell's left edge gives the
+  // worker's incoming x.
   const barRowRect = (barId) => {
     const el = document.getElementById('bv-bar-' + barId);
-    if(!el) return null;
-    const r = el.getBoundingClientRect();
-    return { x: r.right - gridRect.left, y: r.top + r.height / 2 - gridRect.top };
+    if(!el || !el.firstElementChild || !el.lastElementChild) return null;
+    const first = el.firstElementChild.getBoundingClientRect();
+    const last  = el.lastElementChild.getBoundingClientRect();
+    return { x: last.right - gridRect.left, y: first.top + first.height / 2 - gridRect.top };
   };
   const workerRowRect = (appId) => {
     const el = document.getElementById('bv-worker-' + appId);
-    if(!el) return null;
-    const r = el.getBoundingClientRect();
-    return { x: r.left - gridRect.left, y: r.top + r.height / 2 - gridRect.top };
+    if(!el || !el.firstElementChild) return null;
+    const first = el.firstElementChild.getBoundingClientRect();
+    return { x: first.left - gridRect.left, y: first.top + first.height / 2 - gridRect.top };
   };
 
   // For each pending request: draw lines to in_session workers in catchment,

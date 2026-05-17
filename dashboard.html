@@ -10511,8 +10511,28 @@ function bvRenderWorkerExpandDetail(row, move) {
 
   const appId = Number(row.applicationId);
   const reqRows = [];
+
+  // Phase 1-3 follow-up 14 (18 May 2026): committed-worker visibility.
+  // A worker dispatched / onshift / completed sees ONLY their assigned
+  // shift_request in the Active Requests section — they are not
+  // candidates for any other bar, so showing cross-bar entries was
+  // misleading. Non-committed workers see only genuinely-pending
+  // requests AND only those they're in catchment for.
+  const wForFilter = row.worker;
+  const wStatus    = wForFilter ? wForFilter.status : null;
+  const isCommitted = wForFilter && (wStatus === 'dispatched' || wStatus === 'onshift' || wStatus === 'completed');
+  const myShiftReqId = isCommitted ? Number(wForFilter.shiftRequestId) : null;
+
   for(const r of liveSessionOps.requests) {
-    if(r.status !== 'pending' && r.status !== 'dispatched') continue;
+    if(isCommitted) {
+      // Show only the worker's own committed request, regardless of status.
+      if(Number(r.id) !== myShiftReqId) continue;
+    } else {
+      // Non-committed worker: only genuinely-pending requests are actionable.
+      // Dispatched/completed/cancelled/expired requests are filled or dead.
+      if(r.status !== 'pending') continue;
+    }
+
     const barName = r._barName
                  || ((typeof bars !== 'undefined' && bars.find(b => Number(b.id) === Number(r.bar_id)) || {}).name)
                  || ('Bar #' + r.bar_id);
@@ -10521,19 +10541,26 @@ function bvRenderWorkerExpandDetail(row, move) {
       : null;
     const walkMins = dist ? dist.walking_minutes : null;
     const inCatchment = walkMins != null && walkMins < 30;
+    // Non-committed workers also need eligibility — drop out-of-catchment.
+    if(!isCommitted && !inCatchment) continue;
+
     const responses = (typeof liveSessionResponses !== 'undefined') ? (liveSessionResponses.get(r.id) || []) : [];
     const myResp = responses.find(x => Number(x.application_id) === appId) || null;
 
     let respLabel;
-    if(r.status === 'dispatched') {
-      const w = row.worker;
-      if(w && Number(w.shiftRequestId) === Number(r.id)) {
-        respLabel = '<span style="color:var(--green);">Dispatched to this bar</span>';
+    if(isCommitted && Number(r.id) === myShiftReqId) {
+      // Worker's own committed request — show their flow state.
+      if(wStatus === 'onshift' || wForFilter.clockInAt) {
+        respLabel = '<span style="color:var(--green);">On shift here</span>';
+      } else if(wStatus === 'completed') {
+        respLabel = '<span style="color:var(--grey);">Shift complete</span>';
+      } else if(wForFilter.arrivedAt) {
+        respLabel = '<span style="color:var(--green);">Arrived at bar</span>';
+      } else if(wForFilter.departedAt) {
+        respLabel = '<span style="color:var(--green);">En route</span>';
       } else {
-        respLabel = '<span style="color:var(--grey);">–</span>';
+        respLabel = '<span style="color:var(--green);">Dispatched to this bar</span>';
       }
-    } else if(!inCatchment) {
-      respLabel = '<span style="color:var(--grey);">Out of catchment</span>';
     } else if(myResp && myResp.response === 'available') {
       respLabel = '<span style="color:var(--ice);">Available · ' + (myResp.response_seconds != null ? myResp.response_seconds + 's' : '') + '</span>';
     } else if(myResp && myResp.response === 'pass') {
@@ -10541,7 +10568,7 @@ function bvRenderWorkerExpandDetail(row, move) {
     } else if(myResp) {
       respLabel = '<span style="color:var(--grey);">' + escapeBvHtml(myResp.response) + '</span>';
     } else {
-      // No response yet: compute window remaining
+      // No response yet: compute window remaining.
       const windowSecs = (30 - (walkMins || 0)) * 60;
       const postedAt = r.posted_at ? new Date(r.posted_at).getTime() : Date.now();
       const elapsedSec = Math.floor((Date.now() - postedAt) / 1000);
@@ -10551,14 +10578,10 @@ function bvRenderWorkerExpandDetail(row, move) {
       respLabel = '<span style="color:var(--grey);">Window ' + m + ':' + s + ' remaining</span>';
     }
 
-    // Phase 1-3 follow-up 6 (18 May 2026): surface the engine's reasoning
-    // for THIS worker on THIS request when the engine has ranked them.
-    // Read from liveSessionRecommendations.rankedAll (populated by
-    // f33RecomputeRecommendation on every realtime event) — no new RPC.
-    // Skipped for dispatched requests (rank is moot) and for workers not
-    // in rankedAll (passed / no_response / not in_session / out of catchment).
+    // Engine ranking inset only relevant for non-committed workers on
+    // pending requests — once dispatched their rank is moot.
     let rankBlock = '';
-    if(r.status === 'pending') {
+    if(!isCommitted && r.status === 'pending') {
       const rec = (typeof liveSessionRecommendations !== 'undefined')
         ? liveSessionRecommendations.get(r.id)
         : null;

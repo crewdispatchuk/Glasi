@@ -1036,7 +1036,22 @@
       z-index: 1;
       overflow: visible;
     }
-    .bv-line-layer path { pointer-events: stroke; cursor: pointer; transition: stroke 0.25s, stroke-width 0.25s, opacity 0.25s; }
+    /* Phase 1-3 follow-up 7 (18 May 2026): visible lines are decorative;
+       click capture moves to the wider invisible .bv-line-hit sibling
+       rendered immediately before each clickable visible path. */
+    .bv-line-layer path { pointer-events: none; cursor: default; transition: stroke 0.25s, stroke-width 0.25s, opacity 0.25s; }
+    .bv-line-layer path.bv-line-hit {
+      stroke: transparent;
+      stroke-width: 24;
+      fill: none;
+      pointer-events: stroke;
+      cursor: pointer;
+      transition: none;
+    }
+    /* Adjacent-sibling hover boost: hovering the hit target thickens the
+       visible line directly after it in DOM order. Gives a soft feedback
+       cue when Sam moves the mouse near a clickable line. */
+    .bv-line-layer path.bv-line-hit:hover + path { stroke-width: 4.5; }
 
     /* Bipartite line visual grammar (Phase 1-3 follow-up 4, 18 May 2026).
        Pattern: DOTTED = communication (asking / responding / recommending),
@@ -1105,7 +1120,9 @@
       stroke: #15803d; stroke-width: 4; fill: none;
     }
 
-    .bv-line-layer path:hover { stroke-width: 4; }
+    /* .bv-line-layer path:hover retired (follow-up 7): visible paths are now
+       pointer-events:none, so they can't receive :hover. Sibling hover
+       (.bv-line-hit:hover + path) handles the visual feedback above. */
 
     @keyframes bv-flow-forward  { to { stroke-dashoffset: -16; } }
     @keyframes bv-flow-backward { to { stroke-dashoffset:  16; } }
@@ -10554,17 +10571,33 @@ function bvRenderLines() {
       + ' C ' + cx1 + ' ' + p.barPt.y + ', '
       + cx2 + ' ' + p.wpt.y + ', '
       + p.wpt.x + ' ' + p.wpt.y;
+
+    // Phase 1-3 follow-up 7 (18 May 2026): wide invisible hit-target
+    // path appended FIRST for clickable lines so the visible line sits
+    // on top of it in DOM order. With pointer-events:stroke + a 24px
+    // transparent stroke, clicks land here even in the gaps between
+    // dotted dashes or 10-15px off the visible line. Click handler on
+    // this path; visible paths have pointer-events:none (CSS) so the
+    // click passes through to the hit target underneath.
+    const wantsClick = p.cls === 'bv-line-recommend' || p.cls === 'bv-line-available';
+    if(wantsClick) {
+      const hit = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      hit.setAttribute('d', d);
+      hit.setAttribute('class', 'bv-line-hit');
+      hit.setAttribute('data-req-id', p.reqId);
+      hit.setAttribute('data-app-id', p.appId);
+      hit.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        bvOpenDispatchModal(p.appId, p.reqId);
+      });
+      svg.appendChild(hit);
+    }
+
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', d);
     path.setAttribute('class', p.cls);
     path.setAttribute('data-req-id', p.reqId);
     path.setAttribute('data-app-id', p.appId);
-    if(p.cls === 'bv-line-recommend' || p.cls === 'bv-line-available') {
-      path.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        bvOpenDispatchModal(p.appId, p.reqId);
-      });
-    }
     svg.appendChild(path);
   }
 }

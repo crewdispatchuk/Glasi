@@ -709,60 +709,88 @@
       align-items: start;
       min-height: 200px;
     }
-    .bv-bar-col, .bv-worker-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; z-index: 2; }
+    .bv-bar-col, .bv-worker-col { display: flex; flex-direction: column; min-width: 0; z-index: 2; }
     .bv-spacer { min-height: 200px; }
-    .bv-col-header {
-      font-size: 9px; letter-spacing: 3px; color: var(--grey); text-transform: uppercase;
-      padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 6px;
-    }
-    .bv-bar-col .bv-col-header { text-align: left; }
-    .bv-worker-col .bv-col-header { text-align: right; }
+    .bv-col-header { display: none; }  /* Phase 1-3 follow-up 2: column heading is now inside the table header row */
 
-    /* Tabular row layout (Phase 1-3 follow-up, 18 May 2026).
-       Each row is a thin 2-column grid: NAME (col 1, 1fr) | STATUS (col 2, auto).
-       Active bar rows can expand a sibling actions sub-row below.
-       Dispatched/onshift worker rows render a sibling detail sub-row below.
-       The grid-template-columns is the only thing future column additions
-       need to widen — column cells inside each row are positional. */
-    .bv-bar-row, .bv-worker-row {
-      background: var(--navy-mid); border: 1px solid var(--border); border-radius: 8px;
+    /* ============================================================
+       Live Dashboard Redesign Phase 1-3 follow-up 2 (18 May 2026):
+       proper table structure with column headers + vertical column
+       divider + per-row bottom border. Excel-style data grid look.
+
+       Structure:
+         .bv-table (outer wrapper, rounded corners + outer border)
+           .bv-table-header (row, 2 cells, slightly darker bg)
+             .bv-th.bv-th-name    (cell, border-right column divider)
+             .bv-th.bv-th-status  (cell)
+           .bv-tbody (flex column of rows)
+             .bv-bar-row / .bv-worker-row (data row, 2 cells)
+               .bv-cell.bv-cell-name   (cell, border-right column divider)
+               .bv-cell.bv-cell-status (cell)
+             .bv-bar-actions-row / .bv-worker-detail-row (full-width sub-row)
+       ============================================================ */
+    .bv-table {
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .bv-table-header {
       display: grid;
-      align-items: center;
-      gap: 12px;
+      grid-template-columns: 1fr auto;
+      background: rgba(0,0,0,0.22);
+      border-bottom: 1px solid var(--border);
+    }
+    .bv-th {
+      padding: 9px 14px;
+      font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+      font-weight: 700; color: var(--grey);
+      font-family: 'Inter', sans-serif;
+    }
+    .bv-th-name   { border-right: 1px solid var(--border); text-align: left; }
+    .bv-th-status { text-align: right; min-width: 130px; }
+
+    .bv-tbody { display: flex; flex-direction: column; }
+
+    /* Data rows — no individual radius/outer border; live inside .bv-table. */
+    .bv-bar-row, .bv-worker-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
       min-height: 48px;
-      padding: 8px 14px;
-      transition: border-color 0.18s, box-shadow 0.2s, opacity 0.2s, background 0.12s;
-      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      transition: background 0.12s, box-shadow 0.2s, opacity 0.2s;
     }
-    .bv-bar-row    { grid-template-columns: 1fr auto; }
-    .bv-worker-row { grid-template-columns: 1fr auto; }
+    .bv-bar-row { cursor: pointer; }
+    .bv-worker-row { cursor: default; }
+    .bv-bar-row:hover { background: rgba(168,216,234,0.06); }
+    .bv-bar-row.is-actions-expanded { background: rgba(168,216,234,0.10); }
+    .bv-bar-row.is-active   .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(168,216,234,0.65); }
+    .bv-bar-row.is-active.urgent   .bv-cell-name { box-shadow: inset 3px 0 0 0 var(--amber); }
+    .bv-bar-row.is-active.critical .bv-cell-name { box-shadow: inset 3px 0 0 0 var(--red); }
+    .bv-bar-row.is-dispatched .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(168,216,234,0.45); }
+    .bv-bar-row.is-onshift    .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.45); }
 
-    .bv-bar-row:hover, .bv-worker-row:hover {
-      background: rgba(168,216,234,0.06);
+    /* Cells: padding lives on the cell, not the row, so the column-divider
+       border-right runs the full row height. */
+    .bv-cell {
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      min-width: 0;
     }
-    .bv-bar-row.is-actions-expanded {
-      background: rgba(168,216,234,0.10);
-      border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+    .bv-cell-name {
+      border-right: 1px solid var(--border);
+      justify-content: flex-start;
     }
-    .bv-bar-row.is-active   { border-color: rgba(168,216,234,0.45); }
-    .bv-bar-row.is-active.urgent   { border-color: var(--amber); }
-    .bv-bar-row.is-active.critical { border-color: var(--red); }
-    .bv-bar-row.is-dispatched { border-color: rgba(168,216,234,0.35); }
-    .bv-bar-row.is-onshift    { border-color: rgba(34,197,94,0.35); }
-
-    .bv-bar-cell-name, .bv-worker-cell-name {
+    .bv-cell-status {
+      justify-content: flex-end;
+      min-width: 130px;
+    }
+    .bv-cell-name .bv-name-text {
       font-size: 14px; font-weight: 600; color: var(--white);
       min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .bv-bar-cell-name    { text-align: left; }
-    .bv-worker-cell-name { text-align: right; }
-
-    .bv-bar-cell-status, .bv-worker-cell-status {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 12px;
-    }
-    .bv-bar-cell-status    { justify-content: flex-end; }
-    .bv-worker-cell-status { justify-content: flex-end; }
 
     .bv-bar-elapsed {
       font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
@@ -774,17 +802,14 @@
       color: var(--grey); font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
     }
 
-    /* Bar actions sub-row — appears below the bar row when Sam clicks
-       to expand. Visually attached: shares the bar row's left/right edges
-       and bottom radius. */
+    /* Bar actions sub-row — appears below the bar row when Sam clicks to
+       expand. Full row width (spans both columns); no column divider on
+       a sub-row (it's an annotation, not a data row). */
     .bv-bar-actions-row {
-      background: var(--navy);
-      border: 1px solid var(--border); border-top: none;
-      border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
+      background: rgba(0,0,0,0.18);
+      border-bottom: 1px solid var(--border);
       padding: 8px 14px;
-      display: flex; gap: 8px; align-items: center;
-      margin-top: -4px;
-      flex-wrap: wrap;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
     }
     .bv-bar-action-btn {
       background: none; border: 1px solid var(--border); color: var(--grey);
@@ -794,17 +819,16 @@
     .bv-bar-action-btn:hover { color: var(--ice); border-color: var(--ice); }
     .bv-bar-action-btn.danger:hover { color: var(--red); border-color: rgba(239,68,68,0.4); }
 
+    /* Worker row state styling — uses the cell-left inset shadow trick so
+       the column-divider border-right stays clean across all states. */
     .bv-worker-row.is-not-joined { opacity: 0.5; }
     .bv-worker-row.is-left       { opacity: 0.55; text-decoration: line-through; }
     .bv-worker-row.is-cancelled  { opacity: 0.55; text-decoration: line-through; }
     .bv-worker-row.is-completed  { opacity: 0.75; }
-    .bv-worker-row.is-dispatched { border-color: rgba(168,216,234,0.4); }
-    .bv-worker-row.is-onshift    { border-color: rgba(34,197,94,0.4); }
-    .bv-worker-row.movement-nudge1 { box-shadow: 0 0 0 3px rgba(245,158,11,0.55); }
-    .bv-worker-row.movement-nudge2 { box-shadow: 0 0 0 4px rgba(239,68,68,0.6); }
-    .bv-worker-row.has-detail {
-      border-bottom-left-radius: 0; border-bottom-right-radius: 0;
-    }
+    .bv-worker-row.is-dispatched .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(168,216,234,0.5); }
+    .bv-worker-row.is-onshift    .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.5); }
+    .bv-worker-row.movement-nudge1 { box-shadow: inset 0 0 0 2px rgba(245,158,11,0.6); }
+    .bv-worker-row.movement-nudge2 { box-shadow: inset 0 0 0 2px rgba(239,68,68,0.65); }
 
     .bv-worker-pill {
       display: inline-block; padding: 3px 10px; border-radius: 999px;
@@ -821,20 +845,21 @@
     .bv-worker-pill.is-cancelled  { background: rgba(239,68,68,0.18);   color: var(--red); }
     .bv-worker-pill.is-no-show    { background: rgba(239,68,68,0.18);   color: var(--red); }
 
-    /* Worker detail sub-row — appears for dispatched / onshift workers
-       below the thin row. Holds ETA, movement state, clock-in form,
-       cancel-dispatch button etc. Visually attached to the parent row. */
+    /* Worker detail sub-row — appears for dispatched / onshift workers.
+       Full row width (spans both columns); no column divider on a sub-row. */
     .bv-worker-detail-row {
-      background: var(--navy);
-      border: 1px solid var(--border); border-top: none;
-      border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
+      background: rgba(0,0,0,0.18);
+      border-bottom: 1px solid var(--border);
       padding: 10px 14px;
-      margin-top: -4px;
       font-size: 12px; color: var(--grey); line-height: 1.55;
       text-align: right;
     }
-    .bv-worker-detail-row.movement-nudge1 { box-shadow: 0 3px 0 -1px rgba(245,158,11,0.55), 3px 0 0 -1px rgba(245,158,11,0.55), -3px 0 0 -1px rgba(245,158,11,0.55); }
-    .bv-worker-detail-row.movement-nudge2 { box-shadow: 0 4px 0 -1px rgba(239,68,68,0.6), 4px 0 0 -1px rgba(239,68,68,0.6), -4px 0 0 -1px rgba(239,68,68,0.6); }
+    .bv-worker-detail-row.movement-nudge1 { box-shadow: inset 0 0 0 2px rgba(245,158,11,0.6); }
+    .bv-worker-detail-row.movement-nudge2 { box-shadow: inset 0 0 0 2px rgba(239,68,68,0.65); }
+
+    /* Drop the bottom border on the last row in tbody so the table's
+       outer border is the visual termination. */
+    .bv-tbody > *:last-child { border-bottom: none; }
 
     .bv-worker-detail {
       font-size: 12px; color: var(--grey); line-height: 1.55;
@@ -9534,13 +9559,23 @@ function renderBipartiteView() {
              (hotfix 18 May 2026). -->
         <svg id="bv-line-svg" class="bv-line-layer" xmlns="http://www.w3.org/2000/svg"></svg>
         <div class="bv-bar-col">
-          <div class="bv-col-header">Bars</div>
-          <div id="bv-bar-list"></div>
+          <div class="bv-table bv-bars-table">
+            <div class="bv-table-header" role="row">
+              <div class="bv-th bv-th-name">Bar name</div>
+              <div class="bv-th bv-th-status">Request</div>
+            </div>
+            <div id="bv-bar-list" class="bv-tbody"></div>
+          </div>
         </div>
         <div class="bv-spacer" aria-hidden="true"></div>
         <div class="bv-worker-col">
-          <div class="bv-col-header">Workers</div>
-          <div id="bv-worker-list"></div>
+          <div class="bv-table bv-workers-table">
+            <div class="bv-table-header" role="row">
+              <div class="bv-th bv-th-name">Worker name</div>
+              <div class="bv-th bv-th-status">Status</div>
+            </div>
+            <div id="bv-worker-list" class="bv-tbody"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -9675,8 +9710,8 @@ function bvRenderBars() {
     if(isExpanded) rowCls += ' is-actions-expanded';
 
     const rowHtml = '<div class="bv-bar-row' + rowCls + '" id="bv-bar-' + b.id + '" data-bar-id="' + b.id + '" data-req-id="' + (req ? req.id : '') + '" onclick="bvOnBarRowClick(' + b.id + ')">'
-      + '<div class="bv-bar-cell-name">' + escapeBvHtml(b.name || 'Bar #' + b.id) + '</div>'
-      + '<div class="bv-bar-cell-status">' + statusCellHtml + '</div>'
+      + '<div class="bv-cell bv-cell-name"><span class="bv-name-text">' + escapeBvHtml(b.name || 'Bar #' + b.id) + '</span></div>'
+      + '<div class="bv-cell bv-cell-status">' + statusCellHtml + '</div>'
       + '</div>';
 
     // Sibling action sub-row, rendered only when bar is active AND Sam
@@ -9835,8 +9870,8 @@ function bvRenderWorkers() {
 
     const hasDetail = !!detailHtml;
     const rowHtml = '<div class="bv-worker-row ' + info.rowCls + moveCls + (hasDetail ? ' has-detail' : '') + '" id="bv-worker-' + row.applicationId + '" data-app-id="' + row.applicationId + '" data-sw-id="' + (w ? (w.sessionWorkerId || '') : '') + '">'
-      + '<div class="bv-worker-cell-name">' + escapeBvHtml(row.name) + '</div>'
-      + '<div class="bv-worker-cell-status"><span class="bv-worker-pill ' + info.pillCls + '">' + info.pill + '</span></div>'
+      + '<div class="bv-cell bv-cell-name"><span class="bv-name-text">' + escapeBvHtml(row.name) + '</span></div>'
+      + '<div class="bv-cell bv-cell-status"><span class="bv-worker-pill ' + info.pillCls + '">' + info.pill + '</span></div>'
       + '</div>';
     if(hasDetail) {
       // Sibling detail sub-row. Carries the dispatched detail block,

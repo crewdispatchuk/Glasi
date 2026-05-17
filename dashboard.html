@@ -839,7 +839,62 @@
       padding: 8px 14px;
     }
     .bv-bar-actions-row {
-      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    /* Phase 1-3 follow-up 10 (18 May 2026): full request-details panel
+       inside the bar action sub-row. Stats grid + dispatch codes + notes
+       + action buttons. Mirrors the worker expand panel's pattern. */
+    .bv-bar-detail-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .bv-bar-detail-stat {
+      background: var(--navy);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+    }
+    .bv-bar-detail-stat-label {
+      font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--grey); font-weight: 600; margin-bottom: 4px;
+    }
+    .bv-bar-detail-stat-value {
+      font-size: 13px; color: var(--white); font-weight: 600;
+      font-family: 'Inter', sans-serif;
+    }
+    .bv-bar-detail-section-label {
+      font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--ice); font-weight: 700;
+    }
+    .bv-bar-detail-codes {
+      display: flex; gap: 10px; flex-wrap: wrap;
+    }
+    .bv-bar-detail-code {
+      background: var(--navy);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      min-width: 140px;
+    }
+    .bv-bar-detail-code-label {
+      font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--grey); font-weight: 600; margin-bottom: 6px;
+    }
+    .bv-bar-detail-code-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px; font-weight: 700; color: var(--ice);
+      letter-spacing: 4px;
+    }
+    .bv-bar-detail-notes {
+      background: var(--navy);
+      border-left: 2px solid var(--ice);
+      border-radius: 0 4px 4px 0;
+      padding: 10px 12px;
+      font-size: 12px; color: var(--grey); font-style: italic; line-height: 1.5;
+    }
+    .bv-bar-detail-actions {
+      display: flex; gap: 8px; flex-wrap: wrap;
     }
     .bv-bar-action-btn {
       background: none; border: 1px solid var(--border); color: var(--grey);
@@ -1104,12 +1159,46 @@
       stroke: var(--red); stroke-width: 3; fill: none;
       animation: bv-fade-out 1.6s ease-out forwards;
     }
-    /* State 8: EN ROUTE — solid green with subtle moving highlight worker → bar. */
-    .bv-line-layer path.bv-line-enroute {
-      stroke: var(--green); stroke-width: 3; fill: none;
-      stroke-dasharray: 40 4;
-      animation: bv-flow-backward 1.4s linear infinite;
+    /* State 8: EN ROUTE — green comet dashes flowing worker → bar.
+       Small dashes + large gaps + rounded caps = comet/arrow look that
+       visibly travels along the curve toward the bar end. Phase 1-3
+       follow-up 10 (18 May 2026) replaces the previous 40/4 stutter-
+       prone pattern with discrete arrivals. */
+    .bv-line-layer path.bv-line-enroute,
+    .bv-line-layer path.bv-line-enroute-slow,
+    .bv-line-layer path.bv-line-enroute-stop {
+      stroke-width: 3.5; fill: none;
+      stroke-dasharray: 4 22;        /* short dash, long gap = single comet visible per gap-cycle */
+      stroke-linecap: round;
+      animation: bv-comet-flow 1.2s linear infinite;
     }
+    .bv-line-layer path.bv-line-enroute      { stroke: var(--green); filter: drop-shadow(0 0 4px rgba(34,197,94,0.55)); }
+    .bv-line-layer path.bv-line-enroute-slow { stroke: var(--amber); filter: drop-shadow(0 0 4px rgba(245,158,11,0.55)); }
+    .bv-line-layer path.bv-line-enroute-stop { stroke: var(--red);   filter: drop-shadow(0 0 5px rgba(239,68,68,0.6));  animation-duration: 2.2s; }
+
+    @keyframes bv-comet-flow {
+      from { stroke-dashoffset: 0; }
+      to   { stroke-dashoffset: 26; }   /* one full dash+gap period, positive = toward path start = toward bar */
+    }
+
+    /* ETA label sat on the en-route line at the Bezier midpoint. Stroke
+       halo via paint-order so the text is legible against any background
+       without needing a separate <rect> behind it. Colour matches the
+       line state. */
+    .bv-line-eta-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      font-weight: 700;
+      paint-order: stroke;
+      stroke: var(--navy);
+      stroke-width: 4;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+    .bv-line-eta-label.enroute      { fill: var(--green); }
+    .bv-line-eta-label.enroute-slow { fill: var(--amber); }
+    .bv-line-eta-label.enroute-stop { fill: var(--red); }
+    .bv-line-eta-label.stale { font-style: italic; opacity: 0.75; }
     /* State 9: ARRIVED — solid green, no animation (movement complete). */
     .bv-line-layer path.bv-line-arrived {
       stroke: var(--green); stroke-width: 3.5; fill: none;
@@ -9997,18 +10086,71 @@ function bvRenderBars() {
       + '</div>';
 
     // Sibling action sub-row, rendered only when bar is active AND Sam
-    // has expanded it. Kept structurally below the parent row in DOM so
-    // the line endpoint (bv-bar-N centre) stays pinned to the thin row.
+    // has expanded it. Phase 1-3 follow-up 10 (18 May 2026): full request-
+    // details panel inside the action sub-row — posted at, shift length,
+    // requester (PIN-holder), notes, dispatch state, clock-in / clock-out
+    // codes when dispatched. Action buttons retained at the bottom.
     if(isActive && isExpanded) {
-      const notesLabel = (req.raw_message && req.raw_message !== 'Bar manager request via portal') ? 'Edit notes' : '+ Add notes';
-      const actionsHtml = '<div class="bv-bar-actions-row" id="bv-bar-actions-' + b.id + '">'
-        + '<button class="bv-bar-action-btn" onclick="event.stopPropagation();openAddNotes(' + req.id + ')">' + notesLabel + '</button>'
-        + '<button class="bv-bar-action-btn danger" onclick="event.stopPropagation();removeRequest(' + req.id + ')">Remove request</button>'
-        + '</div>';
-      return rowHtml + actionsHtml;
+      return rowHtml + bvRenderBarDetailRow(b, req);
     }
     return rowHtml;
   }).join('');
+}
+
+function bvRenderBarDetailRow(b, req) {
+  const stat = (label, value) => '<div class="bv-bar-detail-stat">'
+    + '<div class="bv-bar-detail-stat-label">' + escapeBvHtml(label) + '</div>'
+    + '<div class="bv-bar-detail-stat-value">' + value + '</div>'
+    + '</div>';
+
+  const postedAt    = req.posted_at ? fmtHm(req.posted_at) : (req.request_time ? fmtHm(req.request_time) : '–');
+  const shiftLen    = req.shift_length_hours != null ? parseFloat(req.shift_length_hours) + 'h' : '–';
+  const requester   = escapeBvHtml(req._requesterName || 'Unknown');
+  const statusLabel = (req.status || '').toUpperCase();
+  const barIdLabel  = '#' + b.id;
+
+  // Resolve the dispatched session_worker for this request (if any) to
+  // pull clock-in / clock-out codes and worker name.
+  const dispW = liveSessionOps.workers.find(w =>
+    Number(w.shiftRequestId) === Number(req.id) &&
+    (w.status === 'dispatched' || w.status === 'onshift' || w.status === 'completed'));
+  const dispWorkerName = dispW ? escapeBvHtml(dispW.name) : null;
+  const clockInCode    = dispW && dispW.clockInCode   ? escapeBvHtml(dispW.clockInCode)  : null;
+  const clockOutCode   = dispW && dispW.clockOutCode  ? escapeBvHtml(dispW.clockOutCode) : null;
+
+  // Notes — only show when Sam-entered (suppress manager-portal boilerplate
+  // per the F-29 convention).
+  const showNotes = req.raw_message && req.raw_message !== 'Bar manager request via portal';
+  const notesLabel = showNotes ? 'Edit notes' : '+ Add notes';
+  const notesBlock = showNotes
+    ? '<div class="bv-bar-detail-notes">' + escapeBvHtml(req.raw_message) + '</div>'
+    : '';
+
+  const codeStats = dispW
+    ? (
+        '<div class="bv-bar-detail-section-label">Dispatched to ' + dispWorkerName + '</div>'
+      + '<div class="bv-bar-detail-codes">'
+      +   (clockInCode  ? '<div class="bv-bar-detail-code"><div class="bv-bar-detail-code-label">Clock-in code</div><div class="bv-bar-detail-code-value">'  + clockInCode  + '</div></div>' : '')
+      +   (clockOutCode ? '<div class="bv-bar-detail-code"><div class="bv-bar-detail-code-label">Clock-out code</div><div class="bv-bar-detail-code-value">' + clockOutCode + '</div></div>' : '')
+      + '</div>'
+      )
+    : '';
+
+  return '<div class="bv-bar-actions-row" id="bv-bar-actions-' + b.id + '">'
+    + '<div class="bv-bar-detail-stats">'
+    +   stat('Bar ID',       barIdLabel)
+    +   stat('Posted at',    postedAt)
+    +   stat('Shift length', shiftLen)
+    +   stat('Requested by', requester)
+    +   stat('Status',       statusLabel)
+    + '</div>'
+    + codeStats
+    + notesBlock
+    + '<div class="bv-bar-detail-actions">'
+    +   '<button class="bv-bar-action-btn" onclick="event.stopPropagation();openAddNotes(' + req.id + ')">' + notesLabel + '</button>'
+    +   '<button class="bv-bar-action-btn danger" onclick="event.stopPropagation();removeRequest(' + req.id + ')">Remove request</button>'
+    + '</div>'
+    + '</div>';
 }
 
 function bvUpdateBarElapsedCounters() {
@@ -10525,15 +10667,21 @@ function bvRenderLines() {
       } else if(w.arrivedAt) {
         cls = 'bv-line-arrived';                    // State 9:  solid green, no flow
       } else if(w.departedAt) {
-        cls = 'bv-line-enroute';                    // State 8:  solid green, flow toward bar
+        // State 8: en route — colour escalates with movement-state nudges.
+        // Phase 1-3 follow-up 10 (18 May 2026): green normal, amber on
+        // nudge_1 (slowdown), red on nudge_2 (stop).
+        if(move && move.cancelled_at)             cls = 'bv-line-cancelled';
+        else if(move && move.nudge_2_fired_at)    cls = 'bv-line-enroute-stop';
+        else if(move && move.nudge_1_fired_at)    cls = 'bv-line-enroute-slow';
+        else                                       cls = 'bv-line-enroute';
       } else if(move && move.cancelled_at) {
         cls = 'bv-line-cancelled';                  // State 7:  solid red fading
       } else if(move && move.nudge_2_fired_at) {
-        cls = 'bv-line-stalled-2';                  // State 6:  flashing amber
+        cls = 'bv-line-stalled-2';                  // State 6:  flashing amber (not yet departed)
       } else if(move && move.nudge_1_fired_at) {
-        cls = 'bv-line-stalled-1';                  // State 5:  flashing green
+        cls = 'bv-line-stalled-1';                  // State 5:  flashing green (not yet departed)
       }                                              // State 4:  solid green static (default)
-      paths.push({ cls, barPt, wpt, reqId: req.id, appId: w.applicationId, kind: cls });
+      paths.push({ cls, barPt, wpt, reqId: req.id, appId: w.applicationId, kind: cls, worker: w });
       continue;
     }
 
@@ -10569,16 +10717,18 @@ function bvRenderLines() {
   // higher, committed lines (dispatched / en route / arrived / on shift)
   // on top so they're never visually overlapped by quieter states.
   const order = {
-    'bv-line-pending':     0,
-    'bv-line-available':   1,
-    'bv-line-recommend':   2,
-    'bv-line-cancelled':   3,
-    'bv-line-dispatched':  4,
-    'bv-line-stalled-1':   4,
-    'bv-line-stalled-2':   4,
-    'bv-line-enroute':     5,
-    'bv-line-arrived':     6,
-    'bv-line-onshift':     7
+    'bv-line-pending':       0,
+    'bv-line-available':     1,
+    'bv-line-recommend':     2,
+    'bv-line-cancelled':     3,
+    'bv-line-dispatched':    4,
+    'bv-line-stalled-1':     4,
+    'bv-line-stalled-2':     4,
+    'bv-line-enroute':       5,
+    'bv-line-enroute-slow':  5,
+    'bv-line-enroute-stop':  5,
+    'bv-line-arrived':       6,
+    'bv-line-onshift':       7
   };
   paths.sort((a, b) => (order[a.cls] || 0) - (order[b.cls] || 0));
 
@@ -10618,6 +10768,44 @@ function bvRenderLines() {
     path.setAttribute('data-req-id', p.reqId);
     path.setAttribute('data-app-id', p.appId);
     svg.appendChild(path);
+
+    // Phase 1-3 follow-up 10 (18 May 2026): ETA label sat on en-route lines.
+    // Bezier midpoint for this symmetric cubic simplifies to the geometric
+    // midpoint of the endpoints (control points are horizontal extensions
+    // of each endpoint). Live ETA preferred; falls back to walking_minutes
+    // from worker_bar_distances. Stale label when liveEtaComputedAt > 90s.
+    const isEnroute = p.cls === 'bv-line-enroute' || p.cls === 'bv-line-enroute-slow' || p.cls === 'bv-line-enroute-stop';
+    if(isEnroute && p.worker) {
+      const w = p.worker;
+      let etaText = '';
+      let staleCls = '';
+      if(w.liveEtaMinutes != null) {
+        etaText = w.liveEtaMinutes + ' min';
+        const ageSec = w.liveEtaComputedAt
+          ? Math.floor((Date.now() - new Date(w.liveEtaComputedAt).getTime()) / 1000)
+          : 0;
+        if(ageSec > 90) staleCls = ' stale';
+      } else if(typeof workerBarDistances !== 'undefined') {
+        const dist = workerBarDistances.find(d =>
+          Number(d.application_id) === Number(p.appId) && Number(d.bar_id) === Number(liveSessionOps.requests.find(r => Number(r.id) === Number(p.reqId))?.bar_id));
+        if(dist && dist.walking_minutes != null) etaText = dist.walking_minutes + ' min';
+      }
+      if(etaText) {
+        const midX = (p.barPt.x + p.wpt.x) / 2;
+        const midY = (p.barPt.y + p.wpt.y) / 2;
+        const variantCls = p.cls === 'bv-line-enroute-stop' ? 'enroute-stop'
+                         : p.cls === 'bv-line-enroute-slow' ? 'enroute-slow'
+                         : 'enroute';
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', midX);
+        text.setAttribute('y', midY - 4);
+        text.setAttribute('class', 'bv-line-eta-label ' + variantCls + staleCls);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.textContent = etaText;
+        svg.appendChild(text);
+      }
+    }
   }
 }
 
@@ -11091,8 +11279,16 @@ async function loadLiveSessionWorkers(sessionId) {
     const invites = await sbGet('session_invites', '?session_id=eq.'+sessionId+'&attendance_confirmed=eq.confirmed&select=application_id,joined_at,applications(id,name,phone,postcode_full,tier,hourly_rate,reliability_score)');
 
     liveSessionOps.workers = [];
-    // Batch create session_workers rows
-    const existingSW = await sbGet('session_workers', '?session_id=eq.'+sessionId+'&select=id,application_id,status');
+    // Phase 1-3 follow-up 9 (18 May 2026): pull the FULL session_workers row
+    // (not just id/application_id/status). The previous 3-field select left
+    // shiftRequestId / dispatchedAt / bar_id / clockInAt / etc out of the
+    // rebuilt cache. Surfaced as: dispatched line briefly drew on restore
+    // (tryRestoreSession built the full cache), then liveSessionOps.start
+    // called THIS function which wiped the cache and rebuilt with the
+    // incomplete data — the dispatched line vanished a moment later.
+    const existingSW = await sbGet('session_workers',
+      '?session_id=eq.'+sessionId
+      + '&select=id,application_id,status,shift_request_id,bar_id,clock_in_at,clock_in_code,clock_out_code,dispatched_at,departed_at,share_location_tapped_at,shift_length_hours,live_eta_minutes,live_eta_computed_at,arrived_at,expected_arrival_minutes');
 
     for(const inv of invites) {
       const app = inv.applications;
@@ -11115,6 +11311,12 @@ async function loadLiveSessionWorkers(sessionId) {
         swRow.status = 'in_session';
       }
 
+      // Resolve bar record for dispatched workers so the worker card body
+      // can show "Dispatched to <BarName>" without an extra lookup.
+      const barRecord = (swRow && swRow.bar_id)
+        ? (bars && bars.find(b => Number(b.id) === Number(swRow.bar_id)) || null)
+        : null;
+
       liveSessionOps.workers.push({
         id: uid(),
         sessionWorkerId: swRow?.id || null,
@@ -11128,12 +11330,25 @@ async function loadLiveSessionWorkers(sessionId) {
         status: correctStatus,
         joinedAt: inv.joined_at || null,
         code: gen4(),
-        clockOutCode: gen4(),
-        bar: null, barRecord: null,
-        dispatchedAt: null, clockInAt: null,
-        clockInCode: null, shiftLength: null,
-        wage: null, clockOutAt: null,
-        notes: null, expectedArrivalMinutes: null,
+        // Dispatch / shift state from the full sw row (Phase 1-3 follow-up 9).
+        // These were `null` defaults under the old 3-field select, which
+        // broke the bipartite dispatched-line lookup keyed on shiftRequestId.
+        shiftRequestId:       swRow?.shift_request_id          || null,
+        bar_id:               swRow?.bar_id                     || null,
+        bar:                  barRecord ? barRecord.name        : null,
+        barRecord:            barRecord,
+        dispatchedAt:         swRow?.dispatched_at              || null,
+        departedAt:           swRow?.departed_at                || null,
+        arrivedAt:            swRow?.arrived_at                 || null,
+        shareLocationTappedAt: swRow?.share_location_tapped_at  || null,
+        clockInAt:            swRow?.clock_in_at                || null,
+        clockInCode:          swRow?.clock_in_code              || null,
+        clockOutCode:         swRow?.clock_out_code             || gen4(),
+        shiftLength:          swRow?.shift_length_hours         || null,
+        liveEtaMinutes:       swRow?.live_eta_minutes           || null,
+        liveEtaComputedAt:    swRow?.live_eta_computed_at       || null,
+        expectedArrivalMinutes: swRow?.expected_arrival_minutes || null,
+        wage: null, clockOutAt: null, notes: null,
       });
     }
 

@@ -807,8 +807,9 @@
     .bv-bar-row.is-active           .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(168,216,234,0.65); }
     .bv-bar-row.is-active.urgent    .bv-cell-name { box-shadow: inset 3px 0 0 0 var(--amber); }
     .bv-bar-row.is-active.critical  .bv-cell-name { box-shadow: inset 3px 0 0 0 var(--red); }
-    .bv-bar-row.is-dispatched       .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(168,216,234,0.45); }
-    .bv-bar-row.is-onshift          .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.45); }
+    .bv-bar-row.is-dispatched       .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.55); }
+    .bv-bar-row.is-arrived          .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.75); }
+    .bv-bar-row.is-onshift          .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.85); }
 
     .bv-bar-elapsed {
       font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
@@ -852,8 +853,10 @@
     .bv-worker-row.is-left       .bv-cell { opacity: 0.6; text-decoration: line-through; }
     .bv-worker-row.is-cancelled  .bv-cell { opacity: 0.6; text-decoration: line-through; }
     .bv-worker-row.is-completed  .bv-cell { opacity: 0.78; }
-    .bv-worker-row.is-dispatched .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(168,216,234,0.5); }
-    .bv-worker-row.is-onshift    .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.5); }
+    .bv-worker-row.is-available  .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(168,216,234,0.55); }
+    .bv-worker-row.is-dispatched .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.55); }
+    .bv-worker-row.is-arrived    .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.75); }
+    .bv-worker-row.is-onshift    .bv-cell-name { box-shadow: inset 3px 0 0 0 rgba(34,197,94,0.85); }
     .bv-worker-row.movement-nudge1 .bv-cell { background-color: rgba(245,158,11,0.13); }
     .bv-worker-row.movement-nudge2 .bv-cell { background-color: rgba(239,68,68,0.16); }
     .bv-worker-detail-row.movement-nudge1 { background-color: rgba(245,158,11,0.13); }
@@ -867,8 +870,10 @@
     }
     .bv-worker-pill.is-not-joined { background: rgba(100,116,139,0.18); color: var(--grey); }
     .bv-worker-pill.is-in-session { background: rgba(168,216,234,0.16); color: var(--ice); }
-    .bv-worker-pill.is-dispatched { background: rgba(168,216,234,0.16); color: var(--ice); }
-    .bv-worker-pill.is-onshift    { background: rgba(34,197,94,0.18);   color: var(--green); }
+    .bv-worker-pill.is-available  { background: rgba(168,216,234,0.28); color: var(--ice); }
+    .bv-worker-pill.is-dispatched { background: rgba(34,197,94,0.20);   color: var(--green); }
+    .bv-worker-pill.is-arrived    { background: rgba(34,197,94,0.28);   color: var(--green); }
+    .bv-worker-pill.is-onshift    { background: rgba(34,197,94,0.30);   color: #86efac; }
     .bv-worker-pill.is-completed  { background: rgba(100,116,139,0.18); color: var(--grey); }
     .bv-worker-pill.is-left       { background: rgba(100,116,139,0.18); color: var(--grey); }
     .bv-worker-pill.is-cancelled  { background: rgba(239,68,68,0.18);   color: var(--red); }
@@ -925,20 +930,85 @@
       overflow: visible;
     }
     .bv-line-layer path { pointer-events: stroke; cursor: pointer; transition: stroke 0.25s, stroke-width 0.25s, opacity 0.25s; }
-    .bv-line-layer path.bv-line-pending    { stroke: rgba(200,200,200,0.55); stroke-width: 1; stroke-dasharray: 4 4; fill: none; animation: bv-pulse-pending 1.6s ease-in-out infinite; }
-    .bv-line-layer path.bv-line-available  { stroke: var(--ice); stroke-width: 2; fill: none; }
-    .bv-line-layer path.bv-line-recommend  { stroke: #7fce5f; stroke-width: 3; fill: none; filter: drop-shadow(0 0 4px rgba(127,206,95,0.55)); }
-    .bv-line-layer path.bv-line-dispatched { stroke: var(--ice); stroke-width: 3; stroke-dasharray: 8 4; fill: none; animation: bv-flow-dispatched 1.2s linear infinite; }
-    .bv-line-layer path.bv-line-onshift    { stroke: var(--green); stroke-width: 2; fill: none; }
-    .bv-line-layer path.bv-line-cancelled  { stroke: rgba(239,68,68,0.6); stroke-width: 2; stroke-dasharray: 2 4; fill: none; opacity: 0.6; }
+
+    /* Bipartite line visual grammar (Phase 1-3 follow-up 4, 18 May 2026).
+       Pattern: DOTTED = communication (asking / responding / recommending),
+                SOLID  = commitment (dispatched / en route / arrived / on shift).
+       Flow direction (via stroke-dashoffset animation):
+                forward (bar → worker) = bar is asking
+                backward (worker → bar) = worker is responding or moving toward bar.
+       Colour grammar:
+                grey  = pending neutral
+                ice   = available (positive but neutral)
+                green = recommended / dispatched / en route / arrived / on shift
+                amber = warning (nudge 2)
+                red   = problem (auto-cancelled). */
+
+    /* State 1: REQUEST SENT — dotted grey, flowing bar → worker. */
+    .bv-line-layer path.bv-line-pending {
+      stroke: rgba(200,200,200,0.65); stroke-width: 2;
+      stroke-dasharray: 3 5; fill: none;
+      animation: bv-flow-forward 1.4s linear infinite;
+    }
+    /* State 2: WORKER AVAILABLE — dotted ice, flowing worker → bar. */
+    .bv-line-layer path.bv-line-available {
+      stroke: var(--ice); stroke-width: 2.5;
+      stroke-dasharray: 3 5; fill: none;
+      animation: bv-flow-backward 1.4s linear infinite;
+    }
+    /* State 3: ENGINE RECOMMENDATION — dotted green, flowing worker → bar, glow. */
+    .bv-line-layer path.bv-line-recommend {
+      stroke: var(--green); stroke-width: 3;
+      stroke-dasharray: 3 5; fill: none;
+      filter: drop-shadow(0 0 5px rgba(34,197,94,0.7));
+      animation: bv-flow-backward 1.4s linear infinite;
+    }
+    /* State 4: DISPATCHED — solid green, static. */
+    .bv-line-layer path.bv-line-dispatched {
+      stroke: var(--green); stroke-width: 3; fill: none;
+    }
+    /* State 5: DISPATCHED + STALLED (nudge 1) — solid green, slow flash. */
+    .bv-line-layer path.bv-line-stalled-1 {
+      stroke: var(--green); stroke-width: 3; fill: none;
+      animation: bv-pulse-slow 1.8s ease-in-out infinite;
+    }
+    /* State 6: DISPATCHED + STALLED (nudge 2) — solid amber, slow flash. */
+    .bv-line-layer path.bv-line-stalled-2 {
+      stroke: var(--amber); stroke-width: 3.5; fill: none;
+      animation: bv-pulse-slow 1.4s ease-in-out infinite;
+    }
+    /* State 7: AUTO-CANCELLED — solid red, fading out. */
+    .bv-line-layer path.bv-line-cancelled {
+      stroke: var(--red); stroke-width: 3; fill: none;
+      animation: bv-fade-out 1.6s ease-out forwards;
+    }
+    /* State 8: EN ROUTE — solid green with subtle moving highlight worker → bar. */
+    .bv-line-layer path.bv-line-enroute {
+      stroke: var(--green); stroke-width: 3; fill: none;
+      stroke-dasharray: 40 4;
+      animation: bv-flow-backward 1.4s linear infinite;
+    }
+    /* State 9: ARRIVED — solid green, no animation (movement complete). */
+    .bv-line-layer path.bv-line-arrived {
+      stroke: var(--green); stroke-width: 3.5; fill: none;
+      filter: drop-shadow(0 0 4px rgba(34,197,94,0.55));
+    }
+    /* State 10: ON SHIFT — deeper green, solid, no animation. */
+    .bv-line-layer path.bv-line-onshift {
+      stroke: #15803d; stroke-width: 4; fill: none;
+    }
+
     .bv-line-layer path:hover { stroke-width: 4; }
 
-    @keyframes bv-pulse-pending {
-      0%, 100% { opacity: 0.45; }
-      50%      { opacity: 0.9; }
+    @keyframes bv-flow-forward  { to { stroke-dashoffset: -16; } }
+    @keyframes bv-flow-backward { to { stroke-dashoffset:  16; } }
+    @keyframes bv-pulse-slow {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.55; }
     }
-    @keyframes bv-flow-dispatched {
-      to { stroke-dashoffset: -12; }
+    @keyframes bv-fade-out {
+      0%   { opacity: 0.85; }
+      100% { opacity: 0; }
     }
 
     .bv-empty {
@@ -9509,7 +9579,16 @@ function renderClassicLiveRoom() {
 // console: only the visual presentation is new.
 // ============================================================================
 
-let _bvTimerInterval = null;
+// Two distinct intervals (Phase 1-3 follow-up 4, 18 May 2026):
+//   _bvElapsedInterval: every 1s. Cheap in-memory pass — updates request
+//   elapsed-counter text on bar rows. No RPC, no full re-render. Sam
+//   expects a stopwatch tick, not a 5s jump.
+//   _bvDetailInterval: every 5s. Re-renders dispatched/onshift worker
+//   detail blocks so ETA / "Nm ago" / stale labels refresh. The expensive
+//   F-33 RPC recompute stays event-driven (response/worker/request events
+//   trigger it via setupLiveViewListeners), not on a fixed tick.
+let _bvElapsedInterval = null;
+let _bvDetailInterval = null;
 let _bvResizeHandler = null;
 let _bvLineDispatchTarget = null; // { applicationId, requestId } for ov-bv-dispatch modal
 
@@ -9632,11 +9711,11 @@ function renderBipartiteView() {
   bvRenderLines();
   renderSessionStats();
 
-  if(_bvTimerInterval) clearInterval(_bvTimerInterval);
-  _bvTimerInterval = setInterval(() => {
-    bvUpdateBarElapsedCounters();
-    bvUpdateWorkerEtaCounters();
-  }, 5000);
+  if(_bvElapsedInterval) clearInterval(_bvElapsedInterval);
+  _bvElapsedInterval = setInterval(() => bvUpdateBarElapsedCounters(), 1000);
+
+  if(_bvDetailInterval) clearInterval(_bvDetailInterval);
+  _bvDetailInterval = setInterval(() => bvUpdateWorkerEtaCounters(), 5000);
 
   if(_bvResizeHandler) window.removeEventListener('resize', _bvResizeHandler);
   _bvResizeHandler = () => bvRenderLines();
@@ -9711,6 +9790,21 @@ function bvRenderBars() {
     const isDispatched = isActive && req.status === 'dispatched';
     const isExpanded = bvBarActionsExpanded.has(Number(b.id));
 
+    // Phase 1-3 follow-up 4: when a bar has a dispatched-state request,
+    // the bar row's left-edge accent should follow the worker's flow state
+    // (dispatched / en route / arrived / on shift) so the bar + worker +
+    // line share the same colour cue.
+    let dispatchedRowCls = ' is-dispatched';
+    if(isDispatched) {
+      const dispW = liveSessionOps.workers.find(w =>
+        Number(w.shiftRequestId) === Number(req.id) &&
+        (w.status === 'dispatched' || w.status === 'onshift'));
+      if(dispW) {
+        if(dispW.status === 'onshift' || dispW.clockInAt) dispatchedRowCls = ' is-onshift';
+        else if(dispW.arrivedAt) dispatchedRowCls = ' is-arrived';
+      }
+    }
+
     let statusCellHtml;
     let rowCls = '';
     if(isActive) {
@@ -9723,7 +9817,7 @@ function bvRenderBars() {
       if(secs >= 1500) elapsedCls = ' critical';
       else if(secs >= 300) elapsedCls = ' urgent';
       statusCellHtml = '<span class="bv-bar-elapsed' + elapsedCls + '" data-elapsed-tag="' + req.id + '">' + label + '</span>';
-      rowCls = isDispatched ? ' is-dispatched' : (' is-active' + elapsedCls);
+      rowCls = isDispatched ? dispatchedRowCls : (' is-active' + elapsedCls);
     } else {
       statusCellHtml = '<span class="bv-bar-none">None</span>';
     }
@@ -9828,18 +9922,46 @@ function bvInvitedWorkers() {
   return Array.from(byAppId.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 }
 
+// Phase 1-3 follow-up 4 (18 May 2026): derive AVAILABLE state from
+// shift_responses against any active pending request. session_workers.status
+// stays 'in_session' through the response phase, so this derived state is
+// what unlocks the AVAILABLE pill + the available line styling.
+function bvIsWorkerAvailable(applicationId) {
+  if(typeof liveSessionResponses === 'undefined') return false;
+  const appId = Number(applicationId);
+  for(const r of liveSessionOps.requests) {
+    if(r.status !== 'pending') continue;
+    const rows = liveSessionResponses.get(r.id) || [];
+    if(rows.some(x => Number(x.application_id) === appId && x.response === 'available')) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function bvWorkerStatusInfo(row) {
   const w = row.worker;
   const status = w ? w.status : null;
-  // Movement state takes precedence for the worker-card border highlight,
-  // but the pill is driven by session_workers.status.
   if(!w) {
     return { pill: 'NOT JOINED', pillCls: 'is-not-joined', rowCls: 'is-not-joined' };
   }
   switch(status) {
-    case 'in_session':  return { pill: 'IN SESSION', pillCls: 'is-in-session', rowCls: '' };
+    case 'in_session':
+      // Derived AVAILABLE state: worker has at least one Available response
+      // against an active pending request. Drives the pill + the row left-edge
+      // accent + (separately) the "available" line styling in bvRenderLines.
+      if(bvIsWorkerAvailable(row.applicationId)) {
+        return { pill: 'AVAILABLE', pillCls: 'is-available', rowCls: 'is-available' };
+      }
+      return { pill: 'IN SESSION', pillCls: 'is-in-session', rowCls: '' };
     case 'invited':     return { pill: 'NOT JOINED', pillCls: 'is-not-joined', rowCls: 'is-not-joined' };
-    case 'dispatched':  return { pill: 'DISPATCHED', pillCls: 'is-dispatched', rowCls: 'is-dispatched' };
+    case 'dispatched':
+      // Derived ARRIVED state: dispatched worker has arrived_at set but has
+      // not yet clocked in. Distinct visual from EN ROUTE (departed_at only).
+      if(w.arrivedAt && !w.clockInAt) {
+        return { pill: 'ARRIVED', pillCls: 'is-arrived', rowCls: 'is-arrived' };
+      }
+      return { pill: 'DISPATCHED', pillCls: 'is-dispatched', rowCls: 'is-dispatched' };
     case 'onshift':     return { pill: 'ON SHIFT',   pillCls: 'is-onshift',    rowCls: 'is-onshift' };
     case 'completed':   return { pill: 'COMPLETED',  pillCls: 'is-completed',  rowCls: 'is-completed' };
     case 'left':        return { pill: 'LEFT',       pillCls: 'is-left',       rowCls: 'is-left' };
@@ -10066,12 +10188,29 @@ function bvRenderLines() {
     const recAppId = rec && rec.recommendedAppId ? Number(rec.recommendedAppId) : null;
 
     if(req.status === 'dispatched') {
-      // Single dispatched/onshift line.
+      // Single committed line. Class picked by worker + movement state per
+      // the 11-state grammar (Phase 1-3 follow-up 4, 18 May 2026).
       const w = dispatchedBySwReq.get(req.id);
       if(!w) continue;
       const wpt = workerRowRect(w.applicationId);
       if(!wpt) continue;
-      const cls = w.status === 'onshift' ? 'bv-line-onshift' : 'bv-line-dispatched';
+      const move = (typeof liveSessionMovementState !== 'undefined' && w.sessionWorkerId)
+        ? liveSessionMovementState.get(Number(w.sessionWorkerId))
+        : null;
+      let cls = 'bv-line-dispatched';
+      if(w.status === 'onshift' || w.clockInAt) {
+        cls = 'bv-line-onshift';                    // State 10: solid deep green
+      } else if(w.arrivedAt) {
+        cls = 'bv-line-arrived';                    // State 9:  solid green, no flow
+      } else if(w.departedAt) {
+        cls = 'bv-line-enroute';                    // State 8:  solid green, flow toward bar
+      } else if(move && move.cancelled_at) {
+        cls = 'bv-line-cancelled';                  // State 7:  solid red fading
+      } else if(move && move.nudge_2_fired_at) {
+        cls = 'bv-line-stalled-2';                  // State 6:  flashing amber
+      } else if(move && move.nudge_1_fired_at) {
+        cls = 'bv-line-stalled-1';                  // State 5:  flashing green
+      }                                              // State 4:  solid green static (default)
       paths.push({ cls, barPt, wpt, reqId: req.id, appId: w.applicationId, kind: cls });
       continue;
     }
@@ -10097,8 +10236,21 @@ function bvRenderLines() {
     }
   }
 
-  // Render paths in z-order: pending below, available above, recommend on top.
-  const order = { 'bv-line-pending': 0, 'bv-line-available': 1, 'bv-line-recommend': 2, 'bv-line-dispatched': 3, 'bv-line-onshift': 4, 'bv-line-cancelled': 5 };
+  // Render paths in z-order: pending below, available above, recommend
+  // higher, committed lines (dispatched / en route / arrived / on shift)
+  // on top so they're never visually overlapped by quieter states.
+  const order = {
+    'bv-line-pending':     0,
+    'bv-line-available':   1,
+    'bv-line-recommend':   2,
+    'bv-line-cancelled':   3,
+    'bv-line-dispatched':  4,
+    'bv-line-stalled-1':   4,
+    'bv-line-stalled-2':   4,
+    'bv-line-enroute':     5,
+    'bv-line-arrived':     6,
+    'bv-line-onshift':     7
+  };
   paths.sort((a, b) => (order[a.cls] || 0) - (order[b.cls] || 0));
 
   for(const p of paths) {

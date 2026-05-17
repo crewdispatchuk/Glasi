@@ -583,6 +583,276 @@
     .export-row { display: flex; justify-content: flex-end; margin-bottom: 16px; }
 
     /* OVERLAY */
+    /* Recommendation Engine Redesign Phase 2.5 (18 May 2026):
+       persistent AUTO/MANUAL pill, fixed top-right across all screens. */
+    .auto-dispatch-pill {
+      position: fixed; top: 14px; right: 18px; z-index: 60;
+      display: none; /* enabled when dashboard-shell mounts */
+      align-items: center; gap: 6px;
+      padding: 5px 11px; border-radius: 999px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      background: var(--navy-mid);
+      color: var(--grey);
+      user-select: none;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .auto-dispatch-pill.on  { color: var(--green); border-color: rgba(34,197,94,0.45); background: rgba(34,197,94,0.10); }
+    .auto-dispatch-pill.off { color: var(--grey);  border-color: var(--border); }
+    .auto-dispatch-pill .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--grey);
+    }
+    .auto-dispatch-pill.on .dot { background: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,0.18); }
+    body.dashboard-shell .auto-dispatch-pill { display: inline-flex; }
+
+    /* Recommendation Engine Redesign Phase 2.5: control screen surfaces. */
+    .ad-card { background: var(--navy-mid); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; margin-bottom: 18px; }
+    .ad-banner {
+      border-radius: 16px; padding: 28px 24px; text-align: center;
+      border: 2px solid var(--border); background: var(--navy-mid);
+      margin-bottom: 22px;
+    }
+    .ad-banner.on  { border-color: rgba(34,197,94,0.45); background: rgba(34,197,94,0.07); }
+    .ad-banner.off { border-color: var(--border); background: var(--navy-mid); }
+    .ad-banner-kicker { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; }
+    .ad-banner.on  .ad-banner-kicker { color: var(--green); }
+    .ad-banner.off .ad-banner-kicker { color: var(--grey); }
+    .ad-banner-title { font-size: 26px; font-weight: 700; color: var(--white); margin-top: 8px; }
+    .ad-banner-sub   { font-size: 13px; color: var(--grey); margin-top: 8px; line-height: 1.6; }
+    .ad-toggle-btn {
+      margin-top: 18px; padding: 13px 24px; border-radius: 10px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      font-family: 'Inter', sans-serif; border: none;
+      transition: opacity 0.15s;
+    }
+    .ad-toggle-btn:hover { opacity: 0.88; }
+    .ad-toggle-btn.enable  { background: var(--green); color: var(--navy); }
+    .ad-toggle-btn.disable { background: var(--red);   color: var(--white); }
+    .ad-card-title { font-size: 11px; letter-spacing: 2px; color: var(--ice); font-weight: 600; text-transform: uppercase; margin-bottom: 12px; }
+    .ad-row { display: flex; align-items: center; gap: 12px; }
+    .ad-input-num {
+      background: var(--navy); border: 1px solid var(--border); color: var(--white);
+      border-radius: 8px; padding: 9px 12px; font-size: 14px; width: 92px;
+      font-family: 'Inter', sans-serif; outline: none;
+    }
+    .ad-input-num:focus { border-color: var(--ice); }
+    .ad-history-table, .ad-decisions-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+    }
+    .ad-history-table th, .ad-decisions-table th {
+      text-align: left; color: var(--grey); font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; font-size: 10px;
+      padding: 8px 10px; border-bottom: 1px solid var(--border);
+    }
+    .ad-history-table td, .ad-decisions-table td {
+      padding: 9px 10px; border-bottom: 1px solid var(--border);
+      color: var(--white); vertical-align: middle;
+    }
+    .ad-history-table tr:last-child td, .ad-decisions-table tr:last-child td { border-bottom: none; }
+    .ad-history-action { font-weight: 600; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; }
+    .ad-history-action.enable  { color: var(--green); background: rgba(34,197,94,0.10); }
+    .ad-history-action.disable { color: var(--grey);  background: rgba(100,116,139,0.18); }
+    .ad-decisions-filters { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .ad-decisions-filters select {
+      background: var(--navy); border: 1px solid var(--border); color: var(--white);
+      border-radius: 8px; padding: 7px 10px; font-size: 12px;
+      font-family: 'Inter', sans-serif;
+    }
+    .ad-source-pill { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; }
+    .ad-source-pill.manual        { color: var(--grey); background: rgba(100,116,139,0.16); }
+    .ad-source-pill.auto_dispatch { color: var(--green); background: rgba(34,197,94,0.12); }
+    .ad-match-icon { font-size: 14px; font-weight: 700; }
+    .ad-match-icon.match    { color: var(--green); }
+    .ad-match-icon.override { color: var(--amber); }
+    .ad-decision-expand {
+      background: rgba(168,216,234,0.06); padding: 14px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12px; color: var(--grey); line-height: 1.6;
+    }
+    .ad-breakdown-grid { display: grid; grid-template-columns: 140px 1fr; gap: 4px 12px; margin-top: 8px; }
+    .ad-breakdown-grid div:nth-child(odd)  { color: var(--grey); }
+    .ad-breakdown-grid div:nth-child(even) { color: var(--white); }
+    .ad-decision-row { cursor: pointer; transition: background 0.12s; }
+    .ad-decision-row:hover { background: rgba(168,216,234,0.04); }
+
+    /* ============================================================
+       Live Dashboard Redesign (18 May 2026): bipartite graph view.
+       Bars (left) + Workers (right) + SVG line layer (centre).
+       Lives alongside the classic 3-column console behind the
+       glasi_live_view_mode localStorage feature flag. CSS scoped
+       to .bipartite-view so the classic console is unaffected.
+       ============================================================ */
+    .bipartite-view { position: relative; }
+    .bv-toolbar {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 14px;
+      font-size: 11px; color: var(--grey);
+    }
+    .bv-toolbar .bv-toolbar-spacer { flex: 1; }
+    .bv-view-toggle {
+      background: none; border: 1px solid var(--border); color: var(--grey);
+      border-radius: 999px; padding: 5px 11px;
+      font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .bv-view-toggle:hover { color: var(--ice); border-color: var(--ice); }
+
+    .bv-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(200px, 1.2fr) minmax(220px, 1fr);
+      gap: 0;
+      align-items: start;
+      min-height: 200px;
+    }
+    .bv-bar-col, .bv-worker-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; z-index: 2; }
+    .bv-col-header {
+      font-size: 9px; letter-spacing: 3px; color: var(--grey); text-transform: uppercase;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px;
+    }
+    .bv-bar-col .bv-col-header { text-align: left; }
+    .bv-worker-col .bv-col-header { text-align: right; }
+
+    .bv-bar-row, .bv-worker-row {
+      background: var(--navy-mid); border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px 14px;
+      transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
+      position: relative;
+    }
+    .bv-bar-row.is-active { border-color: rgba(168,216,234,0.5); }
+    .bv-bar-row.is-active.urgent { border-color: var(--amber); }
+    .bv-bar-row.is-active.critical { border-color: var(--red); }
+    .bv-bar-row.is-dispatched { border-color: rgba(168,216,234,0.4); }
+    .bv-bar-row.is-onshift { border-color: rgba(34,197,94,0.4); }
+
+    .bv-bar-name { font-size: 13px; font-weight: 700; color: var(--white); }
+    .bv-bar-meta { font-size: 11px; color: var(--grey); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+    .bv-bar-meta.urgent { color: var(--amber); }
+    .bv-bar-meta.critical { color: var(--red); }
+    .bv-bar-shift-len { font-size: 10px; color: var(--ice); margin-top: 2px; letter-spacing: 0.5px; }
+    .bv-bar-row .bv-bar-actions {
+      display: none;
+      margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);
+      gap: 6px;
+    }
+    .bv-bar-row.is-active .bv-bar-actions { display: flex; }
+    .bv-bar-action-btn {
+      background: none; border: 1px solid var(--border); color: var(--grey);
+      border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+    .bv-bar-action-btn:hover { color: var(--ice); border-color: var(--ice); }
+    .bv-bar-action-btn.danger:hover { color: var(--red); border-color: rgba(239,68,68,0.4); }
+
+    .bv-worker-row { text-align: right; }
+    .bv-worker-row.is-not-joined { opacity: 0.45; }
+    .bv-worker-row.is-left { opacity: 0.5; text-decoration: line-through; }
+    .bv-worker-row.is-cancelled { opacity: 0.5; text-decoration: line-through; }
+    .bv-worker-row.is-completed { opacity: 0.7; }
+    .bv-worker-row.is-dispatched { border-color: rgba(168,216,234,0.4); }
+    .bv-worker-row.is-onshift { border-color: rgba(34,197,94,0.4); }
+    .bv-worker-row.movement-nudge1 { box-shadow: 0 0 0 3px rgba(245,158,11,0.55); }
+    .bv-worker-row.movement-nudge2 { box-shadow: 0 0 0 4px rgba(239,68,68,0.6); }
+
+    .bv-worker-name { font-size: 13px; font-weight: 700; color: var(--white); }
+    .bv-worker-meta { font-size: 11px; color: var(--grey); margin-top: 3px; }
+    .bv-worker-pill {
+      display: inline-block; padding: 2px 9px; border-radius: 999px;
+      font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      margin-top: 6px;
+    }
+    .bv-worker-pill.is-not-joined { background: rgba(100,116,139,0.18); color: var(--grey); }
+    .bv-worker-pill.is-in-session { background: rgba(168,216,234,0.16); color: var(--ice); }
+    .bv-worker-pill.is-dispatched { background: rgba(168,216,234,0.16); color: var(--ice); }
+    .bv-worker-pill.is-onshift    { background: rgba(34,197,94,0.18);   color: var(--green); }
+    .bv-worker-pill.is-completed  { background: rgba(100,116,139,0.18); color: var(--grey); }
+    .bv-worker-pill.is-left       { background: rgba(100,116,139,0.18); color: var(--grey); }
+    .bv-worker-pill.is-cancelled  { background: rgba(239,68,68,0.18);   color: var(--red); }
+    .bv-worker-pill.is-no-show    { background: rgba(239,68,68,0.18);   color: var(--red); }
+
+    .bv-worker-detail {
+      margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);
+      font-size: 11px; color: var(--grey); line-height: 1.55;
+    }
+    .bv-worker-detail .bv-worker-detail-line { margin-bottom: 4px; }
+    .bv-worker-detail .bv-eta { color: var(--ice); font-family: 'JetBrains Mono', monospace; }
+    .bv-worker-detail .bv-eta.arrived { color: var(--green); }
+    .bv-worker-detail .bv-eta.stale { color: var(--grey); font-style: italic; }
+    .bv-worker-detail .bv-movement-state { color: var(--amber); font-weight: 600; }
+    .bv-worker-detail .bv-movement-state.cancelled { color: var(--red); }
+    .bv-worker-detail .bv-share-location { color: var(--ice); font-size: 10px; }
+    .bv-worker-detail .bv-clock-in-row, .bv-worker-detail .bv-clock-out-row {
+      display: flex; gap: 6px; margin-top: 8px; justify-content: flex-end;
+    }
+    .bv-worker-detail .bv-clock-in-row input, .bv-worker-detail .bv-clock-out-row input {
+      flex: 1; background: var(--navy); border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 10px; font-size: 12px; color: var(--white); font-family: 'Inter', sans-serif; outline: none;
+      text-align: right;
+    }
+    .bv-worker-detail .bv-clock-in-row button, .bv-worker-detail .bv-clock-out-row button {
+      background: var(--green); color: var(--navy); border: none; border-radius: 6px;
+      padding: 6px 12px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif;
+    }
+    .bv-worker-detail .bv-cancel-dispatch {
+      margin-top: 8px;
+      background: none; border: 1px solid rgba(239,68,68,0.3); color: var(--red);
+      border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: 'Inter', sans-serif;
+    }
+    .bv-worker-detail .bv-cancel-dispatch:hover { background: rgba(239,68,68,0.08); }
+    .bv-worker-detail .bv-reveal-clockout {
+      margin-top: 8px;
+      background: none; border: 1px solid var(--border); color: var(--grey);
+      border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: 'Inter', sans-serif;
+    }
+
+    /* SVG line layer sits in the centre column.
+       pointer-events:none on the svg, re-enabled per-path so clicks
+       on lines route to the dispatch modal. */
+    .bv-line-layer {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: visible;
+    }
+    .bv-line-layer path { pointer-events: stroke; cursor: pointer; transition: stroke 0.25s, stroke-width 0.25s, opacity 0.25s; }
+    .bv-line-layer path.bv-line-pending    { stroke: rgba(200,200,200,0.55); stroke-width: 1; stroke-dasharray: 4 4; fill: none; animation: bv-pulse-pending 1.6s ease-in-out infinite; }
+    .bv-line-layer path.bv-line-available  { stroke: var(--ice); stroke-width: 2; fill: none; }
+    .bv-line-layer path.bv-line-recommend  { stroke: #7fce5f; stroke-width: 3; fill: none; filter: drop-shadow(0 0 4px rgba(127,206,95,0.55)); }
+    .bv-line-layer path.bv-line-dispatched { stroke: var(--ice); stroke-width: 3; stroke-dasharray: 8 4; fill: none; animation: bv-flow-dispatched 1.2s linear infinite; }
+    .bv-line-layer path.bv-line-onshift    { stroke: var(--green); stroke-width: 2; fill: none; }
+    .bv-line-layer path.bv-line-cancelled  { stroke: rgba(239,68,68,0.6); stroke-width: 2; stroke-dasharray: 2 4; fill: none; opacity: 0.6; }
+    .bv-line-layer path:hover { stroke-width: 4; }
+
+    @keyframes bv-pulse-pending {
+      0%, 100% { opacity: 0.45; }
+      50%      { opacity: 0.9; }
+    }
+    @keyframes bv-flow-dispatched {
+      to { stroke-dashoffset: -12; }
+    }
+
+    .bv-empty {
+      text-align: center; padding: 32px 20px; color: var(--grey); font-size: 13px; line-height: 1.7;
+      background: var(--navy-mid); border: 1px solid var(--border); border-radius: 10px;
+    }
+
+    .bv-session-tabs {
+      display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .bv-session-tab {
+      background: var(--navy-mid); border: 1px solid var(--border); color: var(--grey);
+      border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .bv-session-tab:hover { color: var(--ice); border-color: var(--ice); }
+    .bv-session-tab.is-active { color: var(--navy); background: var(--ice); border-color: var(--ice); }
+
     .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 200; }
     .overlay.open { display: flex; }
     .modal { background: var(--navy-mid); border: 1px solid var(--border); border-radius: 20px; padding: 32px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
@@ -785,12 +1055,23 @@
     <button class="sidebar-nav-item" id="sidebar-nav-shifts"   onclick="safeNavigate(goToShifts)">Shifts</button>
     <button class="sidebar-nav-item" id="sidebar-nav-billing"  onclick="safeNavigate(goToBilling)">Billing</button>
     <button class="sidebar-nav-item" id="sidebar-nav-documents" onclick="safeNavigate(goToDocuments)">Documents</button>
+    <button class="sidebar-nav-item" id="sidebar-nav-auto-dispatch" onclick="safeNavigate(goToAutoDispatch)">Auto-dispatch</button>
     <button class="sidebar-nav-item" id="sidebar-nav-settings" onclick="safeNavigate(goToSettings)">Settings</button>
   </nav>
 
   <div class="sidebar-divider"></div>
   <button class="sidebar-signout" onclick="doLogout()">Sign Out</button>
 </aside>
+
+<!-- Recommendation Engine Redesign Phase 2.5: persistent AUTO/MANUAL pill.
+     Fixed top-right across all dashboard screens. Display-only per spec;
+     Sam navigates to the Auto-dispatch sidebar entry to change state.
+     Polled every 30s in case another operator/console flipped the toggle. -->
+<div id="auto-dispatch-pill" class="auto-dispatch-pill off"
+     title="Auto-dispatch state (manage via sidebar)">
+  <span class="dot"></span>
+  <span id="auto-dispatch-pill-label">MANUAL</span>
+</div>
 
 <!-- HOME -->
 <div id="screen-home" class="screen">
@@ -891,6 +1172,104 @@
     <div>
       <div style="font-size:10px;letter-spacing:2px;color:var(--grey);font-weight:600;margin-bottom:10px;">PER-BAR DOCUMENT STATUS</div>
       <div id="docs-bar-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Recommendation Engine Redesign Phase 2.5 (18 May 2026): Auto-dispatch
+     control screen. State indicator + toggle with confirmation modal +
+     decision window config + toggle history log + dispatch_decisions
+     audit panel. All RPCs land on backend functions shipped 17 May 2026:
+     set_auto_dispatch_enabled, set_decision_window_seconds, plus reads
+     from recommendation_engine_config, auto_dispatch_toggle_log, and
+     dispatch_decisions. -->
+<div id="screen-auto-dispatch" class="screen">
+  <div style="padding:32px 24px;max-width:980px;margin:0 auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div>
+        <div class="page-title">Auto-dispatch</div>
+        <div class="page-sub">Recommendation engine settings, toggle history, and dispatch decision audit log.</div>
+      </div>
+      <button class="ghost-btn" onclick="showScreen('home')">Back</button>
+    </div>
+
+    <!-- Large state banner. -->
+    <div id="ad-state-banner" class="ad-banner off">
+      <div class="ad-banner-kicker" id="ad-state-kicker">Loading...</div>
+      <div class="ad-banner-title" id="ad-state-title">--</div>
+      <div class="ad-banner-sub"   id="ad-state-sub">--</div>
+      <button id="ad-toggle-btn" class="ad-toggle-btn enable" style="display:none;" onclick="adOpenToggleConfirm()">--</button>
+    </div>
+
+    <!-- Decision window config. -->
+    <div class="ad-card">
+      <div class="ad-card-title">Decision window</div>
+      <div style="font-size:12px;color:var(--grey);line-height:1.6;margin-bottom:14px;">
+        How long the engine waits for additional Available responses after the first one lands, before auto-dispatching the top-ranked worker. 30 to 300 seconds; default 90.
+      </div>
+      <div class="ad-row">
+        <input type="number" id="ad-window-input" class="ad-input-num" min="30" max="300" step="5" />
+        <span style="font-size:12px;color:var(--grey);">seconds</span>
+        <button class="small-ice-btn" onclick="adSaveDecisionWindow()">Save</button>
+        <span id="ad-window-msg" style="font-size:12px;color:var(--grey);margin-left:6px;"></span>
+      </div>
+    </div>
+
+    <!-- Toggle history log. -->
+    <div class="ad-card">
+      <div class="ad-card-title">Toggle history</div>
+      <div id="ad-history-empty" style="font-size:12px;color:var(--grey);">Loading...</div>
+      <div style="max-height:260px;overflow-y:auto;">
+        <table class="ad-history-table" id="ad-history-table" style="display:none;">
+          <thead>
+            <tr><th>When</th><th>Action</th><th>Window</th><th>Changed by</th></tr>
+          </thead>
+          <tbody id="ad-history-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Dispatch decisions audit panel. -->
+    <div class="ad-card">
+      <div class="ad-card-title">Dispatch decisions (last 30)</div>
+      <div class="ad-decisions-filters">
+        <select id="ad-decisions-source-filter" onchange="renderAutoDispatchScreen()">
+          <option value="all">All sources</option>
+          <option value="manual">Manual only</option>
+          <option value="auto_dispatch">Auto only</option>
+        </select>
+        <select id="ad-decisions-bar-filter" onchange="renderAutoDispatchScreen()">
+          <option value="all">All bars</option>
+        </select>
+      </div>
+      <div id="ad-decisions-empty" style="font-size:12px;color:var(--grey);">Loading...</div>
+      <div style="max-height:520px;overflow-y:auto;">
+        <table class="ad-decisions-table" id="ad-decisions-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Bar</th>
+              <th>Worker</th>
+              <th>Source</th>
+              <th style="text-align:center;">Followed rec</th>
+            </tr>
+          </thead>
+          <tbody id="ad-decisions-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Auto-dispatch toggle confirmation modal. -->
+<div id="ov-auto-dispatch-confirm" class="overlay">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-title" id="ad-confirm-title">Enable auto-dispatch?</div>
+    <div class="modal-sub"   id="ad-confirm-sub">--</div>
+    <div id="ad-confirm-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:14px;"></div>
+    <div class="modal-actions">
+      <button class="cancel-btn"  onclick="closeOv('auto-dispatch-confirm')">Cancel</button>
+      <button class="confirm-btn" id="ad-confirm-action-btn" onclick="adSubmitToggle()">Confirm</button>
     </div>
   </div>
 </div>
@@ -1419,19 +1798,25 @@
   </div>
 </div>
 
-<!-- SESSION -->
+<!-- _deprecated_ (Phase 4 cleanup): the legacy zone-scoped session screen
+     with Room/On Shift/Shift Log/Zoom Chat tabs. F-37 lifted these sub-tabs
+     to top-level #screen-sessions; no `showScreen('session')` call exists
+     anywhere in this file, so the screen is unreachable today. Kept in the
+     DOM during Phase 3 for rollback safety; removed in the Live Dashboard
+     Cleanup Phase 4 follow-up batch. Internal onclick handlers point at
+     _deprecated_ stubs so accidental code-path reuse is loud. -->
 <div id="screen-session" class="screen">
   <div class="session-tabs">
-    <button class="tab-btn active" onclick="switchTab('room')" id="tab-room">
+    <button class="tab-btn active" onclick="_deprecated_switchTab('room')" id="tab-room">
       Room <span class="tab-count" id="count-room"></span>
     </button>
-    <button class="tab-btn" onclick="switchTab('onshift')" id="tab-onshift">
+    <button class="tab-btn" onclick="_deprecated_switchTab('onshift')" id="tab-onshift">
       On Shift <span class="tab-count show" id="count-onshift">0</span>
     </button>
-    <button class="tab-btn" onclick="switchTab('log')" id="tab-log">
+    <button class="tab-btn" onclick="_deprecated_switchTab('log')" id="tab-log">
       Shift Log <span class="tab-count" id="count-log"></span>
     </button>
-    <button class="tab-btn" onclick="switchTab('zoom')" id="tab-zoom">
+    <button class="tab-btn" onclick="_deprecated_switchTab('zoom')" id="tab-zoom">
       Zoom Chat
     </button>
     <div style="flex:1;"></div>
@@ -1447,7 +1832,7 @@
           <div class="room-title" id="session-zone-name"></div>
           <div class="room-meta">Select a request, then select a worker to dispatch</div>
         </div>
-        <button class="ghost-btn" onclick="openAddWorkerToSession()">+ Add Worker</button>
+        <button class="ghost-btn" onclick="_deprecated_openAddWorkerToSession()">+ Add Worker</button>
       </div>
       <!-- Request section (legacy template, unreachable) -->
       <div id="request-section">
@@ -1517,7 +1902,7 @@
     <select class="field" id="session-worker-select"></select>
     <div class="modal-actions">
       <button class="cancel-btn" onclick="closeOv('add-session-worker')">Cancel</button>
-      <button class="confirm-btn" onclick="addWorkerMidSession()">Add to Session</button>
+      <button class="confirm-btn" onclick="_deprecated_addWorkerMidSession()">Add to Session</button>
     </div>
   </div>
 </div>
@@ -1532,6 +1917,22 @@
     <div class="modal-sub" id="invite-list-sub">—</div>
     <div id="invite-list-body" style="margin-top:14px;max-height:60vh;overflow-y:auto;">
       <!-- rows injected by renderInviteList() -->
+    </div>
+  </div>
+</div>
+
+<!-- Live Dashboard Redesign (18 May 2026): bipartite-line dispatch confirm.
+     Triggered when Sam clicks an "available" or "recommend" line in the
+     bipartite view. Confirms the dispatch through the existing dispatchWorker
+     path so the audit write + state mutation contract is unchanged. -->
+<div id="ov-bv-dispatch" class="overlay">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-title">Dispatch this worker?</div>
+    <div class="modal-sub" id="bv-dispatch-sub">Loading...</div>
+    <div id="bv-dispatch-summary" style="margin:14px 0;padding:12px 14px;background:var(--navy);border:1px solid var(--border);border-radius:10px;"></div>
+    <div class="modal-actions">
+      <button class="cancel-btn" onclick="bvCancelDispatchModal()">Cancel</button>
+      <button class="confirm-btn" onclick="bvConfirmDispatchFromModal()">Dispatch</button>
     </div>
   </div>
 </div>
@@ -1820,7 +2221,7 @@
     <select class="field" id="dispatch-bar-select"></select>
     <div class="modal-actions">
       <button class="cancel-btn" onclick="closeOv('dispatch-bar')">Cancel</button>
-      <button class="confirm-btn" onclick="confirmDispatchBar()">Confirm Dispatch</button>
+      <button class="confirm-btn" onclick="_deprecated_confirmDispatchBar()">Confirm Dispatch</button>
     </div>
   </div>
 </div>
@@ -2016,6 +2417,10 @@ async function postLoginSetup() {
   refreshProposedCountBadge();
   startProposedInboxRealtime();
 
+  // Recommendation Engine Redesign Phase 2.5: kick off the auto-dispatch
+  // pill poll so the AUTO/MANUAL state is visible across every screen.
+  if(typeof startAutoDispatchPillPoll === 'function') startAutoDispatchPillPoll();
+
   // F-37: boot lands on Sessions. Live sub-tab if a session is currently
   // running, otherwise Schedule. liveSessionOps.resumeIfLive() reattaches
   // the live console state to the in-progress session before navigation.
@@ -2057,6 +2462,9 @@ async function doLogout() {
   document.body.classList.remove('dashboard-shell');
   const sidebarEl = document.getElementById('sidebar');
   if(sidebarEl) sidebarEl.style.display = 'none';
+
+  // Recommendation Engine Redesign Phase 2.5: stop the pill poll on logout.
+  if(typeof stopAutoDispatchPillPoll === 'function') stopAutoDispatchPillPoll();
 
   document.getElementById('l-email').value='';
   document.getElementById('l-pass').value='';
@@ -3637,7 +4045,9 @@ function startTimer() {
 }
 
 // TABS
-function switchTab(name) {
+// _deprecated_ (Phase 4 cleanup): callers live only in the unreachable
+// #screen-session legacy markup. Renamed to make accidental reuse loud.
+function _deprecated_switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(`tab-${name}`).classList.add('active');
   document.querySelectorAll('[id^=tab-content-]').forEach(c=>c.style.display='none');
@@ -4104,6 +4514,29 @@ const liveSessionOps = {
       () => this._onSubDrop('workers')
     ));
 
+    // Live Dashboard Redesign (18 May 2026): dispatch_movement_state realtime
+    // sub. Filter is by record (no session_id column on this table), so we
+    // accept all events and gate per-session by membership in liveSessionOps
+    // .workers (session_worker_id). Closes P2-3. Server-side cron writes the
+    // nudge_1/nudge_2/cancelled_at transitions; bipartite view consumes them
+    // for worker-card border highlights. Old classic view ignores this Map.
+    this._addSub('movement', () => makeRealtimeWs(
+      'realtime:public:dispatch_movement_state',
+      [
+        { event: 'INSERT', schema: 'public', table: 'dispatch_movement_state' },
+        { event: 'UPDATE', schema: 'public', table: 'dispatch_movement_state' }
+      ],
+      async (record, type) => {
+        if(!record || record.session_worker_id == null) return;
+        const swId = Number(record.session_worker_id);
+        const member = liveSessionOps.workers.some(w => Number(w.sessionWorkerId) === swId);
+        if(!member) return;
+        liveSessionMovementState.set(swId, record);
+        this.emit('movement:updated', record);
+      },
+      () => this._onSubDrop('movement')
+    ));
+
     this._addSub('requests', () => makeRealtimeWs(
       'realtime:public:shift_requests',
       [
@@ -4177,6 +4610,15 @@ const liveSessionOps = {
     // Phase 3 Batch 6: wire engagement timeline realtime for this session.
     startEngagementTimelineRealtime(sessionId);
 
+    // Live Dashboard Redesign (18 May 2026): bootstrap dispatch_movement_state
+    // for any session_workers currently in flight (post-reload, post-resync).
+    // Subs are already wired above, so a race row will merge cleanly.
+    try {
+      await bootstrapLiveSessionMovementState();
+    } catch(e) {
+      console.error('[liveSessionOps.start] movement bootstrap failed', e);
+    }
+
     this.emit('session:started', { sessionId });
   },
 
@@ -4196,6 +4638,8 @@ const liveSessionOps = {
     // liveSessionResponses cleanup pattern).
     if(typeof liveSessionRecommendations !== 'undefined') liveSessionRecommendations.clear();
     if(typeof f33DeficitCache !== 'undefined') f33DeficitCache.clear();
+    // Live Dashboard Redesign (18 May 2026): clear movement state cache.
+    if(typeof liveSessionMovementState !== 'undefined') liveSessionMovementState.clear();
     this.workers.length = 0;
     this.requests.length = 0;
     this.invites.length = 0; // round 4: clear invites cache on session end
@@ -4387,10 +4831,63 @@ function setupLiveViewListeners() {
   liveSessionOps.on('session:started', () => { if(typeof renderSessionStats === 'function') renderSessionStats(); });
   liveSessionOps.on('session:resumed', () => { if(typeof renderSessionStats === 'function') renderSessionStats(); });
 
+  // Live Dashboard Redesign (18 May 2026): movement:updated re-renders the
+  // bipartite view (worker card border highlight + line state). Classic view
+  // ignores; it has no surface for movement state today.
+  liveSessionOps.on('movement:updated', renderOrDirty);
+
   // session:stopped intentionally has no auto-render. Close-session and logout
   // flows do their own UI transitions.
 }
 setupLiveViewListeners();
+
+// ============================================================================
+// Live Dashboard Redesign (18 May 2026): bipartite graph view state +
+// helpers. Map mirrors liveSessionMovementState rows by session_worker_id.
+// Bootstrapped at liveSessionOps.start + resync; maintained by the
+// 'movement' realtime sub. Empty Map = no dispatched workers tracked yet.
+// ============================================================================
+
+const liveSessionMovementState = new Map(); // sessionWorkerId -> dispatch_movement_state row
+
+async function bootstrapLiveSessionMovementState() {
+  liveSessionMovementState.clear();
+  const swIds = liveSessionOps.workers
+    .map(w => Number(w.sessionWorkerId))
+    .filter(Boolean);
+  if(!swIds.length) return;
+  try {
+    const rows = await sbGet('dispatch_movement_state',
+      '?session_worker_id=in.(' + swIds.join(',') + ')'
+      + '&select=session_worker_id,dispatched_at,last_state,last_state_at,dispatch_lat,dispatch_lng,metres_from_dispatch,metres_toward_bar,nudge_1_fired_at,nudge_2_fired_at,cancelled_at,cancellation_reason_input,created_at,updated_at');
+    for(const r of (rows || [])) {
+      liveSessionMovementState.set(Number(r.session_worker_id), r);
+    }
+  } catch(e) {
+    console.error('[bootstrapLiveSessionMovementState] failed', e);
+  }
+}
+
+// Live Dashboard Redesign (18 May 2026): feature flag. Toggles between the
+// new bipartite view and the classic 3-column console. Persisted in
+// localStorage so each Sam-controlled browser keeps its preference.
+// Default after Phase 3: 'bipartite'.
+const LIVE_VIEW_MODE_KEY = 'glasi_live_view_mode';
+function getLiveViewMode() {
+  const v = (typeof localStorage !== 'undefined') ? localStorage.getItem(LIVE_VIEW_MODE_KEY) : null;
+  return v === 'classic' ? 'classic' : 'bipartite';
+}
+function setLiveViewMode(mode) {
+  if(typeof localStorage === 'undefined') return;
+  localStorage.setItem(LIVE_VIEW_MODE_KEY, mode === 'classic' ? 'classic' : 'bipartite');
+}
+function toggleLiveViewMode() {
+  const next = getLiveViewMode() === 'bipartite' ? 'classic' : 'bipartite';
+  setLiveViewMode(next);
+  const room = document.getElementById('sessions-live-room');
+  if(room) room.innerHTML = '';
+  if(liveSessionOps.sessionId) renderLiveRoom();
+}
 
 // CORE v6 F-03 supplemental round 4: invite-list modal helpers + session-card
 // stats renderer. State source = liveSessionOps.invites (populated at
@@ -4868,6 +5365,12 @@ async function handleWorkerPortalJoin(record) {
   }
 }
 
+// _deprecated_ (Phase 4 cleanup): "In the session" rendering for the classic
+// 3-column console. Kept wired behind glasi_live_view_mode='classic' for
+// rollback safety. The bipartite view replaces this rendering path; once
+// the rollout window closes, this function + its cells architecture + the
+// .wc-* / .worker-* / .worker-grid CSS rules are all removed.
+//
 // "In the session" rendering. Workers with status='in_session' appear here as
 // cards. Each card carries one .wc-cell per active in-range pending request
 // (round 6 cells architecture, replacing round 5's vertical state-row model).
@@ -5058,7 +5561,8 @@ function renderCompletedCard(w) {
     '</div>';
 }
 
-function confirmWorkerArrival(wid) {
+// _deprecated_ (Phase 4 cleanup): no callers exist in dashboard.html.
+function _deprecated_confirmWorkerArrival(wid) {
   const w=liveSessionOps.workers.find(x=>x.id===wid);
   if(!w) return;
   w.status='in_session';
@@ -5067,7 +5571,8 @@ function confirmWorkerArrival(wid) {
   updateCounts();
 }
 
-function markNoShow(wid) {
+// _deprecated_ (Phase 4 cleanup): no callers exist in dashboard.html.
+function _deprecated_markNoShow(wid) {
   const w=liveSessionOps.workers.find(x=>x.id===wid);
   if(!w) return;
   w.status='no_show';
@@ -5076,6 +5581,12 @@ function markNoShow(wid) {
   updateCounts();
 }
 
+// _deprecated_ (Phase 4 cleanup): classic-view cosmetic "worker-selected"
+// class toggle on in-session worker cards. Kept wired behind
+// glasi_live_view_mode='classic' because renderRoom (also deprecated) inlines
+// selectWorker onto every in-session card. Removed alongside renderRoom in
+// Phase 4. selectedRequestId / selectedWorkerId globals are also removed
+// then.
 function selectWorker(wid) {
   if(!selectedRequestId) {
     alert('Please select a shift request first before selecting a worker.');
@@ -5089,17 +5600,21 @@ function selectWorker(wid) {
   renderRoom();
 }
 
-function markLeft(wid) {
+// _deprecated_ (Phase 4 cleanup): no callers exist in dashboard.html.
+function _deprecated_markLeft(wid) {
   const w=liveSessionOps.workers.find(x=>x.id===wid);
   if(w) { w.status='left'; if(w.sessionWorkerId) sbPatch('session_workers','?id=eq.'+w.sessionWorkerId,{status:'left'}); renderRoom(); updateCounts(); }
 }
 
-function restoreWorker(wid) {
+// _deprecated_ (Phase 4 cleanup): no callers exist in dashboard.html.
+function _deprecated_restoreWorker(wid) {
   const w=liveSessionOps.workers.find(x=>x.id===wid);
   if(w) { w.status='in_session'; if(w.sessionWorkerId) sbPatch('session_workers','?id=eq.'+w.sessionWorkerId,{status:'in_session'}); renderRoom(); updateCounts(); }
 }
 
-function openAddWorkerToSession() {
+// _deprecated_ (Phase 4 cleanup): only caller is the unreachable
+// #screen-session "+ Add Worker" button.
+function _deprecated_openAddWorkerToSession() {
   const inSession=liveSessionOps.workers.map(w=>w.applicationId);
   const zonePostcodes=activeZone?.postcodes||[];
   const eligible=allWorkers.filter(w=>{
@@ -5115,7 +5630,9 @@ function openAddWorkerToSession() {
   openOv('add-session-worker');
 }
 
-async function addWorkerMidSession() {
+// _deprecated_ (Phase 4 cleanup): only caller is the unreachable
+// #ov-add-session-worker overlay confirm button.
+async function _deprecated_addWorkerMidSession() {
   const sel=document.getElementById('session-worker-select');
   const wid=parseInt(sel.value);
   if(!wid) return;
@@ -5149,7 +5666,9 @@ async function addWorkerMidSession() {
 }
 
 // DISPATCH
-function openDispatch(wid) {
+// _deprecated_ (Phase 4 cleanup): no callers; legacy modal-based
+// dispatch flow superseded by ghost-card + bipartite line clicks.
+function _deprecated_openDispatch(wid) {
   // hard block if no request selected
   if(!selectedRequestId) {
     alert('Please log and select a shift request before dispatching a worker.');
@@ -5175,7 +5694,9 @@ function openDispatch(wid) {
   openOv('dispatch-bar');
 }
 
-async function confirmDispatchBar() {
+// _deprecated_ (Phase 4 cleanup): only caller is the unreachable
+// #ov-dispatch-bar overlay confirm button.
+async function _deprecated_confirmDispatchBar() {
   const barVal=document.getElementById('dispatch-bar-select').value;
   const w=liveSessionOps.workers.find(x=>x.id===dispatchingWorkerId);
   if(!w||!barVal) return;
@@ -6195,8 +6716,11 @@ let requestTimerInterval = null;
 // no-op shim functions below preserve callers (request creation, dispatchWorker
 // teardown, post-cancellation reset) without any timer side effects.
 function startResponseWindow(_requestId) { /* no-op under CORE v6 F-03 */ }
-function startResponseWindowFor(_requestId, _seconds) { /* no-op under CORE v6 F-03 */ }
-const responseWindowTimers = new Map(); // retained as no-op for legacy guards
+// _deprecated_ (Phase 4 cleanup): startResponseWindowFor has no callers.
+// responseWindowTimers Map was retained as a no-op for legacy guards that
+// no longer exist; the Map is referenced nowhere now.
+function _deprecated_startResponseWindowFor(_requestId, _seconds) { /* no-op under CORE v6 F-03 */ }
+const _deprecated_responseWindowTimers = new Map();
 
 async function bootstrapPendingRequestTimers() {
   // No timer setup under CORE v6 F-03; per-card render derives elapsed from
@@ -6717,6 +7241,13 @@ function openAddNotes(requestId) {
   renderRequestCards();
 }
 
+// _deprecated_ (Phase 4 cleanup): classic-view request card rendering.
+// Kept wired behind glasi_live_view_mode='classic'. The bipartite view
+// replaces the dispatch-pair triple with SVG lines; once the rollout
+// window closes, this + f33RenderGhostPair + f33RenderEmptyPair + the
+// dispatch-pair CSS rules are removed. The per-second requestTimerInterval
+// inside this function is also removed in Phase 4 in favour of the
+// bipartite event-driven recompute path.
 function renderRequestCards() {
   const empty = document.getElementById('req-empty-state');
   const container = document.getElementById('request-cards-container');
@@ -7059,6 +7590,11 @@ function renderRequestCards() {
   }, 1000);
 }
 
+// _deprecated_ (Phase 4 cleanup): classic-view cosmetic "selected" class
+// toggle on pending request cards. Only effect is the .selected CSS class.
+// Kept wired behind glasi_live_view_mode='classic' because renderRequestCards
+// (also deprecated) inlines selectRequest onto every pending card. Removed
+// alongside renderRequestCards in Phase 4.
 function selectRequest(id) {
   const r = liveSessionOps.requests.find(x => x.id === id);
   if(!r || r.status === 'dispatched') return;
@@ -8704,7 +9240,29 @@ function showDashboardToast(msg) {
 let liveSessionTimer = null;
 let liveSessionStart = null;
 
+// Live Dashboard Redesign (18 May 2026): renderLiveRoom is now a dispatcher
+// keyed on the glasi_live_view_mode feature flag (localStorage). The classic
+// 3-column body lives in renderClassicLiveRoom; the bipartite graph body in
+// renderBipartiteView. Both consume the same liveSessionOps state and emit
+// listeners; they are visually distinct presentations of the same data.
 function renderLiveRoom() {
+  const room = document.getElementById('sessions-live-room');
+  if(!room) return;
+  document.getElementById('sessions-live-empty').style.display = 'none';
+  room.style.display = 'block';
+  if(getLiveViewMode() === 'bipartite') {
+    renderBipartiteView();
+  } else {
+    renderClassicLiveRoom();
+  }
+}
+
+// _deprecated_ (Phase 4 cleanup): the classic 3-column console. Kept
+// behind glasi_live_view_mode='classic' for rollback safety during the
+// rollout of the bipartite view. To be removed in the Live Dashboard
+// Cleanup Phase 4 follow-up batch alongside renderRoom + renderRequestCards
+// + f33RenderGhostPair + f33RenderEmptyPair and the dispatch-pair markup.
+function renderClassicLiveRoom() {
   const room = document.getElementById('sessions-live-room');
   if(!room) return;
 
@@ -8826,6 +9384,678 @@ function renderLiveRoom() {
   renderRoom();
   renderSessionStats();
 }
+
+// ============================================================================
+// Live Dashboard Redesign (18 May 2026): bipartite graph view.
+//
+// Bars on the left, workers on the right, SVG paths between them representing
+// live request, response, recommendation, dispatch, and on-shift relationships.
+// Consumes the same liveSessionOps realtime state as the classic console.
+// Reads liveSessionResponses, liveSessionRecommendations, liveSessionMovementState.
+// Writes via the same dispatchWorker / submitCancellation paths as the classic
+// console: only the visual presentation is new.
+// ============================================================================
+
+let _bvTimerInterval = null;
+let _bvResizeHandler = null;
+let _bvLineDispatchTarget = null; // { applicationId, requestId } for ov-bv-dispatch modal
+
+function renderBipartiteView() {
+  const room = document.getElementById('sessions-live-room');
+  if(!room) return;
+
+  // Tear down the classic per-second timer if it was running, so we don't
+  // double-tick when switching views mid-session.
+  if(typeof requestTimerInterval !== 'undefined' && requestTimerInterval) {
+    clearInterval(requestTimerInterval);
+    requestTimerInterval = null;
+  }
+
+  const zoneName = liveSessionLabel || '';
+  const sessionDate = new Date().toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'short'});
+
+  // If room already has bipartite scaffold, do an incremental refresh.
+  if(room.querySelector('#bv-grid')) {
+    bvUpdateHeader(zoneName);
+    bvRenderBars();
+    bvRenderWorkers();
+    bvRenderLines();
+    renderSessionStats();
+    return;
+  }
+
+  room.innerHTML = `
+    <!-- Session header -->
+    <div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0;margin-top:6px;"></div>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--white);" data-zone-name>${zoneName}</div>
+            <div style="font-size:11px;color:var(--grey);margin-top:2px;">${sessionDate} &nbsp;·&nbsp; Session #${liveSessionOps.sessionId}</div>
+            <div class="session-stats-row">
+              <div class="session-stat-pill" onclick="openInviteListModal('all')" title="Show all invited workers">
+                <span class="session-stat-label">Invited</span>
+                <span class="session-stat-value" id="session-stat-invited">—</span>
+              </div>
+              <div class="session-stat-pill" onclick="openInviteListModal('confirmed')" title="Show confirmed workers only">
+                <span class="session-stat-label">Confirmed</span>
+                <span class="session-stat-value" id="session-stat-confirmed">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:12px;color:var(--ice);" id="live-session-elapsed">00:00</div>
+          <button class="bv-view-toggle" onclick="toggleLiveViewMode()" title="Switch to the classic 3-column console (rollback)">Classic view</button>
+          <button class="ghost-btn" id="engagement-timeline-toggle" onclick="toggleEngagementTimelinePane()" title="Toggle engagement timeline (basket events + ledger writes, real-time)">Timeline</button>
+          <button class="ghost-btn" style="color:var(--red);border-color:rgba(248,113,113,0.3);" onclick="confirmCloseSession()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bipartite-view">
+      <div class="bv-toolbar">
+        <span>Bipartite live view</span>
+        <span class="bv-toolbar-spacer"></span>
+        <span style="font-size:10px;color:var(--grey);letter-spacing:1px;">Click a line to dispatch &middot; Click a bar to manage its request</span>
+      </div>
+      <div class="bv-grid" id="bv-grid">
+        <div class="bv-bar-col">
+          <div class="bv-col-header">Bars</div>
+          <div id="bv-bar-list"></div>
+        </div>
+        <div style="position:relative;min-height:200px;">
+          <svg id="bv-line-svg" class="bv-line-layer" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="bv-worker-col">
+          <div class="bv-col-header">Workers</div>
+          <div id="bv-worker-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 3 Batch 6: engagement timeline slide-in pane. Unchanged. -->
+    <div id="engagement-timeline-pane" class="engagement-timeline-pane" style="display:none;">
+      <div class="etp-header">
+        <div class="etp-title">Engagement Timeline</div>
+        <div class="etp-sub">Live basket events and ledger writes for this session.</div>
+        <button class="ghost-btn etp-close" onclick="toggleEngagementTimelinePane()">Close</button>
+      </div>
+      <div id="engagement-timeline-list" class="etp-list">
+        <div class="empty">Waiting for engagement events...</div>
+      </div>
+    </div>
+  `;
+
+  // Elapsed timer.
+  if(liveSessionTimer) clearInterval(liveSessionTimer);
+  liveSessionStart = liveSessionStart || Date.now();
+  liveSessionTimer = setInterval(() => {
+    const secs = Math.floor((Date.now() - liveSessionStart) / 1000);
+    const m = Math.floor(secs / 60).toString().padStart(2,'0');
+    const s = (secs % 60).toString().padStart(2,'0');
+    const el = document.getElementById('live-session-elapsed');
+    if(el) el.textContent = m + ':' + s;
+  }, 1000);
+
+  // Event-driven recompute: render initial content, then run a lightweight
+  // 5-second tick to refresh bar elapsed counters + recompute lines (cheap,
+  // no RPC). Recommendation RPC fires only on real state events, not on tick.
+  bvRenderBars();
+  bvRenderWorkers();
+  bvRenderLines();
+  renderSessionStats();
+
+  if(_bvTimerInterval) clearInterval(_bvTimerInterval);
+  _bvTimerInterval = setInterval(() => {
+    bvUpdateBarElapsedCounters();
+    bvUpdateWorkerEtaCounters();
+  }, 5000);
+
+  if(_bvResizeHandler) window.removeEventListener('resize', _bvResizeHandler);
+  _bvResizeHandler = () => bvRenderLines();
+  window.addEventListener('resize', _bvResizeHandler);
+}
+
+function bvUpdateHeader(zoneName) {
+  const room = document.getElementById('sessions-live-room');
+  if(!room) return;
+  const zoneEl = room.querySelector('[data-zone-name]');
+  if(zoneEl) zoneEl.textContent = zoneName || '';
+}
+
+// Build the bar column. Static alphabetical, one row per bar in the session.
+// liveSessionBars is set at go-live / restore (already used by classic flow).
+function bvBarsForSession() {
+  const fromSessionBars = (typeof liveSessionBars !== 'undefined' && Array.isArray(liveSessionBars))
+    ? liveSessionBars
+    : [];
+  // Fall back to bars referenced by any shift_request in the session if
+  // liveSessionBars is empty for some reason (defensive).
+  if(fromSessionBars.length) return fromSessionBars.slice().sort((a,b) => (a.name||'').localeCompare(b.name||''));
+  const ids = new Set();
+  for(const r of liveSessionOps.requests) ids.add(Number(r.bar_id));
+  const merged = [];
+  for(const id of ids) {
+    const b = bars.find(x => Number(x.id) === Number(id));
+    if(b) merged.push(b);
+  }
+  return merged.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+}
+
+function bvActiveRequestForBar(barId) {
+  return liveSessionOps.requests.find(r => Number(r.bar_id) === Number(barId)
+    && (r.status === 'pending' || r.status === 'dispatched'));
+}
+
+function bvRenderBars() {
+  const listEl = document.getElementById('bv-bar-list');
+  if(!listEl) return;
+  const barsList = bvBarsForSession();
+  if(!barsList.length) {
+    listEl.innerHTML = '<div class="bv-empty">No bars in this session yet.</div>';
+    return;
+  }
+  listEl.innerHTML = barsList.map(b => {
+    const req = bvActiveRequestForBar(b.id);
+    const isActive = !!req;
+    const isPending = isActive && req.status === 'pending';
+    const isDispatched = isActive && req.status === 'dispatched';
+
+    let elapsedLabel = 'None';
+    let elapsedCls = '';
+    let shiftLenLabel = '';
+    let rowCls = '';
+    if(isActive) {
+      const postedAt = req.posted_at ? new Date(req.posted_at) : (req.request_time ? new Date(req.request_time) : new Date(req.created_at));
+      const secs = Math.max(0, Math.floor((Date.now() - postedAt.getTime()) / 1000));
+      const m = Math.floor(secs / 60);
+      const s = String(secs % 60).padStart(2, '0');
+      elapsedLabel = m > 0 ? (m + 'm ' + s + 's') : (secs + 's');
+      if(secs >= 1500) elapsedCls = 'critical';
+      else if(secs >= 300) elapsedCls = 'urgent';
+      shiftLenLabel = (parseFloat(req.shift_length_hours || 0) || 0) + 'h shift';
+      rowCls = isDispatched ? ' is-dispatched' : (' is-active' + (elapsedCls ? ' ' + elapsedCls : ''));
+    }
+    const actions = isActive
+      ? '<div class="bv-bar-actions">'
+        + '<button class="bv-bar-action-btn" onclick="event.stopPropagation();openAddNotes(' + req.id + ')">' + (req.raw_message && req.raw_message !== 'Bar manager request via portal' ? 'Edit notes' : '+ Add notes') + '</button>'
+        + '<button class="bv-bar-action-btn danger" onclick="event.stopPropagation();removeRequest(' + req.id + ')">Remove request</button>'
+        + '</div>'
+      : '';
+    return '<div class="bv-bar-row' + rowCls + '" id="bv-bar-' + b.id + '" data-bar-id="' + b.id + '" data-req-id="' + (req ? req.id : '') + '">'
+      + '<div class="bv-bar-name">' + escapeBvHtml(b.name || 'Bar #' + b.id) + '</div>'
+      + '<div class="bv-bar-meta' + (elapsedCls ? ' ' + elapsedCls : '') + '" data-elapsed-tag="' + (req ? req.id : '') + '">' + elapsedLabel + '</div>'
+      + (shiftLenLabel ? '<div class="bv-bar-shift-len">' + shiftLenLabel + '</div>' : '')
+      + actions
+      + '</div>';
+  }).join('');
+}
+
+function bvUpdateBarElapsedCounters() {
+  for(const r of liveSessionOps.requests) {
+    if(r.status !== 'pending' && r.status !== 'dispatched') continue;
+    const el = document.querySelector('[data-elapsed-tag="' + r.id + '"]');
+    if(!el) continue;
+    const postedAt = r.posted_at ? new Date(r.posted_at) : (r.request_time ? new Date(r.request_time) : new Date(r.created_at));
+    const secs = Math.max(0, Math.floor((Date.now() - postedAt.getTime()) / 1000));
+    const m = Math.floor(secs / 60);
+    const s = String(secs % 60).padStart(2, '0');
+    el.textContent = m > 0 ? (m + 'm ' + s + 's') : (secs + 's');
+    el.classList.toggle('urgent',   r.status === 'pending' && secs >= 300 && secs < 1500);
+    el.classList.toggle('critical', r.status === 'pending' && secs >= 1500);
+    // CORE v6 30-min auto-expire backstop, preserved.
+    if(secs >= 1800 && r.status === 'pending') {
+      r.status = 'expired';
+      sbPatch('shift_requests', '?id=eq.'+r.id, { status: 'expired' });
+    }
+  }
+}
+
+// Worker column ordering: invites sorted by joined_at presence then alphabetical.
+// All invited workers visible regardless of join status per spec lock.
+function bvInvitedWorkers() {
+  // Build a unified list keyed by application_id from invites + workers.
+  const byAppId = new Map();
+  for(const inv of (liveSessionOps.invites || [])) {
+    const appId = Number(inv.application_id);
+    if(!appId) continue;
+    if(inv.attendance_confirmed === 'declined') continue;
+    const app = inv.applications || {};
+    byAppId.set(appId, {
+      applicationId: appId,
+      name: app.name || ('App ' + appId),
+      postcode_full: app.postcode_full || null,
+      reliability_score: null,
+      tier: null,
+      hourly_rate: null,
+      joinedAt: inv.joined_at || null,
+      attendanceConfirmed: inv.attendance_confirmed || 'pending',
+      worker: null
+    });
+  }
+  for(const w of liveSessionOps.workers) {
+    const appId = Number(w.applicationId);
+    if(!appId) continue;
+    let row = byAppId.get(appId);
+    if(!row) {
+      row = {
+        applicationId: appId,
+        name: w.name || ('App ' + appId),
+        postcode_full: w.postcode_full || null,
+        reliability_score: w.reliability_score || null,
+        tier: w.tier || null,
+        hourly_rate: w.hourly_rate || null,
+        joinedAt: w.joinedAt || null,
+        attendanceConfirmed: 'confirmed',
+        worker: w
+      };
+      byAppId.set(appId, row);
+    } else {
+      row.worker = w;
+      row.postcode_full = row.postcode_full || w.postcode_full || null;
+      row.reliability_score = w.reliability_score || row.reliability_score;
+      row.tier = w.tier || row.tier;
+      row.hourly_rate = w.hourly_rate || row.hourly_rate;
+    }
+  }
+  return Array.from(byAppId.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+}
+
+function bvWorkerStatusInfo(row) {
+  const w = row.worker;
+  const status = w ? w.status : null;
+  // Movement state takes precedence for the worker-card border highlight,
+  // but the pill is driven by session_workers.status.
+  if(!w) {
+    return { pill: 'NOT JOINED', pillCls: 'is-not-joined', rowCls: 'is-not-joined' };
+  }
+  switch(status) {
+    case 'in_session':  return { pill: 'IN SESSION', pillCls: 'is-in-session', rowCls: '' };
+    case 'invited':     return { pill: 'NOT JOINED', pillCls: 'is-not-joined', rowCls: 'is-not-joined' };
+    case 'dispatched':  return { pill: 'DISPATCHED', pillCls: 'is-dispatched', rowCls: 'is-dispatched' };
+    case 'onshift':     return { pill: 'ON SHIFT',   pillCls: 'is-onshift',    rowCls: 'is-onshift' };
+    case 'completed':   return { pill: 'COMPLETED',  pillCls: 'is-completed',  rowCls: 'is-completed' };
+    case 'left':        return { pill: 'LEFT',       pillCls: 'is-left',       rowCls: 'is-left' };
+    case 'cancelled':   return { pill: 'CANCELLED',  pillCls: 'is-cancelled',  rowCls: 'is-cancelled' };
+    case 'no_show':     return { pill: 'NO-SHOW',    pillCls: 'is-no-show',    rowCls: 'is-cancelled' };
+    default:            return { pill: (status || 'UNKNOWN').toUpperCase(), pillCls: 'is-not-joined', rowCls: '' };
+  }
+}
+
+function bvMovementStateFor(row) {
+  if(!row.worker || !row.worker.sessionWorkerId) return null;
+  return liveSessionMovementState.get(Number(row.worker.sessionWorkerId)) || null;
+}
+
+function bvRenderWorkers() {
+  const listEl = document.getElementById('bv-worker-list');
+  if(!listEl) return;
+  const rows = bvInvitedWorkers();
+  if(!rows.length) {
+    listEl.innerHTML = '<div class="bv-empty">No workers invited yet.</div>';
+    return;
+  }
+  listEl.innerHTML = rows.map(row => {
+    const info = bvWorkerStatusInfo(row);
+    const move = bvMovementStateFor(row);
+    let moveCls = '';
+    if(move && !move.cancelled_at) {
+      if(move.nudge_2_fired_at) moveCls = ' movement-nudge2';
+      else if(move.nudge_1_fired_at) moveCls = ' movement-nudge1';
+    }
+    const tierLabel = row.tier ? 'T' + row.tier : '';
+    const relLabel  = row.reliability_score != null ? Math.round(row.reliability_score) + '%' : '';
+    const metaParts = [row.postcode_full, tierLabel, relLabel].filter(Boolean).join(' &middot; ');
+
+    let detail = '';
+    const w = row.worker;
+    if(w && (w.status === 'dispatched' || w.status === 'onshift')) {
+      detail = bvRenderDispatchedDetail(w, move);
+    } else if(w && w.status === 'completed') {
+      detail = bvRenderCompletedDetail(w);
+    } else if(move && move.cancelled_at) {
+      detail = '<div class="bv-worker-detail"><div class="bv-movement-state cancelled">Auto-cancelled, no movement</div></div>';
+    }
+
+    return '<div class="bv-worker-row ' + info.rowCls + moveCls + '" id="bv-worker-' + row.applicationId + '" data-app-id="' + row.applicationId + '" data-sw-id="' + (w ? (w.sessionWorkerId || '') : '') + '">'
+      + '<div class="bv-worker-name">' + escapeBvHtml(row.name) + '</div>'
+      + (metaParts ? '<div class="bv-worker-meta">' + metaParts + '</div>' : '')
+      + '<div class="bv-worker-pill ' + info.pillCls + '">' + info.pill + '</div>'
+      + detail
+      + '</div>';
+  }).join('');
+}
+
+function bvRenderDispatchedDetail(w, move) {
+  const barName = w.bar || (w.barRecord && w.barRecord.name) || '';
+  const isOnShift = (w.status === 'onshift' || w.clockInAt);
+  let etaLine = '';
+  if(isOnShift && w.clockInAt) {
+    etaLine = '<div class="bv-worker-detail-line"><span class="bv-eta">Started ' + fmtHm(w.clockInAt) + '</span></div>';
+  } else if(w.arrivedAt) {
+    const mins = Math.max(0, Math.floor((Date.now() - new Date(w.arrivedAt).getTime())/60000));
+    etaLine = '<div class="bv-worker-detail-line"><span class="bv-eta arrived">Arrived ' + mins + 'm ago</span></div>';
+  } else if(w.liveEtaMinutes != null && w.departedAt) {
+    const ageSec = w.liveEtaComputedAt ? Math.floor((Date.now() - new Date(w.liveEtaComputedAt).getTime())/1000) : 0;
+    const staleCls = ageSec > 90 ? ' stale' : '';
+    etaLine = '<div class="bv-worker-detail-line"><span class="bv-eta' + staleCls + '">Walking, ETA ' + w.liveEtaMinutes + ' min' + (staleCls ? ' (stale)' : '') + '</span></div>';
+  } else if(w.departedAt) {
+    etaLine = '<div class="bv-worker-detail-line"><span class="bv-eta">On the way</span></div>';
+  } else {
+    etaLine = '<div class="bv-worker-detail-line">Awaiting on-the-way confirmation</div>';
+  }
+  let moveLine = '';
+  if(move && !move.cancelled_at && !isOnShift) {
+    if(move.nudge_2_fired_at) moveLine = '<div class="bv-worker-detail-line"><span class="bv-movement-state">Nudged twice, still no movement</span></div>';
+    else if(move.nudge_1_fired_at) moveLine = '<div class="bv-worker-detail-line"><span class="bv-movement-state">Nudged, no movement after 2 min</span></div>';
+    else if(move.last_state === 'stationary') moveLine = '<div class="bv-worker-detail-line"><span class="bv-movement-state">Hasn\'t moved yet</span></div>';
+  }
+  const shareLine = (w.shareLocationTappedAt && !isOnShift)
+    ? '<div class="bv-worker-detail-line"><span class="bv-share-location">Shared location</span></div>'
+    : '';
+  const clockInRow = !isOnShift && w.shiftRequestId
+    ? '<div class="bv-clock-in-row">'
+      + '<input type="text" maxlength="6" placeholder="Clock-in code" id="bv-clockin-' + w.shiftRequestId + '">'
+      + '<button onclick="event.stopPropagation();bvSubmitClockIn(' + w.shiftRequestId + ',' + w.applicationId + ')">Confirm</button>'
+      + '</div>'
+    : '';
+  const clockOutRow = isOnShift && w.shiftRequestId
+    ? '<div class="bv-clock-out-row"><button class="bv-reveal-clockout" onclick="event.stopPropagation();bvRevealClockOut(' + w.shiftRequestId + ',' + (w.clockOutCode ? '\'' + w.clockOutCode + '\'' : 'null') + ')">Reveal clock-out code</button></div>'
+    : '';
+  const cancelBtn = w.shiftRequestId
+    ? '<button class="bv-cancel-dispatch" onclick="event.stopPropagation();bvOpenCancelDispatch(' + w.applicationId + ',' + w.shiftRequestId + ')">Cancel dispatch</button>'
+    : '';
+  return '<div class="bv-worker-detail">'
+    + (barName ? '<div class="bv-worker-detail-line">Dispatched to <strong style="color:var(--white);">' + escapeBvHtml(barName) + '</strong></div>' : '')
+    + etaLine
+    + moveLine
+    + shareLine
+    + clockInRow
+    + clockOutRow
+    + cancelBtn
+    + '</div>';
+}
+
+function bvRenderCompletedDetail(w) {
+  const barName = w.bar || (w.barRecord && w.barRecord.name) || '';
+  const clockInFmt  = w.clockInAt  ? fmtHm(w.clockInAt)  : '';
+  const clockOutFmt = w.clockOutAt ? fmtHm(w.clockOutAt) : '';
+  let hoursStr = '';
+  if(w.clockInAt && w.clockOutAt) {
+    const ms = new Date(w.clockOutAt).getTime() - new Date(w.clockInAt).getTime();
+    hoursStr = (Math.round((ms / 3600000) * 10) / 10) + 'h';
+  }
+  const earnedStr = (w.totalEarned != null) ? ('£' + parseFloat(w.totalEarned).toFixed(2)) : '';
+  const metaRow = [hoursStr, earnedStr].filter(Boolean).join(' &middot; ');
+  return '<div class="bv-worker-detail">'
+    + (barName ? '<div class="bv-worker-detail-line">' + escapeBvHtml(barName) + '</div>' : '')
+    + (clockInFmt && clockOutFmt ? '<div class="bv-worker-detail-line">' + clockInFmt + ' &rarr; ' + clockOutFmt + (metaRow ? ' &middot; ' + metaRow : '') + '</div>' : '')
+    + '</div>';
+}
+
+function bvUpdateWorkerEtaCounters() {
+  // Cheap pass: re-render dispatched/onshift detail blocks so ETAs tick.
+  // No DOM rebuild of the whole row to avoid losing input focus on the
+  // clock-in code input.
+  for(const w of liveSessionOps.workers) {
+    if(!w || !w.applicationId) continue;
+    if(w.status !== 'dispatched' && w.status !== 'onshift') continue;
+    const row = document.getElementById('bv-worker-' + w.applicationId);
+    if(!row) continue;
+    const detailEl = row.querySelector('.bv-worker-detail');
+    if(!detailEl) continue;
+    // Preserve focused input value if any.
+    const focused = (document.activeElement && detailEl.contains(document.activeElement)) ? document.activeElement : null;
+    const focusedId = focused ? focused.id : null;
+    const focusedVal = focused ? focused.value : null;
+    const move = bvMovementStateFor({ worker: w });
+    detailEl.outerHTML = bvRenderDispatchedDetail(w, move);
+    if(focusedId) {
+      const restored = document.getElementById(focusedId);
+      if(restored) {
+        restored.value = focusedVal || '';
+        restored.focus();
+      }
+    }
+  }
+}
+
+// SVG line rendering: for each pending/dispatched request, draw one path
+// per eligible worker. Recommendation engine sets the highlight; available
+// responses solidify; pending fanout dashed; pass/no_response is no line.
+function bvRenderLines() {
+  const svg = document.getElementById('bv-line-svg');
+  const grid = document.getElementById('bv-grid');
+  if(!svg || !grid) return;
+  const gridRect = grid.getBoundingClientRect();
+  // Resize SVG to cover the grid.
+  svg.setAttribute('width',  gridRect.width);
+  svg.setAttribute('height', gridRect.height);
+  svg.style.left = '0'; svg.style.top = '0';
+
+  // Move svg into the centre column for accurate routing; positions are
+  // absolute within the grid. Easier: position svg over the whole grid and
+  // compute coordinates relative to grid origin.
+  // Clear existing paths.
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const paths = [];
+
+  // Build lookups.
+  const barRowRect = (barId) => {
+    const el = document.getElementById('bv-bar-' + barId);
+    if(!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: r.right - gridRect.left, y: r.top + r.height / 2 - gridRect.top };
+  };
+  const workerRowRect = (appId) => {
+    const el = document.getElementById('bv-worker-' + appId);
+    if(!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: r.left - gridRect.left, y: r.top + r.height / 2 - gridRect.top };
+  };
+
+  // For each pending request: draw lines to in_session workers in catchment,
+  // styled by response state and recommendation match. Pass/no_response: skip.
+  const pendingByBar = new Map();
+  for(const r of liveSessionOps.requests) {
+    if(r.status !== 'pending' && r.status !== 'dispatched') continue;
+    pendingByBar.set(Number(r.bar_id), r);
+  }
+
+  // Build a map of dispatched session_workers by shift_request_id for the
+  // dispatched-line case.
+  const dispatchedBySwReq = new Map();
+  for(const w of liveSessionOps.workers) {
+    if(!w || !w.shiftRequestId) continue;
+    if(w.status === 'dispatched' || w.status === 'onshift') {
+      dispatchedBySwReq.set(Number(w.shiftRequestId), w);
+    }
+  }
+
+  for(const [barId, req] of pendingByBar.entries()) {
+    const barPt = barRowRect(barId);
+    if(!barPt) continue;
+    const rec = liveSessionRecommendations.get(req.id);
+    const recAppId = rec && rec.recommendedAppId ? Number(rec.recommendedAppId) : null;
+
+    if(req.status === 'dispatched') {
+      // Single dispatched/onshift line.
+      const w = dispatchedBySwReq.get(req.id);
+      if(!w) continue;
+      const wpt = workerRowRect(w.applicationId);
+      if(!wpt) continue;
+      const cls = w.status === 'onshift' ? 'bv-line-onshift' : 'bv-line-dispatched';
+      paths.push({ cls, barPt, wpt, reqId: req.id, appId: w.applicationId, kind: cls });
+      continue;
+    }
+
+    // Pending: fanout to eligible workers.
+    const responses = liveSessionResponses.get(req.id) || [];
+    if(typeof workerBarDistances === 'undefined') continue;
+    for(const w of liveSessionOps.workers) {
+      if(!w || w.status !== 'in_session') continue;
+      const appId = Number(w.applicationId);
+      const dist = workerBarDistances.find(d => Number(d.application_id) === appId && Number(d.bar_id) === Number(barId));
+      if(!dist || dist.walking_minutes == null || dist.walking_minutes >= 30) continue;
+      const wpt = workerRowRect(appId);
+      if(!wpt) continue;
+      const myResp = responses.find(x => Number(x.application_id) === appId);
+      let cls;
+      if(myResp && myResp.response === 'pass') continue;
+      if(myResp && myResp.response === 'no_response') continue;
+      if(recAppId === appId) cls = 'bv-line-recommend';
+      else if(myResp && myResp.response === 'available') cls = 'bv-line-available';
+      else cls = 'bv-line-pending';
+      paths.push({ cls, barPt, wpt, reqId: req.id, appId, kind: cls });
+    }
+  }
+
+  // Render paths in z-order: pending below, available above, recommend on top.
+  const order = { 'bv-line-pending': 0, 'bv-line-available': 1, 'bv-line-recommend': 2, 'bv-line-dispatched': 3, 'bv-line-onshift': 4, 'bv-line-cancelled': 5 };
+  paths.sort((a, b) => (order[a.cls] || 0) - (order[b.cls] || 0));
+
+  for(const p of paths) {
+    const dx = p.wpt.x - p.barPt.x;
+    const cx1 = p.barPt.x + dx * 0.4;
+    const cx2 = p.barPt.x + dx * 0.6;
+    const d = 'M ' + p.barPt.x + ' ' + p.barPt.y
+      + ' C ' + cx1 + ' ' + p.barPt.y + ', '
+      + cx2 + ' ' + p.wpt.y + ', '
+      + p.wpt.x + ' ' + p.wpt.y;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('class', p.cls);
+    path.setAttribute('data-req-id', p.reqId);
+    path.setAttribute('data-app-id', p.appId);
+    if(p.cls === 'bv-line-recommend' || p.cls === 'bv-line-available') {
+      path.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        bvOpenDispatchModal(p.appId, p.reqId);
+      });
+    }
+    svg.appendChild(path);
+  }
+}
+
+// Dispatch modal triggered by clicking a 'recommend' or 'available' line.
+// Shows worker info + score breakdown + DISPATCH/Cancel buttons. Routes
+// confirms to the existing dispatchWorker function so the audit write and
+// state mutation paths are unchanged.
+function bvOpenDispatchModal(applicationId, requestId) {
+  const w = liveSessionOps.workers.find(x => Number(x.applicationId) === Number(applicationId));
+  const r = liveSessionOps.requests.find(x => Number(x.id) === Number(requestId));
+  if(!w || !r) { alert('Worker or request not found.'); return; }
+  _bvLineDispatchTarget = { applicationId: Number(applicationId), requestId: Number(requestId) };
+  const rec = liveSessionRecommendations.get(requestId);
+  const isRecommended = !!(rec && Number(rec.recommendedAppId) === Number(applicationId));
+  const b = rec && rec.breakdown ? rec.breakdown : null;
+  const barName = r._barName || (bars.find(x => Number(x.id) === Number(r.bar_id)) || {}).name || 'Unknown bar';
+  const distMins = b ? Math.round(parseFloat(b.distance) || parseFloat(b.walking_minutes) || 0) : null;
+  const relPct   = b ? Math.round(parseFloat(b.reliability_score) || 0) : null;
+
+  const summary = '<div style="font-size:13px;color:var(--white);line-height:1.6;">'
+    + '<strong>' + escapeBvHtml(w.name) + '</strong> &rarr; <strong>' + escapeBvHtml(barName) + '</strong>'
+    + (r.shift_length_hours ? ' &middot; ' + (parseFloat(r.shift_length_hours) || 0) + 'h shift' : '')
+    + '</div>';
+  let breakdown = '';
+  if(b) {
+    const rows = [];
+    if(relPct != null)               rows.push('<div>Reliability</div><div>' + relPct + '%</div>');
+    if(b.deficit != null)            rows.push('<div>Deficit (Q-D)</div><div>' + b.deficit + '</div>');
+    if(distMins != null)             rows.push('<div>Distance</div><div>' + distMins + ' min</div>');
+    if(b.tier != null)               rows.push('<div>Tier</div><div>' + b.tier + '</div>');
+    if(b.response)                   rows.push('<div>Response</div><div>' + b.response + '</div>');
+    breakdown = '<div style="margin-top:14px;font-size:11px;letter-spacing:1.5px;color:var(--ice);font-weight:600;text-transform:uppercase;">Engine breakdown</div>'
+              + '<div class="ad-breakdown-grid">' + rows.join('') + '</div>'
+              + (b.narrative ? '<div style="font-size:12px;color:var(--ice);margin-top:8px;font-style:italic;">' + escapeBvHtml(b.narrative) + '</div>' : '');
+  }
+  const sub = isRecommended
+    ? 'This is the engine\'s top-ranked candidate.'
+    : 'Manual override: this worker is not the engine\'s top pick.';
+
+  const modalEl = document.getElementById('bv-dispatch-summary');
+  const subEl   = document.getElementById('bv-dispatch-sub');
+  if(modalEl) modalEl.innerHTML = summary + breakdown;
+  if(subEl)   subEl.textContent = sub;
+  openOv('bv-dispatch');
+}
+
+async function bvConfirmDispatchFromModal() {
+  const t = _bvLineDispatchTarget;
+  if(!t) { closeOv('bv-dispatch'); return; }
+  closeOv('bv-dispatch');
+  await dispatchWorker(t.applicationId, t.requestId);
+  _bvLineDispatchTarget = null;
+}
+
+function bvCancelDispatchModal() {
+  _bvLineDispatchTarget = null;
+  closeOv('bv-dispatch');
+}
+
+// Cancel-dispatch entry point from the bipartite worker card. The classic
+// openCancelDispatch helper expects the local UI worker id (w.id, not
+// applicationId); we resolve the worker by applicationId and pass the
+// correct token through.
+function bvOpenCancelDispatch(applicationId, _requestId) {
+  const w = liveSessionOps.workers.find(x => Number(x.applicationId) === Number(applicationId));
+  if(!w) { alert('Worker not found.'); return; }
+  if(typeof openCancelDispatch === 'function') {
+    openCancelDispatch(w.id);
+    return;
+  }
+  alert('Cancel-dispatch surface not available.');
+}
+
+// Clock-in entry point from the bipartite worker card. Mirrors the classic
+// confirmClockIn behaviour but reads the input id keyed bv-clockin-<reqId>.
+async function bvSubmitClockIn(requestId, applicationId) {
+  const code = (document.getElementById('bv-clockin-' + requestId) || {}).value;
+  if(!code || !code.trim()) { alert('Please enter the clock-in code.'); return; }
+  // Reuse confirmClockIn so the DB-write path stays identical: temporarily
+  // forge the classic-input-id the function reads from.
+  const tmpInput = document.createElement('input');
+  tmpInput.id = 'clockin-' + requestId;
+  tmpInput.value = code.trim();
+  tmpInput.style.display = 'none';
+  document.body.appendChild(tmpInput);
+  try {
+    await confirmClockIn(requestId, applicationId);
+  } finally {
+    try { document.body.removeChild(tmpInput); } catch(e) {}
+  }
+}
+
+function bvRevealClockOut(requestId, code) {
+  if(!code) { alert('No clock-out code available.'); return; }
+  // Reuse the existing reveal helper. Its target element id format is
+  // 'clockout-section-<reqId>'; the bipartite view doesn't render that
+  // element, so render a temporary host inside the worker card and let
+  // the helper paint into it.
+  const row = document.querySelector('.bv-worker-row .bv-clock-out-row');
+  if(!row) { alert('Clock-out code: ' + code); return; }
+  const host = document.createElement('div');
+  host.id = 'clockout-section-' + requestId;
+  row.parentNode.insertBefore(host, row);
+  try {
+    revealClockOutCode(requestId, code);
+  } catch(e) {
+    host.innerHTML = '<div style="font-size:11px;color:var(--grey);">Clock-out code: <strong style="color:var(--white);letter-spacing:2px;">' + code + '</strong></div>';
+  }
+}
+
+function escapeBvHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ============================================================================
+// End bipartite view block.
+// ============================================================================
 
 // F-37: top-level Sessions screen. Defaults to Live if a session is currently
 // live, otherwise Schedule. postLoginSetup uses the same heuristic on boot.
@@ -10922,6 +12152,10 @@ async function f33RecomputeAllPending() {
   return anyChanged;
 }
 
+// _deprecated_ (Phase 4 cleanup): classic-view ghost-card render. Kept
+// wired behind glasi_live_view_mode='classic'. The bipartite view surfaces
+// the engine recommendation as a glowing SVG line instead.
+//
 // Ghost UI render. Returns full dispatch-pair HTML for a pending request with
 // a recommendation. Called from renderRequestCards' pending branch.
 function f33RenderGhostPair(request, recommendation, innerBody, requestSelectedClass, showNotes) {
@@ -10971,6 +12205,9 @@ function f33RenderGhostPair(request, recommendation, innerBody, requestSelectedC
     + '</div>';
 }
 
+// _deprecated_ (Phase 4 cleanup): classic-view "no eligible candidate"
+// render. Kept wired behind glasi_live_view_mode='classic'. The bipartite
+// view surfaces this state as the bar row with no lines emanating.
 function f33RenderEmptyPair(request, innerBody, requestSelectedClass, showNotes) {
   const requestSide = '<div class="dispatch-pair-request' + (requestSelectedClass ? ' ' + requestSelectedClass : '') + '" onclick="selectRequest(' + request.id + ')">'
     + innerBody
@@ -11082,6 +12319,395 @@ async function loadDispatchDecisions(limit) {
     console.error('[loadDispatchDecisions] failed', e);
     return [];
   }
+}
+
+// ============================================================================
+// Recommendation Engine Redesign Phase 2.5 (18 May 2026): toggle UI + audit
+// panel wiring. Dashboard surface for the backend RPCs shipped 17 May 2026.
+// ============================================================================
+
+// In-memory state for the screen. Avoids re-fetching during expand/filter ops.
+const adState = {
+  config:         null,   // { id, decision_window_seconds, global_auto_dispatch_enabled, ... }
+  history:        [],     // auto_dispatch_toggle_log rows, newest first
+  decisions:      [],     // dispatch_decisions rows, newest first
+  workerNames:    new Map(),  // application_id -> name
+  barNames:       new Map(),  // bar_id -> name
+  shiftRequests:  new Map(),  // request_id -> { bar_id }
+  pendingToggle:  null,   // 'enable' | 'disable' when modal is open
+  expandedRowId:  null    // dispatch_decisions.id of an expanded row, if any
+};
+
+// Pill refresh on header. Runs on dashboard mount + every 30s in background.
+let _autoDispatchPillTimer = null;
+function startAutoDispatchPillPoll() {
+  if(_autoDispatchPillTimer) return;
+  refreshAutoDispatchPill();
+  _autoDispatchPillTimer = setInterval(refreshAutoDispatchPill, 30000);
+}
+
+function stopAutoDispatchPillPoll() {
+  if(_autoDispatchPillTimer) { clearInterval(_autoDispatchPillTimer); _autoDispatchPillTimer = null; }
+}
+
+async function refreshAutoDispatchPill() {
+  const pill  = document.getElementById('auto-dispatch-pill');
+  const label = document.getElementById('auto-dispatch-pill-label');
+  if(!pill || !label) return;
+  try {
+    const cfg = await loadAutoDispatchConfig();
+    if(!cfg) return;
+    adState.config = cfg;
+    const on = !!cfg.global_auto_dispatch_enabled;
+    pill.classList.toggle('on',  on);
+    pill.classList.toggle('off', !on);
+    label.textContent = on ? 'AUTO' : 'MANUAL';
+  } catch(e) {
+    console.error('[refreshAutoDispatchPill] failed', e);
+  }
+}
+
+function goToAutoDispatch() {
+  showScreen('auto-dispatch');
+  setActiveNav('auto-dispatch');
+  renderAutoDispatchScreen();
+}
+
+// Top-level screen renderer. Pulls everything fresh from the DB (toggle
+// state, history, decisions) then paints. Re-callable on filter change.
+async function renderAutoDispatchScreen() {
+  const cfg = await loadAutoDispatchConfig();
+  adState.config = cfg;
+
+  // Refresh history + decisions in parallel; one query for name resolution
+  // joins both populations afterwards.
+  const [historyRes, decisionsRes] = await Promise.all([
+    sbAuth.from('auto_dispatch_toggle_log')
+      .select('id, changed_at, changed_by_application_id, changed_by_email, enabled, decision_window_seconds')
+      .order('changed_at', { ascending: false })
+      .limit(100),
+    sbAuth.from('dispatch_decisions')
+      .select('id, request_id, dispatched_application_id, recommended_application_id, was_recommended_match, recommendation_breakdown, dispatched_at, dispatched_by')
+      .order('dispatched_at', { ascending: false })
+      .limit(30)
+  ]);
+  adState.history   = (historyRes && historyRes.data)   || [];
+  adState.decisions = (decisionsRes && decisionsRes.data) || [];
+
+  // Resolve application_ids (history changers + dispatched + recommended +
+  // config.updated_by) and request_id -> bar_id mapping in two batched calls.
+  const appIds = new Set();
+  for(const h of adState.history)   if(h.changed_by_application_id) appIds.add(Number(h.changed_by_application_id));
+  for(const d of adState.decisions) {
+    if(d.dispatched_application_id)  appIds.add(Number(d.dispatched_application_id));
+    if(d.recommended_application_id) appIds.add(Number(d.recommended_application_id));
+  }
+  if(cfg && cfg.updated_by_application_id) appIds.add(Number(cfg.updated_by_application_id));
+
+  const requestIds = [...new Set(adState.decisions.map(d => Number(d.request_id)).filter(Boolean))];
+
+  if(appIds.size > 0) {
+    const ids = [...appIds];
+    try {
+      const r = await sbAuth.from('applications').select('id, name').in('id', ids);
+      if(r && r.data) {
+        for(const row of r.data) adState.workerNames.set(Number(row.id), row.name || ('Worker ' + row.id));
+      }
+    } catch(e) { console.error('[ad worker name resolve] failed', e); }
+  }
+  if(requestIds.length > 0) {
+    try {
+      const r = await sbAuth.from('shift_requests').select('id, bar_id').in('id', requestIds);
+      if(r && r.data) {
+        for(const row of r.data) adState.shiftRequests.set(Number(row.id), { bar_id: Number(row.bar_id) });
+      }
+      const barIds = [...new Set((r?.data || []).map(x => Number(x.bar_id)).filter(Boolean))];
+      if(barIds.length > 0) {
+        const b = await sbAuth.from('bars').select('id, name').in('id', barIds);
+        if(b && b.data) {
+          for(const row of b.data) adState.barNames.set(Number(row.id), row.name || ('Bar ' + row.id));
+        }
+      }
+    } catch(e) { console.error('[ad bar resolve] failed', e); }
+  }
+
+  paintAutoDispatchBanner();
+  paintDecisionWindowInput();
+  paintHistoryTable();
+  paintBarFilterOptions();
+  paintDecisionsTable();
+  refreshAutoDispatchPill();
+}
+
+function paintAutoDispatchBanner() {
+  const cfg = adState.config;
+  const banner = document.getElementById('ad-state-banner');
+  const kicker = document.getElementById('ad-state-kicker');
+  const title  = document.getElementById('ad-state-title');
+  const sub    = document.getElementById('ad-state-sub');
+  const btn    = document.getElementById('ad-toggle-btn');
+  if(!banner || !kicker || !title || !sub || !btn) return;
+
+  const on = !!(cfg && cfg.global_auto_dispatch_enabled);
+  banner.classList.toggle('on',  on);
+  banner.classList.toggle('off', !on);
+  kicker.textContent = on ? 'Auto-dispatch' : 'Auto-dispatch';
+  title.textContent  = on ? 'AUTO-DISPATCH IS ON' : 'AUTO-DISPATCH IS OFF';
+
+  const updatedAt = cfg && cfg.updated_at ? new Date(cfg.updated_at) : null;
+  const updatedByName = cfg && cfg.updated_by_application_id
+    ? (adState.workerNames.get(Number(cfg.updated_by_application_id)) || ('App ' + cfg.updated_by_application_id))
+    : null;
+  const updatedLabel = updatedAt
+    ? 'Last changed ' + updatedAt.toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+        + (updatedByName ? ' by ' + updatedByName : '')
+    : 'No prior changes recorded.';
+  sub.textContent = (on
+    ? 'The platform is dispatching workers automatically when decision windows close. You do not need to be present.'
+    : 'All dispatches require your manual click in the live console.')
+    + ' ' + updatedLabel;
+
+  btn.style.display = 'inline-block';
+  if(on) {
+    btn.className = 'ad-toggle-btn disable';
+    btn.textContent = 'Disable auto-dispatch';
+  } else {
+    btn.className = 'ad-toggle-btn enable';
+    btn.textContent = 'Enable auto-dispatch';
+  }
+}
+
+function paintDecisionWindowInput() {
+  const inp = document.getElementById('ad-window-input');
+  const msg = document.getElementById('ad-window-msg');
+  if(!inp) return;
+  const v = adState.config?.decision_window_seconds ?? 90;
+  inp.value = String(v);
+  if(msg) msg.textContent = '';
+}
+
+async function adSaveDecisionWindow() {
+  const inp = document.getElementById('ad-window-input');
+  const msg = document.getElementById('ad-window-msg');
+  if(!inp) return;
+  const raw = parseInt(inp.value, 10);
+  if(!Number.isFinite(raw) || raw < 30 || raw > 300) {
+    if(msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Pick a value between 30 and 300.'; }
+    return;
+  }
+  if(msg) { msg.style.color = 'var(--grey)'; msg.textContent = 'Saving...'; }
+  const result = await setDecisionWindowSeconds(raw);
+  if(result === null) {
+    if(msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Save failed.'; }
+    return;
+  }
+  if(msg) { msg.style.color = 'var(--green)'; msg.textContent = 'Saved.'; }
+  await renderAutoDispatchScreen();
+}
+
+function paintHistoryTable() {
+  const empty = document.getElementById('ad-history-empty');
+  const table = document.getElementById('ad-history-table');
+  const tbody = document.getElementById('ad-history-tbody');
+  if(!empty || !table || !tbody) return;
+  if(!adState.history.length) {
+    empty.textContent = 'No toggle changes recorded yet.';
+    empty.style.display = 'block';
+    table.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  table.style.display = 'table';
+  tbody.innerHTML = adState.history.map(h => {
+    const when = new Date(h.changed_at);
+    const whenStr = when.toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const action = h.enabled ? 'enable' : 'disable';
+    const actionLabel = h.enabled ? 'Enabled' : 'Disabled';
+    const who = h.changed_by_application_id
+      ? (adState.workerNames.get(Number(h.changed_by_application_id)) || ('App ' + h.changed_by_application_id))
+      : (h.changed_by_email || 'unknown');
+    return '<tr>'
+      + '<td>' + escapeHtml(whenStr) + '</td>'
+      + '<td><span class="ad-history-action ' + action + '">' + actionLabel + '</span></td>'
+      + '<td>' + (h.decision_window_seconds ?? '-') + 's</td>'
+      + '<td>' + escapeHtml(who) + '</td>'
+    + '</tr>';
+  }).join('');
+}
+
+function paintBarFilterOptions() {
+  const sel = document.getElementById('ad-decisions-bar-filter');
+  if(!sel) return;
+  const current = sel.value;
+  // Build unique bar list from current decisions.
+  const barsInScope = new Set();
+  for(const d of adState.decisions) {
+    const req = adState.shiftRequests.get(Number(d.request_id));
+    if(req && req.bar_id) barsInScope.add(req.bar_id);
+  }
+  const opts = ['<option value="all">All bars</option>'];
+  for(const barId of [...barsInScope].sort((a,b) => (adState.barNames.get(a)||'').localeCompare(adState.barNames.get(b)||''))) {
+    const name = adState.barNames.get(barId) || ('Bar ' + barId);
+    opts.push('<option value="' + barId + '">' + escapeHtml(name) + '</option>');
+  }
+  sel.innerHTML = opts.join('');
+  // Preserve previous selection if it still exists, else fall back to All.
+  if(current && sel.querySelector('option[value="' + current + '"]')) sel.value = current;
+}
+
+function paintDecisionsTable() {
+  const empty = document.getElementById('ad-decisions-empty');
+  const table = document.getElementById('ad-decisions-table');
+  const tbody = document.getElementById('ad-decisions-tbody');
+  if(!empty || !table || !tbody) return;
+
+  const sourceFilter = document.getElementById('ad-decisions-source-filter')?.value || 'all';
+  const barFilter    = document.getElementById('ad-decisions-bar-filter')?.value || 'all';
+
+  const filtered = adState.decisions.filter(d => {
+    if(sourceFilter !== 'all' && (d.dispatched_by || 'manual') !== sourceFilter) return false;
+    if(barFilter !== 'all') {
+      const req = adState.shiftRequests.get(Number(d.request_id));
+      if(!req || String(req.bar_id) !== barFilter) return false;
+    }
+    return true;
+  });
+
+  if(!filtered.length) {
+    empty.textContent = adState.decisions.length
+      ? 'No decisions match the current filters.'
+      : 'No dispatch decisions recorded yet.';
+    empty.style.display = 'block';
+    table.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  table.style.display = 'table';
+
+  tbody.innerHTML = filtered.map(d => {
+    const when = new Date(d.dispatched_at);
+    const whenStr = when.toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    const req = adState.shiftRequests.get(Number(d.request_id));
+    const barName = req && req.bar_id ? (adState.barNames.get(Number(req.bar_id)) || ('Bar ' + req.bar_id)) : '-';
+    const workerName = d.dispatched_application_id
+      ? (adState.workerNames.get(Number(d.dispatched_application_id)) || ('App ' + d.dispatched_application_id))
+      : '-';
+    const source = d.dispatched_by || 'manual';
+    const sourceLabel = source === 'auto_dispatch' ? 'Auto' : 'Manual';
+    const matchClass = d.was_recommended_match ? 'match' : 'override';
+    const matchIcon  = d.was_recommended_match ? '✓' : '↪';
+    const matchTitle = d.was_recommended_match ? 'Followed engine recommendation' : 'Sam overrode the recommendation';
+    const expanded = adState.expandedRowId === d.id;
+    let rowHtml = '<tr class="ad-decision-row" onclick="toggleDecisionExpand(' + d.id + ')">'
+      + '<td>' + escapeHtml(whenStr) + '</td>'
+      + '<td>' + escapeHtml(barName) + '</td>'
+      + '<td>' + escapeHtml(workerName) + '</td>'
+      + '<td><span class="ad-source-pill ' + source + '">' + sourceLabel + '</span></td>'
+      + '<td style="text-align:center;" title="' + escapeHtml(matchTitle) + '">'
+      +   '<span class="ad-match-icon ' + matchClass + '">' + matchIcon + '</span>'
+      + '</td>'
+    + '</tr>';
+    if(expanded) {
+      rowHtml += '<tr><td colspan="5" class="ad-decision-expand">' + renderDecisionBreakdown(d) + '</td></tr>';
+    }
+    return rowHtml;
+  }).join('');
+}
+
+function renderDecisionBreakdown(decision) {
+  const b = decision.recommendation_breakdown || {};
+  const rows = [];
+  function add(k, v) {
+    if(v === undefined || v === null || v === '') return;
+    rows.push('<div>' + escapeHtml(k) + '</div><div>' + escapeHtml(String(v)) + '</div>');
+  }
+  add('Reliability score',         b.reliability_score);
+  add('Effective reliability',     b.effective_reliability_score);
+  add('Deficit (quick - dispatch)',b.deficit);
+  add('Quick responses',           b.quick_response_count);
+  add('Dispatches',                b.dispatch_count);
+  add('Walking minutes',           b.walking_minutes);
+  add('Tier',                      b.tier);
+  add('Response state',            b.response);
+  add('Window seconds',            b.window_seconds);
+  add('Fraction window remaining', b.fraction_window_remaining);
+  add('Posted at',                 b.posted_at);
+  add('Request status at decision',b.request_status);
+  if(b.auto_dispatched_at) add('Auto-dispatched at', b.auto_dispatched_at);
+
+  const header = '<div style="font-size:11px;letter-spacing:1.5px;color:var(--ice);font-weight:600;text-transform:uppercase;">Recommendation breakdown</div>';
+  const body = rows.length
+    ? '<div class="ad-breakdown-grid">' + rows.join('') + '</div>'
+    : '<div style="font-size:12px;color:var(--grey);margin-top:6px;">No breakdown captured for this decision.</div>';
+  const meta = '<div style="font-size:11px;color:var(--grey);margin-top:10px;">'
+    + 'Decision id ' + decision.id + ' / request id ' + decision.request_id + '</div>';
+  return header + body + meta;
+}
+
+function toggleDecisionExpand(id) {
+  adState.expandedRowId = (adState.expandedRowId === id) ? null : id;
+  paintDecisionsTable();
+}
+
+// Toggle confirmation modal flow.
+function adOpenToggleConfirm() {
+  const cfg = adState.config;
+  if(!cfg) return;
+  const enabling = !cfg.global_auto_dispatch_enabled;
+  adState.pendingToggle = enabling ? 'enable' : 'disable';
+
+  const titleEl = document.getElementById('ad-confirm-title');
+  const subEl   = document.getElementById('ad-confirm-sub');
+  const btnEl   = document.getElementById('ad-confirm-action-btn');
+  const errEl   = document.getElementById('ad-confirm-error');
+  if(errEl) errEl.textContent = '';
+  if(enabling) {
+    if(titleEl) titleEl.textContent = 'Enable auto-dispatch globally?';
+    if(subEl)   subEl.textContent   = "The platform will automatically dispatch workers when decision windows close, for every live session. You don't need to be present.";
+    if(btnEl) {
+      btnEl.textContent = 'Enable auto-dispatch';
+      btnEl.style.background = 'var(--green)';
+      btnEl.style.color      = 'var(--navy)';
+    }
+  } else {
+    if(titleEl) titleEl.textContent = 'Disable auto-dispatch globally?';
+    if(subEl)   subEl.textContent   = 'All future dispatch decisions will require manual action from the dashboard.';
+    if(btnEl) {
+      btnEl.textContent = 'Disable auto-dispatch';
+      btnEl.style.background = 'var(--red)';
+      btnEl.style.color      = 'var(--white)';
+    }
+  }
+  openOv('auto-dispatch-confirm');
+}
+
+async function adSubmitToggle() {
+  const pending = adState.pendingToggle;
+  if(!pending) return;
+  const enabling = pending === 'enable';
+  const btnEl    = document.getElementById('ad-confirm-action-btn');
+  const errEl    = document.getElementById('ad-confirm-error');
+  if(btnEl) { btnEl.disabled = true; btnEl.textContent = 'Saving...'; }
+  if(errEl) errEl.textContent = '';
+  const result = await setAutoDispatchEnabled(enabling);
+  if(btnEl) btnEl.disabled = false;
+  if(result === null) {
+    if(errEl) errEl.textContent = 'Toggle failed. Check console for details.';
+    if(btnEl) btnEl.textContent = enabling ? 'Enable auto-dispatch' : 'Disable auto-dispatch';
+    return;
+  }
+  adState.pendingToggle = null;
+  closeOv('auto-dispatch-confirm');
+  await renderAutoDispatchScreen();
+}
+
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // =============================================================================

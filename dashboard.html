@@ -1199,6 +1199,19 @@
     .bv-line-eta-label.enroute-slow { fill: var(--amber); }
     .bv-line-eta-label.enroute-stop { fill: var(--red); }
     .bv-line-eta-label.stale { font-style: italic; opacity: 0.75; }
+
+    /* Phase 1-3 follow-up 11 (18 May 2026): chip backdrop behind the ETA
+       text — occludes the comet trail beneath so the line visually breaks
+       at the chip edge ("o o o o 4 min o o o o" pattern). Navy fill matches
+       the page background; stroke matches the line variant for cohesion. */
+    .bv-line-eta-chip {
+      fill: var(--navy);
+      stroke-width: 1.5;
+      pointer-events: none;
+    }
+    .bv-line-eta-chip.enroute      { stroke: var(--green); }
+    .bv-line-eta-chip.enroute-slow { stroke: var(--amber); }
+    .bv-line-eta-chip.enroute-stop { stroke: var(--red); }
     /* State 9: ARRIVED — solid green, no animation (movement complete). */
     .bv-line-layer path.bv-line-arrived {
       stroke: var(--green); stroke-width: 3.5; fill: none;
@@ -10796,9 +10809,28 @@ function bvRenderLines() {
         const variantCls = p.cls === 'bv-line-enroute-stop' ? 'enroute-stop'
                          : p.cls === 'bv-line-enroute-slow' ? 'enroute-slow'
                          : 'enroute';
+        // Phase 1-3 follow-up 11 (18 May 2026): chip backdrop behind the
+        // ETA text so the comets visually stop at the chip edge instead
+        // of passing through the text. Sized from text length (JetBrains
+        // Mono ~7.5px per char + 12px padding each side). Stroke matches
+        // the line variant colour for visual integration.
+        const chipW = etaText.length * 7.5 + 24;
+        const chipH = 22;
+        const chipX = midX - chipW / 2;
+        const chipY = midY - chipH / 2;
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', chipX);
+        rect.setAttribute('y', chipY);
+        rect.setAttribute('width', chipW);
+        rect.setAttribute('height', chipH);
+        rect.setAttribute('rx', 11);
+        rect.setAttribute('ry', 11);
+        rect.setAttribute('class', 'bv-line-eta-chip ' + variantCls);
+        svg.appendChild(rect);
+
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', midX);
-        text.setAttribute('y', midY - 4);
+        text.setAttribute('y', midY);
         text.setAttribute('class', 'bv-line-eta-label ' + variantCls + staleCls);
         text.setAttribute('text-anchor', 'middle');
         text.setAttribute('dominant-baseline', 'middle');

@@ -1243,6 +1243,459 @@
       letter-spacing: 1px; margin-bottom: 12px;
     }
     .workspace-empty .sub { font-size: 14px; color: var(--grey); line-height: 1.6; }
+
+    /* Workspace header + sub-tabs (v2 Batch 2). One pattern reused across
+       Operations / Network / Money / Health / History workspaces. */
+    .ws-header {
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding: 0 0 16px; margin-bottom: 24px; gap: 24px; flex-wrap: wrap;
+    }
+    .ws-title {
+      font-family: 'Inter', sans-serif; font-size: 11px;
+      letter-spacing: 4px; text-transform: uppercase; color: var(--grey);
+      font-weight: 700; margin: 0;
+    }
+    .ws-subtabs { display: flex; gap: 4px; flex-wrap: wrap; }
+    .ws-subtab {
+      background: none; border: none; color: var(--grey);
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      padding: 8px 16px; border-radius: 7px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .ws-subtab:hover { background: rgba(168,216,234,0.06); color: var(--white); }
+    .ws-subtab.active { background: rgba(168,216,234,0.14); color: var(--ice); }
+    .ws-subtab-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+      background: var(--amber); color: var(--navy);
+      font-size: 10px; font-weight: 700;
+    }
+    .ws-subtab-content { display: none; }
+    .ws-subtab-content.active { display: block; }
+    .live-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(34,197,94,0.18); color: var(--green);
+      font-size: 9px; font-weight: 700; letter-spacing: 1px;
+      padding: 2px 6px; border-radius: 4px;
+    }
+    .live-pill-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green);
+      animation: dv2-pulse 1.8s infinite ease-in-out;
+    }
+    .ws-empty {
+      max-width: 540px; margin: 64px auto; text-align: center;
+      padding: 40px 28px; background: var(--navy-mid);
+      border: 1px solid var(--border); border-radius: 12px;
+    }
+    .ws-empty .title { font-size: 18px; font-weight: 700; color: var(--white); letter-spacing: 1px; margin-bottom: 8px; }
+    .ws-empty .sub { font-size: 13px; color: var(--grey); line-height: 1.6; }
+
+    /* Operations / Schedule (v2 Batch 2 Phase 2.3) */
+    .ops-sched-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+    }
+    .ops-sched-toolbar-left { display: flex; align-items: baseline; gap: 12px; }
+    .ops-sched-toolbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .ops-sched-h2 {
+      font-size: 18px; font-weight: 700; color: var(--white); margin: 0;
+      letter-spacing: 0.5px;
+    }
+    .ops-sched-count {
+      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+      color: var(--grey); letter-spacing: 1px; text-transform: uppercase;
+    }
+    .ops-sched-date-field {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--grey); letter-spacing: 0.5px;
+    }
+    .ops-sched-date-field input {
+      background: var(--navy); border: 1px solid var(--border);
+      color: var(--white); border-radius: 6px; padding: 6px 8px;
+      font-family: 'Inter', sans-serif; font-size: 12px;
+    }
+    .ops-sched-action {
+      background: var(--ice); color: var(--navy); border: none;
+      border-radius: 8px; padding: 8px 14px; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
+      letter-spacing: 0.5px; transition: opacity 0.15s;
+    }
+    .ops-sched-action:hover { opacity: 0.9; }
+
+    .ops-sched-table-wrap {
+      background: var(--navy-mid); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    .ops-sched-table { width: 100%; border-collapse: collapse; }
+    .ops-sched-table thead th {
+      background: rgba(168,216,234,0.05);
+      font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--grey); text-align: left; font-weight: 700;
+      padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .ops-sched-table tbody tr.ops-sched-row {
+      cursor: pointer; transition: background 0.12s;
+      border-top: 1px solid var(--border);
+    }
+    .ops-sched-table tbody tr.ops-sched-row:hover { background: rgba(168,216,234,0.04); }
+    .ops-sched-table tbody tr.ops-sched-row.expanded { background: rgba(168,216,234,0.06); }
+    .ops-sched-table tbody tr.ops-sched-row.proposed-stripe td:first-child {
+      border-left: 3px solid var(--amber);
+    }
+    .ops-sched-table tbody td {
+      padding: 12px 16px; font-size: 13px; color: var(--white); vertical-align: middle;
+      white-space: nowrap;
+    }
+    .ops-sched-id { font-family: 'JetBrains Mono', monospace; color: var(--ice); font-size: 12px; }
+    .ops-sched-time { font-family: 'JetBrains Mono', monospace; color: var(--white); font-size: 12px; }
+    .ops-sched-time .day { color: var(--grey); margin-right: 6px; }
+    .ops-sched-pill {
+      display: inline-block;
+      font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 10px; font-weight: 700; white-space: nowrap;
+    }
+    .ops-sched-pill.scheduled { background: rgba(34,197,94,0.18); color: var(--green); }
+    .ops-sched-pill.proposed  { background: rgba(245,158,11,0.18); color: var(--amber); }
+    .ops-sched-pill.cancelled { background: rgba(100,116,139,0.18); color: var(--grey); }
+
+    .ops-sched-row-actions { display: inline-flex; gap: 6px; }
+    .ops-sched-btn {
+      background: none; border: 1px solid var(--border); color: var(--grey);
+      border-radius: 6px; padding: 5px 11px; font-size: 11px; cursor: pointer;
+      font-family: 'Inter', sans-serif; letter-spacing: 0.5px;
+      transition: color 0.12s, border-color 0.12s, background 0.12s;
+    }
+    .ops-sched-btn:hover { color: var(--ice); border-color: var(--ice); }
+    .ops-sched-btn.primary { background: rgba(34,197,94,0.16); border-color: rgba(34,197,94,0.4); color: var(--green); }
+    .ops-sched-btn.primary:hover { background: rgba(34,197,94,0.25); color: var(--white); }
+    .ops-sched-btn.danger { color: var(--red); border-color: rgba(239,68,68,0.3); }
+    .ops-sched-btn.danger:hover { background: rgba(239,68,68,0.12); border-color: var(--red); color: var(--red); }
+
+    .ops-sched-empty {
+      padding: 32px 16px; text-align: center;
+      color: var(--grey); font-size: 13px;
+    }
+    .ops-sched-loading td {
+      padding: 24px 16px; text-align: center;
+      color: var(--grey); font-size: 13px;
+    }
+
+    /* Expanded sub-row (Bars / Workers / Forecast / Notes / Actions). */
+    tr.ops-sched-expanded-row td {
+      padding: 0; background: var(--navy);
+      border-top: 1px solid var(--border); border-bottom: 2px solid var(--ice);
+    }
+    .ops-sched-exp-inner { padding: 20px 24px; display: flex; flex-direction: column; gap: 18px; }
+    .ops-sched-exp-section {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .ops-sched-exp-h3 {
+      font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--ice); font-weight: 700; margin: 0;
+    }
+    .ops-sched-exp-h3.proposed-h3 { color: var(--amber); }
+    .ops-sched-exp-body { font-size: 13px; color: var(--white); line-height: 1.6; }
+    .ops-sched-exp-body .muted { color: var(--grey); }
+    .ops-sched-exp-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ops-sched-bar-chip {
+      background: rgba(168,216,234,0.08); border: 1px solid rgba(168,216,234,0.2);
+      color: var(--ice); font-size: 12px; padding: 4px 10px; border-radius: 6px;
+      font-family: 'Inter', sans-serif;
+    }
+    .ops-sched-worker-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 0; border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .ops-sched-worker-row:last-child { border-bottom: none; }
+    .ops-sched-worker-name { color: var(--white); }
+    .ops-sched-worker-pill {
+      display: inline-block; font-size: 9px; letter-spacing: 0.8px;
+      text-transform: uppercase; padding: 2px 8px; border-radius: 8px;
+      font-weight: 700;
+    }
+    .ops-sched-worker-pill.joined    { background: rgba(34,197,94,0.18);  color: var(--green); }
+    .ops-sched-worker-pill.confirmed { background: rgba(34,197,94,0.10);  color: var(--green); }
+    .ops-sched-worker-pill.declined  { background: rgba(239,68,68,0.16);  color: var(--red); }
+    .ops-sched-worker-pill.no_response { background: rgba(100,116,139,0.16); color: var(--grey); }
+    .ops-sched-worker-pill.invited   { background: rgba(168,216,234,0.10); color: var(--ice); }
+
+    .ops-sched-forecast {
+      display: flex; gap: 24px; flex-wrap: wrap;
+    }
+    .ops-sched-forecast > div { font-size: 13px; color: var(--white); }
+    .ops-sched-forecast .label { display: block; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--grey); margin-bottom: 4px; }
+    .ops-sched-forecast .value strong { color: var(--ice); font-family: 'JetBrains Mono', monospace; }
+
+    .ops-sched-notes-textarea {
+      width: 100%; min-height: 72px; resize: vertical;
+      background: var(--navy-mid); border: 1px solid var(--border);
+      color: var(--white); border-radius: 8px; padding: 10px 12px;
+      font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.5;
+      box-sizing: border-box;
+    }
+    .ops-sched-notes-textarea:focus { outline: none; border-color: var(--ice); }
+    .ops-sched-notes-actions { display: flex; gap: 8px; align-items: center; }
+    .ops-sched-notes-status { font-size: 11px; color: var(--grey); }
+    .ops-sched-notes-status.saved { color: var(--green); }
+    .ops-sched-notes-status.err { color: var(--red); }
+
+    .ops-sched-proposed-extras {
+      background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 8px; padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 6px;
+      font-size: 12px; color: var(--white);
+    }
+    .ops-sched-proposed-extras .row { display: flex; gap: 8px; }
+    .ops-sched-proposed-extras .row .k { color: var(--grey); min-width: 110px; }
+    .ops-sched-proposed-extras .row .v { color: var(--white); flex: 1; }
+
+    .ops-sched-actions-row { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 6px; border-top: 1px solid var(--border); }
+
+    /* Network workspace: filter pills + search input + entity status pills.
+       Shared across Bars / Workers / Pipeline. */
+    .net-pill-row { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+    .net-pill {
+      background: none; border: 1px solid var(--border); color: var(--grey);
+      border-radius: 999px; padding: 4px 12px; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.5px; transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .net-pill:hover { color: var(--white); border-color: var(--ice); }
+    .net-pill.active { background: var(--ice); color: var(--navy); border-color: var(--ice); }
+    .net-search {
+      background: var(--navy); border: 1px solid var(--border);
+      color: var(--white); border-radius: 8px; padding: 6px 10px;
+      font-family: 'Inter', sans-serif; font-size: 12px; min-width: 180px;
+    }
+    .net-search:focus { outline: none; border-color: var(--ice); }
+
+    /* Bar status pills inside the table. */
+    .net-bar-status, .net-bar-sub {
+      display: inline-block;
+      font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 10px; font-weight: 700; white-space: nowrap;
+    }
+    .net-bar-status.active    { background: rgba(34,197,94,0.18);  color: var(--green); }
+    .net-bar-status.trial     { background: rgba(168,216,234,0.18); color: var(--ice); }
+    .net-bar-status.lapsed    { background: rgba(245,158,11,0.18); color: var(--amber); }
+    .net-bar-status.prospect  { background: rgba(100,116,139,0.16); color: var(--grey); }
+    .net-bar-status.suspended { background: rgba(239,68,68,0.18);  color: var(--red); }
+    .net-bar-sub.active       { background: rgba(34,197,94,0.18);  color: var(--green); }
+    .net-bar-sub.paused       { background: rgba(245,158,11,0.18); color: var(--amber); }
+    .net-bar-sub.overdue      { background: rgba(239,68,68,0.18);  color: var(--red); }
+    .net-bar-sub.cancelled    { background: rgba(100,116,139,0.18); color: var(--grey); }
+    .net-bar-sub.trial        { background: rgba(168,216,234,0.18); color: var(--ice); }
+    .net-bar-sub.none         { background: rgba(100,116,139,0.10); color: var(--grey); }
+
+    /* Bar / Worker profile expansion sub-section layout (reused). */
+    .net-prof-grid {
+      display: grid; grid-template-columns: 140px 1fr; gap: 6px 16px;
+      align-items: baseline; font-size: 13px;
+    }
+    .net-prof-grid .k { color: var(--grey); font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .net-prof-grid .v { color: var(--white); }
+    .net-prof-grid .v.muted { color: var(--grey); }
+    .net-prof-edit-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 13px; color: var(--white);
+    }
+    .net-prof-edit-row .field-label { color: var(--grey); font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; min-width: 80px; }
+    .net-prof-edit-row textarea, .net-prof-edit-row input[type="text"] {
+      flex: 1 1 240px; min-height: 32px;
+      background: var(--navy-mid); border: 1px solid var(--border);
+      color: var(--white); border-radius: 6px; padding: 6px 10px;
+      font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.4;
+    }
+    .net-prof-edit-row textarea { min-height: 64px; resize: vertical; }
+    .net-prof-edit-row .field-status { font-size: 11px; color: var(--grey); min-width: 60px; }
+    .net-prof-edit-row .field-status.saved { color: var(--green); }
+    .net-prof-edit-row .field-status.err   { color: var(--red); }
+
+    .net-mini-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .net-mini-table th, .net-mini-table td {
+      padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border);
+    }
+    .net-mini-table th { color: var(--grey); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
+    .net-mini-table td { color: var(--white); }
+    .net-mini-table tr.clickable { cursor: pointer; transition: background 0.12s; }
+    .net-mini-table tr.clickable:hover { background: rgba(168,216,234,0.05); }
+
+    .net-cross-link {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: var(--ice); font-size: 12px; cursor: pointer;
+      background: none; border: none; padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+    .net-cross-link:hover { color: var(--white); text-decoration: underline; }
+    .net-cross-link.disabled {
+      color: var(--grey); cursor: not-allowed;
+    }
+    .net-cross-link.disabled:hover { color: var(--grey); text-decoration: none; }
+
+    .net-pin-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 0; border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .net-pin-row:last-child { border-bottom: none; }
+    .net-pin-name { color: var(--white); }
+    .net-pin-meta { font-size: 11px; color: var(--grey); }
+    .net-pin-pending {
+      background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .net-pin-pending .meta { font-size: 12px; color: var(--white); }
+
+    /* Worker table-specific. */
+    .net-worker-tier {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      background: rgba(168,216,234,0.10); color: var(--ice);
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    }
+    .net-worker-rel {
+      font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+    }
+    .net-worker-rel.high   { color: var(--green); }
+    .net-worker-rel.mid    { color: var(--ice); }
+    .net-worker-rel.low    { color: var(--amber); }
+    .net-worker-rel.poor   { color: var(--red); }
+    .net-worker-rel.na     { color: var(--grey); }
+    .net-worker-status {
+      display: inline-block; font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 10px; font-weight: 700; white-space: nowrap;
+    }
+    .net-worker-status.active     { background: rgba(34,197,94,0.18);  color: var(--green); }
+    .net-worker-status.flagged    { background: rgba(245,158,11,0.18); color: var(--amber); }
+    .net-worker-status.suspended  { background: rgba(239,68,68,0.18);  color: var(--red); }
+    .net-worker-status.offboarded { background: rgba(100,116,139,0.18); color: var(--grey); }
+
+    /* F-32 component breakdown table inside worker profile. */
+    .net-f32-composite {
+      display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px;
+    }
+    .net-f32-composite .value {
+      font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700;
+      color: var(--green);
+    }
+    .net-f32-composite .label { font-size: 11px; color: var(--grey); letter-spacing: 1px; text-transform: uppercase; }
+    .net-f32-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .net-f32-table td { padding: 6px 0; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .net-f32-table td.label { color: var(--white); min-width: 200px; }
+    .net-f32-table td.weight { color: var(--grey); font-family: 'JetBrains Mono', monospace; font-size: 11px; min-width: 60px; text-align: right; padding-right: 12px; }
+    .net-f32-table td.bar { width: 100%; padding-right: 12px; }
+    .net-f32-table td.score { font-family: 'JetBrains Mono', monospace; font-weight: 700; min-width: 50px; text-align: right; }
+    .net-f32-bar {
+      height: 8px; background: rgba(168,216,234,0.08); border-radius: 4px; overflow: hidden;
+    }
+    .net-f32-bar > span {
+      display: block; height: 100%; background: var(--ice);
+      transition: width 0.3s ease;
+    }
+    .net-f32-bar.high > span   { background: var(--green); }
+    .net-f32-bar.mid > span    { background: var(--ice); }
+    .net-f32-bar.low > span    { background: var(--amber); }
+    .net-f32-bar.poor > span   { background: var(--red); }
+    .net-f32-row.na td { color: var(--grey); }
+    .net-f32-row.na .net-f32-bar > span { background: rgba(100,116,139,0.3); }
+    .net-f32-raw { font-size: 11px; color: var(--grey); margin-top: 2px; }
+
+    /* Pipeline workspace (sub-tab inside Network). */
+    .net-pipeline-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+    }
+    .net-pipeline-funnel {
+      font-size: 12px; color: var(--white);
+      display: inline-flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+      margin-left: 12px;
+    }
+    .net-pipeline-funnel .stage { color: var(--grey); letter-spacing: 1px; text-transform: uppercase; font-size: 10px; margin-right: 4px; }
+    .net-pipeline-funnel .num   { font-family: 'JetBrains Mono', monospace; color: var(--white); font-weight: 700; font-size: 14px; }
+    .net-pipeline-funnel .num.active { color: var(--ice); }
+    .net-pipeline-funnel .link {
+      color: var(--grey); cursor: pointer; border-bottom: 1px dashed transparent;
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .net-pipeline-funnel .link:hover { color: var(--ice); border-bottom-color: var(--ice); }
+    .net-pipeline-subtabs { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+
+    .net-pipeline-pane { /* sub-tab within Network/Pipeline */ }
+
+    .net-stage-pill {
+      display: inline-block;
+      font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 10px; font-weight: 700; white-space: nowrap;
+    }
+    .net-stage-pill.registered { background: rgba(100,116,139,0.16); color: var(--grey); }
+    .net-stage-pill.applied    { background: rgba(168,216,234,0.18); color: var(--ice); }
+    .net-stage-pill.prospect   { background: rgba(100,116,139,0.16); color: var(--grey); }
+
+    /* New-prospect inline modal. */
+    .prospect-form-modal {
+      position: fixed; inset: 0; z-index: 5000;
+      background: rgba(15,31,61,0.7);
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .prospect-form-card {
+      background: var(--navy-mid); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px; max-width: 460px; width: 100%;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .prospect-form-h3 { margin: 0; color: var(--white); font-size: 16px; font-weight: 700; }
+    .prospect-form-label {
+      display: flex; flex-direction: column; gap: 4px;
+      font-size: 11px; letter-spacing: 0.5px; color: var(--grey); text-transform: uppercase;
+    }
+    .prospect-form-label input, .prospect-form-label textarea {
+      background: var(--navy); border: 1px solid var(--border); color: var(--white);
+      border-radius: 8px; padding: 8px 10px; font-family: 'Inter', sans-serif; font-size: 13px;
+      text-transform: none; letter-spacing: 0;
+    }
+    .prospect-form-label input:focus, .prospect-form-label textarea:focus { outline: none; border-color: var(--ice); }
+    .prospect-form-err { font-size: 12px; color: var(--red); min-height: 16px; }
+    .prospect-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+
+    /* Worker flagging UI (Decision C). */
+    .net-worker-flags-head {
+      display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px;
+    }
+    .net-worker-flags-title {
+      font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--white); font-weight: 700;
+    }
+    .net-worker-flags-count {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    }
+    .net-worker-flags-count.active { color: var(--amber); }
+    .net-worker-flags-count.muted  { color: var(--grey); }
+    .net-worker-flag-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 12px; padding: 10px 12px; border-radius: 8px; margin-bottom: 6px;
+      background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2);
+    }
+    .net-worker-flag-row.resolved {
+      background: rgba(100,116,139,0.06); border-color: var(--border); opacity: 0.85;
+    }
+    .net-worker-flag-meta { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+    .net-worker-flag-when {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--grey);
+    }
+    .net-worker-flag-reason { color: var(--white); line-height: 1.4; }
+    .net-worker-flag-resolution { color: var(--ice); font-style: italic; font-size: 11px; }
+    .net-worker-flag-history-toggle {
+      background: none; border: none; color: var(--grey);
+      font-family: 'Inter', sans-serif; font-size: 11px; letter-spacing: 0.5px;
+      cursor: pointer; padding: 4px 0; text-transform: uppercase;
+    }
+    .net-worker-flag-history-toggle:hover { color: var(--ice); }
+    .net-worker-flag-history-empty { font-size: 11px; padding: 4px 0; }
+    .net-worker-flag-history-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2215,15 +2668,256 @@
      Each workspace migration lands content into its shell. Spec:
      glasi_dashboard/audits/DASHBOARD_V2_TARGET_SPEC.md -->
 <section class="workspace" id="workspace-operations">
-  <div class="workspace-empty">
-    <div class="title">Operations workspace</div>
-    <div class="sub">Live + Schedule sub-views land here in the Operations migration.<br>The bipartite Live view relocates verbatim; Schedule is redesigned per spec.</div>
+  <header class="ws-header">
+    <h1 class="ws-title">Operations</h1>
+    <nav class="ws-subtabs" id="ops-subtabs">
+      <button class="ws-subtab" data-subtab="schedule" onclick="showOperationsSubtab('schedule')">Schedule</button>
+      <button class="ws-subtab" data-subtab="live" onclick="showOperationsSubtab('live')">
+        <span class="live-pill" id="ops-live-indicator" style="display:none;"><span class="live-pill-dot"></span>LIVE</span>
+        <span class="ws-subtab-label">Live</span>
+      </button>
+    </nav>
+  </header>
+  <div class="ws-subtab-content" data-subtab="schedule">
+    <div class="ops-sched-toolbar">
+      <div class="ops-sched-toolbar-left">
+        <h2 class="ops-sched-h2">Schedule</h2>
+        <span class="ops-sched-count" id="ops-sched-count">&mdash;</span>
+      </div>
+      <div class="ops-sched-toolbar-right">
+        <label class="ops-sched-date-field">
+          <span>From</span>
+          <input type="date" id="ops-sched-from" oninput="onOpsScheduleFilterChange()" />
+        </label>
+        <label class="ops-sched-date-field">
+          <span>To</span>
+          <input type="date" id="ops-sched-to" oninput="onOpsScheduleFilterChange()" />
+        </label>
+        <button class="ops-sched-action" onclick="openScheduleSession()">+ New Session</button>
+      </div>
+    </div>
+    <div class="ops-sched-table-wrap">
+      <table class="ops-sched-table">
+        <thead>
+          <tr>
+            <th>Session ID</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="ops-sched-tbody">
+          <tr class="ops-sched-loading"><td colspan="5">Loading sessions...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="ws-subtab-content" data-subtab="live">
+    <div id="ops-live-empty" class="ws-empty">
+      <div class="title">No live session right now</div>
+      <div class="sub">Sessions auto-go-live at their scheduled start time. Use the Schedule sub-tab to create a session or review what is coming up.</div>
+    </div>
+    <div id="ops-live-room" style="display:none;"></div>
   </div>
 </section>
 <section class="workspace" id="workspace-network">
-  <div class="workspace-empty">
-    <div class="title">Network workspace</div>
-    <div class="sub">Bars + Workers + Pipeline + embedded Documents land here in the Network migration.</div>
+  <header class="ws-header">
+    <h1 class="ws-title">Network</h1>
+    <nav class="ws-subtabs" id="net-subtabs">
+      <button class="ws-subtab" data-subtab="bars" onclick="showNetworkSubtab('bars')">
+        <span class="ws-subtab-label">Bars</span>
+        <span class="ws-subtab-badge" id="net-bars-badge" style="display:none;">0</span>
+      </button>
+      <button class="ws-subtab" data-subtab="workers" onclick="showNetworkSubtab('workers')">
+        <span class="ws-subtab-label">Workers</span>
+      </button>
+      <button class="ws-subtab" data-subtab="pipeline" onclick="showNetworkSubtab('pipeline')">
+        <span class="ws-subtab-label">Pipeline</span>
+        <span class="ws-subtab-badge" id="net-pipeline-badge" style="display:none;">0</span>
+      </button>
+    </nav>
+  </header>
+  <div class="ws-subtab-content" data-subtab="bars">
+    <div class="ops-sched-toolbar">
+      <div class="ops-sched-toolbar-left">
+        <h2 class="ops-sched-h2">Bars</h2>
+        <span class="ops-sched-count" id="net-bars-count">&mdash;</span>
+      </div>
+      <div class="ops-sched-toolbar-right">
+        <div class="net-pill-row" id="net-bars-filters">
+          <button class="net-pill active" data-filter="all"       onclick="setNetworkBarsFilter('all')">All</button>
+          <button class="net-pill" data-filter="active"           onclick="setNetworkBarsFilter('active')">Active</button>
+          <button class="net-pill" data-filter="trial"            onclick="setNetworkBarsFilter('trial')">Trial</button>
+          <button class="net-pill" data-filter="lapsed"           onclick="setNetworkBarsFilter('lapsed')">Lapsed</button>
+          <button class="net-pill" data-filter="prospect"         onclick="setNetworkBarsFilter('prospect')">Prospect</button>
+          <button class="net-pill" data-filter="suspended"        onclick="setNetworkBarsFilter('suspended')">Suspended</button>
+        </div>
+        <input type="search" class="net-search" id="net-bars-search" placeholder="Search by name..." oninput="onNetworkBarsSearch()">
+        <button class="ops-sched-action" onclick="openOv('add-bar')">+ Add Bar</button>
+      </div>
+    </div>
+    <div class="ops-sched-table-wrap">
+      <table class="ops-sched-table">
+        <thead>
+          <tr>
+            <th>Bar Name</th>
+            <th>Postcode</th>
+            <th>Status</th>
+            <th>Subscription</th>
+            <th>Last Session</th>
+          </tr>
+        </thead>
+        <tbody id="net-bars-tbody"><tr class="ops-sched-loading"><td colspan="5">Loading bars...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="ws-subtab-content" data-subtab="workers">
+    <div class="ops-sched-toolbar">
+      <div class="ops-sched-toolbar-left">
+        <h2 class="ops-sched-h2">Workers</h2>
+        <span class="ops-sched-count" id="net-workers-count">&mdash;</span>
+      </div>
+      <div class="ops-sched-toolbar-right">
+        <div class="net-pill-row" id="net-workers-filters">
+          <button class="net-pill active" data-filter="all"          onclick="setNetworkWorkersFilter('all')">All</button>
+          <button class="net-pill" data-filter="active"              onclick="setNetworkWorkersFilter('active')">Active</button>
+          <button class="net-pill" data-filter="flagged"             onclick="setNetworkWorkersFilter('flagged')">Flagged</button>
+          <button class="net-pill" data-filter="suspended"           onclick="setNetworkWorkersFilter('suspended')">Suspended</button>
+          <button class="net-pill" data-filter="offboarded"          onclick="setNetworkWorkersFilter('offboarded')">Offboarded</button>
+        </div>
+        <input type="search" class="net-search" id="net-workers-search" placeholder="Search by name..." oninput="onNetworkWorkersSearch()">
+      </div>
+    </div>
+    <div class="ops-sched-table-wrap">
+      <table class="ops-sched-table">
+        <thead>
+          <tr>
+            <th>Worker Name</th>
+            <th>Postcode</th>
+            <th>Tier</th>
+            <th>Reliability</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="net-workers-tbody"><tr class="ops-sched-loading"><td colspan="5">Loading workers...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="ws-subtab-content" data-subtab="pipeline">
+    <div class="net-pipeline-toolbar">
+      <div class="ops-sched-toolbar-left">
+        <h2 class="ops-sched-h2">Pipeline</h2>
+        <div class="net-pipeline-funnel" id="net-pipeline-funnel">
+          <span class="muted">Loading funnel...</span>
+        </div>
+      </div>
+      <nav class="net-pipeline-subtabs">
+        <button class="net-pill active" data-pipeline-tab="bars"    onclick="showPipelineSubtab('bars')">Bars prospects</button>
+        <button class="net-pill"        data-pipeline-tab="workers" onclick="showPipelineSubtab('workers')">Worker applicants</button>
+      </nav>
+    </div>
+
+    <!-- Pipeline / Bars -->
+    <div class="net-pipeline-pane" data-pipeline-tab="bars">
+      <div class="ops-sched-toolbar" style="margin-bottom:14px;">
+        <div class="ops-sched-toolbar-left">
+          <span class="ops-sched-count" id="net-pipebars-count">&mdash;</span>
+        </div>
+        <div class="ops-sched-toolbar-right">
+          <input type="search" class="net-search" id="net-pipebars-search" placeholder="Search by name..." oninput="onPipelineBarsSearch()">
+          <button class="ops-sched-action" onclick="openProspectForm()">+ Add Prospect</button>
+        </div>
+      </div>
+      <div class="ops-sched-table-wrap">
+        <table class="ops-sched-table">
+          <thead>
+            <tr>
+              <th>Bar Name</th>
+              <th>Postcode</th>
+              <th>Status</th>
+              <th>Last Contact</th>
+              <th>Days in Pipeline</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="net-pipebars-tbody"><tr class="ops-sched-loading"><td colspan="6">Loading prospects...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pipeline / Workers -->
+    <div class="net-pipeline-pane" data-pipeline-tab="workers" style="display:none;">
+      <div class="ops-sched-toolbar" style="margin-bottom:14px;">
+        <div class="ops-sched-toolbar-left">
+          <span class="ops-sched-count" id="net-pipeworkers-count">&mdash;</span>
+        </div>
+        <div class="ops-sched-toolbar-right">
+          <div class="net-pill-row" id="net-pipeworkers-filters">
+            <button class="net-pill active" data-filter="all"        onclick="setPipelineWorkersFilter('all')">All</button>
+            <button class="net-pill" data-filter="registered"        onclick="setPipelineWorkersFilter('registered')">Registered</button>
+            <button class="net-pill" data-filter="applied"           onclick="setPipelineWorkersFilter('applied')">Applied</button>
+          </div>
+          <input type="search" class="net-search" id="net-pipeworkers-search" placeholder="Search by name..." oninput="onPipelineWorkersSearch()">
+        </div>
+      </div>
+      <div class="ops-sched-table-wrap">
+        <table class="ops-sched-table">
+          <thead>
+            <tr>
+              <th>Worker Name</th>
+              <th>Postcode</th>
+              <th>Stage</th>
+              <th>Date</th>
+              <th>Notes summary</th>
+            </tr>
+          </thead>
+          <tbody id="net-pipeworkers-tbody"><tr class="ops-sched-loading"><td colspan="5">Loading applicants...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Flag Worker modal (Decision C) -->
+    <div id="flag-worker-modal" class="prospect-form-modal" style="display:none;">
+      <div class="prospect-form-card">
+        <h3 class="prospect-form-h3">Flag worker <span id="flag-worker-name" style="color:var(--ice);font-weight:600;">,</span></h3>
+        <label class="prospect-form-label">Reason
+          <textarea id="flag-worker-reason" rows="4" placeholder="What happened? Why is this worker being flagged?"></textarea>
+        </label>
+        <div class="prospect-form-err" id="flag-worker-err"></div>
+        <div class="prospect-form-actions">
+          <button class="ops-sched-btn" onclick="closeFlagWorkerModal()">Cancel</button>
+          <button class="ops-sched-action" id="flag-worker-save" onclick="submitFlagWorker()">Flag Worker</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- New-prospect inline modal -->
+    <div id="prospect-form-modal" class="prospect-form-modal" style="display:none;">
+      <div class="prospect-form-card">
+        <h3 class="prospect-form-h3">Add Prospect</h3>
+        <label class="prospect-form-label">Bar name
+          <input type="text" id="prospect-form-name" placeholder="e.g. The Crown" />
+        </label>
+        <label class="prospect-form-label">Postcode
+          <input type="text" id="prospect-form-postcode" placeholder="e.g. SO14 7DU" />
+        </label>
+        <label class="prospect-form-label">Contact name
+          <input type="text" id="prospect-form-contact-name" placeholder="Manager name" />
+        </label>
+        <label class="prospect-form-label">Contact phone
+          <input type="text" id="prospect-form-contact-phone" placeholder="Optional" />
+        </label>
+        <label class="prospect-form-label">Notes
+          <textarea id="prospect-form-notes" rows="3" placeholder="Optional Sam-side notes"></textarea>
+        </label>
+        <div class="prospect-form-err" id="prospect-form-err"></div>
+        <div class="prospect-form-actions">
+          <button class="ops-sched-btn" onclick="closeProspectForm()">Cancel</button>
+          <button class="ops-sched-action" id="prospect-form-save" onclick="saveProspectForm()">Save Prospect</button>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 <section class="workspace" id="workspace-money">
@@ -2470,7 +3164,7 @@ function setActiveNav(name) {
 // ====================================================================
 const DV2_FLAG_KEY = 'glasi_dashboard_v2';
 const DV2_LAST_WORKSPACE_KEY = 'glasi_dashboard_v2_last_workspace';
-const DV2_OPS_SUBTAB_KEY = 'glasi_ops_default_subtab';
+const DV2_OPS_SUBTAB_KEY = 'glasi_ws_operations_subtab';
 const DV2_WORKSPACES = ['operations', 'network', 'money', 'health', 'history', 'settings', 'account'];
 const DV2_PRIMARY = ['operations', 'network', 'money', 'health', 'history'];
 
@@ -2571,6 +3265,2503 @@ function dv2TeardownAll() {
   }
   dv2CurrentWorkspace = null;
 }
+
+// ====================================================================
+// Dashboard v2 Batch 2 / Phase 2.1: Operations workspace shell.
+// Sub-tabs Schedule | Live with localStorage persistence on
+// DV2_OPS_SUBTAB_KEY. Live sub-tab carries a pulsing LIVE pill driven by
+// dv2SetLiveIndicator (which already mirrors the Operations top-tab dot).
+// Schedule + Live content land in Phase 2.2 (Live, relocate verbatim) and
+// Phase 2.3 (Schedule, redesigned).
+// ====================================================================
+
+function getOperationsSubtab() {
+  try {
+    const v = localStorage.getItem(DV2_OPS_SUBTAB_KEY);
+    if(v === 'schedule' || v === 'live') return v;
+  } catch(e) {}
+  return null;
+}
+
+// Spec §3: default 'live' if a session is currently live; else last-used; else 'schedule'.
+function pickInitialOperationsSubtab() {
+  if(typeof liveSessionOps !== 'undefined' && liveSessionOps && liveSessionOps.sessionId) return 'live';
+  const persisted = getOperationsSubtab();
+  if(persisted) return persisted;
+  return 'schedule';
+}
+
+function showOperationsSubtab(name) {
+  if(name !== 'schedule' && name !== 'live') return;
+  const root = document.getElementById('workspace-operations');
+  if(!root) return;
+  root.querySelectorAll('.ws-subtab').forEach(b => {
+    b.classList.toggle('active', b.dataset.subtab === name);
+  });
+  root.querySelectorAll('.ws-subtab-content').forEach(c => {
+    c.classList.toggle('active', c.dataset.subtab === name);
+  });
+  try { localStorage.setItem(DV2_OPS_SUBTAB_KEY, name); } catch(e) {}
+
+  if(name === 'live') {
+    // If a session is live (or one was restored on boot), paint the bipartite
+    // view into #ops-live-room. The room/empty-state dispatch happens inside
+    // renderLiveRoom via getBipartiteRoomEl / getBipartiteEmptyEl.
+    if(typeof liveSessionOps !== 'undefined' && liveSessionOps && liveSessionOps.sessionId) {
+      renderLiveRoom();
+      // Consume any dirty markers accumulated while the sub-tab was off-screen.
+      if(typeof liveSessionOps.consumeDirty === 'function') {
+        liveSessionOps.consumeDirty('live');
+      }
+    } else {
+      const room = document.getElementById('ops-live-room');
+      const emptyEl = document.getElementById('ops-live-empty');
+      if(room) room.style.display = 'none';
+      if(emptyEl) emptyEl.style.display = 'block';
+    }
+  } else if(name === 'schedule') {
+    // Re-render from cached state on switch back. Filters + data persist
+    // for the duration of the workspace session.
+    if(typeof renderOpsScheduleTable === 'function') {
+      if(!opsScheduleState.loaded && typeof loadOpsScheduleData === 'function') {
+        loadOpsScheduleData();
+      } else {
+        renderOpsScheduleTable();
+      }
+    }
+  }
+}
+
+// Mirror the global Operations live indicator onto the Live sub-tab pill.
+// Wraps the existing dv2SetLiveIndicator (which only toggles the top-tab dot)
+// so both signals stay in lockstep without changing the existing callers.
+const _dv2SetLiveIndicatorBase = dv2SetLiveIndicator;
+dv2SetLiveIndicator = function(isLive) {
+  _dv2SetLiveIndicatorBase(isLive);
+  const pill = document.getElementById('ops-live-indicator');
+  if(pill) pill.style.display = isLive ? 'inline-flex' : 'none';
+};
+
+// ====================================================================
+// Phase 2.3: Operations / Schedule.
+// Sessions table (status in scheduled/proposed/cancelled) with row
+// expansion (Bars / Workers / Forecast / Notes / Actions). Realtime sub
+// on sessions table is workspace-scoped (started in operations.onEnter,
+// stopped in operations.onLeave / onTeardown). The "+ New Session" button
+// reuses the existing ov-schedule modal; Approve / Reject reuse the
+// existing approve_session_proposal RPC + ov-decline-proposal modal.
+// ====================================================================
+
+const opsScheduleState = {
+  loaded: false,
+  loading: false,
+  sessions: [],
+  expandedId: null,
+  filterFrom: '',
+  filterTo: '',
+  catchmentCache: new Map(),  // sessionId -> catchment count
+  coverageCache: new Map(),   // sessionId -> coverage forecast
+  notesTimers: new Map(),     // sessionId -> debounce timer
+  notesStatus: new Map()      // sessionId -> 'saving' | 'saved' | 'err'
+};
+let _opsSessionsRealtimeWs = null;
+
+function _fmtIsoDate(d) {
+  // YYYY-MM-DD for <input type="date"> default values.
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return yyyy + '-' + mm + '-' + dd;
+}
+
+function initOpsScheduleFilters() {
+  const fromEl = document.getElementById('ops-sched-from');
+  const toEl   = document.getElementById('ops-sched-to');
+  if(!fromEl || !toEl) return;
+  // Default: today through today+28 (Next 4 weeks) per spec.
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end   = new Date(today); end.setDate(end.getDate() + 28);
+  if(!fromEl.value) fromEl.value = _fmtIsoDate(today);
+  if(!toEl.value)   toEl.value   = _fmtIsoDate(end);
+  opsScheduleState.filterFrom = fromEl.value;
+  opsScheduleState.filterTo   = toEl.value;
+}
+
+function onOpsScheduleFilterChange() {
+  const fromEl = document.getElementById('ops-sched-from');
+  const toEl   = document.getElementById('ops-sched-to');
+  opsScheduleState.filterFrom = (fromEl && fromEl.value) || '';
+  opsScheduleState.filterTo   = (toEl   && toEl.value)   || '';
+  loadOpsScheduleData();
+}
+
+function _opsSessionStartDate(s) {
+  if(s.scheduled_start) return new Date(s.scheduled_start);
+  if(s.session_date) return new Date(s.session_date + 'T' + (s.start_time || '18:00:00'));
+  return null;
+}
+function _opsSessionEndDate(s) {
+  if(s.scheduled_end) return new Date(s.scheduled_end);
+  if(s.end_time && s.session_date) return new Date(s.session_date + 'T' + s.end_time);
+  return null;
+}
+function _opsFmtCellDate(d) {
+  if(!d) return '<span class="muted">&mdash;</span>';
+  const day = d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return '<span class="ops-sched-time"><span class="day">' + day + '</span>' + time + '</span>';
+}
+
+async function loadOpsScheduleData() {
+  const tbody = document.getElementById('ops-sched-tbody');
+  if(!tbody) return;
+  if(opsScheduleState.loading) return;
+  opsScheduleState.loading = true;
+  if(!opsScheduleState.loaded) {
+    tbody.innerHTML = '<tr class="ops-sched-loading"><td colspan="5">Loading sessions...</td></tr>';
+  }
+  const from = opsScheduleState.filterFrom;
+  const to   = opsScheduleState.filterTo;
+  let q = '?status=in.(scheduled,proposed,cancelled)'
+    + '&select=id,session_date,start_time,end_time,scheduled_start,scheduled_end,status,notes,proposal_reason,proposed_by_manager_id,bar_managers!proposed_by_manager_id(name),session_bars(bars(id,name)),session_invites(application_id,attendance_confirmed,joined_at,applications(id,name))'
+    + '&order=scheduled_start.asc.nullsfirst,session_date.asc,start_time.asc';
+  if(from) q += '&session_date=gte.' + encodeURIComponent(from);
+  if(to)   q += '&session_date=lte.' + encodeURIComponent(to);
+  try {
+    const rows = await sbGet('sessions', q);
+    opsScheduleState.sessions = Array.isArray(rows) ? rows : [];
+    opsScheduleState.loaded = true;
+    opsScheduleState.catchmentCache.clear();
+    opsScheduleState.coverageCache.clear();
+    renderOpsScheduleTable();
+  } catch(e) {
+    console.error('[ops-schedule] load failed', e);
+    tbody.innerHTML = '<tr class="ops-sched-loading"><td colspan="5">Could not load sessions. Refresh to retry.</td></tr>';
+  } finally {
+    opsScheduleState.loading = false;
+  }
+}
+
+function renderOpsScheduleTable() {
+  const tbody   = document.getElementById('ops-sched-tbody');
+  const countEl = document.getElementById('ops-sched-count');
+  if(!tbody) return;
+  const rows = opsScheduleState.sessions;
+  if(countEl) countEl.textContent = rows.length + (rows.length === 1 ? ' session' : ' sessions');
+  if(!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="ops-sched-empty">No sessions in this date range. Click + New Session to plan one, or widen the date filter.</div></td></tr>';
+    return;
+  }
+  const expandedId = opsScheduleState.expandedId;
+  const parts = [];
+  for(const s of rows) {
+    parts.push(_renderOpsScheduleRow(s, expandedId === s.id));
+    if(expandedId === s.id) parts.push(_renderOpsScheduleExpansion(s));
+  }
+  tbody.innerHTML = parts.join('');
+}
+
+function _renderOpsScheduleRow(s, isExpanded) {
+  const start = _opsSessionStartDate(s);
+  const end   = _opsSessionEndDate(s);
+  const status = (s.status || 'scheduled').toLowerCase();
+  const statusLabel = status.toUpperCase();
+  const stripeCls = status === 'proposed' ? ' proposed-stripe' : '';
+  const expandedCls = isExpanded ? ' expanded' : '';
+  const pastGoLive = _opsIsSessionPastGoLive(s);
+  const editDisabled = pastGoLive
+    ? ' disabled style="opacity:0.5;cursor:not-allowed;" title="Structural changes require Cancel + New Session"'
+    : '';
+
+  let actions = '';
+  if(status === 'proposed') {
+    actions = ''
+      + '<button class="ops-sched-btn primary" onclick="event.stopPropagation();opsScheduleApprove(' + s.id + ')">Approve</button>'
+      + '<button class="ops-sched-btn danger"  onclick="event.stopPropagation();opsScheduleReject(' + s.id + ')">Reject</button>'
+      + '<button class="ops-sched-btn"' + editDisabled + ' onclick="event.stopPropagation();opsScheduleEdit(' + s.id + ')">Edit</button>'
+      + '<button class="ops-sched-btn"         onclick="event.stopPropagation();opsScheduleCancel(' + s.id + ')">Cancel</button>';
+  } else if(status === 'scheduled') {
+    actions = ''
+      + '<button class="ops-sched-btn"' + editDisabled + ' onclick="event.stopPropagation();opsScheduleEdit(' + s.id + ')">Edit</button>'
+      + '<button class="ops-sched-btn" onclick="event.stopPropagation();opsScheduleCancel(' + s.id + ')">Cancel</button>';
+  } else {
+    actions = '<span class="muted" style="font-size:11px;color:var(--grey);">read-only</span>';
+  }
+
+  return ''
+    + '<tr class="ops-sched-row' + stripeCls + expandedCls + '" data-id="' + s.id + '" onclick="toggleOpsScheduleRow(' + s.id + ')">'
+    +   '<td><span class="ops-sched-id">#' + s.id + '</span></td>'
+    +   '<td>' + _opsFmtCellDate(start) + '</td>'
+    +   '<td>' + _opsFmtCellDate(end) + '</td>'
+    +   '<td><span class="ops-sched-pill ' + status + '">' + statusLabel + '</span></td>'
+    +   '<td><div class="ops-sched-row-actions">' + actions + '</div></td>'
+    + '</tr>';
+}
+
+function _opsEscape(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function _renderOpsScheduleExpansion(s) {
+  const status = (s.status || 'scheduled').toLowerCase();
+  const bars = (s.session_bars || []).map(sb => sb && sb.bars).filter(Boolean);
+  const invites = s.session_invites || [];
+  const sessionId = s.id;
+
+  // Bars chips.
+  const barsHtml = bars.length
+    ? '<div class="ops-sched-exp-list">' + bars.map(b => '<span class="ops-sched-bar-chip">' + _opsEscape(b.name) + '</span>').join('') + '</div>'
+    : '<div class="ops-sched-exp-body muted">No bars attached to this session.</div>';
+
+  // Workers list with state pills. Decision A: per-invite Remove button for
+  // not-yet-joined workers; disabled when the session is past go-live.
+  const pastGoLive = _opsIsSessionPastGoLive(s);
+  const workerRows = invites.map(inv => {
+    const name = (inv.applications && inv.applications.name) || ('Worker #' + inv.application_id);
+    let pill = 'invited';
+    let label = 'INVITED';
+    if(inv.joined_at) { pill = 'joined'; label = 'JOINED'; }
+    else if(inv.attendance_confirmed === 'confirmed') { pill = 'confirmed'; label = 'CONFIRMED'; }
+    else if(inv.attendance_confirmed === 'declined')  { pill = 'declined';  label = 'DECLINED'; }
+    else { pill = 'no_response'; label = 'NO RESPONSE'; }
+    const removable = !inv.joined_at && !pastGoLive && inv.id;
+    const removeBtn = removable
+      ? '<button class="ops-sched-btn danger" style="padding:2px 8px;font-size:10px;margin-left:8px;" onclick="opsScheduleRemoveInvite(' + sessionId + ',' + inv.id + ',&quot;' + _opsEscape(name).replace(/"/g, '&quot;') + '&quot;)">Remove</button>'
+      : '';
+    return '<div class="ops-sched-worker-row">'
+      + '<span class="ops-sched-worker-name">' + _opsEscape(name) + '</span>'
+      + '<span style="display:inline-flex;align-items:center;">'
+      +   '<span class="ops-sched-worker-pill ' + pill + '">' + label + '</span>'
+      +   removeBtn
+      + '</span>'
+      + '</div>';
+  }).join('');
+  const noResponseCount = invites.filter(i => !i.joined_at && (!i.attendance_confirmed || i.attendance_confirmed === 'pending')).length;
+  const workersBody = invites.length
+    ? workerRows
+    : '<div class="ops-sched-exp-body muted">No workers invited yet.</div>';
+  const inviteMoreDisabled = pastGoLive
+    ? ' disabled style="opacity:0.5;cursor:not-allowed;" title="Past go-live, cannot edit invites"'
+    : '';
+  const reinviteDisabled = (pastGoLive || !noResponseCount)
+    ? ' disabled style="opacity:0.5;cursor:not-allowed;"' + (pastGoLive ? ' title="Past go-live, cannot edit invites"' : '')
+    : '';
+  const workersActions = ''
+    + '<button class="ops-sched-btn"' + inviteMoreDisabled + ' onclick="opsScheduleInviteMore(' + sessionId + ')">Invite more</button>'
+    + '<button class="ops-sched-btn"' + reinviteDisabled    + ' onclick="opsScheduleReinviteNonResponders(' + sessionId + ')">Re-send to non-responders</button>';
+
+  // Forecast (catchment + coverage). Filled async by _populateForecast.
+  const forecastHtml = ''
+    + '<div class="ops-sched-forecast" id="ops-sched-forecast-' + sessionId + '">'
+    +   '<div><span class="label">Catchment</span><span class="value muted">Computing&hellip;</span></div>'
+    +   '<div><span class="label">Coverage forecast</span><span class="value muted">Computing&hellip;</span></div>'
+    + '</div>';
+
+  // Notes textarea.
+  const notesValue = _opsEscape(s.notes || '');
+  const notesHtml = ''
+    + '<textarea class="ops-sched-notes-textarea" id="ops-sched-notes-' + sessionId + '"'
+    +   ' oninput="opsScheduleNotesChange(' + sessionId + ', this.value)"'
+    +   ' placeholder="Notes about this session, persist on type">' + notesValue + '</textarea>'
+    + '<div class="ops-sched-notes-actions">'
+    +   '<span class="ops-sched-notes-status" id="ops-sched-notes-status-' + sessionId + '"></span>'
+    + '</div>';
+
+  // Proposed-specific extras (above actions).
+  let proposedExtras = '';
+  if(status === 'proposed') {
+    const requester = (s.bar_managers && s.bar_managers.name) || 'Unknown manager';
+    const requestedBy = bars.length ? bars.map(b => b.name).join(', ') : 'Unknown bar';
+    const managerNotes = s.proposal_reason || '(no message)';
+    const inviteNames = invites.length
+      ? invites.map(i => (i.applications && i.applications.name) || ('#' + i.application_id)).join(', ')
+      : '(no default invite list)';
+    proposedExtras = ''
+      + '<div class="ops-sched-proposed-extras">'
+      +   '<div class="row"><span class="k">Requested by</span><span class="v">' + _opsEscape(requester) + ' (' + _opsEscape(requestedBy) + ')</span></div>'
+      +   '<div class="row"><span class="k">Manager notes</span><span class="v">' + _opsEscape(managerNotes) + '</span></div>'
+      +   '<div class="row"><span class="k">Default invite list</span><span class="v">' + _opsEscape(inviteNames) + '</span></div>'
+      + '</div>';
+  }
+
+  // Bottom actions row. Edit Session is disabled past go-live (Decision A).
+  const editSessionDisabled = pastGoLive
+    ? ' disabled style="opacity:0.5;cursor:not-allowed;" title="Structural changes require Cancel + New Session"'
+    : '';
+  let actionButtons = '';
+  if(status === 'proposed') {
+    actionButtons = ''
+      + '<button class="ops-sched-btn primary" onclick="opsScheduleApprove(' + sessionId + ')">Approve</button>'
+      + '<button class="ops-sched-btn danger"  onclick="opsScheduleReject(' + sessionId + ')">Reject</button>'
+      + '<button class="ops-sched-btn"' + editSessionDisabled + ' onclick="opsScheduleEdit(' + sessionId + ')">Edit Session</button>'
+      + '<button class="ops-sched-btn danger"  onclick="opsScheduleCancel(' + sessionId + ')">Cancel Session</button>';
+  } else if(status === 'scheduled') {
+    actionButtons = ''
+      + '<button class="ops-sched-btn"' + editSessionDisabled + ' onclick="opsScheduleEdit(' + sessionId + ')">Edit Session</button>'
+      + '<button class="ops-sched-btn danger" onclick="opsScheduleCancel(' + sessionId + ')">Cancel Session</button>';
+  } else {
+    actionButtons = '<span class="muted" style="font-size:12px;color:var(--grey);">This session is ' + status + ' &mdash; no further actions available.</span>';
+  }
+
+  setTimeout(() => _populateForecast(s), 0);
+
+  return ''
+    + '<tr class="ops-sched-expanded-row"><td colspan="5"><div class="ops-sched-exp-inner">'
+    +   (proposedExtras ? proposedExtras : '')
+    +   '<div class="ops-sched-exp-section">'
+    +     '<h3 class="ops-sched-exp-h3">Bars</h3>'
+    +     barsHtml
+    +   '</div>'
+    +   '<div class="ops-sched-exp-section">'
+    +     '<h3 class="ops-sched-exp-h3">Workers</h3>'
+    +     '<div class="ops-sched-exp-body">' + workersBody + '</div>'
+    +     '<div class="ops-sched-row-actions">' + workersActions + '</div>'
+    +   '</div>'
+    +   '<div class="ops-sched-exp-section">'
+    +     '<h3 class="ops-sched-exp-h3">Forecast</h3>'
+    +     forecastHtml
+    +   '</div>'
+    +   '<div class="ops-sched-exp-section">'
+    +     '<h3 class="ops-sched-exp-h3">Notes</h3>'
+    +     notesHtml
+    +   '</div>'
+    +   '<div class="ops-sched-actions-row">' + actionButtons + '</div>'
+    + '</div></td></tr>';
+}
+
+async function _populateForecast(s) {
+  const target = document.getElementById('ops-sched-forecast-' + s.id);
+  if(!target) return;
+  const bars = (s.session_bars || []).map(sb => sb && sb.bars && sb.bars.id).filter(Boolean);
+  const invitedCount = (s.session_invites || []).length;
+
+  // Catchment, distinct workers within 30 min of any participating bar.
+  let catchment = opsScheduleState.catchmentCache.get(s.id);
+  if(catchment == null) {
+    if(!bars.length) { catchment = 0; }
+    else {
+      try {
+        const dists = await sbGet('worker_bar_distances',
+          '?bar_id=in.(' + bars.join(',') + ')&active=eq.true&walking_minutes=lte.30&select=application_id');
+        const set = new Set();
+        for(const d of (dists || [])) set.add(Number(d.application_id));
+        catchment = set.size;
+      } catch(e) { catchment = null; }
+    }
+    opsScheduleState.catchmentCache.set(s.id, catchment);
+  }
+
+  // Coverage, simple heuristic, average join_rate of past closed sessions
+  // involving any of these bars, applied to invitedCount.
+  let coverage = opsScheduleState.coverageCache.get(s.id);
+  if(coverage == null) {
+    if(!bars.length || !invitedCount) {
+      coverage = { workers: invitedCount, basis: 'invited' };
+    } else {
+      try {
+        const past = await sbGet('sessions',
+          '?status=eq.closed&select=id,session_bars(bars(id)),session_invites(joined_at)&order=session_date.desc&limit=24');
+        const matching = (past || []).filter(p => {
+          const ids = new Set((p.session_bars || []).map(sb => sb && sb.bars && sb.bars.id).filter(Boolean));
+          return bars.some(b => ids.has(b));
+        });
+        let rates = [];
+        for(const p of matching) {
+          const inv = p.session_invites || [];
+          if(inv.length === 0) continue;
+          const joined = inv.filter(i => i.joined_at).length;
+          rates.push(joined / inv.length);
+        }
+        if(rates.length) {
+          const avg = rates.reduce((a, b) => a + b, 0) / rates.length;
+          coverage = { workers: Math.round(invitedCount * avg), basis: 'heuristic', rate: avg, n: rates.length };
+        } else {
+          coverage = { workers: invitedCount, basis: 'invited' };
+        }
+      } catch(e) {
+        coverage = { workers: invitedCount, basis: 'invited' };
+      }
+    }
+    opsScheduleState.coverageCache.set(s.id, coverage);
+  }
+
+  const catchmentLine = catchment == null
+    ? '<span class="value muted">Unavailable</span>'
+    : '<span class="value"><strong>' + catchment + '</strong> workers within 30 min of any participating bar</span>';
+  let coverageLine;
+  if(coverage.basis === 'heuristic') {
+    coverageLine = '<span class="value">Expected <strong>' + coverage.workers + '</strong> workers '
+      + 'to join (based on ' + coverage.n + ' similar past session' + (coverage.n === 1 ? '' : 's')
+      + ', ~' + Math.round(coverage.rate * 100) + '% historical join rate)</span>';
+  } else {
+    coverageLine = '<span class="value"><strong>' + coverage.workers + '</strong> workers invited (no past data yet)</span>';
+  }
+  target.innerHTML = ''
+    + '<div><span class="label">Catchment</span>' + catchmentLine + '</div>'
+    + '<div><span class="label">Coverage forecast</span>' + coverageLine + '</div>';
+}
+
+function toggleOpsScheduleRow(sessionId) {
+  // One row expanded at a time. Click an open row to collapse.
+  if(opsScheduleState.expandedId === sessionId) {
+    opsScheduleState.expandedId = null;
+  } else {
+    opsScheduleState.expandedId = sessionId;
+  }
+  renderOpsScheduleTable();
+}
+
+function opsScheduleNotesChange(sessionId, value) {
+  // Debounced PATCH to sessions.notes. Status text updates per save state.
+  const statusEl = document.getElementById('ops-sched-notes-status-' + sessionId);
+  if(statusEl) {
+    statusEl.textContent = 'Saving...';
+    statusEl.classList.remove('saved', 'err');
+  }
+  const prev = opsScheduleState.notesTimers.get(sessionId);
+  if(prev) clearTimeout(prev);
+  const timer = setTimeout(async () => {
+    opsScheduleState.notesTimers.delete(sessionId);
+    try {
+      await sbPatch('sessions', '?id=eq.' + sessionId, { notes: value || null });
+      // Update local cache so subsequent re-renders show the saved value.
+      const s = opsScheduleState.sessions.find(x => x.id === sessionId);
+      if(s) s.notes = value || null;
+      if(statusEl) { statusEl.textContent = 'Saved'; statusEl.classList.add('saved'); statusEl.classList.remove('err'); }
+    } catch(e) {
+      console.error('[ops-schedule] notes save failed', e);
+      if(statusEl) { statusEl.textContent = 'Save failed'; statusEl.classList.add('err'); statusEl.classList.remove('saved'); }
+    }
+  }, 600);
+  opsScheduleState.notesTimers.set(sessionId, timer);
+}
+
+// Row actions, reuse existing v1 flows where they exist.
+async function opsScheduleApprove(sessionId) {
+  await approveSessionProposal(sessionId);
+  await loadOpsScheduleData();
+}
+function opsScheduleReject(sessionId) {
+  openDeclineProposalModal(sessionId, 'session');
+}
+async function opsScheduleCancel(sessionId) {
+  await cancelScheduledSession(sessionId);
+  await loadOpsScheduleData();
+}
+// Decision A (18 May 2026): Edit Session v1 = edit notes + add/remove invited
+// workers. Structural changes (start/end time, bar set) still require
+// Cancel + New Session. Disabled once the session is past go-live.
+function _opsIsSessionPastGoLive(s) {
+  if(!s) return false;
+  const st = (s.status || '').toLowerCase();
+  if(st === 'live' || st === 'closed' || st === 'cancelled') return true;
+  const start = _opsSessionStartDate(s);
+  return !!(start && start.getTime() <= Date.now());
+}
+function opsScheduleEdit(sessionId) {
+  const s = opsScheduleState.sessions.find(x => x.id === sessionId);
+  if(!s) return;
+  if(_opsIsSessionPastGoLive(s)) {
+    alert('This session is past its go-live time. Structural changes require Cancel + New Session.');
+    return;
+  }
+  // Expand the row if not already expanded, then focus + scroll the Notes
+  // textarea. Inline Notes / Invite more / Remove invite cover the v1 edit
+  // surface; the button is a discoverability nudge into the expansion.
+  if(opsScheduleState.expandedId !== sessionId) {
+    opsScheduleState.expandedId = sessionId;
+    renderOpsScheduleTable();
+  }
+  setTimeout(() => {
+    const ta = document.getElementById('ops-sched-notes-' + sessionId);
+    if(ta) {
+      ta.focus();
+      ta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 60);
+}
+async function opsScheduleRemoveInvite(sessionId, inviteId, workerName) {
+  const s = opsScheduleState.sessions.find(x => x.id === sessionId);
+  if(s && _opsIsSessionPastGoLive(s)) {
+    alert('This session is past its go-live time. Cannot remove invites.');
+    return;
+  }
+  if(!confirm('Remove the invite for ' + (workerName || ('#' + inviteId)) + '?\n\nThis only works for workers who have not yet joined this session.')) return;
+  try {
+    await sbDelete('session_invites', '?id=eq.' + inviteId + '&joined_at=is.null');
+    // Drop from local cache so the row updates without a full reload.
+    if(s && s.session_invites) {
+      s.session_invites = s.session_invites.filter(inv => inv.id !== inviteId);
+      renderOpsScheduleTable();
+    } else {
+      await loadOpsScheduleData();
+    }
+  } catch(e) {
+    alert('Could not remove invite: ' + (e.message || 'unknown'));
+  }
+}
+function opsScheduleInviteMore(sessionId) {
+  // Reuse existing v1 invite-workers overlay.
+  openInviteWorkers(sessionId);
+}
+async function opsScheduleReinviteNonResponders(sessionId) {
+  if(!confirm('Re-send invites to every NO_RESPONSE worker on this session?')) return;
+  const s = opsScheduleState.sessions.find(x => x.id === sessionId);
+  if(!s) return;
+  const targets = (s.session_invites || [])
+    .filter(i => !i.joined_at && (!i.attendance_confirmed || i.attendance_confirmed === 'pending'))
+    .map(i => i.id || null)
+    .filter(Boolean);
+  if(!targets.length) { alert('No non-responders to re-send to.'); return; }
+  let ok = 0, fail = 0;
+  for(const inviteId of targets) {
+    try { await reInviteWorker(inviteId); ok++; } catch(e) { fail++; }
+  }
+  alert('Re-invite complete: ' + ok + ' sent' + (fail ? ', ' + fail + ' failed' : '') + '.');
+  await loadOpsScheduleData();
+}
+
+function startOpsSessionsRealtime() {
+  if(_opsSessionsRealtimeWs) return;
+  _opsSessionsRealtimeWs = makeRealtimeWs(
+    'realtime:public:ops_sessions',
+    [{ event: '*', schema: 'public', table: 'sessions' }],
+    async (_record, _type) => {
+      // Any sessions change reloads the schedule view. Cheap and correct;
+      // we can refine to surgical patching in a later polish pass.
+      if(getDashboardMode() === 'v2' && dv2CurrentWorkspace === 'operations') {
+        await loadOpsScheduleData();
+      }
+    }
+  );
+}
+function stopOpsSessionsRealtime() {
+  if(_opsSessionsRealtimeWs) {
+    try { _opsSessionsRealtimeWs.close(); } catch(e) {}
+    _opsSessionsRealtimeWs = null;
+  }
+}
+
+dv2RegisterLifecycle('operations', {
+  onEnter: () => {
+    showOperationsSubtab(pickInitialOperationsSubtab());
+    initOpsScheduleFilters();
+    loadOpsScheduleData();
+    startOpsSessionsRealtime();
+  },
+  onLeave: () => {
+    stopOpsSessionsRealtime();
+  },
+  onTeardown: () => {
+    stopOpsSessionsRealtime();
+    opsScheduleState.loaded = false;
+    opsScheduleState.sessions = [];
+    opsScheduleState.expandedId = null;
+  }
+});
+
+// ====================================================================
+// Phase 2.4: Network workspace shell.
+// Sub-tabs Bars | Workers | Pipeline with localStorage persistence on
+// DV2_NETWORK_SUBTAB_KEY. Tab badges: Bars = pending PIN-holder approval
+// count; Pipeline = APPLIED workers count. Content for each sub-tab
+// lands in Phases 2.5 (Bars), 2.6 (Workers), 2.7 (Pipeline).
+// ====================================================================
+
+const DV2_NETWORK_SUBTAB_KEY = 'glasi_ws_network_subtab';
+let _netBadgesRealtimeWs = null;
+
+function getNetworkSubtab() {
+  try {
+    const v = localStorage.getItem(DV2_NETWORK_SUBTAB_KEY);
+    if(v === 'bars' || v === 'workers' || v === 'pipeline') return v;
+  } catch(e) {}
+  return null;
+}
+
+function pickInitialNetworkSubtab() {
+  return getNetworkSubtab() || 'bars';
+}
+
+function showNetworkSubtab(name) {
+  if(name !== 'bars' && name !== 'workers' && name !== 'pipeline') return;
+  const root = document.getElementById('workspace-network');
+  if(!root) return;
+  root.querySelectorAll('.ws-subtab').forEach(b => {
+    b.classList.toggle('active', b.dataset.subtab === name);
+  });
+  root.querySelectorAll('.ws-subtab-content').forEach(c => {
+    c.classList.toggle('active', c.dataset.subtab === name);
+  });
+  try { localStorage.setItem(DV2_NETWORK_SUBTAB_KEY, name); } catch(e) {}
+
+  if(name === 'bars' && typeof loadNetworkBarsData === 'function') {
+    if(!networkBarsState.loaded) loadNetworkBarsData();
+    else renderNetworkBarsTable();
+  } else if(name === 'workers' && typeof loadNetworkWorkersData === 'function') {
+    if(!networkWorkersState.loaded) loadNetworkWorkersData();
+    else renderNetworkWorkersTable();
+  }
+}
+
+async function refreshNetworkBarsBadge() {
+  const badge = document.getElementById('net-bars-badge');
+  if(!badge) return;
+  try {
+    const rows = await sbGet('pin_holder_requests', '?status=eq.pending&select=id');
+    const count = Array.isArray(rows) ? rows.length : 0;
+    if(count > 0) { badge.textContent = String(count); badge.style.display = 'inline-flex'; }
+    else { badge.style.display = 'none'; }
+  } catch(e) {
+    badge.style.display = 'none';
+  }
+}
+
+async function refreshNetworkPipelineBadge() {
+  const badge = document.getElementById('net-pipeline-badge');
+  if(!badge) return;
+  try {
+    const rows = await sbGet('applications', '?worker_status=eq.applied&select=id');
+    const count = Array.isArray(rows) ? rows.length : 0;
+    if(count > 0) { badge.textContent = String(count); badge.style.display = 'inline-flex'; }
+    else { badge.style.display = 'none'; }
+  } catch(e) {
+    badge.style.display = 'none';
+  }
+}
+
+function startNetworkBadgesRealtime() {
+  if(_netBadgesRealtimeWs) return;
+  // Subscribe to pin_holder_requests + applications status changes; refresh
+  // the matching badge. A single WS handles both because makeRealtimeWs
+  // accepts an array of pgChanges filters.
+  _netBadgesRealtimeWs = makeRealtimeWs(
+    'realtime:public:network_badges',
+    [
+      { event: '*', schema: 'public', table: 'pin_holder_requests' },
+      { event: '*', schema: 'public', table: 'applications' }
+    ],
+    async (_record, _type, _table) => {
+      if(_table === 'pin_holder_requests') await refreshNetworkBarsBadge();
+      else if(_table === 'applications') await refreshNetworkPipelineBadge();
+    }
+  );
+}
+
+function stopNetworkBadgesRealtime() {
+  if(_netBadgesRealtimeWs) {
+    try { _netBadgesRealtimeWs.close(); } catch(e) {}
+    _netBadgesRealtimeWs = null;
+  }
+}
+
+dv2RegisterLifecycle('network', {
+  onEnter: () => {
+    showNetworkSubtab(pickInitialNetworkSubtab());
+    refreshNetworkBarsBadge();
+    refreshNetworkPipelineBadge();
+    startNetworkBadgesRealtime();
+  },
+  onLeave: () => {
+    stopNetworkBadgesRealtime();
+    stopNetworkBarsRealtime();
+  },
+  onTeardown: () => {
+    stopNetworkBadgesRealtime();
+    stopNetworkBarsRealtime();
+    networkBarsState.loaded = false;
+    networkBarsState.bars = [];
+    networkBarsState.expandedId = null;
+  }
+});
+
+// ====================================================================
+// Phase 2.5: Network / Bars.
+// Bars table (status filter + name search) with 8-section profile
+// expansion: Identity / Contract & Subscription / Pin Holders /
+// Documents / Recent Sessions / Upcoming Sessions / Performance /
+// Actions. Inline address + notes editing persists on debounce.
+// Cross-workspace links to Money + Health are stubbed disabled until
+// those workspaces populate (Batch 3 / Batch 4).
+// ====================================================================
+
+const networkBarsState = {
+  loaded: false,
+  loading: false,
+  bars: [],            // hydrated rows with subscription + manager + session counts
+  expandedId: null,
+  filter: 'all',
+  search: '',
+  inlineTimers: new Map(),   // bar-id+field -> debounce timer
+  inlineStatus: new Map()    // bar-id+field -> 'saving' | 'saved' | 'err'
+};
+let _networkBarsRealtimeWs = null;
+
+function _netExtractPostcode(addr) {
+  if(!addr) return '';
+  // UK postcode regex; matches AA9 9AA / A9A 9AA / etc.
+  const m = String(addr).match(/[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}/i);
+  return m ? m[0].toUpperCase() : '';
+}
+
+async function loadNetworkBarsData() {
+  const tbody = document.getElementById('net-bars-tbody');
+  if(!tbody) return;
+  if(networkBarsState.loading) return;
+  networkBarsState.loading = true;
+  if(!networkBarsState.loaded) {
+    tbody.innerHTML = '<tr class="ops-sched-loading"><td colspan="5">Loading bars...</td></tr>';
+  }
+  try {
+    const rows = await sbGet('bars',
+      '?order=name.asc&select=id,name,address,contact_name,contact_phone,google_maps_link,status,notes,created_at,opening_time,closing_time'
+      + ',bar_managers(id,name,revoked_at,created_at)'
+      + ',bar_subscriptions(id,status,monthly_fee,discount_amount,trial_ends_at,paused_at,cancelled_at,billing_cycle_day)'
+      + ',session_bars(session_id,sessions(id,session_date,status,scheduled_start))');
+    networkBarsState.bars = Array.isArray(rows) ? rows : [];
+    networkBarsState.loaded = true;
+    renderNetworkBarsTable();
+  } catch(e) {
+    console.error('[net-bars] load failed', e);
+    tbody.innerHTML = '<tr class="ops-sched-loading"><td colspan="5">Could not load bars.</td></tr>';
+  } finally {
+    networkBarsState.loading = false;
+  }
+}
+
+function setNetworkBarsFilter(name) {
+  networkBarsState.filter = name;
+  document.querySelectorAll('#net-bars-filters .net-pill').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === name);
+  });
+  renderNetworkBarsTable();
+}
+function onNetworkBarsSearch() {
+  const el = document.getElementById('net-bars-search');
+  networkBarsState.search = ((el && el.value) || '').trim().toLowerCase();
+  renderNetworkBarsTable();
+}
+
+function _filteredBars() {
+  const f = networkBarsState.filter;
+  const s = networkBarsState.search;
+  return networkBarsState.bars.filter(b => {
+    const status = (b.status || '').toLowerCase();
+    if(f !== 'all' && status !== f) return false;
+    if(s && !((b.name || '').toLowerCase().includes(s))) return false;
+    return true;
+  });
+}
+
+function _activeSubscription(b) {
+  const subs = b.bar_subscriptions || [];
+  // Prefer non-cancelled. Otherwise return null.
+  return subs.find(s => s.status !== 'cancelled') || subs[0] || null;
+}
+function _lastSessionFor(b) {
+  const sessions = (b.session_bars || []).map(sb => sb && sb.sessions).filter(Boolean);
+  if(!sessions.length) return null;
+  sessions.sort((a, c) => {
+    const da = a.scheduled_start || a.session_date || '';
+    const dc = c.scheduled_start || c.session_date || '';
+    return dc.localeCompare(da);
+  });
+  return sessions[0];
+}
+function _formatRelativeDate(iso) {
+  if(!iso) return '<span class="muted">,</span>';
+  const d = new Date(iso);
+  const now = Date.now();
+  const diffDays = Math.floor((now - d.getTime()) / (1000 * 60 * 60 * 24));
+  if(diffDays < 0) return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  if(diffDays === 0) return 'Today';
+  if(diffDays === 1) return 'Yesterday';
+  if(diffDays < 7) return diffDays + ' days ago';
+  if(diffDays < 30) return Math.floor(diffDays / 7) + 'w ago';
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function renderNetworkBarsTable() {
+  const tbody   = document.getElementById('net-bars-tbody');
+  const countEl = document.getElementById('net-bars-count');
+  if(!tbody) return;
+  const rows = _filteredBars();
+  if(countEl) {
+    const activeCount = networkBarsState.bars.filter(b => (b.status || '').toLowerCase() === 'active').length;
+    countEl.textContent = rows.length + (rows.length === 1 ? ' bar' : ' bars')
+      + ' (' + activeCount + ' active total)';
+  }
+  if(!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="ops-sched-empty">No bars match the current filter / search. Try widening the filter or clearing the search.</div></td></tr>';
+    return;
+  }
+  const expandedId = networkBarsState.expandedId;
+  const parts = [];
+  for(const b of rows) {
+    parts.push(_renderNetworkBarsRow(b, expandedId === b.id));
+    if(expandedId === b.id) parts.push(_renderNetworkBarsExpansion(b));
+  }
+  tbody.innerHTML = parts.join('');
+}
+
+function _renderNetworkBarsRow(b, isExpanded) {
+  const status = (b.status || 'prospect').toLowerCase();
+  const postcode = _netExtractPostcode(b.address);
+  const sub = _activeSubscription(b);
+  const subStatus = sub ? (sub.status || 'none').toLowerCase() : 'none';
+  const subLabel = sub ? subStatus.toUpperCase() : 'NONE';
+  const lastSess = _lastSessionFor(b);
+  const lastSessLabel = lastSess
+    ? _formatRelativeDate(lastSess.scheduled_start || lastSess.session_date)
+    : '<span class="muted">,</span>';
+  const expandedCls = isExpanded ? ' expanded' : '';
+  return ''
+    + '<tr class="ops-sched-row' + expandedCls + '" data-id="' + b.id + '" onclick="toggleNetworkBarsRow(' + b.id + ')">'
+    +   '<td style="font-weight:600;color:var(--white);">' + _opsEscape(b.name || '(unnamed bar)') + '</td>'
+    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode || '<span class="muted">,</span>') + '</span></td>'
+    +   '<td><span class="net-bar-status ' + status + '">' + status.toUpperCase() + '</span></td>'
+    +   '<td><span class="net-bar-sub ' + subStatus + '">' + subLabel + '</span></td>'
+    +   '<td>' + lastSessLabel + '</td>'
+    + '</tr>';
+}
+
+function _renderNetworkBarsExpansion(b) {
+  const bid = b.id;
+  const sub = _activeSubscription(b);
+  const managers = (b.bar_managers || []).filter(m => !m.revoked_at);
+
+  // Identity block, address + notes editable, others read-only.
+  const identityHtml = ''
+    + '<div class="net-prof-grid">'
+    +   '<span class="k">Contact name</span><span class="v">' + _opsEscape(b.contact_name || '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Contact phone</span><span class="v">' + _opsEscape(b.contact_phone || '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Google Maps</span><span class="v">' + (b.google_maps_link ? '<a href="' + _opsEscape(b.google_maps_link) + '" target="_blank" rel="noopener" style="color:var(--ice);">Open map</a>' : '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Opening</span><span class="v">' + (b.opening_time || '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Closing</span><span class="v">' + (b.closing_time || '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Created</span><span class="v">' + (b.created_at ? new Date(b.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '<span class="muted">,</span>') + '</span>'
+    + '</div>'
+    + '<div class="net-prof-edit-row" style="margin-top:12px;">'
+    +   '<span class="field-label">Address</span>'
+    +   '<textarea oninput="netBarInlineSave(' + bid + ', &quot;address&quot;, this.value)" placeholder="Postal address">' + _opsEscape(b.address || '') + '</textarea>'
+    +   '<span class="field-status" id="net-bar-status-address-' + bid + '"></span>'
+    + '</div>'
+    + '<div class="net-prof-edit-row" style="margin-top:8px;">'
+    +   '<span class="field-label">Notes</span>'
+    +   '<textarea oninput="netBarInlineSave(' + bid + ', &quot;notes&quot;, this.value)" placeholder="Internal Sam notes">' + _opsEscape(b.notes || '') + '</textarea>'
+    +   '<span class="field-status" id="net-bar-status-notes-' + bid + '"></span>'
+    + '</div>';
+
+  // Contract & Subscription block.
+  let subBody;
+  if(sub) {
+    const subStatus = (sub.status || 'none').toLowerCase();
+    const fee = sub.monthly_fee != null ? ('Â£' + Number(sub.monthly_fee).toFixed(2) + '/mo') : '<span class="muted">,</span>';
+    const disc = sub.discount_amount && Number(sub.discount_amount) > 0
+      ? ('Â£' + Number(sub.discount_amount).toFixed(2) + ' discount')
+      : '<span class="muted">,</span>';
+    const trial = sub.trial_ends_at
+      ? ('Trial ends ' + new Date(sub.trial_ends_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }))
+      : '<span class="muted">No trial info</span>';
+    subBody = '<div class="net-prof-grid">'
+      + '<span class="k">Status</span><span class="v"><span class="net-bar-sub ' + subStatus + '">' + subStatus.toUpperCase() + '</span></span>'
+      + '<span class="k">Monthly fee</span><span class="v">' + fee + '</span>'
+      + '<span class="k">Discount</span><span class="v">' + disc + '</span>'
+      + '<span class="k">Trial</span><span class="v">' + trial + '</span>'
+      + '<span class="k">Billing cycle</span><span class="v">' + (sub.billing_cycle_day ? ('Day ' + sub.billing_cycle_day + ' of month') : '<span class="muted">,</span>') + '</span>'
+      + '</div>'
+      + '<button class="net-cross-link disabled" title="Coming in Money workspace, Batch 4">View invoice history in Money &rsaquo;</button>';
+  } else {
+    subBody = '<div class="net-prof-grid"><span class="k">Status</span><span class="v"><span class="net-bar-sub none">NONE</span></span></div>'
+      + '<div style="font-size:12px;color:var(--grey);">No subscription on file. Use the Money workspace (Batch 4) to set one up.</div>';
+  }
+
+  // Pin Holders block.
+  const pinPendingPlaceholder = '<div id="net-bar-pending-pin-' + bid + '" style="display:none;"></div>';
+  const pinHtml = managers.length
+    ? managers.map(m => ''
+        + '<div class="net-pin-row">'
+        +   '<div>'
+        +     '<div class="net-pin-name">' + _opsEscape(m.name) + '</div>'
+        +     '<div class="net-pin-meta">Added ' + (m.created_at ? new Date(m.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '&mdash;') + '</div>'
+        +   '</div>'
+        +   '<button class="ops-sched-btn" onclick="event.stopPropagation();openEditManagerModal(' + m.id + ')">Edit</button>'
+        + '</div>').join('')
+    : '<div class="ops-sched-exp-body muted">No PIN-holders for this bar yet.</div>';
+  const pinAction = '<button class="ops-sched-btn" onclick="openAddManagerModal()" data-bar-id="' + bid + '">+ Add Manager</button>';
+
+  // Documents block. We surface counts and a placeholder; full doc workflow stays on the
+  // existing Documents screen until v2 absorbs it.
+  const docsHtml = '<div class="ops-sched-exp-body" id="net-bar-docs-' + bid + '">Loading documents&hellip;</div>';
+
+  // Recent sessions + upcoming sessions blocks.
+  const allSessions = ((b.session_bars || []).map(sb => sb && sb.sessions).filter(Boolean));
+  const closedSessions = allSessions.filter(s => s.status === 'closed').sort((a,c) => (c.scheduled_start || c.session_date || '').localeCompare(a.scheduled_start || a.session_date || '')).slice(0, 5);
+  const upcomingSessions = allSessions.filter(s => s.status === 'scheduled' || s.status === 'proposed').sort((a,c) => (a.scheduled_start || a.session_date || '').localeCompare(c.scheduled_start || c.session_date || '')).slice(0, 5);
+  const recentHtml = closedSessions.length
+    ? '<table class="net-mini-table"><thead><tr><th>Date</th><th>Session ID</th><th>Status</th></tr></thead><tbody>'
+        + closedSessions.map(s => '<tr><td>' + (s.scheduled_start ? new Date(s.scheduled_start).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : (s.session_date || '&mdash;')) + '</td><td>#' + s.id + '</td><td>' + s.status + '</td></tr>').join('')
+        + '</tbody></table>'
+        + '<button class="net-cross-link disabled" title="Coming in History workspace, Batch 4">View full history &rsaquo;</button>'
+    : '<div class="ops-sched-exp-body muted">No completed sessions yet.</div>';
+  const upcomingHtml = upcomingSessions.length
+    ? '<table class="net-mini-table"><thead><tr><th>Date</th><th>Session ID</th><th>Status</th></tr></thead><tbody>'
+        + upcomingSessions.map(s => '<tr class="clickable" onclick="jumpToOpsSchedule(' + s.id + ')"><td>' + (s.scheduled_start ? new Date(s.scheduled_start).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : (s.session_date || '&mdash;')) + '</td><td>#' + s.id + '</td><td>' + (s.status || '') + '</td></tr>').join('')
+        + '</tbody></table>'
+    : '<div class="ops-sched-exp-body muted">No upcoming sessions scheduled.</div>';
+
+  // Performance block, recent fill rate + shifts count.
+  const perfHtml = '<div class="ops-sched-exp-body" id="net-bar-perf-' + bid + '">Loading performance&hellip;</div>'
+    + '<button class="net-cross-link disabled" title="Coming in Health workspace, Batch 3">View full analytics in Health &rsaquo;</button>';
+
+  // Action buttons.
+  const status = (b.status || '').toLowerCase();
+  const suspendBtn = status === 'suspended'
+    ? '<button class="ops-sched-btn primary" onclick="netBarSetStatus(' + bid + ', &quot;active&quot;)">Reactivate</button>'
+    : '<button class="ops-sched-btn danger"  onclick="netBarSetStatus(' + bid + ', &quot;suspended&quot;)">Suspend</button>';
+  const actionsHtml = ''
+    + '<button class="ops-sched-btn" onclick="netBarStub(&quot;offboard&quot;)">Offboard</button>'
+    + suspendBtn;
+
+  setTimeout(() => {
+    _populateBarDocs(bid);
+    _populateBarPerformance(bid);
+    _populateBarPendingPin(bid);
+  }, 0);
+
+  return ''
+    + '<tr class="ops-sched-expanded-row"><td colspan="5"><div class="ops-sched-exp-inner">'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Identity</h3>' + identityHtml + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Contract &amp; Subscription</h3>' + subBody + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">PIN Holders</h3>' + pinPendingPlaceholder + pinHtml + '<div style="margin-top:8px;">' + pinAction + '</div></div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Documents</h3>' + docsHtml + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Recent Sessions</h3>' + recentHtml + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Upcoming Sessions</h3>' + upcomingHtml + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Performance</h3>' + perfHtml + '</div>'
+    +   '<div class="ops-sched-actions-row">' + actionsHtml + '</div>'
+    + '</div></td></tr>';
+}
+
+async function _populateBarDocs(barId) {
+  const el = document.getElementById('net-bar-docs-' + barId);
+  if(!el) return;
+  try {
+    const docs = await sbGet('bar_documents',
+      '?bar_id=eq.' + barId + '&is_active=eq.true&select=id,document_type,document_url,version,uploaded_at,approval_status&order=document_type.asc');
+    if(!docs || !docs.length) {
+      el.innerHTML = '<span class="muted">No active documents on file.</span>';
+      return;
+    }
+    el.innerHTML = '<table class="net-mini-table"><thead><tr><th>Type</th><th>Version</th><th>Status</th><th>Link</th></tr></thead><tbody>'
+      + docs.map(d => '<tr>'
+        + '<td>' + _opsEscape((d.document_type || '').replace(/_/g, ' ')) + '</td>'
+        + '<td>v' + (d.version || 1) + '</td>'
+        + '<td>' + _opsEscape((d.approval_status || 'pending').toUpperCase()) + '</td>'
+        + '<td>' + (d.document_url ? '<a href="' + _opsEscape(d.document_url) + '" target="_blank" rel="noopener" style="color:var(--ice);">View</a>' : '<span class="muted">,</span>') + '</td>'
+        + '</tr>').join('')
+      + '</tbody></table>';
+  } catch(e) {
+    el.innerHTML = '<span class="muted">Could not load documents.</span>';
+  }
+}
+
+async function _populateBarPerformance(barId) {
+  const el = document.getElementById('net-bar-perf-' + barId);
+  if(!el) return;
+  try {
+    // Recent fill rate: completed shifts / total shift_requests over last 30 days.
+    const since = new Date(); since.setDate(since.getDate() - 30);
+    const sinceIso = since.toISOString();
+    const [reqs, shifts] = await Promise.all([
+      sbGet('shift_requests', '?bar_id=eq.' + barId + '&created_at=gte.' + encodeURIComponent(sinceIso) + '&select=id,status'),
+      sbGet('shifts',         '?bar_id=eq.' + barId + '&created_at=gte.' + encodeURIComponent(sinceIso) + '&status=eq.completed&select=id,total_earned,shift_length_hours')
+    ]);
+    const reqCount    = Array.isArray(reqs)   ? reqs.length   : 0;
+    const shiftCount  = Array.isArray(shifts) ? shifts.length : 0;
+    const filled     = Array.isArray(reqs) ? reqs.filter(r => r.status === 'completed' || r.status === 'dispatched' || r.status === 'onshift').length : 0;
+    const fillRate   = reqCount > 0 ? Math.round((filled / reqCount) * 100) : null;
+    const totalHours = (shifts || []).reduce((a, s) => a + (parseFloat(s.shift_length_hours) || 0), 0);
+    el.innerHTML = '<div class="net-prof-grid">'
+      + '<span class="k">Fill rate</span><span class="v">' + (fillRate != null ? (fillRate + '% (last 30 days, ' + filled + ' of ' + reqCount + ' requests)') : '<span class="muted">no requests in last 30 days</span>') + '</span>'
+      + '<span class="k">Shifts (30d)</span><span class="v">' + shiftCount + (totalHours ? ' (' + totalHours.toFixed(1) + ' hrs)' : '') + '</span>'
+      + '</div>';
+  } catch(e) {
+    el.innerHTML = '<span class="muted">Could not load performance.</span>';
+  }
+}
+
+async function _populateBarPendingPin(barId) {
+  const wrap = document.getElementById('net-bar-pending-pin-' + barId);
+  if(!wrap) return;
+  try {
+    const rows = await sbGet('pin_holder_requests',
+      '?bar_id=eq.' + barId + '&status=eq.pending&select=id,proposed_name,proposed_email,created_at&order=created_at.asc');
+    if(!rows || !rows.length) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+    wrap.style.display = 'block';
+    wrap.innerHTML = rows.map(r => ''
+      + '<div class="net-pin-pending">'
+      +   '<div class="meta"><strong>' + _opsEscape(r.proposed_name) + '</strong> &middot; ' + _opsEscape(r.proposed_email) + ' &middot; <span style="color:var(--amber);">PENDING APPROVAL</span></div>'
+      +   '<div style="display:flex;gap:6px;">'
+      +     '<button class="ops-sched-btn primary" onclick="approvePinHolderRequest(' + r.id + ')">Approve</button>'
+      +     '<button class="ops-sched-btn danger"  onclick="openDeclineProposalModal(' + r.id + ', &quot;pinholder&quot;)">Reject</button>'
+      +   '</div>'
+      + '</div>').join('');
+  } catch(e) { wrap.style.display = 'none'; }
+}
+
+function toggleNetworkBarsRow(barId) {
+  networkBarsState.expandedId = (networkBarsState.expandedId === barId) ? null : barId;
+  renderNetworkBarsTable();
+}
+
+function netBarInlineSave(barId, field, value) {
+  if(field !== 'address' && field !== 'notes') return;
+  const key = barId + '-' + field;
+  const statusEl = document.getElementById('net-bar-status-' + field + '-' + barId);
+  if(statusEl) { statusEl.textContent = 'Saving...'; statusEl.classList.remove('saved', 'err'); }
+  const prev = networkBarsState.inlineTimers.get(key);
+  if(prev) clearTimeout(prev);
+  const timer = setTimeout(async () => {
+    networkBarsState.inlineTimers.delete(key);
+    try {
+      const patch = {};
+      patch[field] = value || null;
+      await sbPatch('bars', '?id=eq.' + barId, patch);
+      const b = networkBarsState.bars.find(x => x.id === barId);
+      if(b) b[field] = value || null;
+      if(statusEl) { statusEl.textContent = 'Saved'; statusEl.classList.add('saved'); statusEl.classList.remove('err'); }
+    } catch(e) {
+      console.error('[net-bars] inline save failed', e);
+      if(statusEl) { statusEl.textContent = 'Save failed'; statusEl.classList.add('err'); statusEl.classList.remove('saved'); }
+    }
+  }, 600);
+  networkBarsState.inlineTimers.set(key, timer);
+}
+
+async function netBarSetStatus(barId, newStatus) {
+  if(!confirm('Set this bar to ' + newStatus.toUpperCase() + '?')) return;
+  try {
+    await sbPatch('bars', '?id=eq.' + barId, { status: newStatus });
+    const b = networkBarsState.bars.find(x => x.id === barId);
+    if(b) b.status = newStatus;
+    renderNetworkBarsTable();
+  } catch(e) {
+    alert('Status change failed: ' + (e.message || 'unknown'));
+  }
+}
+
+function netBarStub(kind) {
+  alert('Action "' + kind + '" lands in a follow-up batch.');
+}
+
+// Deep-link helper: jump to Operations / Schedule and expand a session row.
+function jumpToOpsSchedule(sessionId) {
+  showWorkspace('operations');
+  showOperationsSubtab('schedule');
+  // Expand the target row once data is present. If sessions are still loading,
+  // poll briefly until the row exists.
+  let attempts = 0;
+  const tryExpand = () => {
+    attempts++;
+    const found = (opsScheduleState.sessions || []).some(s => s.id === sessionId);
+    if(found) {
+      opsScheduleState.expandedId = sessionId;
+      renderOpsScheduleTable();
+      const row = document.querySelector('#workspace-operations [data-id="' + sessionId + '"]');
+      if(row && row.scrollIntoView) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if(attempts < 12) {
+      setTimeout(tryExpand, 200);
+    }
+  };
+  tryExpand();
+}
+
+function startNetworkBarsRealtime() {
+  if(_networkBarsRealtimeWs) return;
+  _networkBarsRealtimeWs = makeRealtimeWs(
+    'realtime:public:network_bars',
+    [
+      { event: '*', schema: 'public', table: 'bars' },
+      { event: '*', schema: 'public', table: 'bar_managers' },
+      { event: '*', schema: 'public', table: 'pin_holder_requests' }
+    ],
+    async () => {
+      if(getDashboardMode() === 'v2' && dv2CurrentWorkspace === 'network') {
+        await loadNetworkBarsData();
+        await refreshNetworkBarsBadge();
+      }
+    }
+  );
+}
+function stopNetworkBarsRealtime() {
+  if(_networkBarsRealtimeWs) {
+    try { _networkBarsRealtimeWs.close(); } catch(e) {}
+    _networkBarsRealtimeWs = null;
+  }
+}
+
+// Hook Bars realtime sub into the Network workspace lifecycle.
+// (The lifecycle was registered above; we extend onEnter to also start the
+// Bars sub when the workspace is entered.)
+(function _hookBarsRealtime() {
+  const ops = dv2Lifecycle.network;
+  if(!ops) return;
+  const prevEnter = ops.onEnter;
+  ops.onEnter = function() {
+    if(prevEnter) prevEnter();
+    startNetworkBarsRealtime();
+  };
+})();
+
+// ====================================================================
+// Phase 2.6: Network / Workers.
+// Workers table (filter pills + name search) with 6-section profile
+// expansion: Identity / Compliance / Performance / Recent Shifts /
+// Upcoming Sessions / Actions. PII read-only per Hard Rule #1; only
+// full_address editable (its UPDATE fires the f35 walking-distances
+// recompute trigger). F-32 component breakdown rendered as bar viz via
+// the f32_compute_reliability_breakdown RPC.
+//
+// Filter mapping:
+//   ACTIVE     -> active = true  AND offboarded_at IS NULL
+//   SUSPENDED  -> active = false AND offboarded_at IS NULL
+//   OFFBOARDED -> offboarded_at IS NOT NULL
+//   FLAGGED    -> no schema field for it yet; stub returns zero (see open question)
+// Vetted + Onboarded are surfaced by default; Pipeline owns registered/applied.
+// ====================================================================
+
+const networkWorkersState = {
+  loaded: false,
+  loading: false,
+  workers: [],
+  expandedId: null,
+  filter: 'all',
+  search: '',
+  inlineTimers: new Map(),
+  f32Cache: new Map(),       // workerId -> breakdown jsonb
+  activeFlagIds: new Set(),  // Decision C: workerIds with any unresolved flag
+  flagDetails: new Map(),    // workerId -> { active: [...], history: [...] } (lazy-fetched on expansion)
+  flagHistoryOpen: new Set() // workerIds where the history sub-block is expanded
+};
+let _networkWorkersRealtimeWs = null;
+
+async function loadNetworkWorkersData() {
+  const tbody = document.getElementById('net-workers-tbody');
+  if(!tbody) return;
+  if(networkWorkersState.loading) return;
+  networkWorkersState.loading = true;
+  if(!networkWorkersState.loaded) {
+    tbody.innerHTML = '<tr class="ops-sched-loading"><td colspan="5">Loading workers...</td></tr>';
+  }
+  try {
+    // Only Vetted + Onboarded land in Workers; Pipeline owns Registered + Applied.
+    const rows = await sbGet('applications',
+      '?worker_status=in.(vetted,onboarded)'
+      + '&select=id,name,email,phone,age_group,full_address,postcode_full,tier,hourly_rate,reliability_score,reliability_updated_at,total_points,worker_status,active,offboarded_at,created_at,vetting_notes,admin_notes,reliability_notes,uk_work_right,instagram_handle,parasol_worker_ref'
+      + '&order=name.asc');
+    networkWorkersState.workers = Array.isArray(rows) ? rows : [];
+    // Decision C: fetch active-flag set in one shot so the FLAGGED pill +
+    // FLAGGED filter compute without N+1 per worker.
+    try {
+      const flagRows = await sbGet('worker_flags', '?resolved_at=is.null&select=application_id');
+      const set = new Set();
+      for(const r of (flagRows || [])) set.add(Number(r.application_id));
+      networkWorkersState.activeFlagIds = set;
+    } catch(e) {
+      networkWorkersState.activeFlagIds = new Set();
+    }
+    networkWorkersState.loaded = true;
+    renderNetworkWorkersTable();
+  } catch(e) {
+    console.error('[net-workers] load failed', e);
+    tbody.innerHTML = '<tr class="ops-sched-loading"><td colspan="5">Could not load workers.</td></tr>';
+  } finally {
+    networkWorkersState.loading = false;
+  }
+}
+
+function _netWorkerStatus(w) {
+  // Decision C: FLAGGED takes precedence over ACTIVE when the worker has
+  // any unresolved flag. SUSPENDED + OFFBOARDED still rank above FLAGGED.
+  if(w.offboarded_at) return 'offboarded';
+  if(w.active === false) return 'suspended';
+  if(networkWorkersState.activeFlagIds && networkWorkersState.activeFlagIds.has(Number(w.id))) return 'flagged';
+  return 'active';
+}
+function _netRelClass(score) {
+  if(score == null) return 'na';
+  const n = Number(score);
+  if(n >= 80) return 'high';
+  if(n >= 60) return 'mid';
+  if(n >= 40) return 'low';
+  return 'poor';
+}
+
+function setNetworkWorkersFilter(name) {
+  networkWorkersState.filter = name;
+  document.querySelectorAll('#net-workers-filters .net-pill').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === name);
+  });
+  renderNetworkWorkersTable();
+}
+function onNetworkWorkersSearch() {
+  const el = document.getElementById('net-workers-search');
+  networkWorkersState.search = ((el && el.value) || '').trim().toLowerCase();
+  renderNetworkWorkersTable();
+}
+
+function _filteredWorkers() {
+  const f = networkWorkersState.filter;
+  const s = networkWorkersState.search;
+  return networkWorkersState.workers.filter(w => {
+    const status = _netWorkerStatus(w);
+    if(f === 'all' && status === 'offboarded') return false; // hide offboarded from default
+    if(f !== 'all' && status !== f) return false;
+    if(s && !((w.name || '').toLowerCase().includes(s))) return false;
+    return true;
+  });
+}
+
+function renderNetworkWorkersTable() {
+  const tbody   = document.getElementById('net-workers-tbody');
+  const countEl = document.getElementById('net-workers-count');
+  if(!tbody) return;
+  const rows = _filteredWorkers();
+  if(countEl) {
+    const activeCount = networkWorkersState.workers.filter(w => _netWorkerStatus(w) === 'active').length;
+    countEl.textContent = rows.length + (rows.length === 1 ? ' worker' : ' workers')
+      + ' (' + activeCount + ' active total)';
+  }
+  if(!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="ops-sched-empty">No workers match the current filter / search.</div></td></tr>';
+    return;
+  }
+  const expandedId = networkWorkersState.expandedId;
+  const parts = [];
+  for(const w of rows) {
+    parts.push(_renderNetworkWorkersRow(w, expandedId === w.id));
+    if(expandedId === w.id) parts.push(_renderNetworkWorkersExpansion(w));
+  }
+  tbody.innerHTML = parts.join('');
+}
+
+function _renderNetworkWorkersRow(w, isExpanded) {
+  const status = _netWorkerStatus(w);
+  const postcode = w.postcode_full || _netExtractPostcode(w.full_address) || '';
+  const tier = w.tier != null ? 'T' + w.tier : '<span class="muted">,</span>';
+  const relClass = _netRelClass(w.reliability_score);
+  const relText = (w.reliability_score == null) ? '&ndash;' : (Math.round(Number(w.reliability_score)) + '%');
+  const expandedCls = isExpanded ? ' expanded' : '';
+  return ''
+    + '<tr class="ops-sched-row' + expandedCls + '" data-id="' + w.id + '" onclick="toggleNetworkWorkersRow(' + w.id + ')">'
+    +   '<td style="font-weight:600;color:var(--white);">' + _opsEscape(w.name || '(no name)') + '</td>'
+    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode || '<span class="muted">,</span>') + '</span></td>'
+    +   '<td><span class="net-worker-tier">' + tier + '</span></td>'
+    +   '<td><span class="net-worker-rel ' + relClass + '">' + relText + '</span></td>'
+    +   '<td><span class="net-worker-status ' + status + '">' + status.toUpperCase() + '</span></td>'
+    + '</tr>';
+}
+
+function _renderNetworkWorkersExpansion(w) {
+  const wid = w.id;
+  const status = _netWorkerStatus(w);
+  const postcode = w.postcode_full || '';
+
+  // Identity: full_address + admin_notes editable; everything else (incl.
+  // vetting_notes) read-only per Hard Rule #1 (Decision B, 18 May 2026:
+  // admin_notes is the editable Sam-authored companion to vetting_notes).
+  const identityHtml = ''
+    + '<div class="net-prof-grid">'
+    +   '<span class="k">Name</span><span class="v">' + _opsEscape(w.name || '<span class="muted">,</span>') + ' <span class="muted" style="font-size:10px;">read-only (PII)</span></span>'
+    +   '<span class="k">Email</span><span class="v">' + _opsEscape(w.email || '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Phone</span><span class="v">' + _opsEscape(w.phone || '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Age group</span><span class="v">' + _opsEscape(w.age_group || '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Postcode</span><span class="v">' + _opsEscape(postcode || '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Onboarded</span><span class="v">' + (w.created_at ? new Date(w.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Parasol ref</span><span class="v">' + _opsEscape(w.parasol_worker_ref || '<span class="muted">,</span>') + '</span>'
+    + '</div>'
+    + '<div class="net-prof-edit-row" style="margin-top:12px;">'
+    +   '<span class="field-label">Address</span>'
+    +   '<textarea oninput="netWorkerInlineSave(' + wid + ', &quot;full_address&quot;, this.value)" placeholder="Full postal address (Sam-authored UPDATE per Hard Rule #1, triggers walking-distances recompute)">' + _opsEscape(w.full_address || '') + '</textarea>'
+    +   '<span class="field-status" id="net-worker-status-full_address-' + wid + '"></span>'
+    + '</div>'
+    + '<div class="net-prof-edit-row" style="margin-top:10px;">'
+    +   '<span class="field-label">Vetting notes</span>'
+    +   '<div style="flex:1 1 240px;min-height:32px;background:var(--navy);border:1px dashed var(--border);color:var(--grey);border-radius:6px;padding:6px 10px;font-family:Inter,sans-serif;font-size:13px;line-height:1.4;white-space:pre-wrap;">'
+    +     _opsEscape(w.vetting_notes || '(no vetting notes captured)')
+    +   '</div>'
+    +   '<span class="field-status" style="color:var(--grey);">read-only (Hard Rule #1)</span>'
+    + '</div>'
+    + '<div class="net-prof-edit-row" style="margin-top:10px;">'
+    +   '<span class="field-label">Admin notes</span>'
+    +   '<textarea oninput="netWorkerInlineSave(' + wid + ', &quot;admin_notes&quot;, this.value)" placeholder="Sam-authored operational notes about this worker (debounced save).">' + _opsEscape(w.admin_notes || '') + '</textarea>'
+    +   '<span class="field-status" id="net-worker-status-admin_notes-' + wid + '"></span>'
+    + '</div>';
+
+  // Compliance.
+  const ukRtw = (w.uk_work_right === true) ? '<span style="color:var(--green);">Yes</span>'
+    : (w.uk_work_right === false ? '<span style="color:var(--red);">No</span>' : '<span class="muted">unknown</span>');
+  const complianceHtml = ''
+    + '<div class="net-prof-grid">'
+    +   '<span class="k">UK right to work</span><span class="v">' + ukRtw + '</span>'
+    +   '<span class="k">Worker status</span><span class="v">' + _opsEscape((w.worker_status || '').toUpperCase()) + '</span>'
+    + '</div>'
+    + '<div class="ops-sched-exp-body" id="net-worker-compliance-' + wid + '">Loading H&amp;S signatures and walkthroughs&hellip;</div>';
+
+  // Performance.
+  const perfHtml = ''
+    + '<div class="net-prof-grid">'
+    +   '<span class="k">Tier</span><span class="v"><span class="net-worker-tier">T' + (w.tier == null ? '?' : w.tier) + '</span></span>'
+    +   '<span class="k">Hourly rate</span><span class="v">' + (w.hourly_rate != null ? ('Â£' + Number(w.hourly_rate).toFixed(2) + '/hr') : '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Total points</span><span class="v">' + (w.total_points != null ? w.total_points : '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Composite recomputed</span><span class="v">' + (w.reliability_updated_at ? new Date(w.reliability_updated_at).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '<span class="muted">not yet</span>') + '</span>'
+    + '</div>'
+    + '<div id="net-worker-f32-' + wid + '" style="margin-top:14px;">Loading F-32 breakdown&hellip;</div>'
+    + '<div id="net-worker-active-flags-' + wid + '" style="margin-top:14px;"></div>'
+    + '<div id="net-worker-flag-history-' + wid + '" style="margin-top:8px;"></div>'
+    + '<div style="margin-top:10px;font-size:11px;color:var(--grey);">Reliability notes (read-only, system-managed): ' + _opsEscape(w.reliability_notes || '(none)') + '</div>';
+
+  // Recent shifts + upcoming sessions placeholders, populated async.
+  const shiftsHtml    = '<div class="ops-sched-exp-body" id="net-worker-shifts-' + wid + '">Loading recent shifts&hellip;</div>'
+    + '<button class="net-cross-link disabled" title="Coming in History workspace, Batch 4">View full shift history &rsaquo;</button>';
+  const upcomingHtml  = '<div class="ops-sched-exp-body" id="net-worker-upcoming-' + wid + '">Loading upcoming sessions&hellip;</div>';
+
+  // Actions.
+  let actionButtons = '';
+  if(status === 'active' || status === 'flagged') {
+    actionButtons = ''
+      + '<button class="ops-sched-btn"        onclick="openFlagWorkerModal(' + wid + ')">Flag Worker</button>'
+      + '<button class="ops-sched-btn danger" onclick="netWorkerSetActive(' + wid + ', false)">Suspend</button>'
+      + '<button class="ops-sched-btn"        onclick="netWorkerStub(&quot;offboard&quot;)">Offboard</button>';
+  } else if(status === 'suspended') {
+    actionButtons = ''
+      + '<button class="ops-sched-btn primary" onclick="netWorkerSetActive(' + wid + ', true)">Reactivate</button>'
+      + '<button class="ops-sched-btn"         onclick="netWorkerStub(&quot;offboard&quot;)">Offboard</button>';
+  } else {
+    actionButtons = '<span class="muted" style="font-size:12px;color:var(--grey);">Worker is offboarded; no further actions available.</span>';
+  }
+
+  setTimeout(() => {
+    _populateF32Breakdown(w);
+    _populateWorkerShifts(w);
+    _populateWorkerUpcoming(w);
+    _populateWorkerCompliance(w);
+    _populateWorkerFlags(w);
+  }, 0);
+
+  return ''
+    + '<tr class="ops-sched-expanded-row"><td colspan="5"><div class="ops-sched-exp-inner">'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Identity</h3>' + identityHtml + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Compliance</h3>' + complianceHtml + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Performance</h3>' + perfHtml + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Recent Shifts</h3>' + shiftsHtml + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Upcoming Sessions</h3>' + upcomingHtml + '</div>'
+    +   '<div class="ops-sched-actions-row">' + actionButtons + '</div>'
+    + '</div></td></tr>';
+}
+
+async function _populateF32Breakdown(w) {
+  const el = document.getElementById('net-worker-f32-' + w.id);
+  if(!el) return;
+  let breakdown = networkWorkersState.f32Cache.get(w.id);
+  if(!breakdown) {
+    try {
+      const res = await sbAuth.rpc('f32_compute_reliability_breakdown', { p_application_id: w.id });
+      if(res.error) throw res.error;
+      breakdown = res.data;
+      networkWorkersState.f32Cache.set(w.id, breakdown);
+    } catch(e) {
+      el.innerHTML = '<span class="muted">Could not load F-32 breakdown.</span>';
+      return;
+    }
+  }
+  if(!breakdown) { el.innerHTML = '<span class="muted">No data yet.</span>'; return; }
+  const composite = breakdown.composite;
+  const compositeClass = _netRelClass(composite);
+  const rows = (breakdown.components || []).map(c => {
+    const applicable = c.applicable !== false;
+    const score = Number(c.score) || 0;
+    const cls = applicable ? _netRelClass(score) : 'na';
+    return '<tr class="net-f32-row ' + (applicable ? '' : 'na') + '">'
+      + '<td class="label">'
+      +   '<div>' + _opsEscape(c.label) + '</div>'
+      +   '<div class="net-f32-raw">' + _opsEscape(c.raw || '') + '</div>'
+      + '</td>'
+      + '<td class="weight">' + Math.round(Number(c.weight) * 100) + '%</td>'
+      + '<td class="bar"><div class="net-f32-bar ' + cls + '"><span style="width:' + (applicable ? Math.max(2, Math.round(score)) : 0) + '%;"></span></div></td>'
+      + '<td class="score">' + (applicable ? (Math.round(score) + '%') : 'n/a') + '</td>'
+      + '</tr>';
+  }).join('');
+  el.innerHTML = ''
+    + '<div class="net-f32-composite">'
+    +   '<span class="value net-worker-rel ' + compositeClass + '">' + (composite == null ? '&ndash;' : (Math.round(Number(composite)) + '%')) + '</span>'
+    +   '<span class="label">Composite reliability (live recompute via f32_compute_reliability_breakdown)</span>'
+    + '</div>'
+    + '<table class="net-f32-table"><tbody>' + rows + '</tbody></table>';
+}
+
+async function _populateWorkerShifts(w) {
+  const el = document.getElementById('net-worker-shifts-' + w.id);
+  if(!el) return;
+  try {
+    const rows = await sbGet('shifts',
+      '?status=eq.completed'
+      + '&order=clock_out_confirmed_at.desc.nullslast,created_at.desc&limit=5'
+      + '&select=id,bar_id,clock_in_confirmed_at,clock_out_confirmed_at,shift_length_hours,total_earned,bar_rating,bars(name),session_workers!inner(application_id)'
+      + '&session_workers.application_id=eq.' + w.id);
+    if(!Array.isArray(rows) || !rows.length) {
+      el.innerHTML = '<span class="muted">No completed shifts yet.</span>';
+      return;
+    }
+    el.innerHTML = '<table class="net-mini-table"><thead><tr><th>Date</th><th>Bar</th><th>Hours</th><th>Earned</th><th>Rating</th></tr></thead><tbody>'
+      + rows.map(s => '<tr>'
+        + '<td>' + (s.clock_in_confirmed_at ? new Date(s.clock_in_confirmed_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '&mdash;') + '</td>'
+        + '<td>' + _opsEscape((s.bars && s.bars.name) || '&mdash;') + '</td>'
+        + '<td>' + (s.shift_length_hours != null ? Number(s.shift_length_hours).toFixed(1) + 'h' : '&mdash;') + '</td>'
+        + '<td>' + (s.total_earned != null ? ('Â£' + Number(s.total_earned).toFixed(2)) : '&mdash;') + '</td>'
+        + '<td>' + (s.bar_rating != null ? ('â˜…'.repeat(s.bar_rating) + 'â˜†'.repeat(5 - s.bar_rating)) : '<span class="muted">,</span>') + '</td>'
+        + '</tr>').join('')
+      + '</tbody></table>';
+  } catch(e) {
+    el.innerHTML = '<span class="muted">Could not load shifts.</span>';
+  }
+}
+
+async function _populateWorkerUpcoming(w) {
+  const el = document.getElementById('net-worker-upcoming-' + w.id);
+  if(!el) return;
+  try {
+    const rows = await sbGet('session_invites',
+      '?application_id=eq.' + w.id
+      + '&sessions.status=in.(proposed,scheduled)'
+      + '&order=created_at.desc&limit=5'
+      + '&select=id,attendance_confirmed,joined_at,sessions!inner(id,session_date,scheduled_start,status)');
+    const upcoming = (rows || []).filter(r => r.sessions);
+    if(!upcoming.length) {
+      el.innerHTML = '<span class="muted">No upcoming sessions for this worker.</span>';
+      return;
+    }
+    el.innerHTML = '<table class="net-mini-table"><thead><tr><th>Date</th><th>Session ID</th><th>State</th></tr></thead><tbody>'
+      + upcoming.map(r => {
+        const s = r.sessions;
+        let state = 'INVITED';
+        if(r.joined_at) state = 'JOINED';
+        else if(r.attendance_confirmed === 'confirmed') state = 'CONFIRMED';
+        else if(r.attendance_confirmed === 'declined') state = 'DECLINED';
+        else state = 'NO RESPONSE';
+        return '<tr class="clickable" onclick="jumpToOpsSchedule(' + s.id + ')">'
+          + '<td>' + (s.scheduled_start ? new Date(s.scheduled_start).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : (s.session_date || '&mdash;')) + '</td>'
+          + '<td>#' + s.id + '</td>'
+          + '<td>' + state + '</td>'
+          + '</tr>';
+      }).join('')
+      + '</tbody></table>';
+  } catch(e) {
+    el.innerHTML = '<span class="muted">Could not load upcoming sessions.</span>';
+  }
+}
+
+async function _populateWorkerFlags(w) {
+  const activeEl  = document.getElementById('net-worker-active-flags-' + w.id);
+  const historyEl = document.getElementById('net-worker-flag-history-' + w.id);
+  if(!activeEl || !historyEl) return;
+  try {
+    // Pull every flag for this worker; split into active + resolved client-side.
+    const rows = await sbGet('worker_flags',
+      '?application_id=eq.' + w.id + '&order=flagged_at.desc&select=id,flagged_at,reason,resolved_at,resolved_by,resolution_notes');
+    const active   = (rows || []).filter(r => !r.resolved_at);
+    const resolved = (rows || []).filter(r => r.resolved_at);
+    networkWorkersState.flagDetails.set(w.id, { active: active, history: resolved });
+    // Keep activeFlagIds in lockstep so the table pill reflects current state.
+    if(active.length) networkWorkersState.activeFlagIds.add(Number(w.id));
+    else networkWorkersState.activeFlagIds.delete(Number(w.id));
+
+    // Active flags sub-block.
+    if(!active.length) {
+      activeEl.innerHTML = '<div class="net-worker-flags-head"><span class="net-worker-flags-title">Active flags</span><span class="net-worker-flags-count muted">none</span></div>';
+    } else {
+      activeEl.innerHTML = ''
+        + '<div class="net-worker-flags-head">'
+        +   '<span class="net-worker-flags-title">Active flags</span>'
+        +   '<span class="net-worker-flags-count active">' + active.length + ' unresolved</span>'
+        + '</div>'
+        + active.map(f => ''
+          + '<div class="net-worker-flag-row active">'
+          +   '<div class="net-worker-flag-meta">'
+          +     '<span class="net-worker-flag-when">' + new Date(f.flagged_at).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) + '</span>'
+          +     '<span class="net-worker-flag-reason">' + _opsEscape(f.reason || '(no reason)') + '</span>'
+          +   '</div>'
+          +   '<button class="ops-sched-btn primary" onclick="resolveWorkerFlag(' + f.id + ',' + w.id + ')">Resolve</button>'
+          + '</div>').join('');
+    }
+
+    // Flag history sub-block (collapsible).
+    const isOpen = networkWorkersState.flagHistoryOpen.has(w.id);
+    if(!resolved.length) {
+      historyEl.innerHTML = '<div class="net-worker-flags-history-empty muted">No resolved flags on record.</div>';
+    } else {
+      historyEl.innerHTML = ''
+        + '<button class="net-worker-flag-history-toggle" onclick="toggleWorkerFlagHistory(' + w.id + ')">'
+        +   (isOpen ? '&#9662;' : '&#9656;') + ' Flag history (' + resolved.length + ' resolved)'
+        + '</button>'
+        + (isOpen
+          ? '<div class="net-worker-flag-history-list">'
+            + resolved.map(f => ''
+              + '<div class="net-worker-flag-row resolved">'
+              +   '<div class="net-worker-flag-meta">'
+              +     '<span class="net-worker-flag-when">' + new Date(f.flagged_at).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric' }) + ' &rarr; resolved ' + new Date(f.resolved_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) + '</span>'
+              +     '<span class="net-worker-flag-reason">' + _opsEscape(f.reason || '(no reason)') + '</span>'
+              +     (f.resolution_notes ? '<span class="net-worker-flag-resolution">Resolution: ' + _opsEscape(f.resolution_notes) + '</span>' : '')
+              +   '</div>'
+              + '</div>').join('')
+            + '</div>'
+          : '');
+    }
+
+    // Re-render the table pill in case the active-flag set just changed.
+    renderNetworkWorkersTable_keepExpanded(w.id);
+  } catch(e) {
+    activeEl.innerHTML = '<span class="muted">Could not load flags.</span>';
+    historyEl.innerHTML = '';
+  }
+}
+
+// Render-and-keep-expanded helper so the populate-flags callback can update
+// the FLAGGED pill without collapsing the current expansion.
+function renderNetworkWorkersTable_keepExpanded(workerId) {
+  const prev = networkWorkersState.expandedId;
+  networkWorkersState.expandedId = workerId;
+  renderNetworkWorkersTable();
+  networkWorkersState.expandedId = prev != null ? prev : workerId;
+}
+
+function toggleWorkerFlagHistory(workerId) {
+  if(networkWorkersState.flagHistoryOpen.has(workerId)) networkWorkersState.flagHistoryOpen.delete(workerId);
+  else networkWorkersState.flagHistoryOpen.add(workerId);
+  const w = networkWorkersState.workers.find(x => x.id === workerId);
+  if(w) _populateWorkerFlags(w);
+}
+
+async function _populateWorkerCompliance(w) {
+  const el = document.getElementById('net-worker-compliance-' + w.id);
+  if(!el) return;
+  try {
+    const sigs = await sbGet('worker_bar_signatures',
+      '?application_id=eq.' + w.id + '&select=id,bar_id,signed_at,bars(name)&order=signed_at.desc');
+    const list = Array.isArray(sigs) ? sigs : [];
+    if(!list.length) {
+      el.innerHTML = '<span class="muted">No bar H&amp;S signatures yet.</span>';
+      return;
+    }
+    el.innerHTML = 'Signed H&amp;S for: ' + list.map(s => _opsEscape((s.bars && s.bars.name) || ('bar #' + s.bar_id))).join(', ');
+  } catch(e) {
+    el.innerHTML = '<span class="muted">Could not load compliance.</span>';
+  }
+}
+
+function toggleNetworkWorkersRow(workerId) {
+  networkWorkersState.expandedId = (networkWorkersState.expandedId === workerId) ? null : workerId;
+  renderNetworkWorkersTable();
+}
+
+function netWorkerInlineSave(workerId, field, value) {
+  // v2 Batch 2: full_address (triggers walking-distances recompute) +
+  // admin_notes (Decision B sister-field of vetting_notes; vetting_notes
+  // itself stays immutable per Hard Rule #1).
+  if(field !== 'full_address' && field !== 'admin_notes') return;
+  const key = workerId + '-' + field;
+  const statusEl = document.getElementById('net-worker-status-' + field + '-' + workerId);
+  if(statusEl) { statusEl.textContent = 'Saving...'; statusEl.classList.remove('saved', 'err'); }
+  const prev = networkWorkersState.inlineTimers.get(key);
+  if(prev) clearTimeout(prev);
+  const timer = setTimeout(async () => {
+    networkWorkersState.inlineTimers.delete(key);
+    try {
+      const patch = {};
+      patch[field] = value || null;
+      await sbPatch('applications', '?id=eq.' + workerId, patch);
+      const w = networkWorkersState.workers.find(x => x.id === workerId);
+      if(w) w[field] = value || null;
+      const savedMsg = field === 'full_address' ? 'Saved (walking distances recomputing)' : 'Saved';
+      if(statusEl) { statusEl.textContent = savedMsg; statusEl.classList.add('saved'); statusEl.classList.remove('err'); }
+    } catch(e) {
+      console.error('[net-workers] inline save failed', e);
+      if(statusEl) { statusEl.textContent = 'Save failed'; statusEl.classList.add('err'); statusEl.classList.remove('saved'); }
+    }
+  }, 600);
+  networkWorkersState.inlineTimers.set(key, timer);
+}
+
+async function netWorkerSetActive(workerId, isActive) {
+  if(!confirm((isActive ? 'Reactivate' : 'Suspend') + ' this worker?')) return;
+  try {
+    await sbPatch('applications', '?id=eq.' + workerId, { active: isActive });
+    const w = networkWorkersState.workers.find(x => x.id === workerId);
+    if(w) w.active = isActive;
+    renderNetworkWorkersTable();
+  } catch(e) {
+    alert('Status change failed: ' + (e.message || 'unknown'));
+  }
+}
+
+function netWorkerStub(kind) {
+  alert('Worker action "' + kind + '" lands in a follow-up batch.');
+}
+
+// Decision C: flagging UI. Modal -> f36_flag_worker RPC. Resolve prompt ->
+// f36_resolve_worker_flag RPC. Active flags re-fetched on success and the
+// table pill updates via _populateWorkerFlags.
+let _flagModalWorkerId = null;
+function openFlagWorkerModal(workerId) {
+  _flagModalWorkerId = workerId;
+  const w = networkWorkersState.workers.find(x => x.id === workerId);
+  document.getElementById('flag-worker-name').textContent = (w && w.name) || ('Worker #' + workerId);
+  document.getElementById('flag-worker-reason').value = '';
+  document.getElementById('flag-worker-err').textContent = '';
+  const btn = document.getElementById('flag-worker-save');
+  btn.disabled = false; btn.textContent = 'Flag Worker';
+  document.getElementById('flag-worker-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('flag-worker-reason').focus(), 50);
+}
+function closeFlagWorkerModal() {
+  document.getElementById('flag-worker-modal').style.display = 'none';
+  _flagModalWorkerId = null;
+}
+async function submitFlagWorker() {
+  const errEl = document.getElementById('flag-worker-err');
+  const btn = document.getElementById('flag-worker-save');
+  errEl.textContent = '';
+  const wid = _flagModalWorkerId;
+  if(!wid) { closeFlagWorkerModal(); return; }
+  const reason = document.getElementById('flag-worker-reason').value.trim();
+  if(!reason) { errEl.textContent = 'Reason text is required.'; return; }
+  btn.disabled = true; btn.textContent = 'Flagging...';
+  try {
+    const res = await sbAuth.rpc('f36_flag_worker', { p_application_id: wid, p_reason: reason });
+    if(res.error) throw res.error;
+    closeFlagWorkerModal();
+    // Update local cache + re-render.
+    networkWorkersState.activeFlagIds.add(Number(wid));
+    const w = networkWorkersState.workers.find(x => x.id === wid);
+    if(w) _populateWorkerFlags(w);
+    renderNetworkWorkersTable_keepExpanded(wid);
+  } catch(e) {
+    errEl.textContent = 'Flag failed: ' + ((e && e.message) || 'unknown');
+    btn.disabled = false; btn.textContent = 'Flag Worker';
+  }
+}
+async function resolveWorkerFlag(flagId, workerId) {
+  const note = prompt('Resolution notes (optional):', '');
+  if(note === null) return; // user cancelled
+  try {
+    const res = await sbAuth.rpc('f36_resolve_worker_flag', { p_flag_id: flagId, p_resolution_notes: note || null });
+    if(res.error) throw res.error;
+    const w = networkWorkersState.workers.find(x => x.id === workerId);
+    if(w) _populateWorkerFlags(w);
+  } catch(e) {
+    alert('Resolve failed: ' + ((e && e.message) || 'unknown'));
+  }
+}
+
+function startNetworkWorkersRealtime() {
+  if(_networkWorkersRealtimeWs) return;
+  _networkWorkersRealtimeWs = makeRealtimeWs(
+    'realtime:public:network_workers',
+    [{ event: '*', schema: 'public', table: 'applications' }],
+    async () => {
+      if(getDashboardMode() === 'v2' && dv2CurrentWorkspace === 'network') {
+        // Clear F-32 cache so newly-computed scores show on next expand.
+        networkWorkersState.f32Cache.clear();
+        await loadNetworkWorkersData();
+        await refreshNetworkPipelineBadge();
+      }
+    }
+  );
+}
+function stopNetworkWorkersRealtime() {
+  if(_networkWorkersRealtimeWs) {
+    try { _networkWorkersRealtimeWs.close(); } catch(e) {}
+    _networkWorkersRealtimeWs = null;
+  }
+}
+
+// Hook Workers realtime sub into the Network workspace lifecycle.
+(function _hookWorkersRealtime() {
+  const ops = dv2Lifecycle.network;
+  if(!ops) return;
+  const prevEnter = ops.onEnter;
+  const prevLeave = ops.onLeave;
+  const prevTeardown = ops.onTeardown;
+  ops.onEnter = function() {
+    if(prevEnter) prevEnter();
+    startNetworkWorkersRealtime();
+  };
+  ops.onLeave = function() {
+    if(prevLeave) prevLeave();
+    stopNetworkWorkersRealtime();
+  };
+  ops.onTeardown = function() {
+    if(prevTeardown) prevTeardown();
+    stopNetworkWorkersRealtime();
+    networkWorkersState.loaded = false;
+    networkWorkersState.workers = [];
+    networkWorkersState.expandedId = null;
+    networkWorkersState.f32Cache.clear();
+  };
+})();
+
+// ====================================================================
+// Phase 2.7: Network / Pipeline.
+// Two sub-tabs (Bars prospects + Worker applicants) under one Pipeline
+// header. Funnel summary (REGISTERED / APPLIED prominent, VETTED /
+// ONBOARDED as a link to Network / Workers). bars.last_contact_at
+// column added via additive DDL to drive the prospect "Last Contact"
+// column and inline-update.
+//
+// Hard Rule #1 in effect: applicant-submitted fields (name, email,
+// phone, age_group, postcode_*, hospitality_experience, uk_work_right,
+// available_hours, instagram_handle, parasol_worker_ref) stay read-only
+// in the APPLIED expansion. Only the vet form fields (Sam-side
+// experience checkbox, parasol consent, address verification, notes)
+// + worker_status / vetted_at / vetted_by / vetting_notes write on Save
+// Vet. Mirrors the existing v1 saveVet() semantics.
+// ====================================================================
+
+const DV2_PIPELINE_SUBTAB_KEY = 'glasi_ws_network_pipeline_subtab';
+
+const networkPipelineBarsState = {
+  loaded: false, loading: false, rows: [], expandedId: null, search: '',
+  inlineTimers: new Map()
+};
+const networkPipelineWorkersState = {
+  loaded: false, loading: false, rows: [], expandedId: null, filter: 'all', search: ''
+};
+let _networkPipelineFunnelCache = null;
+
+function getPipelineSubtab() {
+  try {
+    const v = localStorage.getItem(DV2_PIPELINE_SUBTAB_KEY);
+    if(v === 'bars' || v === 'workers') return v;
+  } catch(e) {}
+  return null;
+}
+function pickInitialPipelineSubtab() { return getPipelineSubtab() || 'bars'; }
+
+function showPipelineSubtab(name) {
+  if(name !== 'bars' && name !== 'workers') return;
+  const root = document.querySelector('#workspace-network [data-subtab="pipeline"]');
+  if(!root) return;
+  root.querySelectorAll('.net-pipeline-subtabs .net-pill').forEach(b => {
+    b.classList.toggle('active', b.dataset.pipelineTab === name);
+  });
+  root.querySelectorAll('.net-pipeline-pane').forEach(p => {
+    p.style.display = (p.dataset.pipelineTab === name) ? 'block' : 'none';
+  });
+  try { localStorage.setItem(DV2_PIPELINE_SUBTAB_KEY, name); } catch(e) {}
+  if(name === 'bars') {
+    if(!networkPipelineBarsState.loaded) loadPipelineBarsData();
+    else renderPipelineBarsTable();
+  } else {
+    if(!networkPipelineWorkersState.loaded) loadPipelineWorkersData();
+    else renderPipelineWorkersTable();
+  }
+}
+
+async function refreshPipelineFunnel() {
+  const target = document.getElementById('net-pipeline-funnel');
+  if(!target) return;
+  try {
+    const rows = await sbGet('applications', '?select=worker_status,active,offboarded_at');
+    const counts = { registered: 0, applied: 0, vetted: 0, onboarded: 0 };
+    (rows || []).forEach(r => {
+      if(r.offboarded_at) return;
+      const s = (r.worker_status || '').toLowerCase();
+      if(counts[s] != null) counts[s]++;
+    });
+    _networkPipelineFunnelCache = counts;
+    target.innerHTML = ''
+      + '<span><span class="stage">Registered</span><span class="num active">' + counts.registered + '</span></span>'
+      + '<span><span class="stage">Applied</span><span class="num active">'    + counts.applied    + '</span></span>'
+      + '<span class="link" onclick="showNetworkSubtab(&quot;workers&quot;)">'
+      +   '<span class="stage">Vetted</span><span class="num">' + counts.vetted + '</span>'
+      +   '<span class="stage" style="margin-left:10px;">Onboarded</span><span class="num">' + counts.onboarded + '</span>'
+      +   ' &rsaquo; in Workers'
+      + '</span>';
+  } catch(e) {
+    target.innerHTML = '<span class="muted">Could not load funnel.</span>';
+  }
+}
+
+// --------- Pipeline / Bars ---------
+
+async function loadPipelineBarsData() {
+  const tbody = document.getElementById('net-pipebars-tbody');
+  if(!tbody) return;
+  if(networkPipelineBarsState.loading) return;
+  networkPipelineBarsState.loading = true;
+  if(!networkPipelineBarsState.loaded) {
+    tbody.innerHTML = '<tr class="ops-sched-loading"><td colspan="6">Loading prospects...</td></tr>';
+  }
+  try {
+    const rows = await sbGet('bars',
+      '?status=eq.prospect&order=created_at.asc&select=id,name,address,contact_name,contact_phone,notes,status,created_at,last_contact_at');
+    networkPipelineBarsState.rows = Array.isArray(rows) ? rows : [];
+    networkPipelineBarsState.loaded = true;
+    renderPipelineBarsTable();
+  } catch(e) {
+    console.error('[net-pipebars] load failed', e);
+    tbody.innerHTML = '<tr class="ops-sched-loading"><td colspan="6">Could not load prospects.</td></tr>';
+  } finally {
+    networkPipelineBarsState.loading = false;
+  }
+}
+function onPipelineBarsSearch() {
+  const el = document.getElementById('net-pipebars-search');
+  networkPipelineBarsState.search = ((el && el.value) || '').trim().toLowerCase();
+  renderPipelineBarsTable();
+}
+function _filteredPipelineBars() {
+  const s = networkPipelineBarsState.search;
+  return networkPipelineBarsState.rows.filter(b => !s || (b.name || '').toLowerCase().includes(s));
+}
+function renderPipelineBarsTable() {
+  const tbody   = document.getElementById('net-pipebars-tbody');
+  const countEl = document.getElementById('net-pipebars-count');
+  if(!tbody) return;
+  const rows = _filteredPipelineBars();
+  if(countEl) countEl.textContent = rows.length + (rows.length === 1 ? ' prospect' : ' prospects');
+  if(!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="ops-sched-empty">No prospects on the pipeline yet. Click + Add Prospect to log one.</div></td></tr>';
+    return;
+  }
+  const expandedId = networkPipelineBarsState.expandedId;
+  const parts = [];
+  for(const b of rows) {
+    parts.push(_renderPipelineBarsRow(b, expandedId === b.id));
+    if(expandedId === b.id) parts.push(_renderPipelineBarsExpansion(b));
+  }
+  tbody.innerHTML = parts.join('');
+}
+function _daysSince(iso) {
+  if(!iso) return 0;
+  const ms = Date.now() - new Date(iso).getTime();
+  return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+}
+function _renderPipelineBarsRow(b, isExpanded) {
+  const postcode = _netExtractPostcode(b.address);
+  const lastContact = b.last_contact_at ? _formatRelativeDate(b.last_contact_at) : '<span class="muted">,</span>';
+  const days = _daysSince(b.created_at);
+  const expandedCls = isExpanded ? ' expanded' : '';
+  return ''
+    + '<tr class="ops-sched-row' + expandedCls + '" data-id="' + b.id + '" onclick="togglePipelineBarsRow(' + b.id + ')">'
+    +   '<td style="font-weight:600;color:var(--white);">' + _opsEscape(b.name || '(unnamed)') + '</td>'
+    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode || '<span class="muted">,</span>') + '</span></td>'
+    +   '<td><span class="net-stage-pill prospect">PROSPECT</span></td>'
+    +   '<td>' + lastContact + '</td>'
+    +   '<td><span class="ops-sched-time">' + days + 'd</span></td>'
+    +   '<td><div class="ops-sched-row-actions">'
+    +     '<button class="ops-sched-btn primary" onclick="event.stopPropagation();convertProspectToActive(' + b.id + ')">Convert to Active</button>'
+    +     '<button class="ops-sched-btn danger"  onclick="event.stopPropagation();archiveProspect('   + b.id + ')">Archive</button>'
+    +   '</div></td>'
+    + '</tr>';
+}
+function _renderPipelineBarsExpansion(b) {
+  const bid = b.id;
+  return ''
+    + '<tr class="ops-sched-expanded-row"><td colspan="6"><div class="ops-sched-exp-inner">'
+    +   '<div class="ops-sched-exp-section">'
+    +     '<h3 class="ops-sched-exp-h3">Identity</h3>'
+    +     '<div class="net-prof-grid">'
+    +       '<span class="k">Bar name</span><span class="v">' + _opsEscape(b.name || '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Postcode</span><span class="v">' + (_netExtractPostcode(b.address) || '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Contact name</span><span class="v">' + _opsEscape(b.contact_name || '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Contact phone</span><span class="v">' + _opsEscape(b.contact_phone || '<span class="muted">,</span>') + '</span>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="ops-sched-exp-section">'
+    +     '<h3 class="ops-sched-exp-h3">Notes</h3>'
+    +     '<div class="net-prof-edit-row">'
+    +       '<span class="field-label">Notes</span>'
+    +       '<textarea oninput="pipelineBarInlineSave(' + bid + ', &quot;notes&quot;, this.value)" placeholder="Sam-side notes">' + _opsEscape(b.notes || '') + '</textarea>'
+    +       '<span class="field-status" id="net-pipebar-status-notes-' + bid + '"></span>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="ops-sched-exp-section">'
+    +     '<h3 class="ops-sched-exp-h3">Last Contact</h3>'
+    +     '<div class="ops-sched-exp-body">'
+    +       (b.last_contact_at ? ('Last contacted ' + _formatRelativeDate(b.last_contact_at)) : '<span class="muted">No contact logged yet.</span>')
+    +       ' &nbsp; <button class="ops-sched-btn" onclick="markProspectContactedToday(' + bid + ')">Mark contacted today</button>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="ops-sched-actions-row">'
+    +     '<button class="ops-sched-btn primary" onclick="convertProspectToActive(' + bid + ')">Convert to Active</button>'
+    +     '<button class="ops-sched-btn danger"  onclick="archiveProspect(' + bid + ')">Archive</button>'
+    +   '</div>'
+    + '</div></td></tr>';
+}
+function togglePipelineBarsRow(barId) {
+  networkPipelineBarsState.expandedId = (networkPipelineBarsState.expandedId === barId) ? null : barId;
+  renderPipelineBarsTable();
+}
+function pipelineBarInlineSave(barId, field, value) {
+  if(field !== 'notes') return;
+  const key = barId + '-' + field;
+  const statusEl = document.getElementById('net-pipebar-status-' + field + '-' + barId);
+  if(statusEl) { statusEl.textContent = 'Saving...'; statusEl.classList.remove('saved', 'err'); }
+  const prev = networkPipelineBarsState.inlineTimers.get(key);
+  if(prev) clearTimeout(prev);
+  const timer = setTimeout(async () => {
+    networkPipelineBarsState.inlineTimers.delete(key);
+    try {
+      const patch = {}; patch[field] = value || null;
+      await sbPatch('bars', '?id=eq.' + barId, patch);
+      const b = networkPipelineBarsState.rows.find(x => x.id === barId);
+      if(b) b[field] = value || null;
+      if(statusEl) { statusEl.textContent = 'Saved'; statusEl.classList.add('saved'); statusEl.classList.remove('err'); }
+    } catch(e) { if(statusEl) { statusEl.textContent = 'Save failed'; statusEl.classList.add('err'); statusEl.classList.remove('saved'); } }
+  }, 600);
+  networkPipelineBarsState.inlineTimers.set(key, timer);
+}
+async function markProspectContactedToday(barId) {
+  const now = new Date().toISOString();
+  try {
+    await sbPatch('bars', '?id=eq.' + barId, { last_contact_at: now });
+    const b = networkPipelineBarsState.rows.find(x => x.id === barId);
+    if(b) b.last_contact_at = now;
+    renderPipelineBarsTable();
+  } catch(e) { alert('Could not update: ' + (e.message || 'unknown')); }
+}
+async function convertProspectToActive(barId) {
+  if(!confirm('Convert this prospect to TRIAL status? Use the Network / Bars tab to upgrade to Active after onboarding.')) return;
+  try {
+    await sbPatch('bars', '?id=eq.' + barId, { status: 'trial' });
+    networkPipelineBarsState.rows = networkPipelineBarsState.rows.filter(x => x.id !== barId);
+    if(networkPipelineBarsState.expandedId === barId) networkPipelineBarsState.expandedId = null;
+    networkBarsState.loaded = false; // force reload on next entry
+    renderPipelineBarsTable();
+    alert('Prospect promoted to TRIAL. View it in Network / Bars.');
+  } catch(e) { alert('Could not convert: ' + (e.message || 'unknown')); }
+}
+async function archiveProspect(barId) {
+  if(!confirm('Archive this prospect? It will be hidden from the pipeline but the record stays in the bars table.')) return;
+  try {
+    // Soft-archive by flipping status to 'lapsed'; row falls out of the prospect filter.
+    await sbPatch('bars', '?id=eq.' + barId, { status: 'lapsed' });
+    networkPipelineBarsState.rows = networkPipelineBarsState.rows.filter(x => x.id !== barId);
+    if(networkPipelineBarsState.expandedId === barId) networkPipelineBarsState.expandedId = null;
+    networkBarsState.loaded = false;
+    renderPipelineBarsTable();
+  } catch(e) { alert('Could not archive: ' + (e.message || 'unknown')); }
+}
+
+// + Add Prospect inline modal.
+function openProspectForm() {
+  const m = document.getElementById('prospect-form-modal');
+  if(!m) return;
+  document.getElementById('prospect-form-name').value = '';
+  document.getElementById('prospect-form-postcode').value = '';
+  document.getElementById('prospect-form-contact-name').value = '';
+  document.getElementById('prospect-form-contact-phone').value = '';
+  document.getElementById('prospect-form-notes').value = '';
+  document.getElementById('prospect-form-err').textContent = '';
+  m.style.display = 'flex';
+  setTimeout(() => document.getElementById('prospect-form-name').focus(), 50);
+}
+function closeProspectForm() {
+  const m = document.getElementById('prospect-form-modal');
+  if(m) m.style.display = 'none';
+}
+async function saveProspectForm() {
+  const errEl = document.getElementById('prospect-form-err');
+  const btn   = document.getElementById('prospect-form-save');
+  errEl.textContent = '';
+  const name     = document.getElementById('prospect-form-name').value.trim();
+  const postcode = document.getElementById('prospect-form-postcode').value.trim();
+  const contact  = document.getElementById('prospect-form-contact-name').value.trim();
+  const phone    = document.getElementById('prospect-form-contact-phone').value.trim();
+  const notes    = document.getElementById('prospect-form-notes').value.trim() || null;
+  if(!name) { errEl.textContent = 'Bar name is required.'; return; }
+  // Compose minimal address out of postcode so the postcode parser surfaces it
+  // in the table (the bars schema has no separate postcode column).
+  const address = postcode || null;
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    await sbPost('bars', {
+      name: name,
+      address: address,
+      contact_name: contact || null,
+      contact_phone: phone || null,
+      notes: notes,
+      status: 'prospect'
+    });
+    closeProspectForm();
+    await loadPipelineBarsData();
+  } catch(e) {
+    errEl.textContent = 'Could not save: ' + (e.message || 'unknown');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Prospect';
+  }
+}
+
+// --------- Pipeline / Workers ---------
+
+async function loadPipelineWorkersData() {
+  const tbody = document.getElementById('net-pipeworkers-tbody');
+  if(!tbody) return;
+  if(networkPipelineWorkersState.loading) return;
+  networkPipelineWorkersState.loading = true;
+  if(!networkPipelineWorkersState.loaded) {
+    tbody.innerHTML = '<tr class="ops-sched-loading"><td colspan="5">Loading applicants...</td></tr>';
+  }
+  try {
+    const rows = await sbGet('applications',
+      '?worker_status=in.(registered,applied)'
+      + '&select=id,name,email,phone,age_group,full_address,postcode_full,worker_status,active,created_at,reliability_notes'
+      + ',hospitality_experience,uk_work_right,available_hours,instagram_handle,referred_by,has_black_clothing,physically_able,speaks_english,understands_trial,agrees_work_standard'
+      + '&order=created_at.asc');
+    networkPipelineWorkersState.rows = Array.isArray(rows) ? rows : [];
+    networkPipelineWorkersState.loaded = true;
+    renderPipelineWorkersTable();
+  } catch(e) {
+    console.error('[net-pipeworkers] load failed', e);
+    tbody.innerHTML = '<tr class="ops-sched-loading"><td colspan="5">Could not load applicants.</td></tr>';
+  } finally {
+    networkPipelineWorkersState.loading = false;
+  }
+}
+function setPipelineWorkersFilter(name) {
+  networkPipelineWorkersState.filter = name;
+  document.querySelectorAll('#net-pipeworkers-filters .net-pill').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === name);
+  });
+  renderPipelineWorkersTable();
+}
+function onPipelineWorkersSearch() {
+  const el = document.getElementById('net-pipeworkers-search');
+  networkPipelineWorkersState.search = ((el && el.value) || '').trim().toLowerCase();
+  renderPipelineWorkersTable();
+}
+function _filteredPipelineWorkers() {
+  const f = networkPipelineWorkersState.filter;
+  const s = networkPipelineWorkersState.search;
+  return networkPipelineWorkersState.rows.filter(w => {
+    const stage = (w.worker_status || '').toLowerCase();
+    if(f !== 'all' && stage !== f) return false;
+    if(s && !((w.name || '').toLowerCase().includes(s))) return false;
+    return true;
+  });
+}
+function renderPipelineWorkersTable() {
+  const tbody   = document.getElementById('net-pipeworkers-tbody');
+  const countEl = document.getElementById('net-pipeworkers-count');
+  if(!tbody) return;
+  const rows = _filteredPipelineWorkers();
+  if(countEl) {
+    const reg = networkPipelineWorkersState.rows.filter(w => w.worker_status === 'registered').length;
+    const app = networkPipelineWorkersState.rows.filter(w => w.worker_status === 'applied').length;
+    countEl.textContent = rows.length + (rows.length === 1 ? ' applicant' : ' applicants')
+      + ' (' + reg + ' registered, ' + app + ' applied)';
+  }
+  if(!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="ops-sched-empty">No applicants match the current filter / search.</div></td></tr>';
+    return;
+  }
+  const expandedId = networkPipelineWorkersState.expandedId;
+  const parts = [];
+  for(const w of rows) {
+    parts.push(_renderPipelineWorkersRow(w, expandedId === w.id));
+    if(expandedId === w.id) parts.push(_renderPipelineWorkersExpansion(w));
+  }
+  tbody.innerHTML = parts.join('');
+}
+function _renderPipelineWorkersRow(w, isExpanded) {
+  const stage = (w.worker_status || 'registered').toLowerCase();
+  const postcode = w.postcode_full || _netExtractPostcode(w.full_address) || '';
+  const date = w.created_at ? new Date(w.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '<span class="muted">,</span>';
+  const notesSummary = w.reliability_notes ? _opsEscape(String(w.reliability_notes).slice(0, 80)) : '<span class="muted">,</span>';
+  const expandedCls = isExpanded ? ' expanded' : '';
+  return ''
+    + '<tr class="ops-sched-row' + expandedCls + '" data-id="' + w.id + '" onclick="togglePipelineWorkersRow(' + w.id + ')">'
+    +   '<td style="font-weight:600;color:var(--white);">' + _opsEscape(w.name || '(no name)') + '</td>'
+    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode || '<span class="muted">,</span>') + '</span></td>'
+    +   '<td><span class="net-stage-pill ' + stage + '">' + stage.toUpperCase() + '</span></td>'
+    +   '<td>' + date + '</td>'
+    +   '<td>' + notesSummary + '</td>'
+    + '</tr>';
+}
+function _renderPipelineWorkersExpansion(w) {
+  const wid = w.id;
+  const stage = (w.worker_status || '').toLowerCase();
+  if(stage === 'registered') {
+    return ''
+      + '<tr class="ops-sched-expanded-row"><td colspan="5"><div class="ops-sched-exp-inner">'
+      +   '<div class="ops-sched-exp-section">'
+      +     '<h3 class="ops-sched-exp-h3">Identity</h3>'
+      +     '<div class="net-prof-grid">'
+      +       '<span class="k">Name</span><span class="v">' + _opsEscape(w.name || '<span class="muted">,</span>') + ' <span class="muted" style="font-size:10px;">read-only (PII)</span></span>'
+      +       '<span class="k">Email</span><span class="v">' + _opsEscape(w.email || '<span class="muted">,</span>') + '</span>'
+      +       '<span class="k">Signup date</span><span class="v">' + (w.created_at ? new Date(w.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '<span class="muted">,</span>') + '</span>'
+      +       '<span class="k">Referred by</span><span class="v">' + _opsEscape(w.referred_by || '<span class="muted">,</span>') + '</span>'
+      +     '</div>'
+      +   '</div>'
+      +   '<div class="ops-sched-actions-row">'
+      +     '<button class="ops-sched-btn" onclick="netPipelineWorkerStub(&quot;invite&quot;)">Invite to Apply</button>'
+      +     '<button class="ops-sched-btn danger" onclick="netPipelineWorkerStub(&quot;remove&quot;)">Remove</button>'
+      +   '</div>'
+      + '</div></td></tr>';
+  }
+  // APPLIED stage: full vet form. Mirrors v1 saveVet() semantics.
+  const expChecked = w.hospitality_experience ? 'checked' : '';
+  return ''
+    + '<tr class="ops-sched-expanded-row"><td colspan="5"><div class="ops-sched-exp-inner">'
+    +   '<div class="ops-sched-exp-section">'
+    +     '<h3 class="ops-sched-exp-h3">Identity (read-only per Hard Rule #1)</h3>'
+    +     '<div class="net-prof-grid">'
+    +       '<span class="k">Name</span><span class="v">' + _opsEscape(w.name || '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Email</span><span class="v">' + _opsEscape(w.email || '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Phone</span><span class="v">' + _opsEscape(w.phone || '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Age group</span><span class="v">' + _opsEscape(w.age_group || '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Postcode (applicant)</span><span class="v">' + _opsEscape(w.postcode_full || '<span class="muted">,</span>') + '</span>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="ops-sched-exp-section">'
+    +     '<h3 class="ops-sched-exp-h3">Application details</h3>'
+    +     '<div class="net-prof-grid">'
+    +       '<span class="k">Hospitality experience</span><span class="v">' + (w.hospitality_experience === true ? 'Yes' : (w.hospitality_experience === false ? 'No' : '<span class="muted">unknown</span>')) + '</span>'
+    +       '<span class="k">UK right to work</span><span class="v">' + (w.uk_work_right === true ? '<span style="color:var(--green);">Yes</span>' : (w.uk_work_right === false ? '<span style="color:var(--red);">No</span>' : '<span class="muted">unknown</span>')) + '</span>'
+    +       '<span class="k">Available hours</span><span class="v">' + _opsEscape(w.available_hours || '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Instagram handle</span><span class="v">' + _opsEscape(w.instagram_handle || '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Speaks English</span><span class="v">' + (w.speaks_english === true ? 'Yes' : (w.speaks_english === false ? 'No' : '&mdash;')) + '</span>'
+    +       '<span class="k">Has black clothing</span><span class="v">' + (w.has_black_clothing === true ? 'Yes' : (w.has_black_clothing === false ? 'No' : '&mdash;')) + '</span>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="ops-sched-exp-section">'
+    +     '<h3 class="ops-sched-exp-h3">Vet form (Sam input)</h3>'
+    +     '<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--white);"><input type="checkbox" id="vet-v2-experience-' + wid + '" ' + expChecked + '> Experience confirmed</label>'
+    +     '<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--white);margin-top:6px;"><input type="checkbox" id="vet-v2-consent-' + wid + '"> Parasol contact consent confirmed</label>'
+    +     '<div class="net-prof-edit-row" style="margin-top:10px;">'
+    +       '<span class="field-label">Address</span>'
+    +       '<textarea id="vet-v2-address-' + wid + '" placeholder="Verified full address">' + _opsEscape(w.full_address || '') + '</textarea>'
+    +     '</div>'
+    +     '<div class="net-prof-edit-row" style="margin-top:6px;">'
+    +       '<span class="field-label">Vetting notes</span>'
+    +       '<textarea id="vet-v2-notes-' + wid + '" placeholder="Sam notes captured during vetting"></textarea>'
+    +     '</div>'
+    +     '<div id="vet-v2-err-' + wid + '" style="font-size:12px;color:var(--red);min-height:16px;margin-top:6px;"></div>'
+    +   '</div>'
+    +   '<div class="ops-sched-actions-row">'
+    +     '<button class="ops-sched-btn primary" id="vet-v2-save-' + wid + '" onclick="saveVetV2(' + wid + ')">Save Vet</button>'
+    +     '<button class="ops-sched-btn danger"  onclick="netPipelineWorkerStub(&quot;reject&quot;)">Reject Application</button>'
+    +     '<button class="ops-sched-btn"         onclick="netPipelineWorkerStub(&quot;more_info&quot;)">Request More Info</button>'
+    +   '</div>'
+    + '</div></td></tr>';
+}
+function togglePipelineWorkersRow(workerId) {
+  networkPipelineWorkersState.expandedId = (networkPipelineWorkersState.expandedId === workerId) ? null : workerId;
+  renderPipelineWorkersTable();
+}
+function netPipelineWorkerStub(kind) {
+  alert('Pipeline action "' + kind + '" lands in a follow-up batch.');
+}
+async function saveVetV2(workerId) {
+  const errEl = document.getElementById('vet-v2-err-' + workerId);
+  const btn   = document.getElementById('vet-v2-save-' + workerId);
+  if(errEl) errEl.textContent = '';
+  const exp     = document.getElementById('vet-v2-experience-' + workerId).checked;
+  const con     = document.getElementById('vet-v2-consent-' + workerId).checked;
+  const address = document.getElementById('vet-v2-address-' + workerId).value.trim();
+  const notes   = document.getElementById('vet-v2-notes-' + workerId).value.trim() || null;
+  if(!address) { if(errEl) errEl.textContent = 'Verified address is required before vetting.'; return; }
+  const now = new Date().toISOString();
+  let samEmail = null;
+  try {
+    const { data } = await sbAuth.auth.getUser();
+    samEmail = data?.user?.email || null;
+  } catch { samEmail = null; }
+  const patch = {
+    worker_status: 'vetted',
+    full_address: address,
+    vetting_notes: notes,
+    vetted_at: now,
+    vetted_by: samEmail,
+    experience_confirmed_at: exp ? now : null,
+    parasol_contact_consent_at: con ? now : null
+  };
+  if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  try {
+    await sbPatch('applications', '?id=eq.' + workerId, patch);
+    // Update local state, drop row from Pipeline Workers, force Workers reload.
+    networkPipelineWorkersState.rows = networkPipelineWorkersState.rows.filter(x => x.id !== workerId);
+    if(networkPipelineWorkersState.expandedId === workerId) networkPipelineWorkersState.expandedId = null;
+    networkWorkersState.loaded = false;
+    renderPipelineWorkersTable();
+    refreshPipelineFunnel();
+    refreshNetworkPipelineBadge();
+    showDashboardToast('Worker vetted, moved to Active Workers');
+  } catch(e) {
+    if(errEl) errEl.textContent = 'Vet save failed: ' + (e.message || 'unknown');
+    if(btn) { btn.disabled = false; btn.textContent = 'Save Vet'; }
+  }
+}
+
+// Hook Pipeline into the Network workspace lifecycle.
+(function _hookPipelineLifecycle() {
+  const ops = dv2Lifecycle.network;
+  if(!ops) return;
+  const prevEnter = ops.onEnter;
+  const prevTeardown = ops.onTeardown;
+  ops.onEnter = function() {
+    if(prevEnter) prevEnter();
+    refreshPipelineFunnel();
+  };
+  ops.onTeardown = function() {
+    if(prevTeardown) prevTeardown();
+    networkPipelineBarsState.loaded = false;
+    networkPipelineBarsState.rows = [];
+    networkPipelineBarsState.expandedId = null;
+    networkPipelineWorkersState.loaded = false;
+    networkPipelineWorkersState.rows = [];
+    networkPipelineWorkersState.expandedId = null;
+  };
+})();
+
+// Wire showNetworkSubtab('pipeline') to also initialise the pipeline panes.
+(function _hookPipelineShowSubtab() {
+  if(typeof showNetworkSubtab !== 'function') return;
+  const prev = showNetworkSubtab;
+  showNetworkSubtab = function(name) {
+    prev(name);
+    if(name === 'pipeline') {
+      // Pick the pipeline sub-tab (Bars vs Workers) per persisted preference.
+      showPipelineSubtab(pickInitialPipelineSubtab());
+    }
+  };
+})();
+
+// ====================================================================
+// Phase 2.8: URL hash routing for cross-workspace deep-links.
+// Hash format: #workspace[/subtab[/sub2]][?expand=<id>]
+// Examples:
+//   #operations/schedule
+//   #operations/schedule?expand=42
+//   #network/bars?expand=7
+//   #network/pipeline/workers?expand=197
+// Workspace + sub-tab switches write the hash. Row expansion writes it.
+// popstate listener parses the hash and applies. dv2ApplyHash() also runs
+// once on boot when v2 mode lands so a deep-link URL opens the right view.
+// ====================================================================
+
+let _dv2HashSuppress = 0;
+function _dv2SuppressHashWrites(fn) {
+  _dv2HashSuppress++;
+  try { fn(); } finally { _dv2HashSuppress--; }
+}
+
+function _dv2BuildHash(state) {
+  // state = { workspace, subtab, pipeline2, expand }
+  if(!state || !state.workspace) return '';
+  let path = state.workspace;
+  if(state.subtab) path += '/' + state.subtab;
+  if(state.pipeline2) path += '/' + state.pipeline2;
+  let q = '';
+  if(state.expand) q = '?expand=' + encodeURIComponent(state.expand);
+  return '#' + path + q;
+}
+
+function _dv2ParseHash() {
+  const raw = (window.location.hash || '').replace(/^#/, '');
+  if(!raw) return null;
+  const [path, query] = raw.split('?');
+  const segs = path.split('/').filter(Boolean);
+  const state = { workspace: null, subtab: null, pipeline2: null, expand: null };
+  if(segs[0]) state.workspace = segs[0];
+  if(segs[1]) state.subtab = segs[1];
+  if(segs[2]) state.pipeline2 = segs[2];
+  if(query) {
+    const params = new URLSearchParams(query);
+    const ex = params.get('expand');
+    if(ex) state.expand = isNaN(Number(ex)) ? ex : Number(ex);
+  }
+  return state;
+}
+
+function _dv2CurrentRouteState() {
+  // Snapshot the current workspace + sub-tab + expansion as a hash state.
+  const ws = dv2CurrentWorkspace;
+  if(!ws) return null;
+  const state = { workspace: ws };
+  if(ws === 'operations') {
+    const liveActive = document.querySelector('#workspace-operations .ws-subtab[data-subtab="live"].active');
+    state.subtab = liveActive ? 'live' : 'schedule';
+    if(state.subtab === 'schedule' && opsScheduleState.expandedId) state.expand = opsScheduleState.expandedId;
+  } else if(ws === 'network') {
+    const activeBtn = document.querySelector('#workspace-network .ws-subtab.active');
+    state.subtab = activeBtn ? activeBtn.dataset.subtab : 'bars';
+    if(state.subtab === 'bars' && networkBarsState.expandedId) state.expand = networkBarsState.expandedId;
+    else if(state.subtab === 'workers' && networkWorkersState.expandedId) state.expand = networkWorkersState.expandedId;
+    else if(state.subtab === 'pipeline') {
+      const activePipe = document.querySelector('#workspace-network [data-subtab="pipeline"] .net-pipeline-subtabs .net-pill.active');
+      state.pipeline2 = activePipe ? activePipe.dataset.pipelineTab : 'bars';
+      if(state.pipeline2 === 'bars' && networkPipelineBarsState.expandedId) state.expand = networkPipelineBarsState.expandedId;
+      else if(state.pipeline2 === 'workers' && networkPipelineWorkersState.expandedId) state.expand = networkPipelineWorkersState.expandedId;
+    }
+  }
+  return state;
+}
+
+function dv2WriteHash() {
+  if(_dv2HashSuppress > 0) return;
+  if(getDashboardMode() !== 'v2') return;
+  const state = _dv2CurrentRouteState();
+  const target = _dv2BuildHash(state);
+  if(!target) return;
+  if(window.location.hash === target) return;
+  // Use replaceState so each click does not flood history; explicit pushes
+  // happen only on workspace + sub-tab switches (handled below).
+  try { history.replaceState(null, '', target); } catch(e) { window.location.hash = target.slice(1); }
+}
+
+function dv2PushHash() {
+  if(_dv2HashSuppress > 0) return;
+  if(getDashboardMode() !== 'v2') return;
+  const state = _dv2CurrentRouteState();
+  const target = _dv2BuildHash(state);
+  if(!target) return;
+  if(window.location.hash === target) return;
+  try { history.pushState(null, '', target); } catch(e) { window.location.hash = target.slice(1); }
+}
+
+function dv2ApplyHash() {
+  if(getDashboardMode() !== 'v2') return;
+  const state = _dv2ParseHash();
+  if(!state || !state.workspace) return;
+  if(!DV2_WORKSPACES.includes(state.workspace)) return;
+  _dv2SuppressHashWrites(() => {
+    showWorkspace(state.workspace);
+    if(state.workspace === 'operations' && state.subtab) showOperationsSubtab(state.subtab);
+    if(state.workspace === 'network'    && state.subtab) showNetworkSubtab(state.subtab);
+    if(state.workspace === 'network' && state.subtab === 'pipeline' && state.pipeline2) {
+      showPipelineSubtab(state.pipeline2);
+    }
+    if(state.expand != null) {
+      // Wait for the table data to be loaded before expanding the target row.
+      _dv2WaitForRowAndExpand(state, 0);
+    }
+  });
+}
+
+function _dv2WaitForRowAndExpand(state, attempt) {
+  if(attempt > 20) return; // give up after ~4 seconds
+  let found = false;
+  const id = state.expand;
+  if(state.workspace === 'operations' && state.subtab === 'schedule') {
+    if((opsScheduleState.sessions || []).some(s => s.id === id)) {
+      opsScheduleState.expandedId = id;
+      renderOpsScheduleTable();
+      found = true;
+    }
+  } else if(state.workspace === 'network' && state.subtab === 'bars') {
+    if((networkBarsState.bars || []).some(b => b.id === id)) {
+      networkBarsState.expandedId = id;
+      renderNetworkBarsTable();
+      found = true;
+    }
+  } else if(state.workspace === 'network' && state.subtab === 'workers') {
+    if((networkWorkersState.workers || []).some(w => w.id === id)) {
+      networkWorkersState.expandedId = id;
+      renderNetworkWorkersTable();
+      found = true;
+    }
+  } else if(state.workspace === 'network' && state.subtab === 'pipeline' && state.pipeline2 === 'bars') {
+    if((networkPipelineBarsState.rows || []).some(b => b.id === id)) {
+      networkPipelineBarsState.expandedId = id;
+      renderPipelineBarsTable();
+      found = true;
+    }
+  } else if(state.workspace === 'network' && state.subtab === 'pipeline' && state.pipeline2 === 'workers') {
+    if((networkPipelineWorkersState.rows || []).some(w => w.id === id)) {
+      networkPipelineWorkersState.expandedId = id;
+      renderPipelineWorkersTable();
+      found = true;
+    }
+  }
+  if(found) {
+    setTimeout(() => {
+      const row = document.querySelector('.workspace.active [data-id="' + id + '"]');
+      if(row && row.scrollIntoView) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  } else {
+    setTimeout(() => _dv2WaitForRowAndExpand(state, attempt + 1), 200);
+  }
+}
+
+// Hook hash writes into every workspace + sub-tab + row-toggle path.
+(function _dv2InstallHashHooks() {
+  // Workspace switch: push (back/forward works).
+  if(typeof showWorkspace === 'function') {
+    const prev = showWorkspace;
+    showWorkspace = function(name) {
+      prev(name);
+      dv2PushHash();
+    };
+  }
+  // Sub-tab switches: replace (avoid history thrash on every tab click).
+  if(typeof showOperationsSubtab === 'function') {
+    const prev = showOperationsSubtab;
+    showOperationsSubtab = function(name) {
+      prev(name);
+      dv2WriteHash();
+    };
+  }
+  if(typeof showNetworkSubtab === 'function') {
+    const prev = showNetworkSubtab;
+    showNetworkSubtab = function(name) {
+      prev(name);
+      dv2WriteHash();
+    };
+  }
+  if(typeof showPipelineSubtab === 'function') {
+    const prev = showPipelineSubtab;
+    showPipelineSubtab = function(name) {
+      prev(name);
+      dv2WriteHash();
+    };
+  }
+  // Row toggles: replace.
+  const toggleFns = ['toggleOpsScheduleRow', 'toggleNetworkBarsRow', 'toggleNetworkWorkersRow', 'togglePipelineBarsRow', 'togglePipelineWorkersRow'];
+  toggleFns.forEach(fn => {
+    if(typeof window[fn] !== 'function') return;
+    const prev = window[fn];
+    window[fn] = function(id) {
+      prev(id);
+      dv2WriteHash();
+    };
+  });
+  // jumpToOpsSchedule: was the pre-Phase-2.8 cross-link path; route it
+  // through the new hash machinery so it benefits from row-wait + scroll.
+  if(typeof jumpToOpsSchedule === 'function') {
+    jumpToOpsSchedule = function(sessionId) {
+      try { history.pushState(null, '', '#operations/schedule?expand=' + sessionId); } catch(e) {}
+      dv2ApplyHash();
+    };
+  }
+  // popstate restores hash state on browser back/forward.
+  window.addEventListener('popstate', () => {
+    if(getDashboardMode() !== 'v2') return;
+    dv2ApplyHash();
+  });
+  // Apply any hash present at boot. applyDashboardMode (which calls
+  // showWorkspace) already runs at postLoginSetup; if a hash was in the URL
+  // before mode-switch, dv2ApplyHash takes precedence.
+  const prevApply = applyDashboardMode;
+  applyDashboardMode = function() {
+    prevApply();
+    if(getDashboardMode() === 'v2' && window.location.hash) {
+      setTimeout(dv2ApplyHash, 0);
+    }
+  };
+})();
 
 // F-28: top-level Sessions audit (cross-zone, filterable, read-only).
 async function goToSessionsAudit() {
@@ -4111,11 +7302,39 @@ const liveSessionOps = {
   }
 };
 
-// Is the live session view currently visible?
+// Is the live session view currently visible? True under either:
+//   v1: #screen-sessions is the active screen AND #sessions-live-tab is the
+//       active sub-tab (the original classic + bipartite location).
+//   v2 (Batch 2 Phase 2.2 onward): body.dashboard-v2 is set AND the
+//       Operations workspace is active AND the Live sub-tab is the active
+//       one. The realtime listeners' `if(isLiveViewActive()) renderLiveRoom()`
+//       guard fires identically in both modes.
 function isLiveViewActive() {
+  if(document.body.classList.contains('dashboard-v2')) {
+    if(dv2CurrentWorkspace !== 'operations') return false;
+    const liveBtn = document.querySelector('#workspace-operations .ws-subtab[data-subtab="live"]');
+    return !!(liveBtn && liveBtn.classList.contains('active'));
+  }
   const screen = document.getElementById('screen-sessions');
   const liveTab = document.getElementById('sessions-live-tab');
   return !!(screen && screen.classList.contains('active') && liveTab && liveTab.style.display !== 'none');
+}
+
+// Phase 2.2: dispatch the bipartite-view container based on dashboard mode.
+// In v2, the live view renders inside the Operations / Live sub-tab; in v1
+// it stays inside the original #sessions-live-room container. Both DOM
+// nodes exist in both modes — the helper just picks the visible one.
+function getBipartiteRoomEl() {
+  if(document.body.classList.contains('dashboard-v2') && dv2CurrentWorkspace === 'operations') {
+    return document.getElementById('ops-live-room');
+  }
+  return document.getElementById('sessions-live-room');
+}
+function getBipartiteEmptyEl() {
+  if(document.body.classList.contains('dashboard-v2') && dv2CurrentWorkspace === 'operations') {
+    return document.getElementById('ops-live-empty');
+  }
+  return document.getElementById('sessions-live-empty');
 }
 
 // Wire default listeners that re-render the live view, or mark it dirty if the
@@ -6397,9 +9616,10 @@ let liveSessionStart = null;
 // and the glasi_live_view_mode feature flag were retired in Batch 1b after
 // the rollback window closed cleanly.
 function renderLiveRoom() {
-  const room = document.getElementById('sessions-live-room');
+  const room = getBipartiteRoomEl();
   if(!room) return;
-  document.getElementById('sessions-live-empty').style.display = 'none';
+  const emptyEl = getBipartiteEmptyEl();
+  if(emptyEl) emptyEl.style.display = 'none';
   room.style.display = 'block';
   renderBipartiteView();
 }
@@ -6430,7 +9650,7 @@ let _bvResizeHandler = null;
 let _bvLineDispatchTarget = null; // { applicationId, requestId } for ov-bv-dispatch modal
 
 function renderBipartiteView() {
-  const room = document.getElementById('sessions-live-room');
+  const room = getBipartiteRoomEl();
   if(!room) return;
 
   const zoneName = liveSessionLabel || '';
@@ -6552,7 +9772,7 @@ function renderBipartiteView() {
 }
 
 function bvUpdateHeader(zoneName) {
-  const room = document.getElementById('sessions-live-room');
+  const room = getBipartiteRoomEl();
   if(!room) return;
   const zoneEl = room.querySelector('[data-zone-name]');
   if(zoneEl) zoneEl.textContent = zoneName || '';

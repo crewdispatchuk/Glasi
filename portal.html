@@ -1827,20 +1827,6 @@
       font-family: 'Inter', sans-serif;
     }
     .f32-ro-today strong { color: var(--ice); font-weight: 600; }
-    .f32-ro-claim {
-      background: var(--ice);
-      color: var(--navy);
-      border: none;
-      border-radius: 999px;
-      padding: 12px 28px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: 'Inter', sans-serif;
-      margin-bottom: 22px;
-      letter-spacing: 0.5px;
-    }
-    .f32-ro-claim:disabled { opacity: 0.4; cursor: default; }
     .f32-ro-history {
       width: 100%;
       max-width: 480px;
@@ -1863,6 +1849,100 @@
       border-bottom: 1px solid rgba(168,216,234,0.08);
     }
     .f32-ro-history-row:last-child { border-bottom: none; }
+
+    /* Phase 3 Batch 7b: after-session report modal. */
+    #after-session-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15,31,61,0.92);
+      z-index: 2000;
+      display: none;
+      align-items: flex-start; justify-content: center;
+      overflow-y: auto; padding: 40px 16px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    #after-session-overlay.open { display: flex; }
+    .asr-card {
+      background: var(--navy-mid); border: 1px solid var(--border); border-radius: 20px;
+      max-width: 520px; width: 100%;
+      padding: 32px 28px; color: var(--white);
+      font-family: 'Inter', sans-serif;
+    }
+    .asr-header { text-align: center; margin-bottom: 24px; }
+    .asr-trigger-label {
+      font-size: 11px; letter-spacing: 3px; font-weight: 700;
+      color: var(--ice); text-transform: uppercase; margin-bottom: 8px;
+    }
+    .asr-title { font-size: 22px; font-weight: 700; color: var(--white); line-height: 1.3; }
+    .asr-section { margin-bottom: 22px; }
+    .asr-section-label {
+      font-size: 11px; letter-spacing: 2px; font-weight: 600;
+      color: var(--grey); text-transform: uppercase;
+      margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+    .asr-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 14px; }
+    .asr-row .label { color: var(--white); flex: 1; padding-right: 12px; }
+    .asr-row .amount { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; }
+    .asr-row.confirmed .amount { color: var(--green); }
+    .asr-row.forfeit .amount { color: var(--red); }
+    .asr-row .forfeit-reason { font-style: italic; color: var(--grey); font-size: 12px; margin-top: 4px; }
+    .asr-delta {
+      display: flex; justify-content: space-between;
+      background: var(--navy); border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px 20px; margin-bottom: 22px;
+    }
+    .asr-delta-block { text-align: center; flex: 1; }
+    .asr-delta-label { font-size: 10px; letter-spacing: 1.5px; color: var(--grey); text-transform: uppercase; margin-bottom: 6px; }
+    .asr-delta-value { font-size: 22px; font-weight: 700; color: var(--white); font-family: 'JetBrains Mono', monospace; }
+    .asr-delta-value.positive { color: var(--green); }
+    .asr-tier-change {
+      text-align: center; background: rgba(168,216,234,0.08); border: 1px solid var(--ice);
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 22px;
+      font-size: 14px; color: var(--ice); font-weight: 600;
+    }
+    .asr-hints {
+      background: rgba(168,216,234,0.05); border-left: 3px solid var(--ice);
+      border-radius: 0 8px 8px 0; padding: 14px 16px; margin-bottom: 22px;
+    }
+    .asr-hint { font-size: 13px; color: var(--white); line-height: 1.5; margin-bottom: 8px; }
+    .asr-hint:last-child { margin-bottom: 0; }
+    .asr-dismiss {
+      background: var(--ice); color: var(--navy); border: none; border-radius: 999px;
+      padding: 14px 32px; font-size: 14px; font-weight: 700; cursor: pointer;
+      font-family: 'Inter', sans-serif; width: 100%; letter-spacing: 0.5px;
+    }
+
+    /* Phase 3 Batch 7b: tier history sub-tabs. */
+    .tier-history-card { background: var(--navy-mid); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+    .tier-subtab-nav { display: flex; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+    .tier-subtab-btn {
+      background: none; border: 1px solid var(--border); color: var(--grey);
+      border-radius: 999px; padding: 8px 16px; font-size: 12px; font-weight: 600;
+      font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.15s;
+    }
+    .tier-subtab-btn.active { background: var(--ice); color: var(--navy); border-color: var(--ice); }
+    .tier-subtab-content { min-height: 120px; }
+    .tier-activity-list, .tier-session-history-list { display: flex; flex-direction: column; }
+    .tier-activity-row {
+      display: grid; grid-template-columns: 1fr auto auto; gap: 12px;
+      align-items: center; padding: 10px 4px;
+      border-bottom: 1px solid rgba(168,216,234,0.08); font-size: 13px;
+    }
+    .tier-activity-row:last-child { border-bottom: none; }
+    .tier-activity-label { color: var(--white); }
+    .tier-activity-when { color: var(--grey); font-size: 11px; }
+    .tier-activity-amount { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; }
+    .tier-session-history-row {
+      display: grid; grid-template-columns: 1fr auto auto; gap: 12px;
+      align-items: center; padding: 12px 4px;
+      border-bottom: 1px solid rgba(168,216,234,0.08); font-size: 13px;
+      cursor: pointer;
+    }
+    .tier-session-history-row:last-child { border-bottom: none; }
+    .tier-session-history-row:hover { background: rgba(168,216,234,0.04); }
+    .tier-session-history-date { color: var(--white); font-weight: 600; }
+    .tier-session-history-status { color: var(--grey); font-size: 11px; text-transform: capitalize; }
+    .tier-session-history-chevron { color: var(--grey); font-size: 18px; }
     .f32-ro-row-left { font-size: 13px; color: var(--white); flex: 1 1 0; min-width: 0; }
     .f32-ro-row-when { font-size: 10px; color: var(--grey); margin-top: 3px; }
     .f32-ro-row-pts {
@@ -2198,32 +2278,53 @@
       <!-- How you earn points -->
       <div class="how-points-card">
         <div class="how-points-title">How you earn points</div>
+        <div style="font-size:13px;color:var(--grey);text-align:center;margin:-4px 0 18px;padding:0 8px;line-height:1.5;">Points are captured when you act and confirmed when you stay engaged through the session.</div>
 
         <div class="how-points-section">
-          <div class="how-points-section-title">Per session</div>
-          <div class="how-points-row"><span>Joined a session</span><span class="pts">+5</span></div>
-          <div class="how-points-row"><span>I'll pass</span><span class="pts">+1</span></div>
-          <div class="how-points-row"><span>I'm available</span><span class="pts">+15</span></div>
-          <div class="how-points-row"><span>Quick response (within first 25% of your window)</span><span class="pts">+15 bonus</span></div>
-          <div class="how-points-row"><span>Selected for a shift</span><span class="pts">+20</span></div>
-          <div class="how-points-row highlight"><span>Completed a shift</span><span class="pts">+60</span></div>
-          <div class="how-points-row highlight"><span>Arrived on time</span><span class="pts">+25</span></div>
-          <div class="how-points-row highlight"><span>Arrived early</span><span class="pts">+40</span></div>
+          <div class="how-points-section-title">During a session</div>
+          <div class="how-points-row"><span>Joined a session</span><span class="pts">+10</span></div>
+          <div class="how-points-row"><span>Said "I'm available"</span><span class="pts">+5</span></div>
+          <div class="how-points-row"><span>Said "I'll pass"</span><span class="pts">+1</span></div>
         </div>
 
         <div class="how-points-section">
-          <div class="how-points-section-title">Other</div>
-          <div class="how-points-row"><span>Daily login claim (claim once per day on your tier ring)</span><span class="pts">+5</span></div>
+          <div class="how-points-section-title">After dispatch</div>
+          <div class="how-points-row"><span>Arrived at the bar</span><span class="pts">+5</span></div>
+          <div class="how-points-row highlight"><span>Clocked in</span><span class="pts">+30</span></div>
+          <div class="how-points-row highlight"><span>Clocked out</span><span class="pts">+10</span></div>
+          <div class="how-points-row highlight"><span>Bar gave you 5 stars</span><span class="pts">+10</span></div>
         </div>
 
         <div class="how-points-section">
-          <div class="how-points-section-title">How you lose points</div>
-          <div class="how-points-row negative"><span>Did not respond when you had time</span><span class="pts">&minus;5</span></div>
-          <div class="how-points-row negative"><span>No-show after dispatch</span><span class="pts">&minus;100, flagged</span></div>
+          <div class="how-points-section-title">One-time</div>
+          <div class="how-points-row"><span>Followed Glasi on Instagram</span><span class="pts">+50</span></div>
+        </div>
+
+        <div class="how-points-section">
+          <div class="how-points-section-title">What you can lose</div>
+          <div class="how-points-row negative"><span>Left a session before 60 minutes</span><span class="pts">Join bonus forfeit</span></div>
+          <div class="how-points-row negative"><span>Ignored a shift request you received</span><span class="pts">Join bonus forfeit</span></div>
+          <div class="how-points-row negative"><span>5 Pass responses in a row</span><span class="pts">Removed from session</span></div>
+          <div class="how-points-row negative"><span>Dispatched but did not arrive</span><span class="pts">Available bonus forfeit</span></div>
+          <div class="how-points-row negative"><span>No-show after dispatch</span><span class="pts">&minus;100 reliability, flagged</span></div>
         </div>
 
         <div class="how-points-footnote">
           Reliability is your behavioural reliability across the platform. Show up consistently and respond when shifts come in.
+        </div>
+      </div>
+
+      <!-- Phase 3 Batch 7b: Activity + Session history sub-tabs. -->
+      <div class="tier-history-card" style="margin-top:20px;">
+        <div class="tier-subtab-nav">
+          <button class="tier-subtab-btn active" data-subtab="activity" onclick="switchTierSubTab('activity')">Activity</button>
+          <button class="tier-subtab-btn" data-subtab="session-history" onclick="switchTierSubTab('session-history')">Session history</button>
+        </div>
+        <div id="tier-subtab-activity-content" class="tier-subtab-content">
+          <div id="tier-activity-list" class="tier-activity-list"></div>
+        </div>
+        <div id="tier-subtab-session-history-content" class="tier-subtab-content" style="display:none;">
+          <div id="tier-session-history-list" class="tier-session-history-list"></div>
         </div>
       </div>
 
@@ -2852,7 +2953,7 @@
     // Auth succeeded. Verify the worker is onboarded before letting them
     // into the portal. A valid Supabase Auth session is not enough on its
     // own, the applications row still gates access.
-    const rows = await fetch(SUPABASE_URL + '/rest/v1/applications?email=eq.' + encodeURIComponent(email) + '&worker_status=eq.onboarded&select=id,name,tier,hourly_rate,total_points,reliability_score,postcode_full,last_login_claim_at', { headers: H }).then(r => r.json());
+    const rows = await fetch(SUPABASE_URL + '/rest/v1/applications?email=eq.' + encodeURIComponent(email) + '&worker_status=eq.onboarded&select=id,name,tier,hourly_rate,total_points,reliability_score,postcode_full', { headers: H }).then(r => r.json());
     if(!rows || !rows.length) {
       await sbAuth.auth.signOut();
       H.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
@@ -2903,7 +3004,7 @@
     if(!data?.session) return;
     H.Authorization = 'Bearer ' + data.session.access_token;
     const email = data.session.user.email;
-    const rows = await fetch(SUPABASE_URL + '/rest/v1/applications?email=eq.' + encodeURIComponent(email) + '&worker_status=eq.onboarded&select=id,name,tier,hourly_rate,total_points,reliability_score,postcode_full,last_login_claim_at', { headers: H }).then(r => r.json());
+    const rows = await fetch(SUPABASE_URL + '/rest/v1/applications?email=eq.' + encodeURIComponent(email) + '&worker_status=eq.onboarded&select=id,name,tier,hourly_rate,total_points,reliability_score,postcode_full', { headers: H }).then(r => r.json());
     if(!rows || !rows.length) {
       await sbAuth.auth.signOut();
       H.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
@@ -3117,31 +3218,315 @@
     f32CloseRingOverlay();
   }
 
-  // Daily-login claim: gated by Europe/London-day boundary. Worker eligible
-  // if last_login_claim_at is null OR before today's UK 00:00.
-  function f32IsDailyClaimEligible() {
-    const w = currentWorker;
-    if(!w) return false;
-    const last = w.last_login_claim_at;
-    if(!last) return true;
-    // Convert "now" and "last" to UK dates and compare YMD.
-    const fmt = d => new Date(d).toLocaleDateString('en-GB', { timeZone: 'Europe/London', year:'numeric', month:'2-digit', day:'2-digit' });
-    return fmt(new Date()) !== fmt(last);
-  }
-
   async function f32OpenRingOverlay() {
     const ov = document.getElementById('f32-ring-overlay');
     if(!ov) return;
     ov.classList.add('open');
     f32RenderTierRing();
     await f32RenderTodaySummary();
-    f32RenderClaimButton();
     await f32RenderHistory();
   }
 
   function f32CloseRingOverlay() {
     const ov = document.getElementById('f32-ring-overlay');
     if(ov) ov.classList.remove('open');
+  }
+
+  // Phase 3 Batch 7b: After-session report. Worker-facing battlefield-style
+  // summary of one session's engagement (confirmed/forfeit/pending baskets,
+  // points delta, tier change, hints). Replaces the legacy post-shift screen.
+  // Auto-triggered on session close, worker leave, shift complete. Manual
+  // trigger from Tier section Session-history sub-tab drilldown.
+  const AFTER_SESSION_HINTS = {
+    'join_session:Left session before 60 min minimum':
+      'Stay 60+ minutes next time to keep your joining bonus.',
+    'join_session:Did not respond to a shift request received during session':
+      'Respond to every shift request that comes up while you\'re in a session, even if it\'s a Pass.',
+    'respond_available:Dispatched but did not arrive at bar':
+      'When you say you\'re available and we send you, you need to actually arrive. No-shows lose the bonus.',
+    'session:5_pass_kick':
+      'Removed after 5 Pass responses in a row. If you\'re not ready to work, leave the session instead of passing repeatedly.',
+    'session:confirmed_only':
+      'Strong session. Keep showing up.',
+    'session:shift_completed':
+      'Great shift. Five-star feedback from the bar adds another 10 points if it lands.',
+    'session:stayed_no_dispatch':
+      'No shifts came your way this session. Your engagement still counts toward your tier.'
+  };
+
+  const ASR_TRIGGER_LABELS = {
+    session_close:  'Session closed',
+    worker_leave:   'You left the session',
+    shift_complete: 'Shift complete',
+    manual:         'Session summary'
+  };
+  const ASR_TRIGGER_TITLES = {
+    session_close:  "Here's how tonight went",
+    worker_leave:   'Thanks for being part of tonight',
+    shift_complete: 'Great work tonight',
+    manual:         'Your session summary'
+  };
+
+  async function showAfterSessionReport(triggerType, ctx) {
+    ctx = ctx || {};
+    const sessionId = ctx.sessionId || null;
+    if(!sessionId || !currentWorker?.id) {
+      console.warn('[showAfterSessionReport] missing sessionId or worker', { triggerType, ctx });
+      return;
+    }
+    const overlay = document.getElementById('after-session-overlay');
+    if(!overlay) return;
+    overlay.classList.add('open');
+    document.getElementById('asr-content').innerHTML =
+      '<div style="text-align:center;color:var(--grey);padding:40px;">Loading...</div>';
+    try {
+      const report = await assembleAfterSessionReport(sessionId, currentWorker.id, ctx);
+      renderAfterSessionReport(triggerType, report, ctx);
+    } catch(err) {
+      console.error('[showAfterSessionReport] failed', err);
+      document.getElementById('asr-content').innerHTML =
+        '<div style="text-align:center;color:var(--grey);padding:40px;">'
+        + 'Could not load the session summary right now. Tap below to dismiss.'
+        + '<button class="asr-dismiss" style="margin-top:24px;" onclick="closeAfterSessionReport()">Dismiss</button>'
+        + '</div>';
+    }
+  }
+
+  function closeAfterSessionReport() {
+    const overlay = document.getElementById('after-session-overlay');
+    if(overlay) overlay.classList.remove('open');
+  }
+
+  async function assembleAfterSessionReport(sessionId, applicationId, ctx) {
+    const [basketRows, ledgerRows, sessionWorkerRows, applicationRows, shiftRows] = await Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/session_basket?application_id=eq.' + applicationId + '&session_id=eq.' + sessionId + '&order=created_at.asc&select=id,reason,amount,status,source_type,source_id,created_at,resolved_at,forfeit_reason', { headers: H }).then(r => r.json()),
+      fetch(SUPABASE_URL + '/rest/v1/points_ledger?application_id=eq.' + applicationId + '&session_id=eq.' + sessionId + '&order=awarded_at.asc&select=id,amount,reason,awarded_at', { headers: H }).then(r => r.json()),
+      fetch(SUPABASE_URL + '/rest/v1/session_workers?application_id=eq.' + applicationId + '&session_id=eq.' + sessionId + '&select=id,status,left_reason,shift_request_id', { headers: H }).then(r => r.json()),
+      fetch(SUPABASE_URL + '/rest/v1/applications?id=eq.' + applicationId + '&select=total_points,tier', { headers: H }).then(r => r.json()),
+      fetch(SUPABASE_URL + '/rest/v1/shifts?session_id=eq.' + sessionId + '&select=id,session_worker_id,clock_in_confirmed_at,clock_out_confirmed_at,shift_length_hours,hourly_rate,total_earned,bar_rating', { headers: H }).then(r => r.json())
+    ]);
+    const baskets   = Array.isArray(basketRows)        ? basketRows                  : [];
+    const ledger    = Array.isArray(ledgerRows)        ? ledgerRows                  : [];
+    const swRow     = Array.isArray(sessionWorkerRows) ? sessionWorkerRows[0] || null : null;
+    const app       = Array.isArray(applicationRows)   ? applicationRows[0]   || null : null;
+    const allShifts = Array.isArray(shiftRows)         ? shiftRows                   : [];
+
+    const workerShifts    = swRow ? allShifts.filter(s => Number(s.session_worker_id) === Number(swRow.id)) : [];
+    const completedShifts = workerShifts.filter(s => !!s.clock_out_confirmed_at);
+    const latestCompletedShift = completedShifts.length ? completedShifts[completedShifts.length - 1] : null;
+
+    const confirmed = baskets.filter(b => b.status === 'confirmed');
+    const forfeit   = baskets.filter(b => b.status === 'forfeit');
+    const pending   = baskets.filter(b => b.status === 'pending');
+
+    const sessionDelta = ledger.filter(r => r.reason !== 'tier_promoted').reduce((s, r) => s + (parseInt(r.amount) || 0), 0);
+    const postTotal = app ? (parseInt(app.total_points) || 0) : 0;
+    const postTier  = app ? (parseInt(app.tier) || 1)         : 1;
+    const preTotal  = Math.max(0, postTotal - sessionDelta);
+    const preTier   = pointsToTier(preTotal);
+
+    const hints = [];
+    for(const f of forfeit) {
+      const key = (f.reason || '') + ':' + (f.forfeit_reason || '');
+      if(AFTER_SESSION_HINTS[key]) hints.push(AFTER_SESSION_HINTS[key]);
+    }
+    const kicked = swRow && (
+      swRow.status === 'cancelled' ||
+      swRow.left_reason === '5_pass_kick' ||
+      forfeit.some(f => /5 consecutive passes/i.test(f.forfeit_reason || ''))
+    );
+    if(kicked && AFTER_SESSION_HINTS['session:5_pass_kick']) hints.push(AFTER_SESSION_HINTS['session:5_pass_kick']);
+    if(completedShifts.length > 0) {
+      if(AFTER_SESSION_HINTS['session:shift_completed']) hints.push(AFTER_SESSION_HINTS['session:shift_completed']);
+    } else if(forfeit.length === 0 && confirmed.length > 0) {
+      if(AFTER_SESSION_HINTS['session:confirmed_only']) hints.push(AFTER_SESSION_HINTS['session:confirmed_only']);
+    } else if(workerShifts.length === 0 && forfeit.length === 0) {
+      if(AFTER_SESSION_HINTS['session:stayed_no_dispatch']) hints.push(AFTER_SESSION_HINTS['session:stayed_no_dispatch']);
+    }
+
+    let shiftStats = null;
+    if(latestCompletedShift) {
+      let totalHours = null;
+      if(latestCompletedShift.clock_in_confirmed_at && latestCompletedShift.clock_out_confirmed_at) {
+        totalHours = (new Date(latestCompletedShift.clock_out_confirmed_at) - new Date(latestCompletedShift.clock_in_confirmed_at)) / 3600000;
+      } else if(latestCompletedShift.shift_length_hours) {
+        totalHours = parseFloat(latestCompletedShift.shift_length_hours);
+      }
+      const hourlyRate = parseFloat(latestCompletedShift.hourly_rate) || currentWorker?.hourly_rate || 12.71;
+      const totalEarned = (latestCompletedShift.total_earned != null) ? parseFloat(latestCompletedShift.total_earned) : (totalHours != null ? Math.round(totalHours * hourlyRate * 100) / 100 : null);
+      shiftStats = {
+        shiftId: latestCompletedShift.id,
+        sessionWorkerId: latestCompletedShift.session_worker_id,
+        totalHours, totalEarned, hourlyRate,
+        hasFeedback: !!latestCompletedShift.bar_rating
+      };
+    }
+
+    return {
+      sessionId, confirmed, forfeit, pending,
+      sessionDelta, preTotal, postTotal, preTier, postTier,
+      promoted: postTier > preTier,
+      completedShifts, workerShifts, swRow, hints,
+      shiftStats
+    };
+  }
+
+  function renderAfterSessionReport(triggerType, report, ctx) {
+    const triggerLabel = ASR_TRIGGER_LABELS[triggerType] || 'Session summary';
+    const triggerTitle = ASR_TRIGGER_TITLES[triggerType] || 'Your session summary';
+
+    let html = '<div class="asr-header">'
+      + '<div class="asr-trigger-label">' + escapeHtml(triggerLabel) + '</div>'
+      + '<div class="asr-title">' + escapeHtml(triggerTitle) + '</div>'
+      + '</div>';
+
+    const deltaSign = report.sessionDelta >= 0 ? '+' : '';
+    html += '<div class="asr-delta">'
+      +   '<div class="asr-delta-block"><div class="asr-delta-label">Before</div><div class="asr-delta-value">' + report.preTotal + '</div></div>'
+      +   '<div class="asr-delta-block"><div class="asr-delta-label">This session</div><div class="asr-delta-value' + (report.sessionDelta > 0 ? ' positive' : '') + '">' + deltaSign + report.sessionDelta + '</div></div>'
+      +   '<div class="asr-delta-block"><div class="asr-delta-label">Now</div><div class="asr-delta-value">' + report.postTotal + '</div></div>'
+      + '</div>';
+
+    if(report.promoted) {
+      const TIER_NAMES = ['New', 'Reliable', 'Trusted', 'Elite', 'Elite+'];
+      const newName = TIER_NAMES[report.postTier - 1] || ('Tier ' + report.postTier);
+      html += '<div class="asr-tier-change">Promoted to Tier ' + report.postTier + ' (' + escapeHtml(newName) + ')</div>';
+    }
+
+    if(report.confirmed.length) {
+      html += '<div class="asr-section"><div class="asr-section-label">Confirmed</div>';
+      for(const c of report.confirmed) {
+        const label = (typeof reasonToLabel === 'function') ? reasonToLabel(c.reason) : c.reason;
+        html += '<div class="asr-row confirmed"><span class="label">' + escapeHtml(label) + '</span><span class="amount">+' + (parseInt(c.amount) || 0) + '</span></div>';
+      }
+      html += '</div>';
+    }
+
+    if(report.forfeit.length) {
+      html += '<div class="asr-section"><div class="asr-section-label">Forfeit</div>';
+      for(const f of report.forfeit) {
+        const label = (typeof reasonToLabel === 'function') ? reasonToLabel(f.reason) : f.reason;
+        html += '<div class="asr-row forfeit"><span class="label">' + escapeHtml(label)
+          +   (f.forfeit_reason ? '<div class="forfeit-reason">' + escapeHtml(f.forfeit_reason) + '</div>' : '')
+          + '</span><span class="amount">&minus;' + (parseInt(f.amount) || 0) + '</span></div>';
+      }
+      html += '</div>';
+    }
+
+    if(report.pending.length && !report.confirmed.length && !report.forfeit.length) {
+      html += '<div class="asr-section"><div class="asr-section-label">Pending</div>';
+      for(const p of report.pending) {
+        const label = (typeof reasonToLabel === 'function') ? reasonToLabel(p.reason) : p.reason;
+        html += '<div class="asr-row"><span class="label">' + escapeHtml(label) + '</span><span class="amount" style="color:var(--ice);">+' + (parseInt(p.amount) || 0) + ' tentative</span></div>';
+      }
+      html += '</div>';
+    }
+
+    if(report.shiftStats) {
+      const s = report.shiftStats;
+      html += '<div class="asr-section"><div class="asr-section-label">Your shift</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">'
+        +   '<div style="background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--white);">' + (s.totalHours != null ? s.totalHours.toFixed(2) + 'h' : '—') + '</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-top:4px;">Length</div></div>'
+        +   '<div style="background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--white);">' + (s.totalEarned != null ? '£' + s.totalEarned.toFixed(2) : '—') + '</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-top:4px;">Earned</div></div>'
+        + '</div>'
+        + '</div>';
+
+      if(triggerType === 'shift_complete' && !s.hasFeedback) {
+        window._postShiftCtx = { sessionWorkerId: s.sessionWorkerId, sessionId: report.sessionId, shiftId: s.shiftId };
+        postShiftSwId = s.sessionWorkerId;
+        postShiftRating = 0;
+        html += '<div id="postshift-feedback" style="background:var(--navy);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:22px;">'
+          +   '<div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:4px;text-align:center;">How was the venue?</div>'
+          +   '<div style="font-size:12px;color:var(--grey);text-align:center;margin-bottom:16px;">Rating is required. Feedback helps us pick the right venues.</div>'
+          +   '<div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px;" id="postshift-stars">'
+          +     '<span onclick="setPostShiftRating(1)" style="font-size:32px;cursor:pointer;opacity:0.3;" data-star="1">★</span>'
+          +     '<span onclick="setPostShiftRating(2)" style="font-size:32px;cursor:pointer;opacity:0.3;" data-star="2">★</span>'
+          +     '<span onclick="setPostShiftRating(3)" style="font-size:32px;cursor:pointer;opacity:0.3;" data-star="3">★</span>'
+          +     '<span onclick="setPostShiftRating(4)" style="font-size:32px;cursor:pointer;opacity:0.3;" data-star="4">★</span>'
+          +     '<span onclick="setPostShiftRating(5)" style="font-size:32px;cursor:pointer;opacity:0.3;" data-star="5">★</span>'
+          +   '</div>'
+          +   '<textarea id="postshift-comment" placeholder="Optional. Anything we should know about your shift tonight?" style="width:100%;background:var(--navy-mid);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;color:var(--white);font-family:\'Inter\',sans-serif;outline:none;resize:none;height:90px;margin-bottom:12px;"></textarea>'
+          +   '<button id="postshift-submit-btn" onclick="submitPostShiftFeedback()" disabled style="width:100%;background:var(--ice);color:var(--navy);border:none;border-radius:8px;padding:13px;font-size:13px;font-weight:700;font-family:\'Inter\',sans-serif;cursor:pointer;opacity:0.4;">Pick a rating to submit</button>'
+          +   '<div id="postshift-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:16px;text-align:center;"></div>'
+          + '</div>';
+      }
+    }
+
+    if(report.hints.length) {
+      html += '<div class="asr-hints">';
+      for(const h of report.hints) html += '<div class="asr-hint">' + escapeHtml(h) + '</div>';
+      html += '</div>';
+    }
+
+    const omitDismiss = (triggerType === 'shift_complete' && report.shiftStats && !report.shiftStats.hasFeedback);
+    if(!omitDismiss) {
+      html += '<button class="asr-dismiss" onclick="closeAfterSessionReport()">Done</button>';
+    }
+
+    document.getElementById('asr-content').innerHTML = html;
+  }
+
+  function switchTierSubTab(name) {
+    document.querySelectorAll('.tier-subtab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.subtab === name);
+    });
+    document.querySelectorAll('.tier-subtab-content').forEach(c => {
+      c.style.display = (c.id === 'tier-subtab-' + name + '-content') ? 'block' : 'none';
+    });
+    if(name === 'activity') loadTierActivityList();
+    else if(name === 'session-history') loadSessionHistoryList();
+  }
+
+  async function loadTierActivityList() {
+    const listEl = document.getElementById('tier-activity-list');
+    if(!listEl || !currentWorker?.id) return;
+    listEl.innerHTML = '<div style="text-align:center;color:var(--grey);font-size:12px;padding:18px;">Loading...</div>';
+    try {
+      const rows = await fetch(SUPABASE_URL + '/rest/v1/points_ledger?application_id=eq.' + currentWorker.id + '&order=awarded_at.desc&limit=100&select=id,amount,reason,awarded_at,session_id', { headers: H }).then(r => r.json());
+      if(!Array.isArray(rows) || !rows.length) {
+        listEl.innerHTML = '<div style="text-align:center;color:var(--grey);font-size:12px;padding:18px;">No activity yet.</div>';
+        return;
+      }
+      listEl.innerHTML = rows.map(r => {
+        const label = (typeof reasonToLabel === 'function') ? reasonToLabel(r.reason) : r.reason;
+        const sign = r.amount >= 0 ? '+' : '';
+        const colour = r.amount >= 0 ? 'var(--green)' : 'var(--red)';
+        const when = (typeof f32RelTime === 'function') ? f32RelTime(r.awarded_at) : '';
+        return '<div class="tier-activity-row">'
+          + '<div class="tier-activity-label">' + escapeHtml(label) + '</div>'
+          + '<div class="tier-activity-when">' + escapeHtml(when) + '</div>'
+          + '<div class="tier-activity-amount" style="color:' + colour + ';">' + sign + r.amount + '</div>'
+          + '</div>';
+      }).join('');
+    } catch(e) {
+      listEl.innerHTML = '<div style="text-align:center;color:var(--grey);font-size:12px;padding:18px;">Could not load activity.</div>';
+    }
+  }
+
+  async function loadSessionHistoryList() {
+    const listEl = document.getElementById('tier-session-history-list');
+    if(!listEl || !currentWorker?.id) return;
+    listEl.innerHTML = '<div style="text-align:center;color:var(--grey);font-size:12px;padding:18px;">Loading...</div>';
+    try {
+      const rows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?application_id=eq.' + currentWorker.id + '&order=id.desc&limit=50&select=id,session_id,status,sessions(id,session_date,start_time,status)', { headers: H }).then(r => r.json());
+      if(!Array.isArray(rows) || !rows.length) {
+        listEl.innerHTML = '<div style="text-align:center;color:var(--grey);font-size:12px;padding:18px;">No sessions yet.</div>';
+        return;
+      }
+      listEl.innerHTML = rows.filter(r => r.sessions).map(r => {
+        const s = r.sessions;
+        const dt = s.session_date ? new Date(s.session_date + 'T' + (s.start_time || '18:00:00')) : null;
+        const dateStr = dt ? dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : '—';
+        const statusLabel = (r.status || '').replace(/_/g, ' ');
+        return '<div class="tier-session-history-row" onclick="showAfterSessionReport(\'manual\', { sessionId: ' + s.id + ' })">'
+          + '<div class="tier-session-history-date">' + escapeHtml(dateStr) + '</div>'
+          + '<div class="tier-session-history-status">' + escapeHtml(statusLabel) + '</div>'
+          + '<div class="tier-session-history-chevron">›</div>'
+          + '</div>';
+      }).join('');
+    } catch(e) {
+      listEl.innerHTML = '<div style="text-align:center;color:var(--grey);font-size:12px;padding:18px;">Could not load session history.</div>';
+    }
   }
 
   async function f32RenderTodaySummary() {
@@ -3156,83 +3541,25 @@
     // Day start in UK time, expressed as UTC ISO (close enough for filter)
     const ukDayStart = new Date(`${y}-${m}-${d}T00:00:00`).toISOString();
     try {
-      const rows = await fetch(SUPABASE_URL + '/rest/v1/points_ledger?application_id=eq.' + w.id + '&awarded_at=gte.' + encodeURIComponent(ukDayStart) + '&select=amount', { headers: H }).then(r => r.json());
-      if(!Array.isArray(rows)) { todayEl.innerHTML = 'Earned today: <strong>+0</strong>'; return; }
-      const total = rows.reduce((s, r) => s + (parseInt(r.amount) || 0), 0);
-      const sign = total >= 0 ? '+' : '';
-      todayEl.innerHTML = 'Earned today: <strong>' + sign + total + '</strong> &middot; ' + rows.length + ' event' + (rows.length === 1 ? '' : 's');
+      // Phase 3 Batch 7: two parallel fetches, confirmed (points_ledger) and
+      // pending (session_basket status=pending). Pending shown as "tentative"
+      // to signal "may confirm or forfeit at end-of-engagement".
+      const [confirmedRows, pendingRows] = await Promise.all([
+        fetch(SUPABASE_URL + '/rest/v1/points_ledger?application_id=eq.' + w.id + '&awarded_at=gte.' + encodeURIComponent(ukDayStart) + '&select=amount', { headers: H }).then(r => r.json()),
+        fetch(SUPABASE_URL + '/rest/v1/session_basket?application_id=eq.' + w.id + '&status=eq.pending&created_at=gte.' + encodeURIComponent(ukDayStart) + '&select=amount', { headers: H }).then(r => r.json())
+      ]);
+      const confirmedArr = Array.isArray(confirmedRows) ? confirmedRows : [];
+      const pendingArr   = Array.isArray(pendingRows)   ? pendingRows   : [];
+      const confirmedTotal = confirmedArr.reduce((s, r) => s + (parseInt(r.amount) || 0), 0);
+      const pendingTotal   = pendingArr.reduce((s, r) => s + (parseInt(r.amount) || 0), 0);
+      const confirmedSign  = confirmedTotal >= 0 ? '+' : '';
+      let html = 'Earned today: <strong>' + confirmedSign + confirmedTotal + '</strong> &middot; ' + confirmedArr.length + ' event' + (confirmedArr.length === 1 ? '' : 's');
+      if(pendingArr.length) {
+        html += '<div style="margin-top:4px;">Pending: <strong>+' + pendingTotal + ' tentative</strong> &middot; ' + pendingArr.length + ' event' + (pendingArr.length === 1 ? '' : 's') + '</div>';
+      }
+      todayEl.innerHTML = html;
     } catch(e) {
       todayEl.innerHTML = 'Earned today: <strong>+0</strong>';
-    }
-  }
-
-  function f32RenderClaimButton() {
-    const btn = document.getElementById('f32-ro-claim');
-    if(!btn) return;
-    if(f32IsDailyClaimEligible()) {
-      btn.style.display = 'inline-block';
-      btn.disabled = false;
-      btn.textContent = "Claim today's +5";
-    } else {
-      btn.style.display = 'none';
-    }
-  }
-
-  async function f32ClaimDailyLogin(btnEl) {
-    if(!currentWorker || !f32IsDailyClaimEligible()) return;
-    btnEl.disabled = true;
-    btnEl.textContent = 'Claiming...';
-    try {
-      // SEC-N1 Stage 7: worker_claim_daily_login (RPC) atomically
-      // updates applications.last_login_claim_at and inserts the
-      // daily_login_claim ledger row server-side. UK day-start gating
-      // is enforced inside the function (date_trunc on Europe/London
-      // tz); returns {ok:true, claimed:false, reason:'already_claimed_today'}
-      // if the slot was already taken. The Stage 1 trigger recomputes
-      // applications.{total_points, tier, hourly_rate} from the new
-      // ledger row.
-      //
-      // Spawn the +X float NOW, while the button is still visible.
-      // f32RenderClaimButton below hides the button on success; if we
-      // floated after, getBoundingClientRect would return 0,0,0,0.
-      f32SpawnFloat(btnEl, '+5');
-
-      const resp = await fetch(SUPABASE_URL + '/rest/v1/rpc/worker_claim_daily_login', {
-        method: 'POST',
-        headers: { ...H, 'Content-Type': 'application/json' },
-        body: '{}'
-      });
-      const data = await resp.json().catch(() => null);
-      if(!resp.ok || !data || data.ok !== true) {
-        throw new Error('claim failed: ' + (data?.error || resp.status));
-      }
-      if(data.claimed === true) {
-        // Mirror the post-trigger applications state into currentWorker
-        // so the ring renders the new tier / total without an extra
-        // fetch. last_login_claim_at is set server-side to now().
-        currentWorker.last_login_claim_at = new Date().toISOString();
-        const newTotal = parseInt(data.new_total);
-        const newTier = parseInt(data.new_tier);
-        if(!isNaN(newTotal)) currentWorker.total_points = newTotal;
-        if(!isNaN(newTier)) {
-          const oldTier = parseInt(currentWorker.tier) || 1;
-          currentWorker.tier = newTier;
-          if(newTier !== oldTier) {
-            currentWorker.hourly_rate = [12.71, 13.71, 14.71, 15.71, 16.71][newTier - 1];
-          }
-        }
-      }
-      // claimed=false (already_claimed_today) is a silent no-op; the
-      // float already spawned is misleading but harmless once on screen.
-
-      f32RenderTierRing();
-      await f32RenderTodaySummary();
-      f32RenderClaimButton();
-      await f32RenderHistory();
-    } catch(e) {
-      console.error('[f32ClaimDailyLogin] failed', e);
-      btnEl.disabled = false;
-      btnEl.textContent = "Claim today's +5";
     }
   }
 
@@ -3741,24 +4068,26 @@
   const ACTIVITY_CACHE_MS = 60 * 1000;
 
   // F-32: points_ledger.reason → friendly label. Mirrors the dashboard
-  // POINTS_REASON_LABELS map. Vocabulary aligned with the post-F-32 CHECK
-  // constraint (14 reasons). Tripwire: keep this map and the dashboard map
-  // in sync with each other and with the CHECK constraint.
+  // Phase 3 Batch 7: REASON_LABELS map. Tripwire: keep in sync with the
+  // dashboard POINTS_REASON_LABELS map AND the points_ledger CHECK constraint.
+  // Phase 3 transitional state: CHECK is EXPANDED (22 values) until Batch 9.2
+  // SHRINK (12 values). Map matches EXPANDED until Batch 9.3 cleanup (legacy
+  // 10 dropped once Batch 9.1 wipe deletes pre-Phase-3 test rows).
   const REASON_LABELS = {
+    // Phase 3 (added Batch 7)
+    join_session:                     'Joined a session',
+    respond_available:                "Said I'm available",
+    respond_pass:                     "Said I'll pass",
+    arrived:                          'Arrived at the bar',
+    clock_in:                         'Clocked in',
+    clock_out:                        'Clocked out',
+    five_star_feedback:               'Bar gave you 5 stars',
+    instagram_follow:                 'Followed Glasi on Instagram',
+    // Survives Batch 9.2 SHRINK
     genesis:                          'Starting balance',
-    joined_session:                   'Joined a session',
-    selected_for_shift:               'Selected for a shift',
-    responded_available:              "Responded I'm available",
-    responded_available_quick:        'Quick response',
-    responded_pass:                   "Responded I'll pass",
-    completed_shift:                  'Completed a shift',
-    arrived_early:                    'Arrived early',
-    arrived_on_time:                  'Arrived on time',
-    no_response:                      'No response when you had time',
     no_show:                          'Selected but did not attend',
     manual_correction:                'Manual correction',
-    tier_promoted:                    'Promoted to a new tier',
-    daily_login_claim:                'Daily login'
+    tier_promoted:                    'Promoted to a new tier'
   };
   // F-32: alias used by the new ring overlay history feed.
   const reasonLabels = REASON_LABELS;
@@ -3794,7 +4123,7 @@
       // 7-day stat. Bars-in-zone is needed for hs_needs_signing — load
       // through the existing cache helper if not already populated.
       const [invites, shiftRows, latestTierRows, dismissalsRows, allLedger] = await Promise.all([
-        fetch(SUPABASE_URL + '/rest/v1/session_invites?application_id=eq.' + currentWorker.id + '&select=id,created_at,session_id,attendance_confirmed,sessions(status,session_date,scheduled_start,start_time,zone_id,zones(name),session_bars(bars(id,name,hs_document_url)))', { headers: H }).then(r => r.json()),
+        fetch(SUPABASE_URL + '/rest/v1/session_invites?application_id=eq.' + currentWorker.id + '&select=id,created_at,session_id,attendance_confirmed,sessions(status,session_date,scheduled_start,start_time,session_bars(bars(id,name,hs_document_url)))', { headers: H }).then(r => r.json()),
         swIds.length
           ? fetch(SUPABASE_URL + '/rest/v1/shifts?session_worker_id=in.(' + swIds.join(',') + ')&status=eq.completed&select=id,clock_in_confirmed_at,clock_out_confirmed_at,shift_length_hours,total_earned,hourly_rate,bar_id,session_id&order=clock_out_confirmed_at.desc&limit=50', { headers: H }).then(r => r.json())
           : Promise.resolve([]),
@@ -4386,7 +4715,7 @@
   // Function name kept for backward compat; it now handles every state.
   async function checkForLiveSession() {
     if(!currentWorker) return;
-    const rows = await fetch(SUPABASE_URL + '/rest/v1/session_invites?application_id=eq.' + currentWorker.id + '&select=id,session_code,session_id,joined_at,left_at,attendance_confirmed,attendance_confirmed_at,sessions(status,session_date,scheduled_start,start_time,zone_id,zones(name),session_bars(bars(id,name,hs_document_url)))', { headers: H }).then(r => r.json());
+    const rows = await fetch(SUPABASE_URL + '/rest/v1/session_invites?application_id=eq.' + currentWorker.id + '&select=id,session_code,session_id,joined_at,left_at,attendance_confirmed,attendance_confirmed_at,sessions(status,session_date,scheduled_start,start_time,session_bars(bars(id,name,hs_document_url)))', { headers: H }).then(r => r.json());
 
     // Always reset the scheduled-state cards + the new live-confirmed card
     // before evaluating; the branches below re-show whichever is relevant.
@@ -4889,24 +5218,15 @@
     document.getElementById('sessions-prejoin').style.display = 'none';
     document.getElementById('sessions-live').style.display = 'block';
 
-    if(currentWorker && currentSessionInvite?.session_id) {
-      // Float source: the live waiting room view header. Fallback to the join
-      // button if the header isn't found.
-      const originEl = document.getElementById('live-waiting')
-                    || document.getElementById('sessions-live')
-                    || document.body;
-      try {
-        await awardPointsImmediate(currentWorker.id, [{
-          amount: 5,
-          reason: 'joined_session',
-          sessionId: currentSessionInvite.session_id
-        }], { sessionId: currentSessionInvite.session_id, originEl });
-      } catch(e) {
-        console.warn('[handleJoinSession] awardPointsImmediate failed', e);
-      }
-    }
+    // Phase 3 Batch 7: joined_session points retired from the portal direct-ledger
+    // path. engagement_basket_on_join_trigger fires server-side on the
+    // session_invites.joined_at UPDATE and writes the join_session basket entry
+    // (+10 pending). Basket confirms at end-of-engagement if the worker stays
+    // 60+ minutes AND responds to every request received; forfeits otherwise.
     // Start real-time subscription (placeholder for now)
     startLiveSession();
+    // Phase 3 Batch 7: engagement basket + ledger watch for live pending/confirmed display.
+    if(currentSessionInvite?.session_id) startEngagementBasketWatch(currentSessionInvite.session_id);
   }
 
   let activeShiftRequestId = null;
@@ -5247,6 +5567,13 @@
   }
 
   function tearDownSessionAfterClose() {
+    // Phase 3 Batch 7b: fire the after-session report modal BEFORE clearing
+    // state, so we still have currentSessionInvite.session_id to assemble it.
+    const closingSessionId = currentSessionInvite?.session_id || null;
+    if(closingSessionId && currentWorker?.id) {
+      showAfterSessionReport('session_close', { sessionId: closingSessionId })
+        .catch(e => console.warn('[tearDownSessionAfterClose] modal failed', e));
+    }
     // Session closed by Sam. Clear all the session-tab state, leave the worker
     // on the idle "No active session" view so they know it's done.
     if(typeof clearAllShiftPostCards === 'function') clearAllShiftPostCards();
@@ -5278,6 +5605,62 @@
         + '<div class="sessions-empty-title">Session closed</div>'
         + '<div class="sessions-empty-sub">Tonight\'s session is done. Thanks for being part of it. We\'ll see you at the next one.</div>';
     }
+  }
+
+  // Phase 3 Batch 7: engagement basket + ledger realtime watch. Subscribes to
+  // session_basket (INSERT + UPDATE) and points_ledger (INSERT) filtered to
+  // the worker's own application_id; session_id is discriminated client-side
+  // (Supabase realtime supports one filter per sub). Drives the today-summary
+  // pending line + tier ring refresh on every engagement event. Started in
+  // handleJoinSession after startLiveSession(); auto-torn-down via
+  // realtimeChannels.push pattern when the session-cleanup paths fire.
+  let engagementBasketWs = null;
+  function startEngagementBasketWatch(sessionId) {
+    if(engagementBasketWs) { try { engagementBasketWs.close(); } catch(e) {} }
+    if(!currentWorker?.id || !sessionId) return;
+    const wsUrl = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPABASE_ANON_KEY + '&vsn=1.0.0';
+    engagementBasketWs = new WebSocket(wsUrl);
+    let hb = null;
+    engagementBasketWs.onopen = async () => {
+      // SEC-N9: access_token injected for RLS-as-authenticated realtime.
+      const { data } = await sbAuth.auth.getSession();
+      const accessToken = data?.session?.access_token;
+      const payload = {
+        config: { postgres_changes: [
+          { event: 'INSERT', schema: 'public', table: 'session_basket', filter: 'application_id=eq.' + currentWorker.id },
+          { event: 'UPDATE', schema: 'public', table: 'session_basket', filter: 'application_id=eq.' + currentWorker.id },
+          { event: 'INSERT', schema: 'public', table: 'points_ledger',  filter: 'application_id=eq.' + currentWorker.id }
+        ]}
+      };
+      if(accessToken) payload.access_token = accessToken;
+      engagementBasketWs.send(JSON.stringify({
+        topic: 'realtime:public:engagement_basket_' + currentWorker.id + '_' + sessionId,
+        event: 'phx_join',
+        payload,
+        ref: 'eb1'
+      }));
+      hb = setInterval(() => {
+        if(engagementBasketWs && engagementBasketWs.readyState === WebSocket.OPEN) {
+          engagementBasketWs.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
+        }
+      }, 30000);
+    };
+    engagementBasketWs.onmessage = async (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if(msg.event !== 'postgres_changes') return;
+        const record = msg.payload?.data?.record;
+        if(!record) return;
+        // Client-side session discrimination (filter only supports one column).
+        if(Number(record.session_id) !== Number(sessionId)) return;
+        if(typeof f32RenderTodaySummary === 'function') await f32RenderTodaySummary();
+        if(typeof f32RenderTierRing === 'function') f32RenderTierRing();
+      } catch(err) { console.error('[engagementBasketWs] msg error', err); }
+    };
+    engagementBasketWs.onclose = () => { if(hb) clearInterval(hb); };
+    engagementBasketWs.onerror = (err) => { console.error('[engagementBasketWs] error', err); };
+    // Register for auto-teardown via tearDownSessionAfterClose / tearDownSessionAfterCloseLocal.
+    realtimeChannels.push(engagementBasketWs);
   }
 
   // CORE v6 F-03: multi-request shift-post system. Each active request gets
@@ -5615,44 +5998,14 @@
     if(ctx.timerHandle) { clearInterval(ctx.timerHandle); ctx.timerHandle = null; }
     await recordResponse(requestId, 'available');
 
-    // F-32: real-time points writers via awardPointsImmediate.
-    // Base +15 for I'm Available, plus conditional +15 quick-response bonus
-    // when responded within first 25% of the worker's personal window.
-    if(currentWorker && ctx && ctx.record) {
-      const sessionId = ctx.record.session_id || null;
-      const barId = ctx.record.bar_id || null;
-      const awards = [{
-        amount: 15,
-        reason: 'responded_available',
-        sessionId,
-        sourceType: 'shift_request',
-        sourceId: requestId
-      }];
-      // Quick-response bonus eligibility uses ctx.windowSeconds (already
-      // computed at card creation as (30 - walking_minutes) * 60). Quick =
-      // elapsed/window < 0.25. ctx.postedAtMs gives the start.
-      const windowSecs = parseFloat(ctx.windowSeconds);
-      if(Number.isFinite(windowSecs) && windowSecs > 0 && ctx.postedAtMs) {
-        const elapsed = (Date.now() - ctx.postedAtMs) / 1000;
-        if(elapsed / windowSecs < 0.25) {
-          awards.push({
-            amount: 15,
-            reason: 'responded_available_quick',
-            sessionId,
-            sourceType: 'shift_request',
-            sourceId: requestId
-          });
-        }
-      }
-
-      try {
-        await awardPointsImmediate(currentWorker.id, awards, {
-          sessionId,
-          shiftRequestId: requestId,
-          originEl: originBtn || ctx.cardEl
-        });
-      } catch(e) { console.warn('[handleAvailable] awardPointsImmediate failed', e); }
-    }
+    // Phase 3 Batch 7: respond_available points retired from the portal direct-ledger
+    // path. engagement_basket_on_shift_response_trigger fires server-side on the
+    // shift_responses INSERT and writes the respond_available basket entry (+5
+    // pending, lowered from +10 in Batch D1 16 May 2026). Basket confirms if the
+    // worker is not dispatched OR is dispatched and successfully clocks in.
+    // Quick-response bonus retired per design § 2 (Available is now +5 flat).
+    // Response timing remains a recommendation-engine
+    // input even without the points bonus.
   }
 
   async function handlePass(requestId) {
@@ -5666,24 +6019,12 @@
     if(ctx.timerHandle) { clearInterval(ctx.timerHandle); ctx.timerHandle = null; }
     await recordResponse(requestId, 'pass');
 
-    // F-32: responded_pass +1. No quick-bonus variant (engagement-with-work
-    // earns the speed bonus, not declining-with-speed).
-    if(currentWorker && ctx && ctx.record) {
-      const sessionId = ctx.record.session_id || null;
-      try {
-        await awardPointsImmediate(currentWorker.id, [{
-          amount: 1,
-          reason: 'responded_pass',
-          sessionId,
-          sourceType: 'shift_request',
-          sourceId: requestId
-        }], {
-          sessionId,
-          shiftRequestId: requestId,
-          originEl: originBtn || ctx.cardEl
-        });
-      } catch(e) { console.warn('[handlePass] awardPointsImmediate failed', e); }
-    }
+    // Phase 3 Batch 7: respond_pass points retired from the portal direct-ledger
+    // path. engagement_basket_on_shift_response_trigger fires server-side on the
+    // shift_responses INSERT and writes the respond_pass basket entry (+1 pending).
+    // Basket confirms unless the worker hits 5 consecutive Pass responses, which
+    // triggers a server-side kick (session_workers.status='cancelled' + all
+    // pending baskets forfeit).
   }
 
   // Drives the per-card transition when a shift_request UPDATE arrives.
@@ -5798,259 +6139,28 @@
     return 1;
   }
 
-  // SEC-N1 Stage 7 (2026-05-13): points writes route through the
-  // worker_award_points_immediate SECURITY DEFINER RPC. The Stage 1
-  // trigger on points_ledger recomputes applications.{total_points,
-  // tier, hourly_rate}; this function mirrors the post-trigger state
-  // locally into currentWorker for instant UI refresh. The RPC handles
-  // per-reason idempotency server-side (keyed by application_id +
-  // session_id for joined_session, or application_id + shift_request_id
-  // for responded_* reasons). Admitted reasons: joined_session (+5),
-  // responded_available (+15), responded_available_quick (+15),
-  // responded_pass (+1). daily_login_claim has its own dedicated RPC
-  // (worker_claim_daily_login); completed_shift / arrived_* go through
-  // worker_clock_out as part of the atomic clock-out transaction.
-  async function awardPointsImmediate(applicationId, awards, opts) {
-    if(!Array.isArray(awards)) awards = [awards];
-    const valid = awards.filter(a => a && a.amount !== 0);
-    if(!valid.length) return null;
-
-    const awardsJsonb = valid.map(a => ({ reason: a.reason, amount: a.amount }));
-    const sessionId = opts?.sessionId ?? valid[0]?.sessionId ?? null;
-    const shiftRequestId = opts?.shiftRequestId ?? null;
-
-    let data = null;
-    try {
-      const resp = await fetch(SUPABASE_URL + '/rest/v1/rpc/worker_award_points_immediate', {
-        method: 'POST',
-        headers: { ...H, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          p_awards: awardsJsonb,
-          p_session_id: sessionId,
-          p_shift_request_id: shiftRequestId
-        })
-      });
-      data = await resp.json().catch(() => null);
-      if(!resp.ok || !data || data.ok !== true) {
-        console.warn('[awardPointsImmediate] RPC rejected:', data?.error, data?.message);
-        return null;
-      }
-    } catch(e) {
-      console.warn('[awardPointsImmediate] RPC threw:', e);
-      return null;
-    }
-
-    const newTotal = parseInt(data.new_total) || 0;
-    const newTier = parseInt(data.new_tier) || 1;
-
-    let oldTier = newTier;
-    if(currentWorker && Number(currentWorker.id) === Number(applicationId)) {
-      oldTier = parseInt(currentWorker.tier) || 1;
-      currentWorker.total_points = newTotal;
-      if(newTier !== oldTier) {
-        currentWorker.tier = newTier;
-        currentWorker.hourly_rate = [12.71, 13.71, 14.71, 15.71, 16.71][newTier - 1];
-      }
-    }
-
-    // F-32: spawn UI floats for each award (only if originEl provided in opts).
-    // Animation is decoration; if it fails to render, points still apply.
-    if(opts?.originEl && typeof f32SpawnFloat === 'function') {
-      valid.forEach((a, i) => {
-        const label = a.floatLabel || ((a.amount >= 0 ? '+' : '') + a.amount);
-        setTimeout(() => f32SpawnFloat(opts.originEl, label), i * 200);
-      });
-    }
-
-    // F-33b: tier promotion celebration. Runs the multi-stage sweep before
-    // the post-write render. All callers benefit without needing to check
-    // the result.promoted flag themselves.
-    if(newTier > oldTier && typeof f33bPlayPromotionSweep === 'function') {
-      try {
-        await f33bPlayPromotionSweep(oldTier, newTier);
-      } catch(e) {
-        console.warn('[awardPointsImmediate] f33bPlayPromotionSweep failed (best-effort)', e);
-      }
-    }
-
-    if(typeof f32RenderTierRing === 'function') f32RenderTierRing();
-
-    return { newTotal, newTier, promoted: newTier > oldTier, oldTier };
-  }
-  // F-32: legacy alias for any caller still using portalAwardPoints. Kept as
-  // a thin wrapper for one batch; remove once all sites are updated.
-  const portalAwardPoints = awardPointsImmediate;
-
   async function showPostShiftScreen(sw, opts) {
+    // Phase 3 Batch 7b: delegates to showAfterSessionReport('shift_complete').
+    // Idempotency guard preserved (realtime self-clock-out arrives just after
+    // workerClockOut's direct call; bail if modal already open for this sw).
     if(!sw || !sw.id) { console.warn('[showPostShiftScreen] missing sw or sw.id', sw); return; }
-    // Idempotency: realtime UPDATE for self-clock-out arrives just after the
-    // direct call from workerClockOut. Bail if we're already on the screen.
-    if(postShiftSwId === sw.id && document.getElementById('portal-shift-complete')?.style.display === 'block') return;
+    if(postShiftSwId === sw.id && document.getElementById('after-session-overlay')?.classList.contains('open')) return;
     postShiftSwId = sw.id;
     postShiftRating = 0;
-
     if(shiftCountdownInterval) clearInterval(shiftCountdownInterval);
 
-    // Diagnostic wrapper: any uncaught error inside the function leaves the
-    // worker stuck on the previous screen with no visible failure. Wrapping
-    // the body forces the error to surface instead of silently failing.
+    const sessionId = sw.session_id || opts?.sessionId || null;
+    if(!sessionId) {
+      console.warn('[showPostShiftScreen] no sessionId on sw', sw);
+      postShiftSwId = null;
+      return;
+    }
     try {
-      await _renderPostShiftBody(sw, opts);
+      await showAfterSessionReport('shift_complete', { sessionId, sw, opts });
     } catch(err) {
-      console.error('[showPostShiftScreen] failed', err, { sw, opts });
-      // Reset the idempotency guard so a follow-up trigger can retry.
+      console.error('[showPostShiftScreen] showAfterSessionReport failed', err, { sw, opts });
       postShiftSwId = null;
     }
-  }
-
-  async function _renderPostShiftBody(sw, opts) {
-    // Round 4 batch A FIX 1: set the dispatch-flow row context so any handler
-    // that depends on it (confirmLeaving, workerClockOut) finds the right
-    // row even though the post-shift path doesn't normally call them.
-    if(sw && sw.id) currentSessionWorkerId = sw.id;
-
-    document.getElementById('sessions-empty').style.display = 'none';
-    document.getElementById('sessions-prejoin').style.display = 'none';
-    document.getElementById('sessions-live').style.display = 'block';
-    document.getElementById('live-waiting').style.display = 'none';
-    if(typeof clearAllShiftPostCards === 'function') clearAllShiftPostCards();
-    document.getElementById('live-responded').style.display = 'none';
-    // Round 4 batch A FIX 1: post-shift no longer reuses live-dispatched as a
-    // wrapper. portal-shift-complete is now a direct sibling of live-dispatched.
-    // Hide the entire dispatch flow when surfacing the feedback screen.
-    document.getElementById('live-dispatched').style.display = 'none';
-
-    let shiftRow = null;
-    try {
-      const shiftRows = await fetch(SUPABASE_URL + '/rest/v1/shifts?session_worker_id=eq.' + sw.id + '&select=id,clock_in_confirmed_at,clock_out_confirmed_at,shift_length_hours,total_earned,hourly_rate,bar_id,session_id,shift_request_id&order=id.desc&limit=1', { headers: H }).then(r => r.json());
-      shiftRow = shiftRows?.[0] || null;
-    } catch(e) {}
-
-    let totalHours = null;
-    if(shiftRow?.clock_in_confirmed_at && shiftRow?.clock_out_confirmed_at) {
-      totalHours = (new Date(shiftRow.clock_out_confirmed_at) - new Date(shiftRow.clock_in_confirmed_at)) / 3600000;
-    } else if(shiftRow?.shift_length_hours) {
-      totalHours = parseFloat(shiftRow.shift_length_hours);
-    }
-    const hourlyRate = parseFloat(shiftRow?.hourly_rate) || currentWorker?.hourly_rate || 12.71;
-    const totalEarned = (shiftRow?.total_earned != null) ? parseFloat(shiftRow.total_earned) : (totalHours != null ? Math.round(totalHours * hourlyRate * 100) / 100 : null);
-
-    // Resolve pre/post snapshots. workerClockOut passes opts; the realtime-
-    // triggered path (dashboard clocked them out) derives them from
-    // applications + the shift's ledger entries.
-    let preShiftTotal, postShiftTotal, preShiftTier, postShiftTier, promoted;
-    if(opts && opts.preShiftTotal != null) {
-      preShiftTotal = opts.preShiftTotal;
-      postShiftTotal = opts.postShiftTotal;
-      preShiftTier = opts.preShiftTier;
-      postShiftTier = opts.postShiftTier;
-      promoted = !!opts.promoted;
-    } else {
-      const appRows = await fetch(SUPABASE_URL + '/rest/v1/applications?id=eq.' + currentWorker.id + '&select=total_points,tier', { headers: H }).then(r => r.json());
-      const app = appRows[0] || {};
-      postShiftTotal = parseInt(app.total_points) || 0;
-      postShiftTier = parseInt(app.tier) || pointsToTier(postShiftTotal);
-
-      let shiftDelta = 0;
-      if(shiftRow?.id) {
-        const ledgerRows = await fetch(SUPABASE_URL + '/rest/v1/points_ledger?shift_id=eq.' + shiftRow.id + '&select=amount,reason', { headers: H }).then(r => r.json());
-        shiftDelta = (ledgerRows || []).filter(r => r.reason !== 'tier_promoted').reduce((s, r) => s + (parseInt(r.amount) || 0), 0);
-      }
-      preShiftTotal = Math.max(0, postShiftTotal - shiftDelta);
-      preShiftTier = pointsToTier(preShiftTotal);
-      promoted = postShiftTier > preShiftTier;
-
-      currentWorker.total_points = postShiftTotal;
-      currentWorker.tier = postShiftTier;
-    }
-
-    const pointsThisShift = postShiftTotal - preShiftTotal;
-
-    window._postShiftCtx = {
-      sessionWorkerId: sw.id,
-      sessionId: shiftRow?.session_id || sw.session_id || null,
-      barId: shiftRow?.bar_id || sw.bar_id || null,
-      shiftRequestId: shiftRow?.shift_request_id || sw.shift_request_id || null,
-      shiftId: shiftRow?.id || null
-    };
-
-    const TIER_NAMES = ['New', 'Reliable', 'Trusted', 'Elite', 'Elite+'];
-    const TIER_RATES = [12.71, 13.71, 14.71, 15.71, 16.71];
-    const TIER_THRESHOLDS = [0, 250, 650, 1500, 3500];
-    const newTierName = TIER_NAMES[postShiftTier - 1];
-    const newTierRate = TIER_RATES[postShiftTier - 1];
-    const tierStart = TIER_THRESHOLDS[postShiftTier - 1];
-    const tierEnd = TIER_THRESHOLDS[postShiftTier] || (tierStart + 1);
-    const isTopTier = postShiftTier >= TIER_THRESHOLDS.length;
-
-    const completeEl = document.getElementById('portal-shift-complete');
-    completeEl.innerHTML = ''
-      + (promoted
-        ? '<div id="postshift-promotion" style="background:rgba(245,158,11,0.1);border:2px solid rgba(245,158,11,0.4);border-radius:16px;padding:24px;text-align:center;margin-bottom:16px;">'
-          + '<div style="font-size:11px;letter-spacing:3px;font-weight:700;color:var(--amber);margin-bottom:8px;">CONGRATULATIONS</div>'
-          + '<div style="font-size:18px;font-weight:600;color:var(--white);line-height:1.5;">your new tier is <strong>' + newTierName + '</strong></div>'
-          + '<div style="font-size:13px;color:var(--grey);margin-top:8px;">your new pay rate of £' + newTierRate.toFixed(2) + '/hr will apply on your next shift</div>'
-          + '</div>'
-        : '')
-      + '<div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;">'
-      +   '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
-      +     '<div style="font-size:13px;font-weight:600;color:var(--white);">Tier ' + postShiftTier + ' · ' + newTierName + '</div>'
-      +     '<div style="font-size:13px;font-weight:700;color:var(--ice);">£' + newTierRate.toFixed(2) + '/hr</div>'
-      +   '</div>'
-      +   '<div style="position:relative;height:10px;background:rgba(255,255,255,0.06);border-radius:5px;overflow:hidden;">'
-      +     '<div id="postshift-progress-bar" style="position:absolute;top:0;left:0;height:100%;width:0%;background:var(--ice);"></div>'
-      +   '</div>'
-      +   '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--grey);">'
-      +     '<span><strong id="postshift-points-display" style="color:var(--white);font-weight:700;">' + preShiftTotal.toLocaleString() + '</strong> points</span>'
-      +     (isTopTier ? '<span>Top tier</span>' : '<span><span id="postshift-points-to-next">' + Math.max(0, tierEnd - preShiftTotal) + '</span> to ' + (TIER_NAMES[postShiftTier] || 'next') + '</span>')
-      +   '</div>'
-      + '</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">'
-      +   '<div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--white);">' + (totalHours != null ? totalHours.toFixed(2) + 'h' : '—') + '</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-top:4px;">Length</div></div>'
-      +   '<div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--white);">' + (totalEarned != null ? '£' + totalEarned.toFixed(2) : '—') + '</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-top:4px;">Earned</div></div>'
-      +   '<div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:18px;font-weight:700;color:var(--amber);">+' + pointsThisShift + '</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-top:4px;">Points</div></div>'
-      + '</div>'
-      + '<div id="postshift-feedback" style="background:var(--navy-mid);border:1px solid var(--border);border-radius:16px;padding:24px;">'
-      +   '<div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:4px;text-align:center;">How was the venue?</div>'
-      +   '<div style="font-size:12px;color:var(--grey);text-align:center;margin-bottom:16px;">Rating is required. Feedback helps us pick the right venues.</div>'
-      +   '<div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px;" id="postshift-stars">'
-      +     '<span onclick="setPostShiftRating(1)" style="font-size:32px;cursor:pointer;opacity:0.3;" data-star="1">★</span>'
-      +     '<span onclick="setPostShiftRating(2)" style="font-size:32px;cursor:pointer;opacity:0.3;" data-star="2">★</span>'
-      +     '<span onclick="setPostShiftRating(3)" style="font-size:32px;cursor:pointer;opacity:0.3;" data-star="3">★</span>'
-      +     '<span onclick="setPostShiftRating(4)" style="font-size:32px;cursor:pointer;opacity:0.3;" data-star="4">★</span>'
-      +     '<span onclick="setPostShiftRating(5)" style="font-size:32px;cursor:pointer;opacity:0.3;" data-star="5">★</span>'
-      +   '</div>'
-      +   '<textarea id="postshift-comment" placeholder="Optional. Anything we should know about your shift tonight?" style="width:100%;background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;color:var(--white);font-family:\'Inter\',sans-serif;outline:none;resize:none;height:90px;margin-bottom:12px;"></textarea>'
-      +   '<button id="postshift-submit-btn" onclick="submitPostShiftFeedback()" disabled style="width:100%;background:var(--ice);color:var(--navy);border:none;border-radius:8px;padding:13px;font-size:13px;font-weight:700;font-family:\'Inter\',sans-serif;cursor:pointer;opacity:0.4;">Pick a rating to submit</button>'
-      +   '<div id="postshift-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:16px;text-align:center;"></div>'
-      + '</div>';
-    completeEl.style.display = 'block';
-
-    setTimeout(() => animatePostShiftProgress(preShiftTotal, postShiftTotal, postShiftTier), 120);
-  }
-
-  function animatePostShiftProgress(preTotal, postTotal, tier) {
-    const TIER_THRESHOLDS = [0, 250, 650, 1500, 3500];
-    const tierStart = TIER_THRESHOLDS[tier - 1];
-    const tierEnd = TIER_THRESHOLDS[tier] || (tierStart + 1);
-    const fillPct = (pts) => Math.min(100, Math.max(0, ((pts - tierStart) / Math.max(1, tierEnd - tierStart)) * 100));
-
-    const startTime = performance.now();
-    const duration = 1800;
-
-    function tick(now) {
-      const t = Math.min(1, (now - startTime) / duration);
-      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
-      const currentPts = Math.round(preTotal + (postTotal - preTotal) * eased);
-      const bar = document.getElementById('postshift-progress-bar');
-      const ptsEl = document.getElementById('postshift-points-display');
-      const toNextEl = document.getElementById('postshift-points-to-next');
-      if(bar) bar.style.width = fillPct(currentPts) + '%';
-      if(ptsEl) ptsEl.textContent = currentPts.toLocaleString();
-      if(toNextEl) toNextEl.textContent = Math.max(0, tierEnd - currentPts);
-      if(t < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
   }
 
   function setPostShiftRating(stars) {
@@ -6104,9 +6214,14 @@
       return;
     }
 
-    const completeEl = document.getElementById('portal-shift-complete');
-    if(completeEl) completeEl.innerHTML = '<div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center;"><div style="font-size:14px;color:var(--green);font-weight:600;margin-bottom:6px;">Thanks for the feedback.</div><div style="font-size:12px;color:var(--grey);">See you next session.</div></div>';
+    // Phase 3 Batch 7b: feedback submitted inside the after-session modal.
+    // Show thanks state in the modal, dismiss after a beat, return to idle.
+    document.getElementById('asr-content').innerHTML = '<div style="text-align:center;padding:40px;">'
+      + '<div style="font-size:16px;color:var(--green);font-weight:600;margin-bottom:8px;">Thanks for the feedback.</div>'
+      + '<div style="font-size:13px;color:var(--grey);">See you next session.</div>'
+      + '</div>';
     setTimeout(() => {
+      closeAfterSessionReport();
       document.getElementById('sessions-live').style.display = 'none';
       document.getElementById('sessions-empty').style.display = 'block';
       const empty = document.getElementById('sessions-empty');
@@ -6114,17 +6229,6 @@
         empty.innerHTML = '<div class="sessions-empty-icon">👋</div>'
           + '<div class="sessions-empty-title">Thanks for tonight</div>'
           + '<div class="sessions-empty-sub">Your shift is logged. We\'ll see you at the next session.</div>';
-      }
-      // F-27 Layer 1: hide and clear portal-shift-complete so the Thanks-for-
-      // feedback card doesn't leak into the next session if the worker stays
-      // logged in and rejoins. Without this, on session rejoin the card
-      // remains display:block (its parent flip hides it visually but the
-      // element state persists), and showShiftPost's defensive early-return
-      // at line 4315-4318 silently blocks all new shift_request renders.
-      const cleanupCompleteEl = document.getElementById('portal-shift-complete');
-      if(cleanupCompleteEl) {
-        cleanupCompleteEl.style.display = 'none';
-        cleanupCompleteEl.innerHTML = '';
       }
       currentSessionInvite = null;
       currentSessionWorkerId = null;
@@ -6708,6 +6812,15 @@
       }
     }
 
+    // Phase 3 Batch 7b: fire the after-session report modal BEFORE the goodbye
+    // surface replaces sessions-empty. Capture sessionId from currentSessionInvite
+    // which is still set at this point.
+    const leavingSessionId = currentSessionInvite?.session_id || null;
+    if(leavingSessionId && currentWorker?.id) {
+      showAfterSessionReport('worker_leave', { sessionId: leavingSessionId })
+        .catch(err => console.warn('[confirmLeaveSession] modal failed', err));
+    }
+
     stopRealtime();
     closeLeaveSession();
 
@@ -6893,12 +7006,20 @@
     </div>
   </div>
   <div class="f32-ro-today" id="f32-ro-today">Earned today: <strong>+0</strong></div>
-  <button class="f32-ro-claim" id="f32-ro-claim" style="display:none;" onclick="f32ClaimDailyLogin(this)">Claim today's +5</button>
   <div class="f32-ro-history">
     <div class="f32-ro-history-title">Recent activity</div>
     <div id="f32-ro-history-list">
       <div style="text-align:center;color:var(--grey);font-size:12px;padding:18px;">Loading...</div>
     </div>
+  </div>
+</div>
+
+<!-- Phase 3 Batch 7b: After-session report modal. Fired by session close,
+     worker leave, shift complete (auto), and Tier section Session history
+     drilldown (manual). All routed through showAfterSessionReport. -->
+<div id="after-session-overlay" onclick="if(event.target===this) closeAfterSessionReport()">
+  <div class="asr-card">
+    <div id="asr-content"><div style="text-align:center;color:var(--grey);padding:40px;">Loading...</div></div>
   </div>
 </div>
 

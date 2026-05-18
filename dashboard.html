@@ -2070,13 +2070,10 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
       <div>
         <div class="page-title">Sessions</div>
-        <div class="page-sub">Cross-zone session audit</div>
+        <div class="page-sub">Cross-bar session audit</div>
       </div>
     </div>
     <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:12px 16px;">
-      <select id="sa-zone-filter" class="field" style="margin:0;max-width:220px;" onchange="renderSessionsAudit()">
-        <option value="">All zones</option>
-      </select>
       <input id="sa-date-from" class="field" type="date" style="margin:0;max-width:160px;" onchange="renderSessionsAudit()" />
       <input id="sa-date-to"   class="field" type="date" style="margin:0;max-width:160px;" onchange="renderSessionsAudit()" />
       <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sa-status-scheduled" checked onchange="renderSessionsAudit()"> Scheduled</label>
@@ -2940,14 +2937,6 @@ function dv2TeardownAll() {
 async function goToSessionsAudit() {
   showScreen('sessions-audit');
   setActiveNav('sessions');
-
-  // Populate zone filter dropdown from ZONES (idempotent).
-  const zoneSel = document.getElementById('sa-zone-filter');
-  if(zoneSel && zoneSel.options.length <= 1) {
-    zoneSel.innerHTML = '<option value="">All zones</option>'
-      + ZONES.map(z => `<option value="${z.dbId}">${z.name}</option>`).join('');
-  }
-
   await renderSessionsAudit();
 }
 
@@ -2956,14 +2945,12 @@ async function renderSessionsAudit() {
   if(!listEl) return;
   listEl.innerHTML = '<div class="empty">Loading...</div>';
 
-  const zoneFilter = document.getElementById('sa-zone-filter')?.value || '';
   const dateFrom = document.getElementById('sa-date-from')?.value || '';
   const dateTo = document.getElementById('sa-date-to')?.value || '';
   const statuses = ['scheduled','live','closed','cancelled']
     .filter(s => document.getElementById('sa-status-' + s)?.checked);
 
-  let url = '/rest/v1/sessions?select=id,zone_id,status,session_date,start_time,scheduled_start,zones(name)&order=session_date.desc,start_time.desc';
-  if(zoneFilter) url += '&zone_id=eq.' + encodeURIComponent(zoneFilter);
+  let url = '/rest/v1/sessions?select=id,status,session_date,start_time,scheduled_start&order=session_date.desc,start_time.desc';
   if(dateFrom) url += '&session_date=gte.' + encodeURIComponent(dateFrom);
   if(dateTo)   url += '&session_date=lte.' + encodeURIComponent(dateTo);
   if(statuses.length) url += '&status=in.(' + statuses.join(',') + ')';
@@ -2978,12 +2965,11 @@ async function renderSessionsAudit() {
       const dt = s.scheduled_start ? new Date(s.scheduled_start) : (s.session_date ? new Date(s.session_date + 'T' + (s.start_time || '18:00:00')) : null);
       const dateStr = dt ? dt.toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'short',year:'numeric'}) : 'TBC';
       const timeStr = dt ? dt.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '';
-      const zoneName = s.zones?.name || 'Unknown zone';
       const statusBadge = '<span class="status-badge badge-' + (s.status || 'pending') + '">' + (s.status || 'pending') + '</span>';
       return '<div onclick="loadSessionDetail('+s.id+')" style="background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:10px;cursor:pointer;transition:border-color 0.2s;display:flex;justify-content:space-between;align-items:center;" onmouseover="this.style.borderColor=\'var(--ice)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
         + '<div>'
         +   '<div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:2px;">'+dateStr+(timeStr?' at '+timeStr:'')+'</div>'
-        +   '<div style="font-size:12px;color:var(--grey);">'+zoneName+'</div>'
+        +   '<div style="font-size:12px;color:var(--grey);">Session #'+s.id+'</div>'
         + '</div>'
         + '<div>'+statusBadge+'</div>'
         + '</div>';
@@ -3611,18 +3597,13 @@ async function tryRestoreSession() {
   liveSessionBars = (session.session_bars || []).map(sb => sb && sb.bars).filter(Boolean);
   liveSessionLabel = describeBarSet(session) || 'Live session';
 
-  // F-37: zone-based session scheduling deprecated; multi-bar sessions
-  // (scheduled via session_bars) may have zone_id NULL. Tolerate null
-  // zone_id and zone-not-found; activeZone stays null in that case and
-  // the live-room render path reads from session_bars / bars[] instead.
-  if(session.zone_id) {
-    const zone = ZONES.find(z => z.dbId === session.zone_id);
-    if(zone) activeZone = zone;
-  }
+  // Pre-v2 cleanup (zones-deprecation Stage B, 18 May 2026): zone-based
+  // scheduling retired in CORE v7. Live-room reads from session_bars / bars[];
+  // activeZone stays null permanently.
 
   // load bars if needed
   if(!bars.length) {
-    const result = await sbGet('bars','?order=name.asc&select=id,name,address,google_maps_link,zone_id,status,notes');
+    const result = await sbGet('bars','?order=name.asc&select=id,name,address,google_maps_link,status,notes');
     bars = Array.isArray(result) ? result : [];
   }
 
@@ -3788,7 +3769,7 @@ async function loadAllWorkers() {
 let bars = [];
 
 async function loadBars() {
-  const barsResult = await sbGet('bars','?order=name.asc&select=id,name,address,google_maps_link,zone_id,status,notes,bartenders,drinks_per_hour,avg_drink_value,avg_customer_spend,typical_rush_minutes,lost_minutes_per_bartender');
+  const barsResult = await sbGet('bars','?order=name.asc&select=id,name,address,google_maps_link,status,notes,bartenders,drinks_per_hour,avg_drink_value,avg_customer_spend,typical_rush_minutes,lost_minutes_per_bartender');
   bars = Array.isArray(barsResult) ? barsResult : [];
   renderBars(bars);
 }
@@ -5427,8 +5408,8 @@ function _deprecated_openDispatch(wid) {
   document.getElementById('dispatch-worker-name').textContent=w.name;
   document.getElementById('dispatch-worker-details').textContent=`${w.phone||''} Â· ${w.postcode_full||''}`;
   // populate bar dropdown from loaded bars filtered by zone
-  const zoneBars=bars.filter(b=>String(b.zone_id)===String(activeZone.dbId)&&(b.status==='active'||b.status==='trial'));
-  const fallback=activeZone.bars||[];
+  const zoneBars=bars.filter(b=>String(b.zone_id)===String(activeZone?.dbId)&&(b.status==='active'||b.status==='trial'));
+  const fallback=activeZone?.bars||[];
   if(zoneBars.length){
     document.getElementById('dispatch-bar-select').innerHTML=zoneBars.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
   } else {
@@ -5757,7 +5738,7 @@ async function confirmComplete() {
     workerPostcode: w.postcode_full||'',
     bar: w.bar,
     barRecord: w.barRecord,
-    zone: activeZone.name,
+    zone: activeZone?.name || '',
     requestTime: w.requestTime,
     requestMessage: w.requestMessage||'',
     dispatchedAt: w.dispatchedAt,
@@ -6243,7 +6224,6 @@ async function confirmCloseSession() {
   clearInterval(requestTimerInterval);
 
   const sessionShifts = [...shifts];
-  const sessionZone = activeZone;
   const sessionRequests = [...liveSessionOps.requests];
 
   await updateWorkerReliabilityScores();
@@ -7519,13 +7499,6 @@ async function openShiftDetail(shiftId) {
         const reqs = await sbGet('shift_requests','?id=eq.'+sw.shift_request_id+'&select=raw_message,request_time,bar_id');
         if(reqs.length) requestData = reqs[0];
       }
-      if(sw.session_id) {
-        const sess = await sbGet('sessions','?id=eq.'+sw.session_id+'&select=zone_id');
-        if(sess.length) {
-          const zone = ZONES.find(z=>z.dbId===sess[0].zone_id);
-          if(zone) sessionZone = zone.name;
-        }
-      }
     }
   }
 
@@ -7922,8 +7895,6 @@ async function downloadShiftPack(shiftId, ref) {
         }
       }
       if(swData[0].session_id) {
-        const sess = await sbGet('sessions','?id=eq.'+swData[0].session_id+'&select=zone_id');
-        if(sess.length) { const zone = ZONES.find(z=>z.dbId===sess[0].zone_id); if(zone) sessionZone = zone.name; }
       }
     }
   }
@@ -8210,14 +8181,12 @@ function exportShiftsCSV() {
 // #screen-requests and goToRequests. Aggregate request review moves to
 // Health → Engine quality + History → session detail Requests tab in v2.
 
-// F-28: optional zoneId filters the history to one zone (zone-detail Sessions
-// sub-tab). Omit zoneId for cross-zone (legacy callers).
-async function loadSessionsHistory(zoneId) {
+// Pre-v2 cleanup (zones-deprecation Stage B, 18 May 2026): zoneId param + zones embed retired.
+async function loadSessionsHistory() {
   const listEl = document.getElementById('sessions-history-list');
   listEl.innerHTML = '<div style="font-size:13px;color:var(--grey);padding:24px 0;text-align:center;">Loading...</div>';
 
-  const sessionsQuery = '?status=eq.closed&order=id.desc&select=id,session_date,start_time,end_time,zone_id,zones(name)'
-    + (zoneId ? '&zone_id=eq.' + encodeURIComponent(zoneId) : '');
+  const sessionsQuery = '?status=eq.closed&order=id.desc&select=id,session_date,start_time,end_time';
   const sessions = await sbGet('sessions', sessionsQuery);
 
   if(!sessions.length) {
@@ -8262,14 +8231,13 @@ async function loadSessionsHistory(zoneId) {
     const sessionShifts = shifts.filter(sh => sh.session_id === s.id);
     const date = s.session_date ? new Date(s.session_date).toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'short',year:'numeric'}) : '';
     const time = s.start_time ? s.start_time.slice(0,5) : '';
-    const zoneName = s.zones?.name || '';
     const completed = sessionShifts.filter(sh => sh.clock_out_confirmed_at).length;
     const totalEarned = sessionShifts.reduce((sum, sh) => sum + (parseFloat(sh.total_earned) || 0), 0);
 
     return '<div onclick="loadSessionDetail('+s.id+')" style="background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:10px;cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor=\'var(--ice)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">'
       + '<div>'
-      + '<div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:2px;">'+zoneName+' &nbsp;Â·&nbsp; <span style="color:var(--grey);font-weight:400;">Session #'+s.id+'</span></div>'
+      + '<div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:2px;">Session #'+s.id+'</div>'
       + '<div style="font-size:12px;color:var(--grey);">'+date+(time?' at '+time:'')+'</div>'
       + '</div>'
       + '<div style="display:flex;gap:20px;text-align:right;">'
@@ -8288,7 +8256,7 @@ async function loadSessionDetail(sessionId) {
   // Fetch session data. F-31: ledgerRows + swRows added for the new
   // WORKERS Â· POINTS section.
   const [sessionArr, requests, sessionShifts, invites, ledgerRows, swRows, basketRows] = await Promise.all([
-    sbGet('sessions', '?id=eq.'+sessionId+'&select=id,session_date,start_time,end_time,zone_id,zones(name)'),
+    sbGet('sessions', '?id=eq.'+sessionId+'&select=id,session_date,start_time,end_time'),
     sbGet('shift_requests', '?session_id=eq.'+sessionId+'&select=*,bars(name)'),
     sbGet('shifts', '?session_id=eq.'+sessionId+'&select=*,session_workers(worker_name,application_id,dispatched_at,departed_at,clock_in_at)'),
     sbGet('session_invites', '?session_id=eq.'+sessionId+'&select=application_id,attendance_confirmed,joined_at'),
@@ -8310,7 +8278,7 @@ async function loadSessionDetail(sessionId) {
     + '<button onclick="loadSessionsHistory()" style="background:none;border:none;color:var(--ice);font-size:13px;cursor:pointer;padding:0;font-family:Inter,sans-serif;">â† Back to Sessions</button>'
     + '</div>'
     + '<div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:24px;">'
-    + '<div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px;">'+session.zones?.name+' &nbsp;Â·&nbsp; <span style="color:var(--grey);font-weight:400;font-size:14px;">Session #'+sessionId+'</span></div>'
+    + '<div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px;">Session #'+sessionId+'</div>'
     + '<div style="font-size:13px;color:var(--grey);margin-bottom:20px;">'+date+(session.start_time ? ' Â· Started '+session.start_time.slice(0,5) : '')+(session.end_time ? ' Â· Ended '+session.end_time.slice(0,5) : '')+'</div>'
     + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">'
     + '<div style="text-align:center;"><div style="font-size:20px;font-weight:700;color:var(--white);">'+invites.length+'</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;">Invited</div></div>'
@@ -11414,13 +11382,13 @@ async function loadShiftsPage() {
   if(container) container.innerHTML = '<div class="empty">Loading...</div>';
 
   if(!bars.length) {
-    const r = await sbGet('bars','?order=name.asc&select=id,name,address,zone_id,status');
+    const r = await sbGet('bars','?order=name.asc&select=id,name,address,status');
     bars = Array.isArray(r) ? r : [];
   }
 
   const rows = await sbGet('shifts',
     '?status=in.(completed,cancelled,no_show)&order=clock_out_confirmed_at.desc.nullslast,created_at.desc'
-    + '&select=*,bars(id,name,zone_id),session_workers(id,application_id,status,worker_name,applications(id,name,tier,parasol_worker_ref)),shift_requests(id,bar_manager_id,posted_at,raw_message,bar_managers(name))');
+    + '&select=*,bars(id,name),session_workers(id,application_id,status,worker_name,applications(id,name,tier,parasol_worker_ref)),shift_requests(id,bar_manager_id,posted_at,raw_message,bar_managers(name))');
 
   let feedbackByShift = new Map();
   if(rows.length) {
@@ -11572,13 +11540,13 @@ async function loadBillingShifts() {
   const container = document.getElementById('billing-shifts-cards');
   if(container) container.innerHTML = '<div class="empty">Loading...</div>';
   if(!bars.length) {
-    const r = await sbGet('bars','?order=name.asc&select=id,name,address,zone_id,status');
+    const r = await sbGet('bars','?order=name.asc&select=id,name,address,status');
     bars = Array.isArray(r) ? r : [];
   }
   const rows = await sbGet('shifts',
     '?status=eq.completed&order=clock_out_confirmed_at.desc.nullslast,created_at.desc'
-    + '&select=*,bars(id,name,zone_id),session_workers(id,application_id,status,worker_name,applications(id,name,tier,parasol_worker_ref)),shift_requests(id,bar_manager_id,posted_at,bar_managers(name))');
-  allPairedUnits = rows.map(r => ({ ...r, _zoneId: r.bars?.zone_id ?? null }));
+    + '&select=*,bars(id,name),session_workers(id,application_id,status,worker_name,applications(id,name,tier,parasol_worker_ref)),shift_requests(id,bar_manager_id,posted_at,bar_managers(name))');
+  allPairedUnits = rows.map(r => ({ ...r }));
   populateBillingShiftsFilters();
   renderBillingShifts();
 }
@@ -11821,11 +11789,11 @@ async function loadBillingSubscriptions() {
   const container = document.getElementById('billing-subs-cards');
   if(container) container.innerHTML = '<div class="empty">Loading...</div>';
   if(!bars.length) {
-    const r = await sbGet('bars','?order=name.asc&select=id,name,address,zone_id,status');
+    const r = await sbGet('bars','?order=name.asc&select=id,name,address,status');
     bars = Array.isArray(r) ? r : [];
   }
   const subs = await sbGet('bar_subscriptions',
-    '?order=created_at.desc&select=*,bars(id,name,zone_id,address)');
+    '?order=created_at.desc&select=*,bars(id,name,address)');
   let invoices = [];
   if(subs.length) {
     const subIds = subs.map(s => s.id);

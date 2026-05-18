@@ -1696,6 +1696,147 @@
     .net-worker-flag-history-toggle:hover { color: var(--ice); }
     .net-worker-flag-history-empty { font-size: 11px; padding: 4px 0; }
     .net-worker-flag-history-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+
+    /* Health workspace (Batch 3). */
+    .health-refresh-btn {
+      background: none; border: 1px solid var(--border); color: var(--grey);
+      border-radius: 999px; padding: 6px 14px; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 11px; letter-spacing: 1px;
+      text-transform: uppercase; font-weight: 700;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .health-refresh-btn:hover { background: rgba(168,216,234,0.08); color: var(--ice); border-color: var(--ice); }
+    .health-refresh-btn.spinning { opacity: 0.6; cursor: wait; }
+
+    .health-loading, .health-empty, .health-error {
+      padding: 40px 24px; text-align: center;
+      color: var(--grey); font-size: 13px;
+      background: var(--navy-mid); border: 1px solid var(--border); border-radius: 12px;
+    }
+    .health-error { color: var(--red); border-color: rgba(239,68,68,0.3); }
+
+    .health-section {
+      background: var(--navy-mid); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px 22px; margin-bottom: 18px;
+    }
+    .health-section-h3 {
+      margin: 0 0 12px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--ice); font-weight: 700;
+    }
+    .health-section-note {
+      font-size: 11px; color: var(--grey); margin: -6px 0 12px;
+    }
+    .health-section-sub {
+      font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--grey); font-weight: 600; margin: 14px 0 8px;
+    }
+
+    /* Stat tiles (Coverage trio, Fulfilment trio, Engine quad). */
+    .health-tile-row {
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin-bottom: 18px;
+    }
+    .health-tile {
+      background: var(--navy-mid); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px 20px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .health-tile .label {
+      font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--grey); font-weight: 700;
+    }
+    .health-tile .value {
+      font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 700;
+      color: var(--white); line-height: 1;
+    }
+    .health-tile .value.muted { color: var(--grey); }
+    .health-tile .sub {
+      font-size: 11px; color: var(--grey);
+      display: inline-flex; align-items: baseline; gap: 6px;
+    }
+    .health-tile .trend.up    { color: var(--green); }
+    .health-tile .trend.down  { color: var(--red); }
+    .health-tile .trend.flat  { color: var(--grey); }
+
+    /* Mini-table reused for health tables. */
+    .health-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .health-table thead th {
+      background: rgba(168,216,234,0.04);
+      font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--grey); text-align: left; font-weight: 700;
+      padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .health-table tbody td {
+      padding: 8px 10px; color: var(--white); border-bottom: 1px solid var(--border); vertical-align: middle;
+    }
+    .health-table tbody tr:last-child td { border-bottom: none; }
+    .health-table tbody tr.clickable { cursor: pointer; transition: background 0.12s; }
+    .health-table tbody tr.clickable:hover { background: rgba(168,216,234,0.04); }
+    .health-link {
+      background: none; border: none; color: var(--ice); cursor: pointer;
+      font-family: inherit; font-size: inherit; padding: 0; text-align: left;
+    }
+    .health-link:hover { color: var(--white); text-decoration: underline; }
+
+    /* Catchment / outcome / engine-rank pills. */
+    .health-pill {
+      display: inline-block; padding: 2px 8px; border-radius: 10px; font-weight: 700;
+      font-size: 9px; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap;
+    }
+    .health-pill.green { background: rgba(34,197,94,0.18);  color: var(--green); }
+    .health-pill.ice   { background: rgba(168,216,234,0.18); color: var(--ice); }
+    .health-pill.amber { background: rgba(245,158,11,0.18); color: var(--amber); }
+    .health-pill.red   { background: rgba(239,68,68,0.18);  color: var(--red); }
+    .health-pill.grey  { background: rgba(100,116,139,0.18); color: var(--grey); }
+
+    /* Aggregated-counts row inside Flags > Rejections. */
+    .health-rej-row {
+      display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 12px;
+    }
+    .health-rej-card {
+      flex: 1 1 220px; background: var(--navy); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .health-rej-card .count {
+      font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700;
+      color: var(--white); margin-bottom: 4px;
+    }
+    .health-rej-card .label {
+      font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--grey); font-weight: 600;
+    }
+    .health-rej-card button.toggle {
+      background: none; border: none; color: var(--ice);
+      cursor: pointer; padding: 4px 0; margin-top: 8px;
+      font-family: 'Inter', sans-serif; font-size: 11px;
+    }
+    .health-rej-card button.toggle:hover { color: var(--white); text-decoration: underline; }
+    .health-rej-details { margin-top: 12px; }
+
+    /* Hour-of-day bar chart (Fulfilment). */
+    .health-hour-row {
+      display: grid; grid-template-columns: 36px 1fr 60px 70px;
+      gap: 8px; align-items: center; padding: 4px 0; font-size: 11px;
+    }
+    .health-hour-row .hr { color: var(--grey); font-family: 'JetBrains Mono', monospace; }
+    .health-hour-row .bar {
+      height: 14px; background: rgba(168,216,234,0.08); border-radius: 3px; overflow: hidden;
+    }
+    .health-hour-row .bar > span { display: block; height: 100%; background: var(--ice); transition: width 0.3s ease; }
+    .health-hour-row .count { color: var(--white); font-family: 'JetBrains Mono', monospace; text-align: right; }
+    .health-hour-row .rate { color: var(--ice); font-family: 'JetBrains Mono', monospace; text-align: right; }
+    .health-hour-row.zero .count, .health-hour-row.zero .rate { color: var(--grey); }
+
+    /* Time-range filter pill row (Fulfilment + Engine). */
+    .health-window-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 14px;
+      font-size: 11px; color: var(--grey);
+    }
+    .health-window-row .label {
+      letter-spacing: 1px; text-transform: uppercase; font-weight: 600;
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2927,9 +3068,47 @@
   </div>
 </section>
 <section class="workspace" id="workspace-health">
-  <div class="workspace-empty">
-    <div class="title">Health workspace</div>
-    <div class="sub">Fill rate + Engine quality + Compliance + Flags &amp; exceptions + Insights land here in the Health migration.</div>
+  <header class="ws-header">
+    <h1 class="ws-title">Health</h1>
+    <nav class="ws-subtabs" id="health-subtabs">
+      <button class="ws-subtab" data-subtab="flags"      onclick="showHealthSubtab('flags')">Flags &amp; Exceptions</button>
+      <button class="ws-subtab" data-subtab="coverage"   onclick="showHealthSubtab('coverage')">Coverage</button>
+      <button class="ws-subtab" data-subtab="fulfilment" onclick="showHealthSubtab('fulfilment')">Fulfilment</button>
+      <button class="ws-subtab" data-subtab="engine"     onclick="showHealthSubtab('engine')">Engine Quality</button>
+      <button class="ws-subtab" data-subtab="compliance" onclick="showHealthSubtab('compliance')">Compliance</button>
+    </nav>
+    <button class="health-refresh-btn" id="health-refresh-btn" onclick="refreshHealthCurrent()" title="Refresh current sub-tab">&#8634; Refresh</button>
+  </header>
+  <div class="ws-subtab-content" data-subtab="flags">
+    <div id="health-flags-pane"><div class="health-loading">Loading Flags &amp; Exceptions...</div></div>
+  </div>
+  <div class="ws-subtab-content" data-subtab="coverage">
+    <div id="health-coverage-pane"><div class="health-loading">Loading Coverage...</div></div>
+  </div>
+  <div class="ws-subtab-content" data-subtab="fulfilment">
+    <div id="health-fulfilment-pane"><div class="health-loading">Loading Fulfilment...</div></div>
+  </div>
+  <div class="ws-subtab-content" data-subtab="engine">
+    <div id="health-engine-pane"><div class="health-loading">Loading Engine Quality...</div></div>
+  </div>
+  <div class="ws-subtab-content" data-subtab="compliance">
+    <div id="health-compliance-pane"><div class="health-loading">Loading Compliance...</div></div>
+  </div>
+
+  <!-- Resolve flag modal (Phase 3.2) -->
+  <div id="health-resolve-flag-modal" class="prospect-form-modal" style="display:none;">
+    <div class="prospect-form-card">
+      <h3 class="prospect-form-h3">Resolve flag</h3>
+      <div style="font-size:12px;color:var(--grey);" id="health-resolve-flag-summary">,</div>
+      <label class="prospect-form-label">Resolution notes (optional)
+        <textarea id="health-resolve-flag-notes" rows="4" placeholder="What did you do? Why is this resolved?"></textarea>
+      </label>
+      <div class="prospect-form-err" id="health-resolve-flag-err"></div>
+      <div class="prospect-form-actions">
+        <button class="ops-sched-btn" onclick="closeHealthResolveFlagModal()">Cancel</button>
+        <button class="ops-sched-action" id="health-resolve-flag-save" onclick="submitHealthResolveFlag()">Resolve</button>
+      </div>
+    </div>
   </div>
 </section>
 <section class="workspace" id="workspace-history">
@@ -5762,6 +5941,847 @@ function _dv2WaitForRowAndExpand(state, attempt) {
     }
   };
 })();
+
+// ====================================================================
+// Phase 3.1-3.6: Health workspace.
+// 5 sub-tabs (Flags & Exceptions / Coverage / Fulfilment / Engine
+// Quality / Compliance). Read-on-entry with manual refresh button.
+// All data sourced from f37_health_* RPCs (admin-gated). Cross-workspace
+// deep-links via the Phase 2.8 hash routing.
+// ====================================================================
+
+const DV2_HEALTH_SUBTAB_KEY = 'glasi_ws_health_subtab';
+const HEALTH_SUBTABS = ['flags', 'coverage', 'fulfilment', 'engine', 'compliance'];
+
+const healthState = {
+  // Flags (Phase 3.2)
+  flagsActive: null, flagsRejections: null, flagsExceptions: null,
+  rejectionsExpanded: { invites_declined: false, dispatch_rejections: false, shift_cancellations: false },
+  // Coverage (Phase 3.3)
+  coverageMetrics: null, coveragePerBar: null, coverageOverlap: null, coverageGaps: null, coverageForecast: null,
+  // Fulfilment (Phase 3.4)
+  fulfilmentMetrics: null, fulfilmentByHour: null, fulfilmentByBar: null, fulfilmentUnfilled: null,
+  fulfilmentWindow: '30d',
+  // Engine (Phase 3.5)
+  engineMetrics: null, engineDecisions: null, engineWindow: '30d',
+  // Compliance (Phase 3.6)
+  complianceWorker: null, complianceBar: null, complianceOffboarded: null,
+  // Resolve modal
+  resolveFlagId: null,
+  resolveFlagSummary: ''
+};
+
+function getHealthSubtab() {
+  try {
+    const v = localStorage.getItem(DV2_HEALTH_SUBTAB_KEY);
+    if(HEALTH_SUBTABS.includes(v)) return v;
+  } catch(e) {}
+  return null;
+}
+function pickInitialHealthSubtab() { return getHealthSubtab() || 'flags'; }
+
+function showHealthSubtab(name) {
+  if(!HEALTH_SUBTABS.includes(name)) return;
+  const root = document.getElementById('workspace-health');
+  if(!root) return;
+  root.querySelectorAll('.ws-subtab').forEach(b => b.classList.toggle('active', b.dataset.subtab === name));
+  root.querySelectorAll('.ws-subtab-content').forEach(c => c.classList.toggle('active', c.dataset.subtab === name));
+  try { localStorage.setItem(DV2_HEALTH_SUBTAB_KEY, name); } catch(e) {}
+  _healthLoadIfNeeded(name);
+}
+
+function _healthLoadIfNeeded(name) {
+  if(name === 'flags'      && !healthState.flagsActive)      return loadHealthFlagsData();
+  if(name === 'coverage'   && !healthState.coverageMetrics)  return loadHealthCoverageData();
+  if(name === 'fulfilment' && !healthState.fulfilmentMetrics) return loadHealthFulfilmentData();
+  if(name === 'engine'     && !healthState.engineMetrics)    return loadHealthEngineData();
+  if(name === 'compliance' && !healthState.complianceWorker) return loadHealthComplianceData();
+  // Re-render from cache to ensure UI matches state.
+  if(name === 'flags')      _renderHealthFlagsPane();
+  if(name === 'coverage')   _renderHealthCoveragePane();
+  if(name === 'fulfilment') _renderHealthFulfilmentPane();
+  if(name === 'engine')     _renderHealthEnginePane();
+  if(name === 'compliance') _renderHealthCompliancePane();
+}
+
+async function refreshHealthCurrent() {
+  const active = document.querySelector('#workspace-health .ws-subtab.active');
+  if(!active) return;
+  const name = active.dataset.subtab;
+  const btn = document.getElementById('health-refresh-btn');
+  if(btn) btn.classList.add('spinning');
+  try {
+    if(name === 'flags')      { healthState.flagsActive = null;      await loadHealthFlagsData(); }
+    if(name === 'coverage')   { healthState.coverageMetrics = null;  await loadHealthCoverageData(); }
+    if(name === 'fulfilment') { healthState.fulfilmentMetrics = null; await loadHealthFulfilmentData(); }
+    if(name === 'engine')     { healthState.engineMetrics = null;    await loadHealthEngineData(); }
+    if(name === 'compliance') { healthState.complianceWorker = null; await loadHealthComplianceData(); }
+  } finally {
+    if(btn) btn.classList.remove('spinning');
+  }
+}
+
+// Deep-link helpers, route through Phase 2.8 hash + apply.
+function _healthGoToWorker(id) {
+  if(!id) return;
+  try { history.pushState(null, '', '#network/workers?expand=' + id); } catch(e) {}
+  if(typeof dv2ApplyHash === 'function') dv2ApplyHash();
+}
+function _healthGoToBar(id, opts) {
+  if(!id) return;
+  try { history.pushState(null, '', '#network/bars?expand=' + id); } catch(e) {}
+  if(typeof dv2ApplyHash === 'function') dv2ApplyHash();
+}
+function _healthGoToBarsList() {
+  try { history.pushState(null, '', '#network/bars'); } catch(e) {}
+  if(typeof dv2ApplyHash === 'function') dv2ApplyHash();
+}
+function _healthGoToWorkersOffboarded(applicationId) {
+  // Set the offboarded filter then expand the target row.
+  try {
+    if(typeof setNetworkWorkersFilter === 'function') {
+      // Show offboarded via filter once Workers loads. Defer via setTimeout
+      // because the workspace may need to mount first.
+      setTimeout(() => {
+        if(typeof setNetworkWorkersFilter === 'function') setNetworkWorkersFilter('offboarded');
+      }, 200);
+    }
+    history.pushState(null, '', '#network/workers?expand=' + applicationId);
+  } catch(e) {}
+  if(typeof dv2ApplyHash === 'function') dv2ApplyHash();
+}
+function _healthGoToSession(id) {
+  if(!id) return;
+  try { history.pushState(null, '', '#operations/schedule?expand=' + id); } catch(e) {}
+  if(typeof dv2ApplyHash === 'function') dv2ApplyHash();
+}
+
+// Helpers shared across panes.
+function _healthFmtDate(iso) {
+  if(!iso) return '&mdash;';
+  return new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+function _healthFmtDateTime(iso) {
+  if(!iso) return '&mdash;';
+  return new Date(iso).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function _healthFmtRelativeDate(iso) {
+  if(!iso) return '<span class="muted">,</span>';
+  const d = new Date(iso);
+  const diffDays = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+  if(diffDays < 0) return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  if(diffDays === 0) return 'Today';
+  if(diffDays === 1) return 'Yesterday';
+  if(diffDays < 7)  return diffDays + ' days ago';
+  if(diffDays < 30) return Math.floor(diffDays / 7) + 'w ago';
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+function _healthTrendArrow(curr, prev, opts) {
+  opts = opts || {};
+  const goodIsUp = opts.goodIsUp !== false; // default: higher=better
+  if(curr == null || prev == null || prev === 0) return '<span class="trend flat">&mdash;</span>';
+  const delta = curr - prev;
+  if(Math.abs(delta) < (opts.epsilon || 0.05)) return '<span class="trend flat">&rarr; vs prev</span>';
+  const isUp = delta > 0;
+  const good = (isUp && goodIsUp) || (!isUp && !goodIsUp);
+  const arrow = isUp ? '&uarr;' : '&darr;';
+  const pct = prev !== 0 ? Math.round((delta / Math.abs(prev)) * 100) : 0;
+  return '<span class="trend ' + (good ? 'up' : 'down') + '">' + arrow + ' ' + Math.abs(pct) + '% vs prev</span>';
+}
+
+dv2RegisterLifecycle('health', {
+  onEnter: () => {
+    showHealthSubtab(pickInitialHealthSubtab());
+  },
+  onLeave: () => { /* no realtime subs to stop */ },
+  onTeardown: () => {
+    healthState.flagsActive = null; healthState.flagsRejections = null; healthState.flagsExceptions = null;
+    healthState.coverageMetrics = null; healthState.coveragePerBar = null;
+    healthState.coverageOverlap = null; healthState.coverageGaps = null; healthState.coverageForecast = null;
+    healthState.fulfilmentMetrics = null; healthState.fulfilmentByHour = null;
+    healthState.fulfilmentByBar = null; healthState.fulfilmentUnfilled = null;
+    healthState.engineMetrics = null; healthState.engineDecisions = null;
+    healthState.complianceWorker = null; healthState.complianceBar = null; healthState.complianceOffboarded = null;
+  }
+});
+
+// Hook Health into Phase 2.8 hash routing.
+(function _hookHealthHash() {
+  // _dv2CurrentRouteState extension so dv2WriteHash captures the current
+  // Health sub-tab.
+  if(typeof _dv2CurrentRouteState === 'function') {
+    const prev = _dv2CurrentRouteState;
+    _dv2CurrentRouteState = function() {
+      const state = prev();
+      if(state && state.workspace === 'health') {
+        const active = document.querySelector('#workspace-health .ws-subtab.active');
+        if(active) state.subtab = active.dataset.subtab;
+      }
+      return state;
+    };
+  }
+  // dv2ApplyHash extension so deep-links to health URLs land on the right sub-tab.
+  if(typeof dv2ApplyHash === 'function') {
+    const prev = dv2ApplyHash;
+    dv2ApplyHash = function() {
+      const raw = (window.location.hash || '').replace(/^#/, '').split('?')[0];
+      const segs = raw.split('/').filter(Boolean);
+      if(segs[0] === 'health' && getDashboardMode() === 'v2') {
+        showWorkspace('health');
+        if(segs[1] && HEALTH_SUBTABS.includes(segs[1])) {
+          showHealthSubtab(segs[1]);
+        }
+        return;
+      }
+      prev();
+    };
+  }
+  // Wrap showHealthSubtab to write the hash on switch.
+  if(typeof showHealthSubtab === 'function') {
+    const prevShow = showHealthSubtab;
+    showHealthSubtab = function(name) {
+      prevShow(name);
+      if(typeof dv2WriteHash === 'function') dv2WriteHash();
+    };
+  }
+})();
+
+// ----- Phase 3.2: Flags & Exceptions -----
+
+async function loadHealthFlagsData() {
+  const pane = document.getElementById('health-flags-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading Flags &amp; Exceptions...</div>';
+  try {
+    const [a, r, e] = await Promise.all([
+      sbAuth.rpc('f37_health_flags_active'),
+      sbAuth.rpc('f37_health_flags_rejections', { p_window: '7d' }),
+      sbAuth.rpc('f37_health_flags_exceptions')
+    ]);
+    if(a.error) throw a.error;
+    if(r.error) throw r.error;
+    if(e.error) throw e.error;
+    healthState.flagsActive = a.data || [];
+    healthState.flagsRejections = r.data || {};
+    healthState.flagsExceptions = e.data || {};
+    _renderHealthFlagsPane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadHealthFlagsData()">Retry</button></div>';
+  }
+}
+
+function _renderHealthFlagsPane() {
+  const pane = document.getElementById('health-flags-pane');
+  if(!pane) return;
+  const active = healthState.flagsActive || [];
+  const rej = healthState.flagsRejections || {};
+  const exc = healthState.flagsExceptions || {};
+
+  // Active flags section
+  const activeRows = active.length
+    ? active.map(f => ''
+        + '<tr>'
+        + '<td><button class="health-link" onclick="_healthGoToWorker(' + f.application_id + ')">' + _opsEscape(f.worker_name || '#' + f.application_id) + '</button></td>'
+        + '<td>' + _opsEscape(f.reason || '') + '</td>'
+        + '<td>' + _healthFmtDateTime(f.flagged_at) + '</td>'
+        + '<td><button class="ops-sched-btn primary" onclick="openHealthResolveFlagModal(' + f.flag_id + ',&quot;' + _opsEscape((f.worker_name || '#'+f.application_id)).replace(/"/g,'&quot;') + '&quot;)">Resolve</button></td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">No active flags. Great.</td></tr>';
+  const activeHtml = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Active Worker Flags ' + (active.length ? '<span style="color:var(--amber);font-family:JetBrains Mono,monospace;font-size:11px;margin-left:8px;">' + active.length + ' unresolved</span>' : '') + '</h3>'
+    +   '<table class="health-table"><thead><tr><th>Worker</th><th>Reason</th><th>Flagged</th><th></th></tr></thead><tbody>' + activeRows + '</tbody></table>'
+    + '</section>';
+
+  // Recent rejections section
+  const rejHtml = _renderRejectionsBlock(rej);
+
+  // System exceptions section
+  const cron = (exc && exc.cron) || {};
+  const wbd  = (exc && exc.walking_distances) || {};
+  const cronLine = cron.healthy
+    ? '<span style="color:var(--green);">All healthy</span> &middot; ' + (cron.total_jobs || 0) + ' cron jobs active'
+    : '<span style="color:var(--red);">' + (cron.inactive_jobs || 0) + ' inactive job' + ((cron.inactive_jobs || 0) === 1 ? '' : 's') + '</span> of ' + (cron.total_jobs || 0);
+  const wbdLine = wbd.last_recompute
+    ? 'Last successful run ' + _healthFmtRelativeDate(wbd.last_recompute) + ' &middot; ' + (wbd.active_rows || 0) + ' active rows / ' + (wbd.total_rows || 0) + ' total'
+    : '<span style="color:var(--grey);">No recompute history available.</span>';
+  const exceptionsHtml = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">System Exceptions</h3>'
+    +   '<div style="font-size:13px;color:var(--white);line-height:1.7;">'
+    +     '<div><span class="health-section-sub" style="display:inline;margin-right:8px;">pg_cron</span> ' + cronLine + '</div>'
+    +     '<div><span class="health-section-sub" style="display:inline;margin-right:8px;">Walking distances</span> ' + wbdLine + '</div>'
+    +   '</div>'
+    + '</section>';
+
+  // PIN-holder approvals
+  const pinCount = (exc && exc.pin_holder_pending_count) || 0;
+  const pinHtml = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">PIN-Holder Approvals Pending</h3>'
+    +   '<div style="font-size:13px;color:var(--white);">'
+    +     (pinCount > 0
+        ? ('<strong style="color:var(--amber);">' + pinCount + ' pending</strong> &middot; <button class="health-link" onclick="_healthGoToBarsList()">review in Network &rarr; Bars &rsaquo;</button>')
+        : '0 - no pending approvals.')
+    +   '</div>'
+    + '</section>';
+
+  pane.innerHTML = activeHtml + rejHtml + exceptionsHtml + pinHtml;
+}
+
+function _renderRejectionsBlock(rej) {
+  const buckets = [
+    { key: 'invites_declined',    label: 'Invites declined',    data: rej.invites_declined    || {} },
+    { key: 'dispatch_rejections', label: 'Dispatch rejections', data: rej.dispatch_rejections || {} },
+    { key: 'shift_cancellations', label: 'Shift cancellations', data: rej.shift_cancellations || {} }
+  ];
+  const cards = buckets.map(b => {
+    const expanded = !!healthState.rejectionsExpanded[b.key];
+    const cnt = b.data.count || 0;
+    return ''
+      + '<div class="health-rej-card">'
+      +   '<div class="count">' + cnt + '</div>'
+      +   '<div class="label">' + _opsEscape(b.label) + ' &middot; last 7 days</div>'
+      +   (cnt > 0
+          ? '<button class="toggle" onclick="toggleHealthRejections(&quot;' + b.key + '&quot;)">' + (expanded ? '&#9662; Hide details' : '&#9656; View details') + '</button>'
+          : '<div style="font-size:11px;color:var(--grey);margin-top:6px;">0 - no ' + _opsEscape(b.label.toLowerCase()) + ' in last 7 days.</div>')
+      + '</div>';
+  }).join('');
+  const details = buckets.filter(b => healthState.rejectionsExpanded[b.key] && (b.data.count || 0) > 0).map(b => {
+    const rows = (b.data.rows || []).map(r => ''
+      + '<tr>'
+      + '<td>' + _healthFmtDateTime(r.when) + '</td>'
+      + '<td>' + (r.application_id ? '<button class="health-link" onclick="_healthGoToWorker(' + r.application_id + ')">' + _opsEscape(r.worker_name || '#' + r.application_id) + '</button>' : '<span class="muted">,</span>') + '</td>'
+      + '<td>' + _opsEscape(r.bar_label || '') + '</td>'
+      + '<td>' + _opsEscape(r.context || '') + '</td>'
+      + '</tr>').join('');
+    return ''
+      + '<div class="health-rej-details">'
+      +   '<div class="health-section-sub">' + _opsEscape(b.label) + ' details</div>'
+      +   '<table class="health-table"><thead><tr><th>When</th><th>Worker</th><th>Bar</th><th>Context</th></tr></thead><tbody>' + rows + '</tbody></table>'
+      + '</div>';
+  }).join('');
+  return ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Recent Rejections &amp; Cancellations <span style="color:var(--grey);font-size:10px;margin-left:8px;">LAST 7 DAYS</span></h3>'
+    +   '<div class="health-rej-row">' + cards + '</div>'
+    +   details
+    + '</section>';
+}
+
+function toggleHealthRejections(key) {
+  healthState.rejectionsExpanded[key] = !healthState.rejectionsExpanded[key];
+  _renderHealthFlagsPane();
+}
+
+function openHealthResolveFlagModal(flagId, workerName) {
+  healthState.resolveFlagId = flagId;
+  healthState.resolveFlagSummary = workerName || '';
+  document.getElementById('health-resolve-flag-summary').textContent = workerName ? ('Resolve flag for ' + workerName) : 'Resolve flag';
+  document.getElementById('health-resolve-flag-notes').value = '';
+  document.getElementById('health-resolve-flag-err').textContent = '';
+  const btn = document.getElementById('health-resolve-flag-save');
+  btn.disabled = false; btn.textContent = 'Resolve';
+  document.getElementById('health-resolve-flag-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('health-resolve-flag-notes').focus(), 50);
+}
+function closeHealthResolveFlagModal() {
+  document.getElementById('health-resolve-flag-modal').style.display = 'none';
+  healthState.resolveFlagId = null;
+}
+async function submitHealthResolveFlag() {
+  const errEl = document.getElementById('health-resolve-flag-err');
+  const btn = document.getElementById('health-resolve-flag-save');
+  const flagId = healthState.resolveFlagId;
+  if(!flagId) { closeHealthResolveFlagModal(); return; }
+  const notes = document.getElementById('health-resolve-flag-notes').value.trim() || null;
+  errEl.textContent = '';
+  btn.disabled = true; btn.textContent = 'Resolving...';
+  try {
+    const res = await sbAuth.rpc('f36_resolve_worker_flag', { p_flag_id: flagId, p_resolution_notes: notes });
+    if(res.error) throw res.error;
+    closeHealthResolveFlagModal();
+    healthState.flagsActive = null; // bust cache so Flags pane refreshes
+    await loadHealthFlagsData();
+  } catch(e) {
+    errEl.textContent = 'Resolve failed: ' + (e.message || 'unknown');
+    btn.disabled = false; btn.textContent = 'Resolve';
+  }
+}
+
+// ----- Phase 3.3: Coverage -----
+
+async function loadHealthCoverageData() {
+  const pane = document.getElementById('health-coverage-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading Coverage...</div>';
+  try {
+    const [m, pb, ov, gp, fc] = await Promise.all([
+      sbAuth.rpc('f37_health_coverage_metrics'),
+      sbAuth.rpc('f37_health_coverage_per_bar'),
+      sbAuth.rpc('f37_health_coverage_overlap'),
+      sbAuth.rpc('f37_health_coverage_gaps'),
+      sbAuth.rpc('f37_health_coverage_forecast')
+    ]);
+    if(m.error || pb.error || ov.error || gp.error || fc.error) {
+      throw (m.error || pb.error || ov.error || gp.error || fc.error);
+    }
+    healthState.coverageMetrics  = m.data  || {};
+    healthState.coveragePerBar   = pb.data || [];
+    healthState.coverageOverlap  = ov.data || {};
+    healthState.coverageGaps     = gp.data || [];
+    healthState.coverageForecast = fc.data || [];
+    _renderHealthCoveragePane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadHealthCoverageData()">Retry</button></div>';
+  }
+}
+
+function _coverageCatchmentPill(n) {
+  if(n == null) return 'grey';
+  if(n === 0) return 'red';
+  if(n <= 4)  return 'amber';
+  if(n <= 9)  return 'ice';
+  return 'green';
+}
+
+function _renderHealthCoveragePane() {
+  const pane = document.getElementById('health-coverage-pane');
+  if(!pane) return;
+  const m = healthState.coverageMetrics || {};
+  const pb = healthState.coveragePerBar || [];
+  const ov = healthState.coverageOverlap || {};
+  const gp = healthState.coverageGaps || [];
+  const fc = healthState.coverageForecast || [];
+
+  const tiles = ''
+    + '<div class="health-tile-row">'
+    +   '<div class="health-tile"><span class="label">Total active workers</span><span class="value">' + (m.active_workers != null ? m.active_workers : '&mdash;') + '</span><span class="sub">vetted + onboarded, not offboarded</span></div>'
+    +   '<div class="health-tile"><span class="label">Workers per active bar</span><span class="value">' + (m.workers_per_bar != null ? m.workers_per_bar : '&mdash;') + '</span><span class="sub">' + (m.active_workers || 0) + ' workers / ' + (m.active_bars || 0) + ' bars</span></div>'
+    +   '<div class="health-tile"><span class="label">Total catchment</span><span class="value">' + (m.total_catchment != null ? m.total_catchment : '&mdash;') + '</span><span class="sub">distinct workers within 30 min of any active bar</span></div>'
+    + '</div>';
+
+  const perBarRows = pb.length
+    ? pb.map(b => {
+        const pill = _coverageCatchmentPill(b.total_catchment);
+        return '<tr>'
+          + '<td><button class="health-link" onclick="_healthGoToBar(' + b.bar_id + ')">' + _opsEscape(b.bar_name || '') + '</button></td>'
+          + '<td>' + (b.workers_15min != null ? b.workers_15min : '&mdash;') + '</td>'
+          + '<td>' + (b.workers_30min != null ? b.workers_30min : '&mdash;') + '</td>'
+          + '<td><span class="health-pill ' + pill + '">' + (b.total_catchment != null ? b.total_catchment : '0') + '</span></td>'
+          + '</tr>';
+      }).join('')
+    : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">No active bars to score.</td></tr>';
+
+  const perBarHtml = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Per-bar catchment</h3>'
+    +   '<div class="health-section-note">Sorted by total catchment ascending - critically-undercovered bars surface first.</div>'
+    +   '<table class="health-table"><thead><tr><th>Bar</th><th>Workers &le;15 min</th><th>Workers &le;30 min</th><th>Total catchment</th></tr></thead><tbody>' + perBarRows + '</tbody></table>'
+    + '</section>';
+
+  const overlapHtml = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Catchment overlap</h3>'
+    +   '<div style="font-size:13px;color:var(--white);line-height:1.7;">'
+    +     '<div><strong>' + (ov.total_overlap_workers || 0) + '</strong> workers cover multiple bars</div>'
+    +     '<div class="muted" style="font-size:12px;color:var(--grey);">Cover 2 bars: ' + (ov.workers_covering_2_bars || 0) + ' &middot; Cover 3+ bars: ' + (ov.workers_covering_3plus_bars || 0) + '</div>'
+    +   '</div>'
+    + '</section>';
+
+  const gapRows = gp.length
+    ? gp.map(g => '<tr>'
+        + '<td>' + _opsEscape(g.postcode_area || '') + '</td>'
+        + '<td>' + (g.active_bars != null ? g.active_bars : '&mdash;') + '</td>'
+        + '<td>' + (g.workers_in_area != null ? g.workers_in_area : '&mdash;') + '</td>'
+        + '<td><span class="health-pill ' + (g.worker_to_bar_ratio == null || Number(g.worker_to_bar_ratio) < 2 ? 'red' : Number(g.worker_to_bar_ratio) < 5 ? 'amber' : 'green') + '">' + (g.worker_to_bar_ratio != null ? g.worker_to_bar_ratio : '&mdash;') + '</span></td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">No geographic gaps detected.</td></tr>';
+  const gapsHtml = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Geographic gaps</h3>'
+    +   '<div class="health-section-note">Postcode area extracted from active bar addresses; workers grouped by postcode_sector. Sort: worst worker:bar ratio first.</div>'
+    +   '<table class="health-table"><thead><tr><th>Postcode area</th><th>Active bars</th><th>Workers in area</th><th>Worker:bar ratio</th></tr></thead><tbody>' + gapRows + '</tbody></table>'
+    + '</section>';
+
+  const forecastRows = fc.length
+    ? fc.map(f => {
+        const when = f.scheduled_start || (f.session_date ? f.session_date + 'T18:00:00Z' : null);
+        const catchVsInv = (f.invited != null && f.catchment != null) ? ((f.catchment >= f.invited) ? 'green' : 'amber') : 'grey';
+        return '<tr>'
+          + '<td>' + _healthFmtDate(when) + '</td>'
+          + '<td><button class="health-link" onclick="_healthGoToSession(' + f.session_id + ')">#' + f.session_id + '</button></td>'
+          + '<td>' + _opsEscape(f.bar_names || '') + '</td>'
+          + '<td>' + (f.catchment != null ? f.catchment : '&mdash;') + '</td>'
+          + '<td><span class="health-pill ' + catchVsInv + '">' + (f.confirmed || 0) + ' / ' + (f.invited || 0) + ' confirmed</span></td>'
+          + '</tr>';
+      }).join('')
+    : '<tr><td colspan="5" style="padding:24px 10px;text-align:center;color:var(--grey);">No scheduled sessions in the next 7 days.</td></tr>';
+  const forecastHtml = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Upcoming sessions forecast <span style="color:var(--grey);font-size:10px;margin-left:8px;">NEXT 7 DAYS</span></h3>'
+    +   '<table class="health-table"><thead><tr><th>Date</th><th>Session</th><th>Bars</th><th>Catchment</th><th>Expected coverage</th></tr></thead><tbody>' + forecastRows + '</tbody></table>'
+    + '</section>';
+
+  pane.innerHTML = tiles + perBarHtml + overlapHtml + gapsHtml + forecastHtml;
+}
+
+// ----- Phase 3.4: Fulfilment -----
+
+async function loadHealthFulfilmentData() {
+  const pane = document.getElementById('health-fulfilment-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading Fulfilment...</div>';
+  const w = healthState.fulfilmentWindow || '30d';
+  try {
+    const [m, h, b, u] = await Promise.all([
+      sbAuth.rpc('f37_health_fulfilment_metrics',  { p_window: w }),
+      sbAuth.rpc('f37_health_fulfilment_by_hour',  { p_window: w }),
+      sbAuth.rpc('f37_health_fulfilment_by_bar',   { p_window: w }),
+      sbAuth.rpc('f37_health_fulfilment_unfilled', { p_window: w })
+    ]);
+    if(m.error || h.error || b.error || u.error) throw (m.error || h.error || b.error || u.error);
+    healthState.fulfilmentMetrics  = m.data || {};
+    healthState.fulfilmentByHour   = h.data || [];
+    healthState.fulfilmentByBar    = b.data || [];
+    healthState.fulfilmentUnfilled = u.data || [];
+    _renderHealthFulfilmentPane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadHealthFulfilmentData()">Retry</button></div>';
+  }
+}
+
+function setHealthFulfilmentWindow(w) {
+  healthState.fulfilmentWindow = w;
+  healthState.fulfilmentMetrics = null; // bust cache
+  loadHealthFulfilmentData();
+}
+
+function _renderHealthFulfilmentPane() {
+  const pane = document.getElementById('health-fulfilment-pane');
+  if(!pane) return;
+  const m = healthState.fulfilmentMetrics || {};
+  const cur = m.current || {};
+  const prev = m.previous || {};
+  const byH = healthState.fulfilmentByHour || [];
+  const byB = healthState.fulfilmentByBar || [];
+  const un  = healthState.fulfilmentUnfilled || [];
+  const w = healthState.fulfilmentWindow;
+
+  const windowRow = _renderHealthWindowRow('fulfilment', w);
+
+  const tiles = ''
+    + '<div class="health-tile-row">'
+    +   '<div class="health-tile">'
+    +     '<span class="label">Fulfilment rate</span>'
+    +     '<span class="value">' + (cur.fulfilment_rate != null ? (cur.fulfilment_rate + '%') : '&mdash;') + '</span>'
+    +     '<span class="sub">' + (cur.requests_fulfilled || 0) + ' / ' + (cur.requests_total || 0) + ' requests &middot; ' + _healthTrendArrow(cur.fulfilment_rate, prev.fulfilment_rate, { goodIsUp: true }) + '</span>'
+    +   '</div>'
+    +   '<div class="health-tile">'
+    +     '<span class="label">Avg response time</span>'
+    +     '<span class="value">' + (cur.avg_response_minutes != null ? (cur.avg_response_minutes + 'm') : '&mdash;') + '</span>'
+    +     '<span class="sub">posted_at &rarr; first available &middot; ' + _healthTrendArrow(cur.avg_response_minutes, prev.avg_response_minutes, { goodIsUp: false }) + '</span>'
+    +   '</div>'
+    +   '<div class="health-tile">'
+    +     '<span class="label">Avg time-to-fulfilment</span>'
+    +     '<span class="value">' + (cur.avg_time_to_fulfilment_minutes != null ? (cur.avg_time_to_fulfilment_minutes + 'm') : '&mdash;') + '</span>'
+    +     '<span class="sub">posted_at &rarr; clock-in &middot; ' + _healthTrendArrow(cur.avg_time_to_fulfilment_minutes, prev.avg_time_to_fulfilment_minutes, { goodIsUp: false }) + '</span>'
+    +   '</div>'
+    + '</div>';
+
+  // Hour-of-day breakdown
+  const maxCount = Math.max(1, ...byH.map(h => h.requests_total || 0));
+  const hourRows = byH.map(h => {
+    const pct = ((h.requests_total || 0) / maxCount) * 100;
+    const zero = (h.requests_total || 0) === 0;
+    return ''
+      + '<div class="health-hour-row' + (zero ? ' zero' : '') + '">'
+      +   '<span class="hr">' + String(h.hour).padStart(2,'0') + ':00</span>'
+      +   '<div class="bar"><span style="width:' + pct + '%;"></span></div>'
+      +   '<span class="count">' + (h.requests_total || 0) + '</span>'
+      +   '<span class="rate">' + (h.fulfilment_rate != null ? (h.fulfilment_rate + '%') : '&mdash;') + '</span>'
+      + '</div>';
+  }).join('');
+  const hourHtml = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">By hour of day</h3>'
+    +   '<div class="health-section-note">Local time (Europe/London). Bars scaled to the busiest hour in the window.</div>'
+    +   (hourRows || '<div class="muted" style="color:var(--grey);font-size:13px;padding:12px 0;">No request data in window.</div>')
+    + '</section>';
+
+  // By-bar table
+  const byBarRows = byB.length
+    ? byB.map(b => '<tr>'
+        + '<td><button class="health-link" onclick="_healthGoToBar(' + b.bar_id + ')">' + _opsEscape(b.bar_name || '') + '</button></td>'
+        + '<td>' + (b.requests_total || 0) + '</td>'
+        + '<td>' + (b.fulfilment_rate != null ? (b.fulfilment_rate + '%') : '&mdash;') + '</td>'
+        + '<td>' + (b.avg_response_minutes != null ? (b.avg_response_minutes + 'm') : '&mdash;') + '</td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">No requests recorded in this window.</td></tr>';
+  const byBarHtml = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">By bar monitoring</h3>'
+    +   '<div class="health-section-note">Monitoring only - workers do not see per-bar requests. Sort: requests count descending.</div>'
+    +   '<table class="health-table"><thead><tr><th>Bar</th><th>Requests</th><th>Fulfilment rate</th><th>Avg response</th></tr></thead><tbody>' + byBarRows + '</tbody></table>'
+    + '</section>';
+
+  // Recent unfilled
+  const unRows = un.length
+    ? un.map(u => '<tr>'
+        + '<td>' + _healthFmtDateTime(u.when) + '</td>'
+        + '<td>' + (u.bar_id ? '<button class="health-link" onclick="_healthGoToBar(' + u.bar_id + ')">' + _opsEscape(u.bar_name || '') + '</button>' : '<span class="muted">,</span>') + '</td>'
+        + '<td>' + _opsEscape((u.reason || u.status || '').toString()) + '</td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="3" style="padding:24px 10px;text-align:center;color:var(--grey);">All requests fulfilled. Great.</td></tr>';
+  const unfilledHtml = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Recent unfilled requests</h3>'
+    +   '<div class="health-section-note">Requests that expired or were cancelled before dispatch. Latest 50.</div>'
+    +   '<table class="health-table"><thead><tr><th>When</th><th>Bar</th><th>Reason</th></tr></thead><tbody>' + unRows + '</tbody></table>'
+    + '</section>';
+
+  pane.innerHTML = windowRow + tiles + hourHtml + byBarHtml + unfilledHtml;
+}
+
+function _renderHealthWindowRow(subtab, currentWindow) {
+  const fnName = subtab === 'fulfilment' ? 'setHealthFulfilmentWindow' : 'setHealthEngineWindow';
+  const options = subtab === 'fulfilment'
+    ? [['7d','Last 7 days'],['30d','Last 30 days'],['90d','Last 90 days'],['all','All time']]
+    : [['7d','Last 7 days'],['30d','Last 30 days'],['90d','Last 90 days']];
+  return ''
+    + '<div class="health-window-row">'
+    +   '<span class="label">Window</span>'
+    +   '<div class="net-pill-row">'
+    +     options.map(o => '<button class="net-pill' + (o[0] === currentWindow ? ' active' : '') + '" onclick="' + fnName + '(&quot;' + o[0] + '&quot;)">' + o[1] + '</button>').join('')
+    +   '</div>'
+    + '</div>';
+}
+
+// ----- Phase 3.5: Engine Quality -----
+
+async function loadHealthEngineData() {
+  const pane = document.getElementById('health-engine-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading Engine Quality...</div>';
+  const w = healthState.engineWindow || '30d';
+  try {
+    const [m, d] = await Promise.all([
+      sbAuth.rpc('f37_health_engine_metrics',   { p_window: w }),
+      sbAuth.rpc('f37_health_engine_decisions', { p_window: w, p_limit: 50 })
+    ]);
+    if(m.error || d.error) throw (m.error || d.error);
+    healthState.engineMetrics  = m.data || {};
+    healthState.engineDecisions = d.data || [];
+    _renderHealthEnginePane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadHealthEngineData()">Retry</button></div>';
+  }
+}
+
+function setHealthEngineWindow(w) {
+  healthState.engineWindow = w;
+  healthState.engineMetrics = null;
+  loadHealthEngineData();
+}
+
+function _renderHealthEnginePane() {
+  const pane = document.getElementById('health-engine-pane');
+  if(!pane) return;
+  const m = healthState.engineMetrics || {};
+  const cur = m.current || {};
+  const prev = m.previous || {};
+  const decisions = healthState.engineDecisions || [];
+  const w = healthState.engineWindow;
+
+  const windowRow = _renderHealthWindowRow('engine', w);
+
+  // Override outcome: comparison subline.
+  const ovr = cur.override_completion_rate;
+  const eng = cur.engine_completion_rate;
+  let overrideSub = '&mdash;';
+  if(ovr != null && eng != null) {
+    overrideSub = 'Override: <strong>' + ovr + '%</strong> &middot; Engine pick: <strong>' + eng + '%</strong>';
+  } else if(ovr != null) {
+    overrideSub = 'Override complete rate: ' + ovr + '% (engine: insufficient data)';
+  } else if(eng != null) {
+    overrideSub = 'Engine pick complete rate: ' + eng + '% (no overrides yet)';
+  }
+
+  const tiles = ''
+    + '<div class="health-tile-row">'
+    +   '<div class="health-tile"><span class="label">Match rate</span>'
+    +     '<span class="value">' + (cur.match_rate != null ? (cur.match_rate + '%') : '&mdash;') + '</span>'
+    +     '<span class="sub">completion vs cancel/no-show &middot; ' + _healthTrendArrow(cur.match_rate, prev.match_rate, { goodIsUp: true }) + '</span>'
+    +   '</div>'
+    +   '<div class="health-tile"><span class="label">Top-rank pick rate</span>'
+    +     '<span class="value">' + (cur.top_rank_pick_rate != null ? (cur.top_rank_pick_rate + '%') : '&mdash;') + '</span>'
+    +     '<span class="sub">% dispatches matching engine&apos;s rank-1 &middot; ' + _healthTrendArrow(cur.top_rank_pick_rate, prev.top_rank_pick_rate, { goodIsUp: true }) + '</span>'
+    +   '</div>'
+    +   '<div class="health-tile"><span class="label">Override outcome</span>'
+    +     '<span class="value">' + (ovr != null ? (ovr + '%') : '&mdash;') + '</span>'
+    +     '<span class="sub">' + overrideSub + '</span>'
+    +   '</div>'
+    +   '<div class="health-tile"><span class="label">Avg dispatch latency</span>'
+    +     '<span class="value">' + (cur.avg_dispatch_latency_seconds != null ? (cur.avg_dispatch_latency_seconds + 's') : '&mdash;') + '</span>'
+    +     '<span class="sub">posted_at &rarr; dispatched_at &middot; ' + _healthTrendArrow(cur.avg_dispatch_latency_seconds, prev.avg_dispatch_latency_seconds, { goodIsUp: false }) + '</span>'
+    +   '</div>'
+    + '</div>';
+
+  // Decisions log
+  const decRows = decisions.length
+    ? decisions.map(d => {
+        const rankClass = d.engine_rank === 1 ? 'green' : (d.engine_rank == null ? 'amber' : 'ice');
+        const rankLabel = d.engine_rank != null ? ('#' + d.engine_rank) : 'override';
+        const oc = (d.outcome || '').toLowerCase();
+        const ocClass = oc === 'completed' ? 'green' : (oc === 'no_show' ? 'red' : (oc === 'cancelled' || oc === 'left' ? 'amber' : (oc ? 'ice' : 'grey')));
+        const ocLabel = (d.outcome || 'in-progress').replace(/_/g, ' ').toUpperCase();
+        const ovrLabel = d.was_recommended_match ? 'no' : 'YES';
+        const ovrClass = d.was_recommended_match ? 'grey' : 'amber';
+        return '<tr>'
+          + '<td>' + _healthFmtDateTime(d.when) + '</td>'
+          + '<td>' + (d.application_id ? '<button class="health-link" onclick="_healthGoToWorker(' + d.application_id + ')">' + _opsEscape(d.worker_name || '#' + d.application_id) + '</button>' : '<span class="muted">,</span>') + '</td>'
+          + '<td>' + (d.bar_id ? '<button class="health-link" onclick="_healthGoToBar(' + d.bar_id + ')">' + _opsEscape(d.bar_name || '') + '</button>' : '<span class="muted">,</span>') + '</td>'
+          + '<td><span class="health-pill ' + rankClass + '">' + rankLabel + '</span></td>'
+          + '<td><span class="health-pill ' + ovrClass + '">' + ovrLabel + '</span></td>'
+          + '<td><span class="health-pill ' + ocClass + '">' + ocLabel + '</span></td>'
+          + '</tr>';
+      }).join('')
+    : '<tr><td colspan="6" style="padding:24px 10px;text-align:center;color:var(--grey);">No dispatch decisions recorded in this window.</td></tr>';
+  const decHtml = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Recent dispatch decisions <span style="color:var(--grey);font-size:10px;margin-left:8px;">LATEST 50</span></h3>'
+    +   '<table class="health-table"><thead><tr><th>When</th><th>Worker</th><th>Bar</th><th>Engine rank</th><th>Override</th><th>Outcome</th></tr></thead><tbody>' + decRows + '</tbody></table>'
+    + '</section>';
+
+  pane.innerHTML = windowRow + tiles + decHtml;
+}
+
+// ----- Phase 3.6: Compliance -----
+
+async function loadHealthComplianceData() {
+  const pane = document.getElementById('health-compliance-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading Compliance...</div>';
+  try {
+    const [w, b, o] = await Promise.all([
+      sbAuth.rpc('f37_health_compliance_worker_gaps'),
+      sbAuth.rpc('f37_health_compliance_bar_gaps'),
+      sbAuth.rpc('f37_health_compliance_offboarded')
+    ]);
+    if(w.error || b.error || o.error) throw (w.error || b.error || o.error);
+    healthState.complianceWorker     = w.data || {};
+    healthState.complianceBar        = b.data || {};
+    healthState.complianceOffboarded = o.data || [];
+    _renderHealthCompliancePane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadHealthComplianceData()">Retry</button></div>';
+  }
+}
+
+function _healthComplianceSubTable(label, rows, columns, rowRender, emptyMsg) {
+  if(!rows || !rows.length) {
+    return '<div class="health-section-sub">' + _opsEscape(label) + '</div>'
+      + '<div style="font-size:12px;color:var(--grey);padding:6px 0 12px;">' + _opsEscape(emptyMsg) + '</div>';
+  }
+  const head = columns.map(c => '<th>' + _opsEscape(c) + '</th>').join('');
+  const body = rows.map(rowRender).join('');
+  return '<div class="health-section-sub">' + _opsEscape(label) + '</div>'
+    + '<table class="health-table" style="margin-bottom:14px;"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
+}
+
+function _renderHealthCompliancePane() {
+  const pane = document.getElementById('health-compliance-pane');
+  if(!pane) return;
+  const wg = healthState.complianceWorker || {};
+  const bg = healthState.complianceBar || {};
+  const off = healthState.complianceOffboarded || [];
+
+  const workerSection = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Worker compliance gaps</h3>'
+    +   _healthComplianceSubTable('Missing H&S signatures',
+        wg.missing_hs_signatures, ['Worker','Bar / Detail'],
+        r => '<tr>'
+          + '<td><button class="health-link" onclick="_healthGoToWorker(' + r.application_id + ')">' + _opsEscape(r.worker_name || '#' + r.application_id) + '</button></td>'
+          + '<td>' + _opsEscape(r.bar_name || '') + '</td>'
+          + '</tr>',
+        'All workers compliant on H&S signatures.')
+    +   _healthComplianceSubTable('Right-to-work flagged',
+        wg.expired_right_to_work, ['Worker','Status'],
+        r => '<tr>'
+          + '<td><button class="health-link" onclick="_healthGoToWorker(' + r.application_id + ')">' + _opsEscape(r.worker_name || '#' + r.application_id) + '</button></td>'
+          + '<td>' + _opsEscape(r.detail || '') + '</td>'
+          + '</tr>',
+        'All workers confirmed right-to-work.')
+    +   _healthComplianceSubTable('Overdue walkthroughs',
+        wg.overdue_walkthroughs, ['Worker','Detail'],
+        r => '<tr><td>' + _opsEscape(r.worker_name || '') + '</td><td>' + _opsEscape(r.detail || '') + '</td></tr>',
+        'Walkthrough tracking lands in a follow-up batch.')
+    +   _healthComplianceSubTable('Missing employment paperwork',
+        wg.missing_employment_paperwork, ['Worker','Detail'],
+        r => '<tr>'
+          + '<td><button class="health-link" onclick="_healthGoToWorker(' + r.application_id + ')">' + _opsEscape(r.worker_name || '#' + r.application_id) + '</button></td>'
+          + '<td>' + _opsEscape(r.detail || '') + '</td>'
+          + '</tr>',
+        'All onboarded workers have Numbermill paperwork.')
+    + '</section>';
+
+  const barSection = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Bar compliance gaps</h3>'
+    +   _healthComplianceSubTable('Bars without contract / agreement',
+        bg.no_contract, ['Bar','Status'],
+        r => '<tr>'
+          + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '') + '</button></td>'
+          + '<td>' + _opsEscape(r.detail || '') + '</td>'
+          + '</tr>',
+        'All bars compliant on contracts.')
+    +   _healthComplianceSubTable('Bars without walkthrough video',
+        bg.no_walkthrough, ['Bar','Last session'],
+        r => '<tr>'
+          + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '') + '</button></td>'
+          + '<td>' + _opsEscape(r.detail || '<span style="color:var(--grey);">no sessions yet</span>') + '</td>'
+          + '</tr>',
+        'All bars compliant on walkthroughs.')
+    +   _healthComplianceSubTable('Bars without H&S document',
+        bg.no_hs_document, ['Bar','Status'],
+        r => '<tr>'
+          + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '') + '</button></td>'
+          + '<td>' + _opsEscape(r.detail || '') + '</td>'
+          + '</tr>',
+        'All bars compliant on H&S documents.')
+    +   _healthComplianceSubTable('Bars with pending PIN-holder approval',
+        bg.pin_holder_pending, ['Bar','Proposed PIN-holder','Requested by'],
+        r => '<tr>'
+          + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '') + '</button></td>'
+          + '<td>' + _opsEscape(r.proposed_name || '') + ' &middot; ' + _opsEscape(r.proposed_email || '') + '</td>'
+          + '<td>' + _opsEscape(r.requested_by_manager_name || '&mdash;') + '</td>'
+          + '</tr>',
+        'No PIN-holder approvals pending.')
+    + '</section>';
+
+  const pinPendingCount = (bg.pin_holder_pending || []).length;
+  const pinSection = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">PIN-Holder Approval Queue</h3>'
+    +   '<div style="font-size:13px;color:var(--white);">'
+    +     (pinPendingCount > 0
+        ? ('<strong style="color:var(--amber);">' + pinPendingCount + ' pending</strong> &middot; <button class="health-link" onclick="_healthGoToBarsList()">review in Network &rarr; Bars &rsaquo;</button> <span style="color:var(--grey);font-size:11px;">(canonical action surface; this view is visibility only)</span>')
+        : '0 - no pending approvals.')
+    +   '</div>'
+    + '</section>';
+
+  const offRows = off.length
+    ? off.map(r => '<tr>'
+        + '<td>' + _healthFmtDate(r.offboarded_at) + '</td>'
+        + '<td><button class="health-link" onclick="_healthGoToWorkersOffboarded(' + r.application_id + ')">' + _opsEscape(r.worker_name || '#' + r.application_id) + '</button></td>'
+        + '<td>' + _opsEscape(r.reason || '') + '</td>'
+        + '<td>' + _opsEscape(r.offboarded_by || 'unknown') + '</td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">No workers have been offboarded.</td></tr>';
+  const offSection = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Offboarded workers history</h3>'
+    +   '<table class="health-table"><thead><tr><th>Date offboarded</th><th>Worker</th><th>Reason</th><th>Offboarded by</th></tr></thead><tbody>' + offRows + '</tbody></table>'
+    + '</section>';
+
+  pane.innerHTML = workerSection + barSection + pinSection + offSection;
+}
 
 // F-28: top-level Sessions audit (cross-zone, filterable, read-only).
 async function goToSessionsAudit() {

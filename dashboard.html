@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -82,16 +82,8 @@
     .sidebar-nav-item.active { background: rgba(168,216,234,0.12); color: var(--ice); font-weight: 600; }
     .sidebar-nav-chevron { display: inline-block; font-size: 10px; transition: transform 0.15s; }
     .sidebar-nav-chevron.expanded { transform: rotate(90deg); }
-    .sidebar-zones-children { display: none; margin: 4px 0 8px 16px; padding-left: 12px; border-left: 1px solid var(--border); }
-    .sidebar-zones-children.expanded { display: flex; flex-direction: column; gap: 2px; }
-    .sidebar-zone-child {
-      background: none; border: none; color: var(--grey);
-      text-align: left; padding: 7px 12px; border-radius: 6px;
-      font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer;
-      transition: background 0.15s, color 0.15s;
-    }
-    .sidebar-zone-child:hover { background: rgba(168,216,234,0.05); color: var(--white); }
-    .sidebar-zone-child.active { background: rgba(168,216,234,0.14); color: var(--ice); font-weight: 600; }
+    /* Pre-v2 cleanup (18 May 2026): .sidebar-zones-children + .sidebar-zone-child
+       rules removed (CORE v7 zones-as-primary deprecation). */
     .sidebar-divider { border-top: 1px solid var(--border); margin: 12px 12px 8px; }
     .sidebar-signout {
       background: none; border: 1px solid var(--border); color: var(--grey);
@@ -161,7 +153,7 @@
     .session-time {  font-size: 12px; color: var(--ice); }
     .worker-grid { display: flex; flex-direction: column; gap: 10px; }
 
-    /* WORKER CARDS — round 3: vertical-list compact mode. Two-zone horizontal split:
+    /* WORKER CARDS â€” round 3: vertical-list compact mode. Two-zone horizontal split:
        left = identity (name, postcode/tier/reliability), right = state (per-request
        state rows or idle 'Available' marker). Card grows vertically with multi-request
        state stacks. */
@@ -201,7 +193,7 @@
 
     /* CORE v6 F-03 supplemental round 3: 3-column live console grid.
        Sessions selector header sits above (full width). Grid below: requests col
-       (2fr) + 1px divider + workers col (1fr). No responsive collapse — desktop only. */
+       (2fr) + 1px divider + workers col (1fr). No responsive collapse â€” desktop only. */
     .live-console-grid { display: grid; grid-template-columns: minmax(0, 2fr) 1px minmax(0, 1fr); gap: 24px; align-items: start; }
     .lc-divider { background: var(--border); width: 1px; align-self: stretch; min-height: 240px; }
     .lc-requests-col, .lc-workers-col { min-width: 0; }
@@ -335,7 +327,7 @@
     /* Round 6: worker card cells architecture. Left section is a horizontal
        wrapping grid of mini-cells, one per active in-range pending request.
        Right section holds worker identity (name, In Session pill, meta).
-       Replaces round 5 Fix 2/4/5/6 (which retired here) — vertical
+       Replaces round 5 Fix 2/4/5/6 (which retired here) â€” vertical
        state-row + idle marker model didn't scale to multi-bar reality where
        a worker can have 5-10 simultaneous in-flight requests. Cell label
        uses bar_id (#1, #2, ...) for terse cross-card lookup with the request
@@ -897,7 +889,7 @@
       font-size: 12px; color: var(--grey); font-style: italic; line-height: 1.5;
     }
     /* Phase 1-3 follow-up 12 (18 May 2026): shift progress / summary block
-       inside the bar expand panel — list of label/value pairs for
+       inside the bar expand panel â€” list of label/value pairs for
        Started / Elapsed / Remaining (on shift) or Started / Ended /
        Hours / Total earned (completed). */
     .bv-bar-detail-shift {
@@ -948,7 +940,7 @@
     }
     .bv-bar-action-btn.primary:hover { opacity: 0.88; }
 
-    /* "No replacement found" callout panel inside the bar expand panel —
+    /* "No replacement found" callout panel inside the bar expand panel â€”
        red-tinted card explaining why the request didn't re-fill itself
        and pointing at the retry button below. */
     .bv-bar-detail-no-replacement {
@@ -1078,7 +1070,7 @@
     .bv-worker-row.is-expanded > .bv-cell { background: rgba(168,216,234,0.08); }
     .bv-worker-row > .bv-cell { cursor: pointer; }
 
-    /* Worker row state styling — cells inherit the row class via descendant
+    /* Worker row state styling â€” cells inherit the row class via descendant
        selectors. Display:contents row has no own box; state visuals live
        on the cells. */
     .bv-worker-row.is-not-joined .bv-cell { opacity: 0.55; }
@@ -1095,7 +1087,7 @@
        both cells when the row is ON SHIFT. Inset box-shadow on top + bottom
        of both cells, plus left on the name cell and right on the status
        cell, frames the row in deep green that matches the on-shift line.
-       Bar row + worker row both apply — visually the two rows + the line
+       Bar row + worker row both apply â€” visually the two rows + the line
        connecting them read as one bound unit. */
     .bv-bar-row.is-onshift > .bv-cell-name,
     .bv-worker-row.is-onshift > .bv-cell-name {
@@ -1204,8 +1196,8 @@
        Pattern: DOTTED = communication (asking / responding / recommending),
                 SOLID  = commitment (dispatched / en route / arrived / on shift).
        Flow direction (via stroke-dashoffset animation):
-                forward (bar → worker) = bar is asking
-                backward (worker → bar) = worker is responding or moving toward bar.
+                forward (bar â†’ worker) = bar is asking
+                backward (worker â†’ bar) = worker is responding or moving toward bar.
        Colour grammar:
                 grey  = pending neutral
                 ice   = available (positive but neutral)
@@ -1213,29 +1205,29 @@
                 amber = warning (nudge 2)
                 red   = problem (auto-cancelled). */
 
-    /* State 1: REQUEST SENT — dotted grey, flowing bar → worker. */
+    /* State 1: REQUEST SENT â€” dotted grey, flowing bar â†’ worker. */
     .bv-line-layer path.bv-line-pending {
       stroke: rgba(200,200,200,0.65); stroke-width: 2;
       stroke-dasharray: 3 5; fill: none;
       animation: bv-flow-forward 1.4s linear infinite;
     }
-    /* State 2: WORKER AVAILABLE — dotted ice, flowing worker → bar. */
+    /* State 2: WORKER AVAILABLE â€” dotted ice, flowing worker â†’ bar. */
     .bv-line-layer path.bv-line-available {
       stroke: var(--ice); stroke-width: 2.5;
       stroke-dasharray: 3 5; fill: none;
       animation: bv-flow-backward 1.4s linear infinite;
     }
-    /* State 3: ENGINE RECOMMENDATION — dotted green, flowing worker → bar, glow. */
+    /* State 3: ENGINE RECOMMENDATION â€” dotted green, flowing worker â†’ bar, glow. */
     .bv-line-layer path.bv-line-recommend {
       stroke: var(--green); stroke-width: 3;
       stroke-dasharray: 3 5; fill: none;
       filter: drop-shadow(0 0 5px rgba(34,197,94,0.7));
       animation: bv-flow-backward 1.4s linear infinite;
     }
-    /* State 4: DISPATCHED — solid green stroke with breathing glow halo.
+    /* State 4: DISPATCHED â€” solid green stroke with breathing glow halo.
        Phase 1-3 follow-up 13 (18 May 2026): the previous static-no-glow
        look read too similar to on-shift. The breathing glow communicates
-       "worker just committed, waiting for confirmation" — attention-getting
+       "worker just committed, waiting for confirmation" â€” attention-getting
        without being aggressive. On-shift stays steady + deeper green so
        the two states are visually distinct at a glance. */
     .bv-line-layer path.bv-line-dispatched {
@@ -1246,22 +1238,22 @@
       0%, 100% { filter: drop-shadow(0 0 4px  rgba(34,197,94,0.55)); }
       50%      { filter: drop-shadow(0 0 11px rgba(34,197,94,0.95)); }
     }
-    /* State 5: DISPATCHED + STALLED (nudge 1) — solid green, slow flash. */
+    /* State 5: DISPATCHED + STALLED (nudge 1) â€” solid green, slow flash. */
     .bv-line-layer path.bv-line-stalled-1 {
       stroke: var(--green); stroke-width: 3; fill: none;
       animation: bv-pulse-slow 1.8s ease-in-out infinite;
     }
-    /* State 6: DISPATCHED + STALLED (nudge 2) — solid amber, slow flash. */
+    /* State 6: DISPATCHED + STALLED (nudge 2) â€” solid amber, slow flash. */
     .bv-line-layer path.bv-line-stalled-2 {
       stroke: var(--amber); stroke-width: 3.5; fill: none;
       animation: bv-pulse-slow 1.4s ease-in-out infinite;
     }
-    /* State 7: AUTO-CANCELLED — solid red, fading out. */
+    /* State 7: AUTO-CANCELLED â€” solid red, fading out. */
     .bv-line-layer path.bv-line-cancelled {
       stroke: var(--red); stroke-width: 3; fill: none;
       animation: bv-fade-out 1.6s ease-out forwards;
     }
-    /* State 8: EN ROUTE — green comet dashes flowing worker → bar.
+    /* State 8: EN ROUTE â€” green comet dashes flowing worker â†’ bar.
        Small dashes + large gaps + rounded caps = comet/arrow look that
        visibly travels along the curve toward the bar end. Phase 1-3
        follow-up 10 (18 May 2026) replaces the previous 40/4 stutter-
@@ -1303,7 +1295,7 @@
     .bv-line-eta-label.stale { font-style: italic; opacity: 0.75; }
 
     /* Phase 1-3 follow-up 11 (18 May 2026): chip backdrop behind the ETA
-       text — occludes the comet trail beneath so the line visually breaks
+       text â€” occludes the comet trail beneath so the line visually breaks
        at the chip edge ("o o o o 4 min o o o o" pattern). Navy fill matches
        the page background; stroke matches the line variant for cohesion. */
     .bv-line-eta-chip {
@@ -1314,12 +1306,12 @@
     .bv-line-eta-chip.enroute      { stroke: var(--green); }
     .bv-line-eta-chip.enroute-slow { stroke: var(--amber); }
     .bv-line-eta-chip.enroute-stop { stroke: var(--red); }
-    /* State 9: ARRIVED — solid green, no animation (movement complete). */
+    /* State 9: ARRIVED â€” solid green, no animation (movement complete). */
     .bv-line-layer path.bv-line-arrived {
       stroke: var(--green); stroke-width: 3.5; fill: none;
       filter: drop-shadow(0 0 4px rgba(34,197,94,0.55));
     }
-    /* State 10: ON SHIFT — deeper green, solid, no animation. */
+    /* State 10: ON SHIFT â€” deeper green, solid, no animation. */
     .bv-line-layer path.bv-line-onshift {
       stroke: #15803d; stroke-width: 4; fill: none;
     }
@@ -1527,6 +1519,79 @@
     .pu-detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
     .pu-detail-row .l { color: var(--grey); }
     .pu-detail-row .v { color: var(--white); font-family: 'JetBrains Mono', monospace; }
+
+    /* ================================================================
+       Dashboard v2 scaffolding (18 May 2026, Batch 1).
+       Feature-flag-gated; default OFF (localStorage.glasi_dashboard_v2='v1').
+       When body.dashboard-v2 is set:
+         - v1 sidebar + .screen elements are hidden
+         - v2 header + .workspace elements are shown
+       Spec: glasi_dashboard/audits/DASHBOARD_V2_TARGET_SPEC.md
+       Audit: glasi_dashboard/audits/DASHBOARD_V2_AUDIT_2026-05-18.md
+    ================================================================ */
+    .dashboard-v2-header { display: none; }
+    .workspace { display: none; }
+    body.dashboard-v2 #sidebar { display: none !important; }
+    body.dashboard-v2 .screen { display: none !important; }
+    body.dashboard-v2 #auto-dispatch-pill { display: none !important; }
+    body.dashboard-v2 .dashboard-v2-header { display: flex; }
+    body.dashboard-v2.dashboard-shell { padding-left: 0; padding-top: 56px; }
+    body.dashboard-v2 .workspace.active { display: block; }
+    .dashboard-v2-header {
+      position: fixed; top: 0; left: 0; right: 0; height: 56px;
+      background: var(--navy-mid); border-bottom: 1px solid var(--border);
+      align-items: center; padding: 0 20px; z-index: 50; gap: 24px;
+    }
+    .dv2-brand {
+      font-family: 'Raleway', sans-serif; font-weight: 700; font-size: 18px;
+      letter-spacing: 8px; color: var(--white);
+      border: 1.5px solid var(--white); border-radius: 6px; padding: 4px 12px;
+      cursor: pointer; user-select: none;
+    }
+    .dv2-switcher { display: flex; gap: 4px; flex: 1; justify-content: center; }
+    .dv2-tab {
+      background: none; border: none; color: var(--grey);
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      padding: 8px 18px; border-radius: 7px; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .dv2-tab:hover { background: rgba(168,216,234,0.06); color: var(--white); }
+    .dv2-tab.active { background: rgba(168,216,234,0.14); color: var(--ice); }
+    .dv2-tab .live-dot {
+      display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); margin-right: 6px; vertical-align: middle;
+      animation: dv2-pulse 1.8s infinite ease-in-out;
+    }
+    @keyframes dv2-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .dv2-right { display: flex; gap: 8px; align-items: center; }
+    .dv2-auto-pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 14px; font-size: 11px;
+      font-weight: 700; letter-spacing: 1.5px; cursor: pointer;
+      border: 1px solid var(--border);
+    }
+    .dv2-auto-pill.on { background: rgba(34,197,94,0.12); color: var(--green); border-color: rgba(34,197,94,0.4); }
+    .dv2-auto-pill.off { background: rgba(100,116,139,0.12); color: var(--grey); }
+    .dv2-auto-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .dv2-icon-btn {
+      background: none; border: 1px solid var(--border); color: var(--grey);
+      width: 32px; height: 32px; border-radius: 7px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .dv2-icon-btn:hover { background: rgba(168,216,234,0.06); color: var(--white); }
+    .workspace { min-height: calc(100vh - 56px); padding: 32px 24px; }
+    .workspace-empty {
+      max-width: 720px; margin: 80px auto; text-align: center;
+      padding: 48px 32px; background: var(--navy-mid);
+      border: 1px solid var(--border); border-radius: 12px;
+    }
+    .workspace-empty .title {
+      font-size: 24px; font-weight: 700; color: var(--white);
+      letter-spacing: 1px; margin-bottom: 12px;
+    }
+    .workspace-empty .sub { font-size: 14px; color: var(--grey); line-height: 1.6; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1567,6 +1632,29 @@
   <button class="sidebar-signout" onclick="doLogout()">Sign Out</button>
 </aside>
 
+<!-- Dashboard v2 scaffolding (18 May 2026, Batch 1). Hidden by default;
+     activated when body.dashboard-v2 class is set (localStorage
+     glasi_dashboard_v2='v2'). Spec: DASHBOARD_V2_TARGET_SPEC.md. -->
+<header class="dashboard-v2-header" id="dashboard-v2-header">
+  <div class="dv2-brand" onclick="showWorkspace('operations')">GLASI</div>
+  <nav class="dv2-switcher" id="dv2-switcher">
+    <button class="dv2-tab" id="dv2-tab-operations" onclick="showWorkspace('operations')"><span class="live-dot" id="dv2-live-dot" style="display:none;"></span>Operations</button>
+    <button class="dv2-tab" id="dv2-tab-network"    onclick="showWorkspace('network')">Network</button>
+    <button class="dv2-tab" id="dv2-tab-money"      onclick="showWorkspace('money')">Money</button>
+    <button class="dv2-tab" id="dv2-tab-health"     onclick="showWorkspace('health')">Health</button>
+    <button class="dv2-tab" id="dv2-tab-history"    onclick="showWorkspace('history')">History</button>
+  </nav>
+  <div class="dv2-right">
+    <div class="dv2-auto-pill off" id="dv2-auto-pill" onclick="showWorkspace('settings')" title="Auto-dispatch state (manage in Settings)">
+      <span class="dot"></span>
+      <span id="dv2-auto-pill-label">MANUAL</span>
+    </div>
+    <button class="dv2-icon-btn" title="Settings" onclick="showWorkspace('settings')">&#9881;</button>
+    <button class="dv2-icon-btn" title="Account"  onclick="showWorkspace('account')">&#9737;</button>
+    <button class="dv2-icon-btn" title="Sign out" onclick="doLogout()">&#10148;</button>
+  </div>
+</header>
+
 <!-- Recommendation Engine Redesign Phase 2.5: persistent AUTO/MANUAL pill.
      Fixed top-right across all dashboard screens. Display-only per spec;
      Sam navigates to the Auto-dispatch sidebar entry to change state.
@@ -1585,21 +1673,14 @@
     <!-- Worker funnel -->
     <div id="worker-funnel" style="display:flex;gap:24px;margin-top:20px;padding:16px 20px;background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;"></div>
     <div style="margin-top:20px;">
-      <!-- F-28 home is the zero-zones fallback. Cards route via the new
-           sidebar-aware nav functions. -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-        <button class="zone-card" onclick="goToSessionsAudit()" style="text-align:center;">
+      <!-- Pre-v2 cleanup (18 May 2026): Zones card removed (CORE v7 deprecates
+           zones-as-primary). Sessions card target rerouted from the retiring
+           #screen-sessions-audit to the active #screen-sessions sidebar entry. -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <button class="zone-card" onclick="goToSessions()" style="text-align:center;">
           <div class="zone-card-name">Sessions</div>
-          <div class="zone-card-meta">Cross-zone session audit</div>
+          <div class="zone-card-meta">Schedule, live, history</div>
         </button>
-        <button class="zone-card" onclick="goToZonesMgmt()" style="text-align:center;">
-          <div class="zone-card-name">Zones</div>
-          <div class="zone-card-meta">Coverage and postcodes</div>
-        </button>
-      </div>
-
-      <!-- Bottom row: Bars | Workers -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
         <button class="zone-card" onclick="goToBars()" style="text-align:center;">
           <div class="zone-card-name">Bars</div>
           <div class="zone-card-meta">Pipeline, contacts and venues</div>
@@ -2009,19 +2090,9 @@
   </div>
 </div>
 
-<!-- SHIFT DETAIL SCREEN -->
-<div id="screen-shift-detail" class="screen">
-  <div class="history-screen">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
-      <div>
-        <div class="page-title" id="shift-detail-ref"></div>
-        <div class="page-sub" id="shift-detail-sub"></div>
-      </div>
-      <button class="ghost-btn" onclick="goToShifts()">Back to Shifts</button>
-    </div>
-    <div id="shift-detail-body"></div>
-  </div>
-</div>
+<!-- Pre-v2 cleanup (18 May 2026): #screen-shift-detail removed.
+     Pre-F-30 single-shift detail screen. F-30 paired-unit Shifts page
+     (#screen-shifts â†’ #screen-shift-paired) replaced this entirely. -->
 
 <!-- F-37: top-level Sessions screen with three sub-tabs (Schedule, Live,
      History). The legacy zone-detail Sessions sub-tabs are deprecated; this
@@ -2157,20 +2228,11 @@
   </div>
 </div>
 
-<!-- REQUESTS SCREEN -->
-<div id="screen-requests" class="screen">
-  <div class="history-screen">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
-      <div>
-        <div class="page-title">Requests</div>
-        <div class="page-sub">All shift requests and their outcomes</div>
-      </div>
-    </div>
-    <div id="requests-list">
-      <div class="empty">Loading requests...</div>
-    </div>
-  </div>
-</div>
+<!-- Pre-v2 cleanup (18 May 2026): #screen-requests removed (Sam Q-H.3).
+     Standalone all-requests view; no callers in HTML. Per-session request
+     review lives on Sessions â†’ Live + future History session detail
+     Requests tab; aggregate analysis lives on future Health â†’ Engine
+     quality + fill rate. -->
 
 <!-- SESSION REPORT -->
 <div id="screen-report" class="screen">
@@ -2202,214 +2264,24 @@
   </div>
 </div>
 
-<!-- CHAT PARSER SCREEN -->
-<div id="screen-chat-parser" class="screen">
-  <div class="history-screen">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
-      <div>
-        <div class="page-title">Log Session Chat</div>
-        <div class="page-sub">Paste your Zoom chat export to log worker response times</div>
-      </div>
-    </div>
+<!-- Pre-v2 cleanup (18 May 2026): #screen-chat-parser removed (Sam Q-H.1).
+     Zoom chat paste path was the pre-portal mode. Worker portal + Flutter
+     app generate shift_responses directly via authenticated user actions. -->
 
-    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-      <select class="field" id="chat-session-select" style="max-width:300px;margin-bottom:0;">
-        <option value="">Select session to log against...</option>
-      </select>
-      <button class="small-ice-btn" onclick="parseZoomChat()">Parse Chat</button>
-      <button class="ghost-btn" onclick="document.getElementById('chat-input').value=''">Clear</button>
-    </div>
+<!-- Pre-v2 cleanup (18 May 2026): zones-deprecation block removed
+     (Sam Q-H.2 + Q-H.13). CORE v7 deprecates zones-as-primary-architecture.
+     Removed surfaces: #screen-zones-mgmt, #screen-zone-detail (already a
+     stub), #screen-zones, #screen-invite, ov-zone modal. The zones DB
+     table is retained for now per Hard Rule no-DROP without dependency
+     check; the DROP paste-block lands separately after MCP dependency
+     check surfaces clean. -->
 
-    <textarea id="chat-input" class="field" rows="12" placeholder="Paste your Zoom chat export here...&#10;&#10;Format example:&#10;22:14:32 From fran_leach@yahoo.co.uk to Everyone:&#10;&#9;WOOL&#10;22:15:03 From Sam Morrall to Everyone:&#10;&#9;Shift posted..." style="font-family:'JetBrains Mono',monospace;font-size:12px;width:100%;margin-bottom:16px;"></textarea>
 
-    <div id="chat-parse-results" style="display:none;">
-      <div style="font-size:9px;letter-spacing:3px;color:var(--grey);text-transform:uppercase;margin-bottom:16px;">Parsed Results</div>
-      <div id="chat-parse-table"></div>
-      <div style="margin-top:20px;display:flex;gap:10px;">
-        <button class="small-ice-btn" onclick="saveChatData()">Save to Database</button>
-        <button class="ghost-btn" onclick="document.getElementById('chat-parse-results').style.display='none'">Clear Results</button>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- Pre-v2 cleanup (18 May 2026): #screen-session (F-28 zone-scoped Room /
+     On Shift / Shift Log / Zoom Chat) + ov-add-session-worker modal
+     removed. Unreachable per the prior _deprecated_ marker comments;
+     bipartite Live view inside Sessions â†’ Live is the canonical surface. -->
 
-<!-- ZONES MANAGEMENT SCREEN -->
-<div id="screen-zones-mgmt" class="screen">
-  <div class="history-screen">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
-      <div>
-        <div class="page-title">Zones</div>
-        <div class="page-sub">Manage dispatch zones and postcode coverage</div>
-      </div>
-      <button class="small-ice-btn" onclick="openAddZone()">+ Add Zone</button>
-    </div>
-    <div id="zones-mgmt-list"><div class="empty">Loading zones...</div></div>
-  </div>
-</div>
-
-<!-- F-37: legacy zone detail screen retired. Sub-tabs lifted to top-level
-     #screen-sessions; this screen is now unreachable. Empty stub kept to
-     avoid orphaned references in JS (replaced with no-op body). Cleanup in
-     a follow-up pass. -->
-<div id="screen-zone-detail" class="screen">
-  <div class="history-screen">
-    <div class="empty">Zone detail retired (F-37). Use the Sessions screen.</div>
-  </div>
-</div>
-
-<!-- OVERLAY: ADD/EDIT ZONE -->
-<div class="overlay" id="ov-zone">
-  <div class="modal">
-    <div class="modal-title" id="zone-modal-title">Add Zone</div>
-    <label>Zone Name</label>
-    <input class="field" type="text" id="zone-name" placeholder="e.g. Southampton City Centre" />
-    <label>Postcodes (comma separated)</label>
-    <input class="field" type="text" id="zone-postcodes" placeholder="e.g. SO14, SO15" />
-    <div class="modal-actions">
-      <button class="cancel-btn" onclick="closeOv('zone')">Cancel</button>
-      <button class="confirm-btn" onclick="saveZone()">Save Zone</button>
-    </div>
-  </div>
-</div>
-
-<!-- ZONE SELECT (DISPATCH) -->
-<div id="screen-zones" class="screen">
-  <div style="padding:48px 24px;max-width:680px;margin:0 auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <div class="page-title">Select Zone</div>
-      <button class="ghost-btn" onclick="safeNavigate(()=>{showScreen('home');setActiveNav(null);})">Home</button>
-    </div>
-    <div class="page-sub">Choose the zone you are dispatching for tonight</div>
-    <div class="zones-grid" id="zones-grid" style="margin-top:24px;"></div>
-  </div>
-</div>
-
-<!-- INVITE SCREEN -->
-<div id="screen-invite" class="screen">
-  <div style="padding:32px 24px;max-width:900px;margin:0 auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <div class="page-title" id="invite-zone-title"></div>
-      <button class="ghost-btn" onclick="goToZones()">Back</button>
-    </div>
-    <div class="page-sub">Click workers to invite them to tonight's session. Click again to uninvite.</div>
-    <div style="margin-top:24px;">
-      <div class="section-label">Workers in Zone - click to invite</div>
-      <div id="invite-worker-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:28px;"></div>
-      <div class="section-label">Invited (<span id="invite-count">0</span>)</div>
-      <div id="invited-worker-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:28px;"></div>
-      <button class="start-session-btn" onclick="startSession()">Start Session</button>
-    </div>
-  </div>
-</div>
-
-<!-- _deprecated_ (Phase 4 cleanup): the legacy zone-scoped session screen
-     with Room/On Shift/Shift Log/Zoom Chat tabs. F-37 lifted these sub-tabs
-     to top-level #screen-sessions; no `showScreen('session')` call exists
-     anywhere in this file, so the screen is unreachable today. Kept in the
-     DOM during Phase 3 for rollback safety; removed in the Live Dashboard
-     Cleanup Phase 4 follow-up batch. Internal onclick handlers point at
-     _deprecated_ stubs so accidental code-path reuse is loud. -->
-<div id="screen-session" class="screen">
-  <div class="session-tabs">
-    <button class="tab-btn active" onclick="_deprecated_switchTab('room')" id="tab-room">
-      Room <span class="tab-count" id="count-room"></span>
-    </button>
-    <button class="tab-btn" onclick="_deprecated_switchTab('onshift')" id="tab-onshift">
-      On Shift <span class="tab-count show" id="count-onshift">0</span>
-    </button>
-    <button class="tab-btn" onclick="_deprecated_switchTab('log')" id="tab-log">
-      Shift Log <span class="tab-count" id="count-log"></span>
-    </button>
-    <button class="tab-btn" onclick="_deprecated_switchTab('zoom')" id="tab-zoom">
-      Zoom Chat
-    </button>
-    <div style="flex:1;"></div>
-    <div class="session-time" id="session-timer"></div>
-    <button class="close-session-btn" style="margin-left:16px;" onclick="confirmCloseSession()">Close Session</button>
-  </div>
-
-  <div class="session-body">
-    <!-- ROOM TAB -->
-    <div id="tab-content-room" class="room-view">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-        <div>
-          <div class="room-title" id="session-zone-name"></div>
-          <div class="room-meta">Select a request, then select a worker to dispatch</div>
-        </div>
-        <button class="ghost-btn" onclick="_deprecated_openAddWorkerToSession()">+ Add Worker</button>
-      </div>
-      <!-- Request section (legacy template, unreachable) -->
-      <div id="request-section">
-        <div class="req-no-request" id="req-empty-state">
-          <div style="margin-top:12px;font-size:12px;color:var(--grey);">Waiting for a request from a bar manager</div>
-        </div>
-        <div id="request-cards-container" style="display:none;">
-          <div class="request-section-label">Requests</div>
-          <div id="request-cards"></div>
-        </div>
-      </div>
-      <!-- Available workers -->
-      <div id="available-section">
-        <div class="request-section-label" id="workers-label-legacy">Workers in Session</div>
-        <div class="worker-grid" id="worker-grid"></div>
-      </div>
-      <!-- Invited workers -->
-      <div id="invited-section" style="margin-top:24px;">
-        <div class="request-section-label" style="color:var(--amber);">Invited - awaiting confirmation</div>
-        <div class="worker-grid" id="invited-grid"></div>
-      </div>
-      <!-- Live response feed -->
-      <div id="response-feed-section" style="margin-top:24px;display:none;">
-        <div class="request-section-label" style="color:var(--ice);">Live Responses</div>
-        <div id="response-feed" style="display:flex;flex-direction:column;gap:8px;margin-top:8px;"></div>
-      </div>
-    </div>
-
-    <!-- ON SHIFT TAB -->
-    <div id="tab-content-onshift" class="onshift-view" style="display:none;">
-      <div style="margin-bottom:20px;">
-        <div class="page-title" style="font-size:18px;">On Shift</div>
-        <div class="page-sub">Enter the code the worker sends you to confirm arrival</div>
-      </div>
-      <div id="onshift-list"></div>
-    </div>
-
-    <!-- LOG TAB -->
-    <div id="tab-content-log" class="log-view" style="display:none;">
-      <div id="session-event-log" style="padding:8px 0;">
-        <div class="empty">No events logged yet.</div>
-      </div>
-    </div>
-
-    <!-- ZOOM CHAT TAB -->
-    <div id="tab-content-zoom" style="display:none;padding:20px;">
-      <div style="margin-bottom:16px;">
-        <div class="page-title" style="font-size:18px;">Zoom Chat Log</div>
-        <div class="page-sub">Paste the Zoom chat export before closing the session</div>
-      </div>
-      <textarea id="session-chat-input" class="field" rows="14" placeholder="Paste your Zoom chat export here...&#10;&#10;Example format:&#10;22:14:32 From fran_leach@yahoo.co.uk to Everyone:&#10;&#9;WOOL" style="font-family:'JetBrains Mono',monospace;font-size:12px;width:100%;margin-bottom:12px;"></textarea>
-      <div style="display:flex;gap:10px;margin-bottom:20px;">
-        <button class="small-ice-btn" onclick="parseSessionChat()">Parse Chat</button>
-        <button class="ghost-btn" onclick="document.getElementById('session-chat-input').value='';document.getElementById('session-chat-results').style.display='none'">Clear</button>
-      </div>
-      <div id="session-chat-results" style="display:none;padding-bottom:20px;"></div>
-    </div>
-  </div>
-</div>
-
-<!-- OVERLAY: ADD WORKER TO SESSION -->
-<div class="overlay" id="ov-add-session-worker">
-  <div class="modal">
-    <div class="modal-title">Add Worker to Session</div>
-    <div class="modal-sub">Worker will be added as Invited</div>
-    <label>Select Worker</label>
-    <select class="field" id="session-worker-select"></select>
-    <div class="modal-actions">
-      <button class="cancel-btn" onclick="closeOv('add-session-worker')">Cancel</button>
-      <button class="confirm-btn" onclick="_deprecated_addWorkerMidSession()">Add to Session</button>
-    </div>
-  </div>
-</div>
 
 <!-- OVERLAY: INVITE LIST (round 4) -->
 <div class="overlay" id="ov-invite-list">
@@ -2418,7 +2290,7 @@
       <div class="modal-title" id="invite-list-title" style="margin:0;">Invited Workers</div>
       <button class="cancel-btn" onclick="closeOv('invite-list')" style="margin:0;">Close</button>
     </div>
-    <div class="modal-sub" id="invite-list-sub">—</div>
+    <div class="modal-sub" id="invite-list-sub">â€”</div>
     <div id="invite-list-body" style="margin-top:14px;max-height:60vh;overflow-y:auto;">
       <!-- rows injected by renderInviteList() -->
     </div>
@@ -2562,40 +2434,10 @@
   </div>
 </div>
 
-<!-- OVERLAY: REQUEST DETAIL -->
-<div class="overlay" id="ov-request-detail">
-  <div class="modal">
-    <div class="modal-title" id="rd-bar"></div>
-    <div class="modal-sub" id="rd-status"></div>
-    <label>Original Message</label>
-    <div id="rd-message" style="background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;line-height:1.6;color:var(--white);margin-bottom:16px;"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-      <div>
-        <div style="font-size:9px;letter-spacing:2px;color:var(--ice);text-transform:uppercase;margin-bottom:4px;">Request Time</div>
-        <div class="mono" id="rd-request-time" style="font-size:13px;"></div>
-      </div>
-      <div>
-        <div style="font-size:9px;letter-spacing:2px;color:var(--ice);text-transform:uppercase;margin-bottom:4px;">Posted to Zoom</div>
-        <div class="mono" id="rd-posted-time" style="font-size:13px;"></div>
-      </div>
-      <div>
-        <div style="font-size:9px;letter-spacing:2px;color:var(--ice);text-transform:uppercase;margin-bottom:4px;">Shift Length</div>
-        <div class="mono" id="rd-shift-length" style="font-size:13px;"></div>
-      </div>
-      <div>
-        <div style="font-size:9px;letter-spacing:2px;color:var(--ice);text-transform:uppercase;margin-bottom:4px;">Status</div>
-        <div id="rd-status-badge" style="font-size:13px;"></div>
-      </div>
-    </div>
-    <div style="margin-top:8px;padding-top:16px;border-top:1px solid var(--border);">
-      <div class="section-label">Cancellation History</div>
-      <div id="rd-cancellations" style="font-size:12px;"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="confirm-btn" onclick="closeOv('request-detail')">Close</button>
-    </div>
-  </div>
-</div>
+<!-- Pre-v2 cleanup (18 May 2026): ov-request-detail removed.
+     Only caller was showRequestDetail(index) tied to the legacy shifts log
+     (#screen-shift-detail) which is also retired in this batch. -->
+
 
 <!-- OVERLAY: ADD BAR -->
 <div class="overlay" id="ov-add-bar">
@@ -2667,7 +2509,7 @@
 <div class="overlay" id="ov-add-manager">
   <div class="modal" style="max-width:480px;">
     <div class="modal-title">Add PIN-Holder</div>
-    <div class="modal-sub" id="add-manager-bar-name">—</div>
+    <div class="modal-sub" id="add-manager-bar-name">â€”</div>
     <label>Name</label>
     <input class="field" type="text" id="add-mgr-name" placeholder="e.g. Wolf" />
     <label>Initial PIN (4 digits)</label>
@@ -2716,90 +2558,56 @@
   </div>
 </div>
 
-<!-- OVERLAY: DISPATCH STEP 1 - Select Bar -->
-<div class="overlay" id="ov-dispatch-bar">
-  <div class="modal">
-    <div class="modal-title" id="dispatch-worker-name"></div>
-    <div class="modal-sub" id="dispatch-worker-details"></div>
-    <label>Dispatch to which bar?</label>
-    <select class="field" id="dispatch-bar-select"></select>
-    <div class="modal-actions">
-      <button class="cancel-btn" onclick="closeOv('dispatch-bar')">Cancel</button>
-      <button class="confirm-btn" onclick="_deprecated_confirmDispatchBar()">Confirm Dispatch</button>
-    </div>
+<!-- Pre-v2 cleanup (18 May 2026): legacy dispatch + manual log modals
+     removed: ov-dispatch-bar, ov-dispatch-code, ov-log-response, ov-complete.
+     All pre-bipartite / pre-portal manual flows. Replaced by the bipartite
+     view's dispatch + cancel + clock-in / clock-out paths. -->
+
+<!-- Dashboard v2 workspace shells (18 May 2026, Batch 1). Empty scaffolds.
+     Each workspace migration lands content into its shell. Spec:
+     glasi_dashboard/audits/DASHBOARD_V2_TARGET_SPEC.md -->
+<section class="workspace" id="workspace-operations">
+  <div class="workspace-empty">
+    <div class="title">Operations workspace</div>
+    <div class="sub">Live + Schedule sub-views land here in the Operations migration.<br>The bipartite Live view relocates verbatim; Schedule is redesigned per spec.</div>
   </div>
-</div>
-
-<!-- OVERLAY: DISPATCH STEP 2 - Code + Log -->
-<div class="overlay" id="ov-dispatch-code">
-  <div class="modal">
-    <div class="modal-title">Worker Dispatched</div>
-    <div class="modal-sub" id="code-worker-bar"></div>
-
-    <div class="code-display">
-      <div class="code-display-label">Clock In Code</div>
-      <div class="code-display-value" id="code-value"></div>
-    </div>
-
-    <label>ETA (minutes)</label>
-    <input class="field" type="number" id="dispatch-eta" placeholder="e.g. 10" min="1" max="60" style="margin-bottom:16px;" />
-
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
-      <div>
-        <div style="font-size:9px;letter-spacing:2px;color:var(--amber);text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:6px;">Message to Bar Manager</div>
-        <div id="msg-bar-manager" style="background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;line-height:1.6;color:var(--white);white-space:pre-wrap;"></div>
-        <button class="copy-address-btn" style="margin-top:8px;width:100%;" onclick="copyMsg('msg-bar-manager', this)">Copy Bar Manager Message</button>
-      </div>
-      <div>
-        <div style="font-size:9px;letter-spacing:2px;color:var(--ice);text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:6px;">Message to Worker</div>
-        <div id="msg-worker" style="background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;line-height:1.6;color:var(--white);white-space:pre-wrap;"></div>
-        <button class="copy-address-btn" style="margin-top:8px;width:100%;" onclick="copyMsg('msg-worker', this)">Copy Worker Message</button>
-      </div>
-    </div>
-
-    <div class="modal-actions">
-      <button class="confirm-btn" onclick="confirmDispatch()">Confirm Dispatch</button>
-    </div>
+</section>
+<section class="workspace" id="workspace-network">
+  <div class="workspace-empty">
+    <div class="title">Network workspace</div>
+    <div class="sub">Bars + Workers + Pipeline + embedded Documents land here in the Network migration.</div>
   </div>
-</div>
-
-<!-- OVERLAY: LOG WORKER RESPONSE -->
-<div class="overlay" id="ov-log-response">
-  <div class="modal">
-    <div class="modal-title">Log Worker Response</div>
-    <div class="modal-sub" id="response-worker-name"></div>
-    <label>Shift Request</label>
-    <select class="field" id="response-request-select"></select>
-    <label>Response</label>
-    <select class="field" id="response-type">
-      <option value="accepted">Accepted</option>
-      <option value="declined">Declined</option>
-      <option value="ignored">Ignored</option>
-    </select>
-    <label>Response Time (from Zoom chat)</label>
-    <input class="field" type="time" id="response-time" />
-    <div class="modal-actions">
-      <button class="cancel-btn" onclick="closeOv('log-response')">Cancel</button>
-      <button class="confirm-btn" onclick="saveWorkerResponse()">Save Response</button>
-    </div>
+</section>
+<section class="workspace" id="workspace-money">
+  <div class="workspace-empty">
+    <div class="title">Money workspace</div>
+    <div class="sub">Bar billing + Worker payroll + Cashflow land here in the Money migration.</div>
   </div>
-</div>
-
-<!-- OVERLAY: COMPLETE SHIFT -->
-<div class="overlay" id="ov-complete">
-  <div class="modal">
-    <div class="modal-title">Complete Shift</div>
-    <div class="modal-sub" id="complete-worker-info"></div>
-    <label>Clock Out Time (time received from venue)</label>
-    <input class="field" type="time" id="co-time" />
-    <label>Notes</label>
-    <textarea class="field" id="co-notes" rows="3" placeholder="Any feedback from the bar..."></textarea>
-    <div class="modal-actions">
-      <button class="cancel-btn" onclick="closeOv('complete')">Cancel</button>
-      <button class="confirm-btn" onclick="confirmComplete()">Complete Shift</button>
-    </div>
+</section>
+<section class="workspace" id="workspace-health">
+  <div class="workspace-empty">
+    <div class="title">Health workspace</div>
+    <div class="sub">Fill rate + Engine quality + Compliance + Flags &amp; exceptions + Insights land here in the Health migration.</div>
   </div>
-</div>
+</section>
+<section class="workspace" id="workspace-history">
+  <div class="workspace-empty">
+    <div class="title">History workspace</div>
+    <div class="sub">Past sessions table + session detail page (Overview / Requests / Workers / Decisions tabs) land here in the History migration.</div>
+  </div>
+</section>
+<section class="workspace" id="workspace-settings">
+  <div class="workspace-empty">
+    <div class="title">Settings</div>
+    <div class="sub">Account + Engine config (auto-dispatch toggle + decision window + toggle history) + notifications stub. Utility surface from the global header.</div>
+  </div>
+</section>
+<section class="workspace" id="workspace-account">
+  <div class="workspace-empty">
+    <div class="title">Account</div>
+    <div class="sub">User profile + login info + password reset. Utility surface from the global header.</div>
+  </div>
+</section>
 
 <script>
 const SB = "https://hweytbyrqvjsviydmacv.supabase.co";
@@ -2929,13 +2737,19 @@ async function postLoginSetup() {
   // running, otherwise Schedule. liveSessionOps.resumeIfLive() reattaches
   // the live console state to the in-progress session before navigation.
   const restored = await liveSessionOps.resumeIfLive();
+  // Dashboard v2 boot hint (Batch 1): if a session is live, default
+  // workspace becomes Operations (Q-H.8). applyDashboardMode reads this.
+  window._dv2BootLiveSession = !!restored;
   if(restored) {
     showScreen('sessions');
     setActiveNav('sessions');
     switchSessionsTab('live');
+    applyDashboardMode();
     return;
   }
   await goToSessions();
+  // Dashboard v2: apply feature flag after v1 boot lands (no-op when v1).
+  applyDashboardMode();
 }
 
 // F-34: lightweight badge-count fetch (no full inbox load). Used at boot
@@ -2977,6 +2791,9 @@ async function doLogout() {
   showScreen(null);
   setActiveNav(null);
   liveSessionOps.stop();
+  // Dashboard v2: teardown workspace hooks + clear v2 chrome on logout.
+  if(typeof dv2TeardownAll === 'function') dv2TeardownAll();
+  document.body.classList.remove('dashboard-v2');
   currentUser=null;
   activeZone=null; setupWorkers=[]; shifts=[];
 }
@@ -3006,51 +2823,117 @@ function setActiveNav(name) {
   if(name) { const b=document.getElementById(`sidebar-nav-${name}`); if(b) b.classList.add('active'); }
 }
 
-// F-28: sidebar Zones expander + zone child active state + dynamic population.
-function toggleZonesNav() {
-  const childrenEl = document.getElementById('sidebar-zones-children');
-  const chevronEl = document.getElementById('sidebar-zones-chevron');
-  if(!childrenEl || !chevronEl) return;
-  const expanded = childrenEl.classList.toggle('expanded');
-  chevronEl.classList.toggle('expanded', expanded);
+// ====================================================================
+// Dashboard v2 scaffolding (18 May 2026, Batch 1).
+// Workspace switcher + lifecycle contract + feature flag.
+// Hidden by default; enable via dv2Enable() in browser console or by
+// setting localStorage.glasi_dashboard_v2='v2'. Workspace migrations
+// land content into the empty shells; this batch only ships the chrome.
+// Spec: glasi_dashboard/audits/DASHBOARD_V2_TARGET_SPEC.md
+// Audit: glasi_dashboard/audits/DASHBOARD_V2_AUDIT_2026-05-18.md
+// ====================================================================
+const DV2_FLAG_KEY = 'glasi_dashboard_v2';
+const DV2_LAST_WORKSPACE_KEY = 'glasi_dashboard_v2_last_workspace';
+const DV2_OPS_SUBTAB_KEY = 'glasi_ops_default_subtab';
+const DV2_WORKSPACES = ['operations', 'network', 'money', 'health', 'history', 'settings', 'account'];
+const DV2_PRIMARY = ['operations', 'network', 'money', 'health', 'history'];
+
+function getDashboardMode() {
+  try { return localStorage.getItem(DV2_FLAG_KEY) === 'v2' ? 'v2' : 'v1'; }
+  catch(e) { return 'v1'; }
+}
+function setDashboardMode(mode) {
+  try { localStorage.setItem(DV2_FLAG_KEY, mode === 'v2' ? 'v2' : 'v1'); } catch(e) {}
+  applyDashboardMode();
+}
+// Console helpers (Sam: dv2Enable() / dv2Disable() to toggle without UI).
+window.dv2Enable  = () => setDashboardMode('v2');
+window.dv2Disable = () => setDashboardMode('v1');
+window.dv2Status  = () => ({ mode: getDashboardMode(), workspace: dv2CurrentWorkspace });
+
+function applyDashboardMode() {
+  const mode = getDashboardMode();
+  document.body.classList.toggle('dashboard-v2', mode === 'v2');
+  if(mode === 'v2') showWorkspace(getInitialWorkspace());
 }
 
-function expandZonesNav() {
-  document.getElementById('sidebar-zones-children')?.classList.add('expanded');
-  document.getElementById('sidebar-zones-chevron')?.classList.add('expanded');
+// Workspace lifecycle registry. Each workspace registers onEnter / onLeave /
+// onTeardown hooks via dv2RegisterLifecycle(name, hooks). onEnter fires when
+// the workspace becomes active (after onLeave on the prior workspace).
+// onTeardown fires on logout or mode-switch back to v1.
+const dv2Lifecycle = {
+  operations: { onEnter: null, onLeave: null, onTeardown: null },
+  network:    { onEnter: null, onLeave: null, onTeardown: null },
+  money:      { onEnter: null, onLeave: null, onTeardown: null },
+  health:     { onEnter: null, onLeave: null, onTeardown: null },
+  history:    { onEnter: null, onLeave: null, onTeardown: null },
+  settings:   { onEnter: null, onLeave: null, onTeardown: null },
+  account:    { onEnter: null, onLeave: null, onTeardown: null }
+};
+function dv2RegisterLifecycle(name, hooks) {
+  if(!dv2Lifecycle[name]) return;
+  Object.assign(dv2Lifecycle[name], hooks || {});
 }
 
-function setActiveZoneChild(zoneDbId) {
-  document.querySelectorAll('.sidebar-zone-child').forEach(b => b.classList.remove('active'));
-  if(zoneDbId != null) {
-    document.getElementById('sidebar-zone-child-' + zoneDbId)?.classList.add('active');
+let dv2CurrentWorkspace = null;
+
+function showWorkspace(name) {
+  if(!DV2_WORKSPACES.includes(name)) return;
+  if(getDashboardMode() !== 'v2') return; // no-op silently if v2 off
+  if(dv2CurrentWorkspace && dv2Lifecycle[dv2CurrentWorkspace]?.onLeave) {
+    try { dv2Lifecycle[dv2CurrentWorkspace].onLeave(); } catch(e) { console.warn('[dv2] onLeave error', e); }
+  }
+  document.querySelectorAll('.workspace').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.dv2-tab').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('workspace-' + name);
+  if(el) el.classList.add('active');
+  const tabBtn = document.getElementById('dv2-tab-' + name);
+  if(tabBtn) tabBtn.classList.add('active');
+  dv2CurrentWorkspace = name;
+  if(DV2_PRIMARY.includes(name)) {
+    try { localStorage.setItem(DV2_LAST_WORKSPACE_KEY, name); } catch(e) {}
+  }
+  if(dv2Lifecycle[name]?.onEnter) {
+    try { dv2Lifecycle[name].onEnter(); } catch(e) { console.warn('[dv2] onEnter error', e); }
   }
 }
 
-function renderSidebarZones() {
-  const childrenEl = document.getElementById('sidebar-zones-children');
-  if(!childrenEl) return;
-  if(!ZONES.length) {
-    childrenEl.innerHTML = '<div style="font-size:11px;color:var(--grey);padding:6px 12px;font-style:italic;">No zones yet</div>';
-    return;
-  }
-  childrenEl.innerHTML = ZONES.map(z =>
-    `<button class="sidebar-zone-child" id="sidebar-zone-child-${z.dbId}" onclick="goToZoneDetail(${z.dbId})">${z.name}</button>`
-  ).join('');
-}
-
-// F-28: localStorage zone persistence.
-const LAST_ZONE_KEY = 'glasi_dashboard_last_zone';
-
-function rememberLastZone(zoneDbId) {
-  try { localStorage.setItem(LAST_ZONE_KEY, String(zoneDbId)); } catch(e) {}
-}
-
-function getLastZone() {
+// Default workspace on boot (Sam Q-H.8). Caller sets window._dv2BootLiveSession
+// before applyDashboardMode if a live session is restoring.
+function getInitialWorkspace() {
+  if(window._dv2BootLiveSession) return 'operations';
   try {
-    const id = parseInt(localStorage.getItem(LAST_ZONE_KEY) || '', 10);
-    return Number.isFinite(id) ? id : null;
-  } catch(e) { return null; }
+    const last = localStorage.getItem(DV2_LAST_WORKSPACE_KEY);
+    if(last && DV2_PRIMARY.includes(last)) return last;
+  } catch(e) {}
+  return 'operations';
+}
+
+// Live indicator on the Operations tab (Q-H.10). Toggled by liveSessionOps
+// lifecycle. Cheap to call; no-op if dot element absent.
+function dv2SetLiveIndicator(isLive) {
+  const dot = document.getElementById('dv2-live-dot');
+  if(dot) dot.style.display = isLive ? 'inline-block' : 'none';
+}
+
+// AUTO/MANUAL pill in the v2 header. Mirrors the legacy fixed-pill state.
+// Called from refreshAutoDispatchPill so v1 and v2 stay in lockstep.
+function dv2UpdateAutoPill(enabled) {
+  const pill = document.getElementById('dv2-auto-pill');
+  const label = document.getElementById('dv2-auto-pill-label');
+  if(!pill || !label) return;
+  if(enabled) { pill.classList.remove('off'); pill.classList.add('on'); label.textContent = 'AUTO'; }
+  else        { pill.classList.add('off'); pill.classList.remove('on'); label.textContent = 'MANUAL'; }
+}
+
+// Teardown all workspaces on logout / mode-switch.
+function dv2TeardownAll() {
+  for(const name of DV2_WORKSPACES) {
+    if(dv2Lifecycle[name]?.onTeardown) {
+      try { dv2Lifecycle[name].onTeardown(); } catch(e) { console.warn('[dv2] onTeardown error', e); }
+    }
+  }
+  dv2CurrentWorkspace = null;
 }
 
 // F-28: top-level Sessions audit (cross-zone, filterable, read-only).
@@ -3165,340 +3048,19 @@ function goToBilling() {
   setActiveNav('billing');
   switchBillingTab(billingActiveTab || 'shifts');
 }
-function goToAccounting() { return goToBilling(); }
-
 function goToWorkers() {
   showScreen('workers');
   setActiveNav('workers');
   loadWorkers();
 }
 
-function goToChatParser() {
-  showScreen('chat-parser');
-  setActiveNav('chat');
-  loadChatSessionSelect();
-}
+// Pre-v2 cleanup (18 May 2026): chat parser ecosystem removed (Sam Q-H.1).
+// goToChatParser / loadChatSessionSelect / parsedChatData / parseZoomChat /
+// overrideChatMatch / saveChatData / parseSessionChat / saveSessionChatData
+// all retired together with #screen-chat-parser and the dead #screen-session
+// Zoom-chat tab. Worker portal + Flutter app now generate shift_responses
+// directly via authenticated user actions.
 
-async function loadChatSessionSelect() {
-  const sessions = await sbGet('sessions','?order=session_date.desc&select=id,session_date,start_time,zones(name)');
-  const sel = document.getElementById('chat-session-select');
-  sel.innerHTML = '<option value="">Select session to log against...</option>'
-    + sessions.map(s =>
-        '<option value="'+s.id+'">'
-        +(s.zones?.name||'Unknown zone')+' - '
-        +new Date(s.session_date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})
-        +(s.start_time?' '+s.start_time.slice(0,5):'')
-        +'</option>'
-      ).join('');
-}
-
-let parsedChatData = [];
-
-function parseZoomChat() {
-  const raw = document.getElementById('chat-input').value.trim();
-  if(!raw) { alert('Paste your Zoom chat first.'); return; }
-
-  const sessionId = document.getElementById('chat-session-select').value;
-  if(!sessionId) { alert('Select a session first.'); return; }
-
-  // parse lines
-  // format: HH:MM:SS From [sender] to Everyone:
-  //         \t[message]
-  const lines = raw.split('\n');
-  const messages = [];
-  let current = null;
-
-  for(let i=0; i<lines.length; i++) {
-    const line = lines[i];
-    const match = line.match(/^(\d{2}:\d{2}:\d{2})\s+From\s+(.+?)\s+to\s+Everyone:/i);
-    if(match) {
-      current = { time: match[1], sender: match[2].trim(), message: '' };
-      messages.push(current);
-    } else if(current && line.match(/^\t|^    /)) {
-      current.message = line.trim();
-    }
-  }
-
-  if(!messages.length) { alert('Could not parse any messages. Check the format matches Zoom chat export.'); return; }
-
-  // identify shift posts - messages from Sam/dispatcher containing keywords
-  // keywords are typically uppercase short words
-  // shift posts are messages that contain a keyword prompt
-  const keywordPattern = /^[A-Z0-9]{2,8}$/i;
-  const shiftPostPattern = /shift|posted|keyword|accept/i;
-
-  // find all shift posts (from dispatcher)
-  const shiftPosts = messages.filter(m =>
-    (m.sender.toLowerCase().includes('sam') || m.sender.toLowerCase().includes('glasi'))
-    && shiftPostPattern.test(m.message)
-  );
-
-  // find all keywords from workers
-  const workerKeywords = messages.filter(m =>
-    !m.sender.toLowerCase().includes('sam')
-    && !m.sender.toLowerCase().includes('glasi')
-    && keywordPattern.test(m.message)
-  );
-
-  // time to seconds
-  const toSecs = t => {
-    const [h,m,s] = t.split(':').map(Number);
-    return h*3600 + m*60 + s;
-  };
-
-  // match workers to database by email or name
-  const matchWorker = sender => {
-    const sLower = sender.toLowerCase().trim();
-    // try email match first
-    const byEmail = allWorkers.find(w => w.email && w.email.toLowerCase() === sLower);
-    if(byEmail) return byEmail;
-    // try full name match
-    const byName = allWorkers.find(w => w.name && w.name.toLowerCase() === sLower);
-    if(byName) return byName;
-    // try partial name match
-    const byPartial = allWorkers.find(w => w.name && (
-      sLower.includes(w.name.toLowerCase().split(' ')[0]) ||
-      w.name.toLowerCase().includes(sLower.split(' ')[0])
-    ));
-    return byPartial || null;
-  };
-
-  // build per-worker response data
-  const workerData = {};
-
-  // all unique senders except dispatcher
-  const senders = [...new Set(messages
-    .filter(m => !m.sender.toLowerCase().includes('sam') && !m.sender.toLowerCase().includes('glasi'))
-    .map(m => m.sender)
-  )];
-
-  senders.forEach(sender => {
-    const worker = matchWorker(sender);
-    const workerMessages = messages.filter(m => m.sender === sender);
-    const keywords = workerKeywords.filter(m => m.sender === sender);
-
-    // find their check-in response (any keyword before first shift post)
-    const firstShiftPost = shiftPosts.length ? toSecs(shiftPosts[0].time) : null;
-    const checkIn = workerMessages.find(m => toSecs(m.time) < (firstShiftPost || Infinity) && keywordPattern.test(m.message));
-
-    // find their response to each shift post
-    const responses = shiftPosts.map(post => {
-      const postSecs = toSecs(post.time);
-      const response = keywords.find(k => toSecs(k.time) > postSecs && toSecs(k.time) < postSecs + 300);
-      return {
-        postTime: post.time,
-        postMessage: post.message,
-        responseTime: response ? response.time : null,
-        responseSeconds: response ? toSecs(response.time) - postSecs : null
-      };
-    });
-
-    workerData[sender] = {
-      sender,
-      worker,
-      matched: !!worker,
-      messageCount: workerMessages.length,
-      checkIn: checkIn ? checkIn.time : null,
-      responses
-    };
-  });
-
-  parsedChatData = Object.values(workerData);
-
-  // render results
-  const resultsDiv = document.getElementById('chat-parse-results');
-  const tableDiv = document.getElementById('chat-parse-table');
-  resultsDiv.style.display = 'block';
-
-  if(!parsedChatData.length) {
-    tableDiv.innerHTML = '<div class="empty">No worker messages found in the chat.</div>';
-    return;
-  }
-
-  tableDiv.innerHTML = '<table class="history-table"><thead><tr>'
-    +'<th>Zoom Name</th><th>Matched Worker</th><th>Check-in</th><th>Shift Responses</th><th>Override Match</th>'
-    +'</tr></thead><tbody>'
-    +parsedChatData.map((d,i) => {
-      const matchBadge = d.matched
-        ? '<span style="color:var(--green);font-size:11px;">✓ '+d.worker.name+'</span>'
-        : '<span style="color:var(--red);font-size:11px;">No match</span>';
-
-      const responsesSummary = d.responses.map(r =>
-        r.responseSeconds !== null
-          ? '<span style="color:var(--green);font-size:11px;">'+r.responseSeconds+'s</span>'
-          : '<span style="color:var(--grey);font-size:11px;">No response</span>'
-      ).join(' · ') || '-';
-
-      const overrideSelect = '<select class="field" style="max-width:160px;margin-bottom:0;font-size:11px;" onchange="overrideChatMatch('+i+', this.value)">'
-        +'<option value="">Override...</option>'
-        +allWorkers.map(w=>'<option value="'+w.id+'">'+w.name+'</option>').join('')
-        +'</select>';
-
-      return '<tr>'
-        +'<td style="font-family:\'JetBrains Mono\',monospace;font-size:11px;">'+d.sender+'</td>'
-        +'<td>'+matchBadge+'</td>'
-        +'<td><span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;">'+(d.checkIn||'-')+'</span></td>'
-        +'<td>'+responsesSummary+'</td>'
-        +'<td>'+overrideSelect+'</td>'
-        +'</tr>';
-    }).join('')
-    +'</tbody></table>'
-    +'<div style="font-size:11px;color:var(--grey);margin-top:12px;">'+messages.length+' messages parsed · '+parsedChatData.length+' workers found · '+shiftPosts.length+' shift posts detected</div>';
-}
-
-function overrideChatMatch(index, workerId) {
-  const worker = allWorkers.find(w => String(w.id) === String(workerId));
-  if(worker) {
-    parsedChatData[index].worker = worker;
-    parsedChatData[index].matched = true;
-  }
-}
-
-async function saveChatData() {
-  const sessionId = document.getElementById('chat-session-select').value;
-  if(!sessionId) { alert('Select a session first.'); return; }
-
-  const unmatched = parsedChatData.filter(d => !d.matched);
-  if(unmatched.length) {
-    if(!confirm(unmatched.length+' workers could not be matched and will be skipped. Continue?')) return;
-  }
-
-  const matched = parsedChatData.filter(d => d.matched && d.worker);
-  let saved = 0;
-
-  for(const d of matched) {
-    const workerId = d.worker.id;
-
-    // calculate best response time across all shift posts
-    const bestResponse = d.responses.filter(r=>r.responseSeconds!==null)
-      .sort((a,b)=>a.responseSeconds-b.responseSeconds)[0];
-
-    // check if they were a no-show (accepted but no clock in)
-    // we'll just log the response data for now
-    const payload = {
-      session_id: parseInt(sessionId),
-      application_id: workerId,
-      zoom_display_name: d.sender,
-      checked_in: !!d.checkIn,
-      check_in_time: d.checkIn || null,
-      shift_response_seconds: bestResponse ? bestResponse.responseSeconds : null,
-      shift_responded: bestResponse ? true : false,
-      message_count: d.messageCount
-    };
-
-    // upsert to session_chat_log table
-    await sbUpsert('session_chat_log', payload, 'session_id,application_id');
-    saved++;
-  }
-
-  alert(saved+' worker records saved successfully.');
-  document.getElementById('chat-parse-results').style.display = 'none';
-  document.getElementById('chat-input').value = '';
-}
-
-function parseSessionChat() {
-  const raw = document.getElementById('session-chat-input').value.trim();
-  if(!raw) { alert('Paste your Zoom chat first.'); return; }
-  if(!liveSessionOps.sessionId) { alert('No active session found.'); return; }
-
-  const lines = raw.split('\n');
-  const messages = [];
-  let current = null;
-  for(let i=0; i<lines.length; i++) {
-    const line = lines[i];
-    const match = line.match(/^(\d{2}:\d{2}:\d{2})\s+From\s+(.+?)\s+to\s+Everyone:/i);
-    if(match) {
-      current = { time: match[1], sender: match[2].trim(), message: '' };
-      messages.push(current);
-    } else if(current && (line.startsWith('\t') || line.startsWith('    '))) {
-      current.message = line.trim();
-    }
-  }
-
-  if(!messages.length) { alert('Could not parse any messages. Check the format.'); return; }
-
-  const keywordPattern = /^[A-Z0-9]{2,8}$/i;
-  const shiftPostPattern = /shift|posted|keyword|accept/i;
-  const toSecs = t => { const [h,m,s]=t.split(':').map(Number); return h*3600+m*60+s; };
-
-  const shiftPosts = messages.filter(m =>
-    (m.sender.toLowerCase().includes('sam') || m.sender.toLowerCase().includes('glasi'))
-    && shiftPostPattern.test(m.message)
-  );
-
-  const matchWorker = sender => {
-    const sLower = sender.toLowerCase().trim();
-    const byEmail = allWorkers.find(w => w.email && w.email.toLowerCase() === sLower);
-    if(byEmail) return byEmail;
-    const byName = allWorkers.find(w => w.name && w.name.toLowerCase() === sLower);
-    if(byName) return byName;
-    const byPartial = allWorkers.find(w => w.name && (
-      sLower.includes(w.name.toLowerCase().split(' ')[0]) ||
-      w.name.toLowerCase().includes(sLower.split(' ')[0])
-    ));
-    return byPartial || null;
-  };
-
-  const senders = [...new Set(messages
-    .filter(m => !m.sender.toLowerCase().includes('sam') && !m.sender.toLowerCase().includes('glasi'))
-    .map(m => m.sender)
-  )];
-
-  parsedChatData = senders.map(sender => {
-    const worker = matchWorker(sender);
-    const workerMessages = messages.filter(m => m.sender === sender);
-    const keywords = workerMessages.filter(m => keywordPattern.test(m.message));
-    const firstShiftPost = shiftPosts.length ? toSecs(shiftPosts[0].time) : null;
-    const checkIn = workerMessages.find(m => toSecs(m.time) < (firstShiftPost||Infinity) && keywordPattern.test(m.message));
-    const responses = shiftPosts.map(post => {
-      const postSecs = toSecs(post.time);
-      const response = keywords.find(k => toSecs(k.time) > postSecs && toSecs(k.time) < postSecs+300);
-      return { responseSeconds: response ? toSecs(response.time) - postSecs : null };
-    });
-    return { sender, worker, matched: !!worker, messageCount: workerMessages.length, checkIn: checkIn?checkIn.time:null, responses };
-  });
-
-  const resultsDiv = document.getElementById('session-chat-results');
-  resultsDiv.style.display = 'block';
-  resultsDiv.innerHTML = '<div style="font-size:9px;letter-spacing:3px;color:var(--grey);text-transform:uppercase;margin-bottom:12px;">Parsed - '+messages.length+' messages · '+parsedChatData.length+' workers · '+shiftPosts.length+' shift posts</div>'
-    +'<table class="history-table"><thead><tr><th>Zoom Name</th><th>Matched Worker</th><th>Check-in</th><th>Response Time</th><th>Override</th></tr></thead><tbody>'
-    +parsedChatData.map((d,i) => {
-      const bestResp = d.responses.filter(r=>r.responseSeconds!==null).sort((a,b)=>a.responseSeconds-b.responseSeconds)[0];
-      return '<tr>'
-        +'<td style="font-family:\'JetBrains Mono\',monospace;font-size:11px;">'+d.sender+'</td>'
-        +'<td>'+(d.matched?'<span style="color:var(--green);font-size:11px;">✓ '+d.worker.name+'</span>':'<span style="color:var(--red);font-size:11px;">No match</span>')+'</td>'
-        +'<td><span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;">'+(d.checkIn||'-')+'</span></td>'
-        +'<td><span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--green);">'+(bestResp?bestResp.responseSeconds+'s':'-')+'</span></td>'
-        +'<td><select class="field" style="max-width:150px;margin-bottom:0;font-size:11px;" onchange="overrideChatMatch('+i+', this.value)">'
-        +'<option value="">Override...</option>'
-        +allWorkers.map(w=>'<option value="'+w.id+'">'+w.name+'</option>').join('')
-        +'</select></td>'
-        +'</tr>';
-    }).join('')
-    +'</tbody></table>'
-    +'<button class="small-ice-btn" style="margin-top:16px;" onclick="saveSessionChatData()">Save Response Data</button>';
-}
-
-async function saveSessionChatData() {
-  const matched = parsedChatData.filter(d => d.matched && d.worker);
-  const unmatched = parsedChatData.filter(d => !d.matched);
-  if(unmatched.length && !confirm(unmatched.length+' workers unmatched and will be skipped. Continue?')) return;
-
-  for(const d of matched) {
-    const bestResp = d.responses.filter(r=>r.responseSeconds!==null).sort((a,b)=>a.responseSeconds-b.responseSeconds)[0];
-    await sbUpsert('session_chat_log', {
-      session_id: liveSessionOps.sessionId,
-      application_id: d.worker.id,
-      zoom_display_name: d.sender,
-      checked_in: !!d.checkIn,
-      check_in_time: d.checkIn||null,
-      shift_response_seconds: bestResp ? bestResp.responseSeconds : null,
-      shift_responded: !!bestResp,
-      message_count: d.messageCount
-    });
-  }
-  alert(matched.length+' worker records saved.');
-}
 
 function goToReports() {
   showScreen('reports');
@@ -3526,8 +3088,8 @@ async function loadReports() {
       +'<td><span class="mono">'+(r.requests_filled||0)+'/'+(r.requests_total||0)+'</span></td>'
       +'<td><span class="mono">'+(r.avg_response_minutes!=null?r.avg_response_minutes+'m':'-')+'</span></td>'
       +'<td><span class="mono">'+(r.customers_per_hour!=null?r.customers_per_hour:'-')+'</span></td>'
-      +'<td><span class="mono">'+(r.revenue_protected!=null?'£'+parseFloat(r.revenue_protected).toFixed(0):'-')+'</span></td>'
-      +'<td><span class="mono" style="color:var(--green);">'+(r.net_value!=null?'£'+parseFloat(r.net_value).toFixed(0):'-')+'</span></td>'
+      +'<td><span class="mono">'+(r.revenue_protected!=null?'Â£'+parseFloat(r.revenue_protected).toFixed(0):'-')+'</span></td>'
+      +'<td><span class="mono" style="color:var(--green);">'+(r.net_value!=null?'Â£'+parseFloat(r.net_value).toFixed(0):'-')+'</span></td>'
       +'</tr>'
     ).join('')
     +'</tbody></table>';
@@ -3570,7 +3132,7 @@ async function openSavedReport(index) {
 
   const barName = barData?.name || r.bars?.name || 'Unknown venue';
   const date = r.report_date ? new Date(r.report_date).toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '';
-  reportSubtitle.textContent = barName + ' · ' + date;
+  reportSubtitle.textContent = barName + ' Â· ' + date;
 
   // F-34c: load requests for this session, plus the firing manager via the
   // F-26 chain (shift_requests.bar_manager_id -> bar_managers.name).
@@ -3610,7 +3172,7 @@ async function openSavedReport(index) {
       +'<div style="font-size:9px;letter-spacing:3px;color:var(--ice);text-transform:uppercase;margin-bottom:14px;">The Impact</div>'
       +'<p style="margin:0 0 16px;font-size:15px;line-height:1.8;">'+onDutyName+' using Glasi at the right time meant that approximately <strong style="color:var(--white);font-size:18px;">'+(r.customers_per_hour||'-')+' additional customers per hour</strong> had a better experience in your venue. Instead of waiting, they were served quicker and had clear tables to sit at, getting the level of service you strive to deliver.</p>'
       +'<p style="margin:0 0 20px;font-size:15px;line-height:1.8;">As a result, those customers are more likely to come back. That\'s another benefit of using Glasi at the right moment.</p>'
-      +'<p style="margin:0 0 20px;font-size:15px;line-height:1.8;">Over '+r.total_hours+' hours of floor support, this translated to an estimated <strong style="color:var(--green);font-size:18px;">£'+parseFloat(r.revenue_protected).toFixed(0)+' in revenue protected</strong> against a Glasi cost of £'+glasiCost.toFixed(0)+'.</p>'
+      +'<p style="margin:0 0 20px;font-size:15px;line-height:1.8;">Over '+r.total_hours+' hours of floor support, this translated to an estimated <strong style="color:var(--green);font-size:18px;">Â£'+parseFloat(r.revenue_protected).toFixed(0)+' in revenue protected</strong> against a Glasi cost of Â£'+glasiCost.toFixed(0)+'.</p>'
       +'<div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;">'
       +'<div style="font-size:12px;color:var(--grey);margin-bottom:10px;letter-spacing:1px;text-transform:uppercase;">Tonight in numbers</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">'
@@ -3618,8 +3180,8 @@ async function openSavedReport(index) {
       +'<div style="color:var(--grey);">Response time</div><div style="'+monoStyle+'">'+(r.avg_response_minutes!=null?r.avg_response_minutes+' minutes':'-')+'</div>'
       +'<div style="color:var(--grey);">Floor support</div><div style="'+monoStyle+'">'+r.total_hours+' hours</div>'
       +'<div style="color:var(--grey);">Customers per hour</div><div style="'+monoStyle+'">'+(r.customers_per_hour||'-')+' additional</div>'
-      +'<div style="color:var(--grey);">Revenue protected</div><div style="color:var(--green);'+monoStyle+'">£'+parseFloat(r.revenue_protected).toFixed(0)+'</div>'
-      +'<div style="color:var(--grey);">Glasi cost</div><div style="'+monoStyle+'">£'+glasiCost.toFixed(0)+'</div>'
+      +'<div style="color:var(--grey);">Revenue protected</div><div style="color:var(--green);'+monoStyle+'">Â£'+parseFloat(r.revenue_protected).toFixed(0)+'</div>'
+      +'<div style="color:var(--grey);">Glasi cost</div><div style="'+monoStyle+'">Â£'+glasiCost.toFixed(0)+'</div>'
       +'</div></div></div>';
   }
 
@@ -3639,11 +3201,6 @@ async function openSavedReport(index) {
     +'</div>';
 }
 
-function goToRequests() {
-  showScreen('requests');
-  setActiveNav('requests');
-  loadRequestsHistory();
-}
 
 // WORKERS (F-35 Phase 3: four-stage lifecycle sub-tabs + sub-tab-aware edit overlay)
 let allWorkersData = [];
@@ -3838,7 +3395,7 @@ function buildReadonlyHeader(w) {
   if(status === 'onboarded') {
     rows += ewRow('Onboarded',     w.onboarded_at ? fmtDate(w.onboarded_at) : 'not tracked');
     rows += ewRow('Full address',  w.full_address || '');
-    rows += ewRow('Tier',          'Tier '+(w.tier||1)+' (£'+(w.hourly_rate||tierRate(w.tier)).toFixed(2)+'/hr)');
+    rows += ewRow('Tier',          'Tier '+(w.tier||1)+' (Â£'+(w.hourly_rate||tierRate(w.tier)).toFixed(2)+'/hr)');
     rows += ewRow('Shifts',        String(w._shiftsCompleted||0));
     rows += ewRow('Reliability',   w.reliability_score != null ? parseFloat(w.reliability_score).toFixed(1)+'%' : 'No data');
     rows += ewRow('Total points',  String(w.total_points||0));
@@ -4014,25 +3571,6 @@ async function markOnboarded() {
 }
 
 // ZONES
-async function loadZones() {
-  const data = await sbGet('zones', '?order=name.asc&select=id,name,postcodes');
-  ZONES = data.map(z => ({
-    id: 'zone-'+z.id,
-    dbId: z.id,
-    name: z.name,
-    postcodes: z.postcodes || [],
-    meta: (z.postcodes||[]).join(', ')
-  }));
-}
-
-function renderZones() {
-  const grid = document.getElementById('zones-grid');
-  if(!ZONES.length) { grid.innerHTML = '<div class="empty">No zones set up yet. Add a zone to get started.</div>'; return; }
-  grid.innerHTML = ZONES.map(z =>
-    '<button class="zone-card" onclick="selectZone(\''+z.id+'\')">'+
-    '<div class="zone-card-name">'+z.name+'</div>'+
-    '<div class="zone-card-meta">'+z.meta+'</div>'+
-    '</button>'
   ).join('');
 }
 
@@ -4244,323 +3782,8 @@ async function loadAllWorkers() {
   allWorkers = await sbGet('applications','?active=not.eq.false&order=name.asc&select=id,name,phone,postcode_full,email,tier,hourly_rate,reliability_score,available_hours,worker_status');
 }
 
-async function selectZone(id) {
-  activeZone = ZONES.find(z => z.id === id);
-  document.getElementById('invite-zone-title').textContent = activeZone.name;
-  setupWorkers = [];
-  await loadAllWorkers();
-  renderInviteGrid();
-  showScreen('invite');
-}
-
-function goToZones() {
-  setupWorkers = [];
-  showScreen('zones');
-  renderZones();
-  setActiveNav('dispatch');
-}
-
-function goToZonesMgmt() {
-  showScreen('zones-mgmt');
-  setActiveNav('zones');
-  loadZonesMgmt();
-}
-
-async function loadZonesMgmt() {
-  await loadZones();
-  renderZonesMgmt();
-}
-
-async function loadZonesMgmt() {
-  await loadZones();
-  if(!bars.length) {
-    const result = await sbGet('bars','?order=name.asc&select=id,name,address,zone_id,status,google_maps_link,notes');
-    bars = Array.isArray(result) ? result : [];
-  }
-  renderZonesMgmt();
-}
-
-function renderZonesMgmt() {
-  const list = document.getElementById('zones-mgmt-list');
-  if(!ZONES.length) { list.innerHTML = '<div class="empty">No zones yet. Add one to get started.</div>'; return; }
-  list.innerHTML = '<table class="history-table"><thead><tr><th>Zone</th><th>Postcodes</th><th>Bars</th><th>Workers</th><th></th></tr></thead><tbody>'
-    + ZONES.map(z => {
-      const barCount = bars.filter(b=>String(b.zone_id)===String(z.dbId)).length;
-      const workerCount = allWorkers.filter(w=>{
-        if(!w.postcode_full) return false;
-        if(w.worker_status !== 'onboarded') return false;
-        const pc = w.postcode_full.trim().toUpperCase();
-        return (z.postcodes||[]).some(p=>pc.startsWith(p));
-      }).length;
-      return '<tr style="cursor:pointer;" onclick="goToZoneDetail(\''+z.id+'\')">'
-        +'<td style="font-weight:500;">'+z.name+'</td>'
-        +'<td><span class="mono">'+(z.postcodes||[]).join(', ')+'</span></td>'
-        +'<td><span class="mono">'+barCount+'</span></td>'
-        +'<td><span class="mono">'+workerCount+'</span></td>'
-        +'<td><button class="ghost-btn" onclick="event.stopPropagation();openEditZone('+z.dbId+')">Edit</button></td>'
-        +'</tr>';
-    }).join('')
-    +'</tbody></table>';
-}
-
-let currentZoneDetail = null;
-
-// F-28 Option B: zone overview rendering extracted into its own function.
-// Renders bars list + workers list into the #zone-overview-section inside
-// the Schedule sub-tab. Called from goToZoneDetail after the sub-tab DOM is
-// in place; the new goToZoneDetail no longer overwrites #zone-detail-body.
-// F-28 amendment (4 May 2026): the availability banner that previously sat
-// above the bars list was removed as redundant with the per-worker Tonight
-// column on the workers table below.
-async function renderZoneOverview(z) {
-  const overviewEl = document.getElementById('zone-overview-section');
-  if(!overviewEl) return;
-  overviewEl.innerHTML = '<div class="empty">Loading...</div>';
-
-  // load bars and workers for this zone (cached at app boot; refresh if empty)
-  if(!bars.length) {
-    const result = await sbGet('bars','?order=name.asc&select=id,name,address,zone_id,status,google_maps_link,notes');
-    bars = Array.isArray(result) ? result : [];
-  }
-  if(!allWorkers.length) await loadAllWorkers();
-
-  const zoneBars = bars.filter(b=>String(b.zone_id)===String(z.dbId));
-  const zoneWorkers = allWorkers.filter(w=>{
-    if(!w.postcode_full) return false;
-    if(w.worker_status !== 'onboarded') return false;
-    const pc = w.postcode_full.trim().toUpperCase();
-    return (z.postcodes||[]).some(p=>pc.startsWith(p));
-  });
-
-  // work out current availability slot using London timezone (used by the
-  // workers table's Tonight column only; banner removed)
-  const now = new Date();
-  const londonTime = new Date(now.toLocaleString('en-US', {timeZone:'Europe/London'}));
-  const days = ['sun','mon','tue','wed','thu','fri','sat'];
-  const dayStr = days[londonTime.getDay()];
-  const hour = londonTime.getHours();
-  let slot = null;
-  if(hour >= 18) slot = dayStr+'_18_00';
-  else if(hour >= 12) slot = dayStr+'_12_18';
-
-  const tonightSlot = dayStr+'_18_00';
-
-  const isWorkerAvailableNow = w => slot && w.available_hours && w.available_hours.includes(slot);
-  const isWorkerAvailableTonight = w => w.available_hours && w.available_hours.includes(tonightSlot);
-  const isWorkerAvailableTonightAny = w => w.available_hours && (
-    w.available_hours.includes(dayStr+'_12_18') ||
-    w.available_hours.includes(dayStr+'_18_00') ||
-    w.available_hours.includes(dayStr+'_12_16') ||
-    w.available_hours.includes(dayStr+'_16_20') ||
-    w.available_hours.includes(dayStr+'_20_00')
-  );
-
-  const availableTonight = zoneWorkers.filter(isWorkerAvailableTonight);
-
-  const barsHtml = '<div style="margin-bottom:28px;">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
-    +'<div class="section-label">Bars in this zone ('+zoneBars.length+')</div>'
-    +'</div>'
-    +(zoneBars.length
-      ? '<table class="history-table"><thead><tr><th>Name</th><th>Address</th><th>Status</th></tr></thead><tbody>'
-        +zoneBars.map(b=>'<tr style="cursor:pointer;" onclick="goToBar('+b.id+')">'
-          +'<td style="font-weight:500;">'+b.name+'</td>'
-          +'<td style="font-size:12px;color:var(--grey);">'+(b.address||'')+'</td>'
-          +'<td><span class="status-badge badge-'+(b.status||'prospect')+'">'+(b.status||'prospect')+'</span></td>'
-          +'</tr>'
-        ).join('')
-        +'</tbody></table>'
-      : '<div style="font-size:13px;color:var(--grey);padding:16px;background:var(--navy-mid);border-radius:10px;">No bars in this zone yet. To add a bar, go to the Bars screen and select <strong>'+z.name+'</strong> as the zone when adding.</div>'
-    )
-    +'</div>';
-
-  const workersHtml = '<div>'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
-    +'<div class="section-label">Workers in this zone ('+zoneWorkers.length+'), '+availableTonight.length+' available tonight</div>'
-    +'</div>'
-    +(zoneWorkers.length
-      ? '<table class="history-table"><thead><tr><th>Name</th><th>Postcode</th><th>Tier</th><th>Score</th><th>Tonight</th></tr></thead><tbody>'
-        +zoneWorkers.map(w=>{
-          const availTonight = isWorkerAvailableTonight(w);
-          const availTonightAny = isWorkerAvailableTonightAny(w);
-          const availNow = isWorkerAvailableNow(w);
-          const tonightLabel = availNow ? 'Now' : availTonight ? '6pm+' : availTonightAny ? '12-6pm' : null;
-          return '<tr style="cursor:pointer;'+(availTonightAny?'':'opacity:0.5;')+'" onclick="goToWorker('+w.id+')">'
-            +'<td style="font-weight:500;">'+w.name+'</td>'
-            +'<td><span class="mono">'+(w.postcode_full||'')+'</span></td>'
-            +'<td><span class="status-badge badge-pending">Tier '+(w.tier||1)+'</span></td>'
-            +'<td>'+(w.reliability_score!=null?scorebadge(w.reliability_score):'<span style="color:var(--grey);font-size:11px;">No data</span>')+'</td>'
-            +'<td>'+(tonightLabel?'<span style="color:var(--green);font-size:12px;">'+tonightLabel+'</span>':'<span style="color:var(--grey);font-size:12px;">Not set</span>')+'</td>'
-            +'</tr>';
-        }).join('')
-        +'</tbody></table>'
-      : '<div style="font-size:13px;color:var(--grey);padding:16px;background:var(--navy-mid);border-radius:10px;">No workers matched to this zone yet. Workers are matched automatically by postcode. Zone postcodes: <strong>'+(z.postcodes||[]).join(', ')+'</strong></div>'
-    )
-    +'</div>';
-
-  overviewEl.innerHTML = barsHtml + workersHtml;
-}
-
-async function goToZoneDetail(zoneId) {
-  // F-28: zoneId may arrive as a string ('zone-1') from the legacy zones-mgmt
-  // table or as a number (1) from the sidebar zone children. Resolve to a
-  // ZONES entry by both keys.
-  const z = ZONES.find(x => x.id === zoneId || x.dbId === Number(zoneId));
-  if(!z) return;
-  currentZoneDetail = z;
-
-  showScreen('zone-detail');
-  setActiveNav('zones');
-  expandZonesNav();
-  setActiveZoneChild(z.dbId);
-  rememberLastZone(z.dbId);
-
-  document.getElementById('zone-detail-name').textContent = z.name;
-  document.getElementById('zone-detail-postcodes').textContent = 'Postcodes: '+(z.postcodes||[]).join(', ');
-
-  // F-28 Option B: render the zone overview into the Schedule sub-tab top
-  // section. Run async; sub-tab default-selection logic doesn't wait on it.
-  renderZoneOverview(z);
-
-  // REFINEMENT 1: query DB directly for live session in this zone — don't
-  // rely on the activeZone in-memory global (only set during goLiveSession).
-  let liveForZone = false;
-  try {
-    const liveSessionRows = await sbGet('sessions', '?zone_id=eq.' + z.dbId + '&status=eq.live&select=id&limit=1');
-    liveForZone = Array.isArray(liveSessionRows) && liveSessionRows.length > 0;
-  } catch(e) { /* default Schedule on error */ }
-
-  if(liveForZone) {
-    switchSessionsTab('live');
-  } else {
-    switchSessionsTab('schedule');
-    await loadSessionsList(z.dbId);
-  }
-}
-
-let editingZoneId = null;
-
-function openAddZone() {
-  editingZoneId = null;
-  document.getElementById('zone-modal-title').textContent = 'Add Zone';
-  document.getElementById('zone-name').value = '';
-  document.getElementById('zone-postcodes').value = '';
-  openOv('zone');
-}
-
-function openEditZone(dbId) {
-  const z = ZONES.find(x => x.dbId === dbId);
-  if(!z) return;
-  editingZoneId = dbId;
-  document.getElementById('zone-modal-title').textContent = 'Edit Zone';
-  document.getElementById('zone-name').value = z.name;
-  document.getElementById('zone-postcodes').value = (z.postcodes||[]).join(', ');
-  openOv('zone');
-}
-
-async function saveZone() {
-  const name = document.getElementById('zone-name').value.trim();
-  const postcodesRaw = document.getElementById('zone-postcodes').value;
-  const postcodes = postcodesRaw.split(',').map(p=>p.trim().toUpperCase()).filter(Boolean);
-  if(!name) { alert('Please enter a zone name.'); return; }
-  if(editingZoneId) {
-    await sbPatch('zones', '?id=eq.'+editingZoneId, { name, postcodes });
-  } else {
-    await sbPost('zones', { name, postcodes });
-  }
-  closeOv('zone');
-  await loadZonesMgmt();
-  renderZones();
-  // F-28: refresh sidebar zone children on add/edit so the new zone is
-  // immediately clickable from the sidebar.
-  renderSidebarZones();
-}
-
-function renderInviteGrid() {
-  const zonePostcodes=activeZone?.postcodes||[];
-  const zoneWorkers=allWorkers.filter(w=>{
-    if(!w.postcode_full) return false;
-    if(w.worker_status !== 'onboarded') return false;
-    const pc=w.postcode_full.trim().toUpperCase();
-    return zonePostcodes.some(p=>pc.startsWith(p));
-  });
-
-  const uninvited=zoneWorkers.filter(w=>!setupWorkers.find(s=>s.email===w.email));
-  const invited=setupWorkers;
-
-  document.getElementById('invite-count').textContent=invited.length;
-
-  const grid=document.getElementById('invite-worker-grid');
-  if(!uninvited.length) {
-    grid.innerHTML='<div style="color:var(--grey);font-size:13px;">All zone workers invited.</div>';
-  } else {
-    grid.innerHTML=uninvited.map(w=>
-      '<div class="invite-worker-card" onclick="toggleInvite(\''+w.email+'\', true)">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
-      +'<div class="invite-worker-name">'+w.name+'</div>'
-      +(w.reliability_score!=null?scorebadge(w.reliability_score):'')
-      +'</div>'
-      +'<div class="invite-worker-meta">'+(w.phone||'')+' · '+(w.postcode_full||'')+'</div>'
-      +'</div>'
-    ).join('');
-  }
-
-  const invList=document.getElementById('invited-worker-list');
-  if(!invited.length) {
-    invList.innerHTML='<div style="color:var(--grey);font-size:13px;grid-column:1/-1;">No workers invited yet. Click workers above to invite.</div>';
-  } else {
-    invList.innerHTML=invited.map(w=>
-      '<div class="invite-worker-card invited" onclick="toggleInvite(\''+w.email+'\', false)">'
-      +'<div class="invite-worker-name">'+w.name+' <span style="font-size:10px;color:var(--amber);">✓ Invited</span></div>'
-      +'<div class="invite-worker-meta">'+(w.phone||'')+' · '+(w.postcode_full||'')+'</div>'
-      +'</div>'
-    ).join('');
-  }
-}
-
-function toggleInvite(email, invite) {
-  if(invite) {
-    const w=allWorkers.find(x=>x.email===email);
-    if(w && !setupWorkers.find(s=>s.email===email)) setupWorkers.push(w);
-  } else {
-    setupWorkers=setupWorkers.filter(w=>w.email!==email);
-  }
-  renderInviteGrid();
-}
-
-// F-37: legacy zone-based session creation retired. The only path that creates
-// sessions or session_bars rows is the schedule_session_with_bars RPC invoked
-// by createScheduledSession() on the new Sessions screen. This function is
-// kept as a guarded stub so any orphaned caller surfaces clearly.
-async function startSession() {
-  alert('Legacy zone-based session start is retired (F-37). Schedule a session from the Sessions screen using the bar-set picker.');
-}
-
-function startTimer() {
-  clearInterval(sessionTimerInterval);
-  sessionTimerInterval=setInterval(()=>{
-    const diff=Math.floor((new Date()-sessionStartTime)/1000);
-    const h=Math.floor(diff/3600);
-    const m=Math.floor((diff%3600)/60);
-    const s=diff%60;
-    document.getElementById('session-timer').textContent=
-      `Session: ${h>0?h+'h ':''}`+
-      `${String(m).padStart(2,'0')}m `+
-      `${String(s).padStart(2,'0')}s`;
-  },1000);
-}
-
-// TABS
-// _deprecated_ (Phase 4 cleanup): callers live only in the unreachable
-// #screen-session legacy markup. Renamed to make accidental reuse loud.
-function _deprecated_switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById(`tab-${name}`).classList.add('active');
-  document.querySelectorAll('[id^=tab-content-]').forEach(c=>c.style.display='none');
-  document.getElementById(`tab-content-${name}`).style.display='block';
-  if(name==='log') renderLog();
-  if(name==='onshift') renderOnShift();
-}
+// Pre-v2 cleanup (18 May 2026): selectZone retired with the rest of the
+// zones-dispatch flow (#screen-zones, #screen-invite, renderInviteGrid).
 
 // BARS
 let bars = [];
@@ -4729,7 +3952,7 @@ async function renderBarManagersList(barId) {
     return;
   }
 
-  // Email lookup via auth.users — one query for all auth_user_ids on this bar.
+  // Email lookup via auth.users â€” one query for all auth_user_ids on this bar.
   const authIds = [...new Set(managers.map(m => m.auth_user_id))].filter(Boolean);
   let emailByAuthId = {};
   if(authIds.length) {
@@ -4739,7 +3962,7 @@ async function renderBarManagersList(barId) {
       const idsQuery = authIds.map(id => 'id.eq.' + id).join(',');
       const users = await sbGet('users', '?or=(' + idsQuery + ')&select=id,email') || [];
       users.forEach(u => { emailByAuthId[u.id] = u.email; });
-    } catch(e) { /* email column will display as '—' */ }
+    } catch(e) { /* email column will display as 'â€”' */ }
   }
 
   listEl.innerHTML = managers.map(m => {
@@ -5114,7 +4337,7 @@ const liveSessionOps = {
     // DB after realtime subs are registered. Without this, liveSessionOps.workers
     // stays empty across the session lifetime, and `pendingInRangeFor(worker)`
     // (the render helper that draws response cells) iterates over zero workers
-    // — meaning no shift_response can ever surface in the live console, even
+    // â€” meaning no shift_response can ever surface in the live console, even
     // though the response:new realtime event fires and lands in
     // liveSessionResponses correctly. SEC-N9 pattern: subs first, bootstrap
     // after (handlers are idempotent against the race window).
@@ -5137,11 +4360,15 @@ const liveSessionOps = {
     }
 
     this.emit('session:started', { sessionId });
+    // Dashboard v2: light the Operations tab live indicator.
+    if(typeof dv2SetLiveIndicator === 'function') dv2SetLiveIndicator(true);
   },
 
   async stop() {
     // Phase 3 Batch 6: tear down engagement timeline realtime first.
     stopEngagementTimelineRealtime();
+    // Dashboard v2: clear the Operations tab live indicator.
+    if(typeof dv2SetLiveIndicator === 'function') dv2SetLiveIndicator(false);
     for(const sub of this._subs) {
       if(sub.retryTimer) { clearTimeout(sub.retryTimer); sub.retryTimer = null; }
       try { sub.ws?.close(); } catch(e) {}
@@ -5161,7 +4388,7 @@ const liveSessionOps = {
     this.requests.length = 0;
     this.invites.length = 0; // round 4: clear invites cache on session end
     this._dirty.clear();
-    // Round 4: close the invite-list modal if open — stale data when session ends.
+    // Round 4: close the invite-list modal if open â€” stale data when session ends.
     if(typeof isInviteModalOpen === 'function' && isInviteModalOpen()) closeOv('invite-list');
     const wasSessionId = this.sessionId;
     this.sessionId = null;
@@ -5464,7 +4691,7 @@ function computeRequestPill(r, sw) {
     // whose session_workers.status='completed' but whose clockOutAt happens
     // to be null in the cache (e.g., stale boot path) still renders as
     // Completed rather than falling into the (clockInAt && !clockOutAt)
-    // → 'On Shift' short-circuit.
+    // â†’ 'On Shift' short-circuit.
     if(sw.status === 'completed' || sw.clockOutAt) {
       return { slug: 'completed', label: 'Completed' };
     }
@@ -5545,7 +4772,7 @@ function renderInviteList() {
     const lastSentStr = formatInviteTime(inv.last_invite_sent_at);
     const showReinvite = status !== 'declined';
 
-    const metaParts = [app.postcode_full || '', app.email || '', app.phone || ''].filter(Boolean).join(' · ');
+    const metaParts = [app.postcode_full || '', app.email || '', app.phone || ''].filter(Boolean).join(' Â· ');
 
     return ''
       + '<div class="invite-row" id="invite-row-' + inv.id + '">'
@@ -5557,9 +4784,9 @@ function renderInviteList() {
       +     '<span class="invite-row-status-pill ' + statusClass + '">' + statusLabel + '</span>'
       +   '</div>'
       +   '<div class="invite-row-times">'
-      +     '<div><span class="invite-row-times-label">Invited:</span> <span class="invite-row-times-value">' + (invitedAtStr || '—') + '</span></div>'
+      +     '<div><span class="invite-row-times-label">Invited:</span> <span class="invite-row-times-value">' + (invitedAtStr || 'â€”') + '</span></div>'
       +     (respondedLabel
-            ? '<div><span class="invite-row-times-label">' + respondedLabel + ':</span> <span class="invite-row-times-value">' + (respondedAtStr || '—') + '</span></div>'
+            ? '<div><span class="invite-row-times-label">' + respondedLabel + ':</span> <span class="invite-row-times-value">' + (respondedAtStr || 'â€”') + '</span></div>'
             : '')
       +     (lastSentStr
             ? '<div><span class="invite-row-times-label">Last sent:</span> <span class="invite-row-times-value">' + lastSentStr + '</span></div>'
@@ -5607,7 +4834,7 @@ async function reInviteWorker(sessionInviteId) {
 
     const hhmm = new Date(nowIso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
     if(btn) {
-      btn.textContent = 'Re-invited ✓ ' + hhmm;
+      btn.textContent = 'Re-invited âœ“ ' + hhmm;
       btn.classList.add('is-success');
       btn.disabled = true;
     }
@@ -5800,7 +5027,7 @@ function renderEngagementTimelineList() {
     } else if(ev.kind === 'forfeit') {
       kindLabel = 'Basket forfeit';
       kindClass = 'etp-event-forfeit';
-      amountSpan = '<span class="etp-event-amount" style="color:var(--red);">−' + ev.amount + ' forfeited</span>';
+      amountSpan = '<span class="etp-event-amount" style="color:var(--red);">âˆ’' + ev.amount + ' forfeited</span>';
     } else if(ev.kind === 'tier_promoted') {
       kindLabel = 'Tier promotion';
       kindClass = 'etp-event-tier-promoted';
@@ -5929,12 +5156,12 @@ function renderRoom() {
   // Round 6: cells architecture. One mini-cell per active in-range pending
   // request for this worker. Cells wrap horizontally; identity zone on the
   // right side. Replaces round 5 Fix 2/4/5/6 vertical state-row + idle marker
-  // model — that model didn't scale to the multi-bar reality where a worker
+  // model â€” that model didn't scale to the multi-bar reality where a worker
   // can have 5-10 concurrent requests in flight.
   //
   // Cell content: #{barId} top, state middle (timer / DISPATCH / "Unavail."),
   // response time micro-label bottom (when responded available).
-  // Tooltip via native title attr: "{Bar Name} · {N}hr shift · posted Xm ago".
+  // Tooltip via native title attr: "{Bar Name} Â· {N}hr shift Â· posted Xm ago".
   // Pre-response cells tick down via cell-timer-${appId}-${reqId} target.
   function renderCell(worker, entry) {
     const appId = Number(worker.applicationId);
@@ -5944,7 +5171,7 @@ function renderRoom() {
     const shiftLen = parseFloat(entry.req.shift_length_hours || 0);
     const postedAtMs = entry.req.posted_at ? new Date(entry.req.posted_at).getTime() : Date.now();
     const postedMinAgo = Math.max(0, Math.floor((Date.now() - postedAtMs) / 60000));
-    const tooltip = (barName + ' · ' + shiftLen + 'hr shift · posted ' + postedMinAgo + 'm ago').replace(/"/g, '&quot;');
+    const tooltip = (barName + ' Â· ' + shiftLen + 'hr shift Â· posted ' + postedMinAgo + 'm ago').replace(/"/g, '&quot;');
 
     const elapsedSecs = Math.floor((Date.now() - postedAtMs) / 1000);
     const windowSecs = (30 - entry.mins) * 60;
@@ -5960,7 +5187,7 @@ function renderRoom() {
         stateInner = '<button class="wc-cell-dispatch" onclick="event.stopPropagation();dispatchWorker(' + appId + ',' + reqId + ')">DISPATCH</button>';
         metaInner = (entry.response.response_seconds != null) ? (entry.response.response_seconds + 's') : '';
       } else {
-        // pass / no_response → unavailable, no action
+        // pass / no_response â†’ unavailable, no action
         stateClass = 'is-unavailable';
         stateInner = '<span class="wc-cell-unavail">Unavail.</span>';
       }
@@ -5991,7 +5218,7 @@ function renderRoom() {
       const selectedClass=isSelected?' worker-selected':'';
       const tier = w.tier != null ? 'T' + w.tier : '';
       const rel = w.reliability_score != null ? Math.round(w.reliability_score) + '%' : '';
-      const metaParts = [w.postcode_full || '', tier, rel].filter(Boolean).join(' · ');
+      const metaParts = [w.postcode_full || '', tier, rel].filter(Boolean).join(' Â· ');
       const cells = pendingInRangeFor(w).map(entry => renderCell(w, entry)).join('');
       const cellsContent = cells || '<div class="wc-cells-empty">No requests yet</div>';
       return '<div class="worker-card '+w.status+selectedClass+'" id="wc-'+w.id+'" onclick="selectWorker(\''+w.id+'\')">'+
@@ -6013,7 +5240,7 @@ function renderRoom() {
     invitedSection.style.display='block';
     invitedGrid.innerHTML=invited.map(w=>{
       const tier = w.tier != null ? 'T' + w.tier : '';
-      const metaParts = [w.postcode_full || '', tier].filter(Boolean).join(' · ');
+      const metaParts = [w.postcode_full || '', tier].filter(Boolean).join(' Â· ');
       return '<div class="worker-card" style="border-color:var(--amber);opacity:0.8;" id="wc-'+w.id+'">'+
         '<div class="wc-status-dot" style="background:var(--amber);"></div>'+
         '<div class="wc-left">'+
@@ -6027,7 +5254,7 @@ function renderRoom() {
     }).join('');
   }
 
-  // SEC-N10 (14 May 2026): Completed section — surfaces workers who clocked
+  // SEC-N10 (14 May 2026): Completed section â€” surfaces workers who clocked
   // out during this session. Without this panel, completed workers vanish
   // from the live console entirely (worker.status='completed' is excluded
   // from the in_session and invited filters, and shift_requests cascading
@@ -6053,10 +5280,10 @@ function renderRoom() {
 function renderCompletedCard(w) {
   const tier = w.tier != null ? 'T' + w.tier : '';
   const barName = w.bar || (w.barRecord && w.barRecord.name) || (bars && bars.find(b => b.id === w.bar_id)?.name) || '';
-  const refLabel = w.gsRef ? (' · ' + w.gsRef) : '';
+  const refLabel = w.gsRef ? (' Â· ' + w.gsRef) : '';
   const metaTop = [barName, refLabel].filter(Boolean).join('');
-  const clockInFmt = w.clockInAt ? fmtHm(w.clockInAt) : '—';
-  const clockOutFmt = w.clockOutAt ? fmtHm(w.clockOutAt) : '—';
+  const clockInFmt = w.clockInAt ? fmtHm(w.clockInAt) : 'â€”';
+  const clockOutFmt = w.clockOutAt ? fmtHm(w.clockOutAt) : 'â€”';
   let hoursStr = '';
   if(w.clockInAt && w.clockOutAt) {
     const ms = new Date(w.clockOutAt).getTime() - new Date(w.clockInAt).getTime();
@@ -6065,17 +5292,17 @@ function renderCompletedCard(w) {
   } else if(w.shiftLength) {
     hoursStr = parseFloat(w.shiftLength) + 'h';
   }
-  const earnedStr = (w.totalEarned != null) ? ('£' + parseFloat(w.totalEarned).toFixed(2)) : '';
+  const earnedStr = (w.totalEarned != null) ? ('Â£' + parseFloat(w.totalEarned).toFixed(2)) : '';
   const ratingStr = (w.feedbackRating != null)
-    ? ('<span style="color:var(--amber);">' + '★'.repeat(w.feedbackRating) + '</span>')
+    ? ('<span style="color:var(--amber);">' + 'â˜…'.repeat(w.feedbackRating) + '</span>')
     : '';
-  const metaRow = [hoursStr, earnedStr].filter(Boolean).join(' · ');
+  const metaRow = [hoursStr, earnedStr].filter(Boolean).join(' Â· ');
   return '<div class="worker-card" style="border-color:var(--grey);opacity:0.85;" id="wc-'+w.id+'">'+
     '<div class="wc-status-dot" style="background:var(--grey);"></div>'+
     '<div class="wc-left">'+
       '<div class="wc-name">'+w.name+(tier?' <span style="color:var(--grey);font-size:11px;">'+tier+'</span>':'')+'</div>'+
       '<div class="wc-meta" style="color:var(--grey);">'+metaTop+'</div>'+
-      '<div class="wc-meta" style="color:var(--grey);">'+clockInFmt+' → '+clockOutFmt+(metaRow?' · '+metaRow:'')+'</div>'+
+      '<div class="wc-meta" style="color:var(--grey);">'+clockInFmt+' â†’ '+clockOutFmt+(metaRow?' Â· '+metaRow:'')+'</div>'+
     '</div>'+
     '<div class="wc-right">'+
       (ratingStr || '<div class="wc-idle" style="color:var(--grey);">DONE</div>')+
@@ -6199,7 +5426,7 @@ function _deprecated_openDispatch(wid) {
   dispatchingWorkerId=wid;
   const w=liveSessionOps.workers.find(x=>x.id===wid);
   document.getElementById('dispatch-worker-name').textContent=w.name;
-  document.getElementById('dispatch-worker-details').textContent=`${w.phone||''} · ${w.postcode_full||''}`;
+  document.getElementById('dispatch-worker-details').textContent=`${w.phone||''} Â· ${w.postcode_full||''}`;
   // populate bar dropdown from loaded bars filtered by zone
   const zoneBars=bars.filter(b=>String(b.zone_id)===String(activeZone.dbId)&&(b.status==='active'||b.status==='trial'));
   const fallback=activeZone.bars||[];
@@ -6483,7 +5710,7 @@ function confirmClockOut(wid) {
   // confirmed - trigger complete shift flow
   completingShiftId = wid;
   w.clockOutAt = new Date().toISOString();
-  document.getElementById('complete-worker-info').textContent = `${w.name} · ${w.bar}`;
+  document.getElementById('complete-worker-info').textContent = `${w.name} Â· ${w.bar}`;
   document.getElementById('co-time').value = nowT();
   document.getElementById('co-notes').value = '';
   starRating = 0;
@@ -6499,7 +5726,7 @@ function undoClockIn(wid) {
 function openComplete(wid) {
   completingShiftId=wid;
   const w=liveSessionOps.workers.find(x=>x.id===wid);
-  document.getElementById('complete-worker-info').textContent=`${w.name} · ${w.bar}`;
+  document.getElementById('complete-worker-info').textContent=`${w.name} Â· ${w.bar}`;
   document.getElementById('co-time').value=nowT();
   document.getElementById('co-notes').value='';
   starRating=0;
@@ -6596,9 +5823,9 @@ function renderLog() {
       +'<div style="font-size:13px;font-weight:500;">'+s.workerName+' - '+s.bar+'</div>'
       +'<div style="font-size:11px;color:var(--grey);margin-top:2px;">'
       +fmtLen(hours)+' shift'
-      +(s.clockInAt ? ' · Clocked in '+fmtT(s.clockInAt) : '')
-      +(s.clockOutAt ? ' · Clocked out '+fmtT(s.clockOutAt) : '')
-      +(s.rating ? ' · '+('★'.repeat(s.rating)+'☆'.repeat(5-s.rating)) : '')
+      +(s.clockInAt ? ' Â· Clocked in '+fmtT(s.clockInAt) : '')
+      +(s.clockOutAt ? ' Â· Clocked out '+fmtT(s.clockOutAt) : '')
+      +(s.rating ? ' Â· '+('â˜…'.repeat(s.rating)+'â˜†'.repeat(5-s.rating)) : '')
       +'</div>'
       +(s.requestMessage ? '<div style="font-size:11px;color:var(--ice);margin-top:2px;font-style:italic;">"'+s.requestMessage+'"</div>' : '')
       +'</div>'
@@ -6663,8 +5890,8 @@ function exportPayrollCSV() {
       fmtT(s.clockInAt),
       fmtT(s.clockOutAt),
       fmtLen(hours),
-      rate?'£'+rate.toFixed(2)+'/hr':'',
-      rate&&hours?'£'+(rate*hours).toFixed(2):''
+      rate?'Â£'+rate.toFixed(2)+'/hr':'',
+      rate&&hours?'Â£'+(rate*hours).toFixed(2):''
     ];
   });
   downloadCSV([headers,...rows].map(csvRow).join('\n'), 'glasi-payroll-'+today()+'.csv');
@@ -6683,8 +5910,8 @@ function exportFullCSV() {
       s.requestMessage||'', s.requestTime?fmtT(s.requestTime):'',
       fmtT(s.dispatchedAt), fmtT(s.clockInAt), fmtT(s.clockOutAt),
       fmtLen(hours),
-      rate?'£'+rate.toFixed(2)+'/hr':'',
-      rate&&hours?'£'+(rate*hours).toFixed(2):'',
+      rate?'Â£'+rate.toFixed(2)+'/hr':'',
+      rate&&hours?'Â£'+(rate*hours).toFixed(2):'',
       s.code||'', s.rating||'', s.notes||''
     ];
   });
@@ -6731,7 +5958,7 @@ async function updateWorkerReliabilityScores() {
 
 // -- POINTS SYSTEM CONSTANTS ------------------------------------------------
 // Phase 3 basket model (Batch 6 of engagement redesign). Magnitudes per
-// ENGAGEMENT_SYSTEM_TARGET_DESIGN.md § 2 and CORE.md Phase 5 § 5.2.A.
+// ENGAGEMENT_SYSTEM_TARGET_DESIGN.md Â§ 2 and CORE.md Phase 5 Â§ 5.2.A.
 // Every value here is the basket amount written at capture time; confirmation
 // (basket -> ledger) or forfeit (no ledger write) happens via the engagement
 // triggers + worker_clock_in / worker_clock_out RPCs. Direct ledger writes
@@ -6750,7 +5977,7 @@ const POINTS = {
 
 const TIER_THRESHOLDS = [0, 250, 650, 1500, 3500];
 
-// F-32: reliabilityMultiplier removed (was dead — zero call sites). The
+// F-32: reliabilityMultiplier removed (was dead â€” zero call sites). The
 // engine multiplier concept moved to the recommendation engine ranking, not
 // a points multiplier. Reliability now drives recommendation order, not
 // magnitude of awards.
@@ -6915,7 +6142,7 @@ function f38ShowInflightModal(workers, retryFn) {
 
     const info = document.createElement('div');
     info.style.cssText = 'flex:1 1 auto;min-width:0;';
-    const sessionLabel = w.session_id ? (' · session ' + w.session_id) : '';
+    const sessionLabel = w.session_id ? (' Â· session ' + w.session_id) : '';
     info.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--white);">'
       + (w.worker_name || ('Worker #' + (w.session_worker_id || '?')))
       + '</div><div style="font-size:11px;color:var(--grey);">'
@@ -7024,7 +6251,7 @@ async function confirmCloseSession() {
   // Phase 3 Batch 6: generateSessionReports + updateWorkerPoints + the dormant
   // reports-array consumer all retired. Session-end engagement points now flow
   // through the basket model (trigger-driven capture + resolve helpers at
-  // end-of-engagement). Worker-facing after-session report is the Phase 3 § 6
+  // end-of-engagement). Worker-facing after-session report is the Phase 3 Â§ 6
   // surface, not a dashboard-side text dump.
 
   await liveSessionOps.stop();
@@ -7070,7 +6297,7 @@ async function generateSessionReport(sessionShifts, zone, requests) {
   const date = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric', timeZone:'Europe/London' });
   const barName = firstShift?.bar || zone?.name || 'Unknown venue';
 
-  document.getElementById('report-subtitle').textContent = barName + ' · ' + date;
+  document.getElementById('report-subtitle').textContent = barName + ' Â· ' + date;
 
   // calculate totals from session data
   const totalShifts = sessionShifts.length;
@@ -7169,7 +6396,7 @@ async function generateSessionReport(sessionShifts, zone, requests) {
       +'<div style="font-size:9px;letter-spacing:3px;color:var(--ice);text-transform:uppercase;margin-bottom:14px;">The Impact</div>'
       +'<p style="margin:0 0 16px;font-size:15px;line-height:1.8;">'+onDutyName+' using Glasi at the right time meant that approximately <strong style="color:var(--white);font-size:18px;">'+customersPerHrSave+' additional customers per hour</strong> had a better experience in your venue. Instead of waiting, they were served quicker and had clear tables to sit at, getting the level of service you strive to deliver.</p>'
       +'<p style="margin:0 0 20px;font-size:15px;line-height:1.8;">As a result, those customers are more likely to come back. That\'s another benefit of using Glasi at the right moment.</p>'
-      +'<p style="margin:0 0 20px;font-size:15px;line-height:1.8;">Over '+totalHours+' hours of floor support, this translated to an estimated <strong style="color:var(--green);font-size:18px;">£'+parseFloat(revenueProtectedSave).toFixed(0)+' in revenue protected</strong> against a Glasi cost of £'+glasiCostToBar.toFixed(0)+'.</p>'
+      +'<p style="margin:0 0 20px;font-size:15px;line-height:1.8;">Over '+totalHours+' hours of floor support, this translated to an estimated <strong style="color:var(--green);font-size:18px;">Â£'+parseFloat(revenueProtectedSave).toFixed(0)+' in revenue protected</strong> against a Glasi cost of Â£'+glasiCostToBar.toFixed(0)+'.</p>'
       +'<div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;">'
       +'<div style="font-size:12px;color:var(--grey);margin-bottom:10px;letter-spacing:1px;text-transform:uppercase;">Tonight in numbers</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">'
@@ -7177,8 +6404,8 @@ async function generateSessionReport(sessionShifts, zone, requests) {
       +'<div style="color:var(--grey);">Response time</div><div style="'+monoStyle+'">'+(avgResponseMins != null ? avgResponseMins+' minutes' : '-')+'</div>'
       +'<div style="color:var(--grey);">Floor support</div><div style="'+monoStyle+'">'+totalHours+' hours</div>'
       +'<div style="color:var(--grey);">Customers per hour</div><div style="'+monoStyle+'">'+customersPerHrSave+' additional</div>'
-      +'<div style="color:var(--grey);">Revenue protected</div><div style="color:var(--green);'+monoStyle+'">£'+parseFloat(revenueProtectedSave).toFixed(0)+'</div>'
-      +'<div style="color:var(--grey);">Glasi cost</div><div style="'+monoStyle+'">£'+glasiCostToBar.toFixed(0)+'</div>'
+      +'<div style="color:var(--grey);">Revenue protected</div><div style="color:var(--green);'+monoStyle+'">Â£'+parseFloat(revenueProtectedSave).toFixed(0)+'</div>'
+      +'<div style="color:var(--grey);">Glasi cost</div><div style="'+monoStyle+'">Â£'+glasiCostToBar.toFixed(0)+'</div>'
       +'</div></div></div>';
   }
 
@@ -7227,7 +6454,7 @@ let loggingResponseForWorkerId = null;
 // Request creation surface removed (CORE v6 F-03 supplemental round 3): requests
 // originate from the manager portal only. Sam-side openRequestReceived /
 // saveShiftRequest / buildZoomPost / copyZoomPost / currentRequestId all retired.
-// Manager-portal POST → realtime INSERT → liveSessionOps populates requests.
+// Manager-portal POST â†’ realtime INSERT â†’ liveSessionOps populates requests.
 let selectedRequestId = null;
 let selectedWorkerId = null;
 let requestTimerInterval = null;
@@ -7602,7 +6829,7 @@ async function dispatchWorker(applicationId, requestId) {
   // 3. Update local state. Phase 1-3 follow-up 8 (18 May 2026): include
   // shiftRequestId + clockOutCode + bar_id so the bipartite view's
   // dispatchedBySwReq lookup (keyed on worker.shiftRequestId) finds this
-  // worker on the very next render — otherwise the dispatched green line
+  // worker on the very next render â€” otherwise the dispatched green line
   // never draws because the cache stays null on the field the line code
   // filters by. Mirrors the DB PATCH columns one-for-one.
   worker.status = 'dispatched';
@@ -7623,7 +6850,7 @@ async function dispatchWorker(applicationId, requestId) {
   // the worker to 'dispatched' in liveSessionOps state. Live Dashboard
   // Redesign hotfix (18 May 2026): dispatch via renderLiveRoom so both the
   // classic dispatch-pair pairing AND the bipartite line-state transition
-  // (recommend/available → dispatched flow line) render.
+  // (recommend/available â†’ dispatched flow line) render.
   liveSessionResponses.delete(requestId);
   if(typeof renderLiveRoom === 'function') renderLiveRoom();
 
@@ -7687,7 +6914,7 @@ async function confirmClockIn(requestId, applicationId) {
   // Update the clock-in section in the card
   const clockInDiv = document.getElementById('clockin-'+requestId)?.parentElement?.parentElement;
   if(clockInDiv) {
-    clockInDiv.innerHTML = '<div style="font-size:11px;color:var(--green);">Clocked in &nbsp;·&nbsp; Ref: '+shiftRef+'</div>';
+    clockInDiv.innerHTML = '<div style="font-size:11px;color:var(--green);">Clocked in &nbsp;Â·&nbsp; Ref: '+shiftRef+'</div>';
   }
 }
 
@@ -7908,19 +7135,19 @@ function renderRequestCards() {
         +'<div class="dispatch-pair-request">'
         + innerBody
         +'</div>'
-        // CONNECTOR — chain motif
+        // CONNECTOR â€” chain motif
         +'<div class="dispatch-pair-connector"></div>'
-        // RIGHT — expanded worker card
+        // RIGHT â€” expanded worker card
         +'<div class="dispatch-pair-worker">'
         +(dispWorker
           ? '<div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:2px;">'+dispWorker.name+'</div>'
-            +'<div style="font-size:11px;color:var(--grey);margin-bottom:12px;">Tier '+dispWorker.tier+' · '+(dispWorker.postcode_full||'')+'</div>'
+            +'<div style="font-size:11px;color:var(--grey);margin-bottom:12px;">Tier '+dispWorker.tier+' Â· '+(dispWorker.postcode_full||'')+'</div>'
 
             // STATE LINE
             +(isOnShift
-              ? '<div style="font-size:13px;color:var(--green);font-weight:700;margin-bottom:8px;">On shift · started '+(dispWorker.clockInAt ? new Date(dispWorker.clockInAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : '')+'</div>'
+              ? '<div style="font-size:13px;color:var(--green);font-weight:700;margin-bottom:8px;">On shift Â· started '+(dispWorker.clockInAt ? new Date(dispWorker.clockInAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : '')+'</div>'
               : isEnRoute
-                ? '<div style="font-size:13px;color:var(--ice);font-weight:700;margin-bottom:8px;">On the Way'+(dispWorker.departedAt?' · '+new Date(dispWorker.departedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):'')+'</div>'
+                ? '<div style="font-size:13px;color:var(--ice);font-weight:700;margin-bottom:8px;">On the Way'+(dispWorker.departedAt?' Â· '+new Date(dispWorker.departedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):'')+'</div>'
                 : '<div style="font-size:13px;color:var(--amber);font-weight:700;margin-bottom:8px;">Awaiting on-the-way confirmation</div>')
 
             // F-34b Share Location indicator: surfaced when worker tapped
@@ -7976,7 +7203,7 @@ function renderRequestCards() {
       return f33RenderEmptyPair(r, innerBody, requestSelectedClass, showNotes);
     }
 
-    // F-29: non-dispatched, non-pending fallback (expired / cancelled — kept
+    // F-29: non-dispatched, non-pending fallback (expired / cancelled â€” kept
     // visible briefly before they leave the list). Existing flat card.
     return '<div class="'+cardClass+'" onclick="selectRequest('+r.id+')" id="rcard-'+r.id+'">'
       + innerBody
@@ -8086,7 +7313,7 @@ function renderRequestCards() {
       // Round 6: per-second update of per-cell timer spans on worker cards.
       // One pass over pending requests x in-range workers, surgical DOM update
       // on id="cell-timer-${appId}-${reqId}". Workers with a recorded response
-      // (or no longer in 'in_session' status) skip — their cells render with
+      // (or no longer in 'in_session' status) skip â€” their cells render with
       // a final-state element (DISPATCH button or "Unavail.") and no timer
       // span exists. At window expiry the visual state flips to "Expired"
       // without writing anything to the DB (no_response writes still come
@@ -8209,8 +7436,8 @@ function renderShiftsList() {
     +filtered.map(s => {
       const rate = s.hourly_rate||0;
       const hours = parseFloat(s.shift_length_hours)||0;
-      const workerTotal = rate && hours ? '£'+(rate*hours).toFixed(2) : '';
-      const barTotal = hours ? '£'+(hours*30).toFixed(2) : '';
+      const workerTotal = rate && hours ? 'Â£'+(rate*hours).toFixed(2) : '';
+      const barTotal = hours ? 'Â£'+(hours*30).toFixed(2) : '';
       const fin = s._fin;
       const fs = getFinancialStatus(fin, s.created_at);
       const ref = fin?.shift_reference || '-';
@@ -8240,7 +7467,7 @@ function renderShiftsList() {
         actionBtn = '<button class="ghost-btn" style="font-size:10px;" onclick="logParasolInvoice('+s.id+')">Log PI</button>';
       }
       if(fin?.parasol_invoice_ref && !fin.parasol_paid_at) {
-        actionBtn = '<button class="ghost-btn" style="font-size:10px;" onclick="markParasolPaid('+s.id+')">Pay P (£'+(fin.parasol_invoice_amount||'?')+')</button>';
+        actionBtn = '<button class="ghost-btn" style="font-size:10px;" onclick="markParasolPaid('+s.id+')">Pay P (Â£'+(fin.parasol_invoice_amount||'?')+')</button>';
       }
       if(fs.code === 'CHASE B') {
         actionBtn = '<button class="ghost-btn" style="font-size:10px;color:var(--red);" onclick="alert(\'Chase '+s.bars?.name+' for payment of '+ref+'\')">Chase</button>';
@@ -8277,7 +7504,7 @@ async function openShiftDetail(shiftId) {
   const monoStyle = 'font-family:\'JetBrains Mono\',monospace;';
 
   document.getElementById('shift-detail-ref').textContent = ref;
-  document.getElementById('shift-detail-sub').textContent = (s.bars?.name||'Unknown bar') + ' · ' + date;
+  document.getElementById('shift-detail-sub').textContent = (s.bars?.name||'Unknown bar') + ' Â· ' + date;
 
   showScreen('shift-detail');
   setActiveNav('shifts');
@@ -8362,10 +7589,10 @@ async function openShiftDetail(shiftId) {
     +row('Clock In', fmtT(s.clock_in_confirmed_at))
     +row('Clock Out', fmtT(s.clock_out_confirmed_at))
     +row('Duration', fmtLen(hours))
-    +row('Worker Rate', workerRate ? '£'+workerRate.toFixed(2)+'/hr' : '-')
-    +row('Worker Total', '£'+workerTotal)
-    +row('Bar Total', '<span style="color:var(--green);">£'+barTotal+' @ £30/hr</span>')
-    +(s.bar_rating ? row('Bar Rating', '★'.repeat(s.bar_rating)+'☆'.repeat(5-s.bar_rating)) : '')
+    +row('Worker Rate', workerRate ? 'Â£'+workerRate.toFixed(2)+'/hr' : '-')
+    +row('Worker Total', 'Â£'+workerTotal)
+    +row('Bar Total', '<span style="color:var(--green);">Â£'+barTotal+' @ Â£30/hr</span>')
+    +(s.bar_rating ? row('Bar Rating', 'â˜…'.repeat(s.bar_rating)+'â˜†'.repeat(5-s.bar_rating)) : '')
   );
 
   // SECTION 2: Report (The Request + The Impact)
@@ -8382,11 +7609,11 @@ async function openShiftDetail(shiftId) {
   const impactHtml = customersPerHr
     ? '<div style="background:linear-gradient(135deg,var(--navy-light) 0%,var(--navy) 100%);border-radius:8px;padding:16px;margin-top:4px;">'
       +'<p style="font-family:Inter,sans-serif;font-size:14px;line-height:1.8;color:rgba(230,237,243,0.85);margin:0 0 12px;">'+onDutyName+' using Glasi at the right time meant that approximately <strong style="color:var(--white);">'+customersPerHr+' additional customers per hour</strong> had a better experience in your venue. Instead of waiting, they were served quicker and had clear tables to sit at.</p>'
-      +'<p style="font-family:Inter,sans-serif;font-size:14px;line-height:1.8;color:rgba(230,237,243,0.85);margin:0 0 12px;">Over '+hours+' hours of floor support, this translated to an estimated <strong style="color:var(--green);">£'+parseFloat(revenueProtected).toFixed(0)+' in revenue protected</strong> against a Glasi cost of £'+barTotal+'.</p>'
+      +'<p style="font-family:Inter,sans-serif;font-size:14px;line-height:1.8;color:rgba(230,237,243,0.85);margin:0 0 12px;">Over '+hours+' hours of floor support, this translated to an estimated <strong style="color:var(--green);">Â£'+parseFloat(revenueProtected).toFixed(0)+' in revenue protected</strong> against a Glasi cost of Â£'+barTotal+'.</p>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">'
       +'<div style="color:var(--grey);">Customers per hour</div><div style="'+monoStyle+'">'+customersPerHr+' additional</div>'
-      +'<div style="color:var(--grey);">Revenue protected</div><div style="color:var(--green);'+monoStyle+'">£'+parseFloat(revenueProtected).toFixed(0)+'</div>'
-      +'<div style="color:var(--grey);">Glasi cost to bar</div><div style="'+monoStyle+'">£'+barTotal+'</div>'
+      +'<div style="color:var(--grey);">Revenue protected</div><div style="color:var(--green);'+monoStyle+'">Â£'+parseFloat(revenueProtected).toFixed(0)+'</div>'
+      +'<div style="color:var(--grey);">Glasi cost to bar</div><div style="'+monoStyle+'">Â£'+barTotal+'</div>'
       +'</div>'
       +'</div>'
     : '';
@@ -8405,7 +7632,7 @@ async function openShiftDetail(shiftId) {
     +'<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">'
     +'<div>'
     +'<div style="font-size:13px;font-weight:500;margin-bottom:4px;">Timesheet to Parasol (TS)</div>'
-    +'<div style="font-size:11px;color:var(--grey);">'+ref+' · '+(s.session_workers?.worker_name||'Unknown')+' · '+fmtLen(hours)+' · £'+workerRate.toFixed(2)+'/hr · Total £'+workerTotal+'</div>'
+    +'<div style="font-size:11px;color:var(--grey);">'+ref+' Â· '+(s.session_workers?.worker_name||'Unknown')+' Â· '+fmtLen(hours)+' Â· Â£'+workerRate.toFixed(2)+'/hr Â· Total Â£'+workerTotal+'</div>'
     +(fin?.ts_sent_at ? '<div style="font-size:10px;color:var(--green);margin-top:2px;">Sent '+fmtT(fin.ts_sent_at)+'</div>' : '<div style="font-size:10px;color:var(--amber);margin-top:2px;">Not sent yet</div>')
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:10px;">'
@@ -8419,7 +7646,7 @@ async function openShiftDetail(shiftId) {
     +'<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">'
     +'<div>'
     +'<div style="font-size:13px;font-weight:500;margin-bottom:4px;">Bar Invoice (BI)</div>'
-    +'<div style="font-size:11px;color:var(--grey);">'+ref+' · '+fmtLen(hours)+' @ £30/hr · Total £'+barTotal+'</div>'
+    +'<div style="font-size:11px;color:var(--grey);">'+ref+' Â· '+fmtLen(hours)+' @ Â£30/hr Â· Total Â£'+barTotal+'</div>'
     +(fin?.bi_sent_at ? '<div style="font-size:10px;color:var(--green);margin-top:2px;">Sent '+fmtT(fin.bi_sent_at)+'</div>' : '<div style="font-size:10px;color:var(--amber);margin-top:2px;">Not sent yet</div>')
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">'
@@ -8436,7 +7663,7 @@ async function openShiftDetail(shiftId) {
         +'<div>'
         +'<div style="font-size:13px;font-weight:500;margin-bottom:4px;">Parasol Invoice (PAY P)</div>'
         +(fin.parasol_invoice_ref
-          ? '<div style="font-size:11px;color:var(--grey);">Ref: '+fin.parasol_invoice_ref+' · £'+(fin.parasol_invoice_amount||'?')+'</div>'
+          ? '<div style="font-size:11px;color:var(--grey);">Ref: '+fin.parasol_invoice_ref+' Â· Â£'+(fin.parasol_invoice_amount||'?')+'</div>'
           : '<div style="font-size:11px;color:var(--amber);">Awaiting invoice from Parasol</div>'
         )
         +(fin?.parasol_paid_at ? '<div style="font-size:10px;color:var(--green);margin-top:2px;">Paid '+fmtT(fin.parasol_paid_at)+'</div>' : '')
@@ -8569,7 +7796,7 @@ async function downloadBiForShift(shiftId, ref) {
 <div class="header">
   <div>
     <div class="wordmark">GLASI</div>
-    <div style="font-size:12px;color:#888;margin-top:8px;">Glasi Ltd · hello@glasi.co.uk · glasi.co.uk</div>
+    <div style="font-size:12px;color:#888;margin-top:8px;">Glasi Ltd Â· hello@glasi.co.uk Â· glasi.co.uk</div>
   </div>
   <div class="invoice-meta">
     <div class="ref">${invoiceNum}</div>
@@ -8594,16 +7821,16 @@ ${customersPerHr ? `
     <div class="impact-text">${onDutyName} calling it early made a real difference. Approximately <strong>${customersPerHr} additional customers per hour</strong> didn't have to wait at a dirty table, didn't have to chase someone for a drink, and didn't leave with a bad impression of ${barName}. They had a good time. Those are the customers who come back.</div>
     <div class="two-col">
       <div class="stat-box"><div class="stat-val">${customersPerHr}</div><div class="stat-label">extra customers per hour looked after</div></div>
-      <div class="stat-box"><div class="stat-val" style="color:#2a7a4a;">£${revenueProtected}</div><div class="stat-label">estimated revenue protected</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:#2a7a4a;">Â£${revenueProtected}</div><div class="stat-label">estimated revenue protected</div></div>
     </div>
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid #dde;font-size:12px;color:#666;display:flex;justify-content:space-between;">
-      <span>Revenue protected</span><span style="font-family:monospace;color:#2a7a4a;">£${revenueProtected}</span>
+      <span>Revenue protected</span><span style="font-family:monospace;color:#2a7a4a;">Â£${revenueProtected}</span>
     </div>
     <div style="font-size:12px;color:#666;display:flex;justify-content:space-between;">
-      <span>Glasi cost (ex. VAT)</span><span style="font-family:monospace;">£${barNet}</span>
+      <span>Glasi cost (ex. VAT)</span><span style="font-family:monospace;">Â£${barNet}</span>
     </div>
     <div style="font-size:13px;font-weight:600;color:#2a7a4a;display:flex;justify-content:space-between;margin-top:4px;padding-top:8px;border-top:1px solid #dde;">
-      <span>Net benefit</span><span style="font-family:monospace;">£${(parseFloat(revenueProtected)-parseFloat(barNet)).toFixed(0)}</span>
+      <span>Net benefit</span><span style="font-family:monospace;">Â£${(parseFloat(revenueProtected)-parseFloat(barNet)).toFixed(0)}</span>
     </div>
   </div>
 </div>
@@ -8618,20 +7845,20 @@ ${customersPerHr ? `
         <td>Glasi floor support - glass collecting and table clearing</td>
         <td class="mono">${shortDate}</td>
         <td class="mono">${hours.toFixed(1)}</td>
-        <td class="mono">£30.00/hr</td>
-        <td class="mono">£${barNet}</td>
+        <td class="mono">Â£30.00/hr</td>
+        <td class="mono">Â£${barNet}</td>
       </tr>
       <tr style="font-size:12px;color:#888;">
         <td colspan="4" style="text-align:right;">Subtotal</td>
-        <td class="mono">£${barNet}</td>
+        <td class="mono">Â£${barNet}</td>
       </tr>
       <tr style="font-size:12px;color:#888;">
         <td colspan="4" style="text-align:right;">VAT @ 20%</td>
-        <td class="mono">£${barVat}</td>
+        <td class="mono">Â£${barVat}</td>
       </tr>
       <tr class="total-row">
         <td colspan="4" style="text-align:right;">Total due (inc. VAT)</td>
-        <td class="mono">£${barTotal}</td>
+        <td class="mono">Â£${barTotal}</td>
       </tr>
     </tbody>
   </table>
@@ -8648,7 +7875,7 @@ ${customersPerHr ? `
 </div>
 
 <div class="footer">
-  Glasi Ltd · Registered in England and Wales · hello@glasi.co.uk · glasi.co.uk<br>
+  Glasi Ltd Â· Registered in England and Wales Â· hello@glasi.co.uk Â· glasi.co.uk<br>
   Figures are estimates based on bar data provided at onboarding.
 </div>
 
@@ -8763,7 +7990,7 @@ async function downloadShiftPack(shiftId, ref) {
 </div>
 
 <div class="settled">
-  <span style="color:#2a7a4a;font-weight:600;font-size:13px;">✓ Shift fully settled - all payments sent and received</span>
+  <span style="color:#2a7a4a;font-weight:600;font-size:13px;">âœ“ Shift fully settled - all payments sent and received</span>
 </div>
 
 <h2>Shift Details</h2>
@@ -8773,13 +8000,13 @@ async function downloadShiftPack(shiftId, ref) {
   ${stamp('Zone', sessionZone||'-')}
   ${stamp('Date', date)}
   ${stamp('Worker', workerName)}
-  ${stamp('Tier rate', workerRate ? '£'+parseFloat(workerRate).toFixed(2)+'/hr' : '-')}
+  ${stamp('Tier rate', workerRate ? 'Â£'+parseFloat(workerRate).toFixed(2)+'/hr' : '-')}
   ${stamp('Clock in', fmtT(s.clock_in_confirmed_at))}
   ${stamp('Clock out', fmtT(s.clock_out_confirmed_at))}
   ${stamp('Duration', fmtLen(hours))}
-  ${stamp('Worker total', '£'+workerTotal)}
-  ${stamp('Bar charge', '£'+barTotal+' @ £30/hr')}
-  ${s.bar_rating ? stamp('Bar rating', '★'.repeat(s.bar_rating)+'☆'.repeat(5-s.bar_rating)) : ''}
+  ${stamp('Worker total', 'Â£'+workerTotal)}
+  ${stamp('Bar charge', 'Â£'+barTotal+' @ Â£30/hr')}
+  ${s.bar_rating ? stamp('Bar rating', 'â˜…'.repeat(s.bar_rating)+'â˜†'.repeat(5-s.bar_rating)) : ''}
 </div>
 
 <h2>Request & Impact</h2>
@@ -8789,7 +8016,7 @@ async function downloadShiftPack(shiftId, ref) {
   ${customersPerHr ? `
   <div style="margin-top:12px;font-size:12px;color:#555;line-height:1.7;">
     ${onDutyName} using Glasi at the right time meant approximately <strong>${customersPerHr} additional customers per hour</strong> had a better experience.
-    Over ${hours} hours, an estimated <strong class="green">£${revenueProtected} in revenue was protected</strong> against a Glasi cost of £${barTotal}.
+    Over ${hours} hours, an estimated <strong class="green">Â£${revenueProtected} in revenue was protected</strong> against a Glasi cost of Â£${barTotal}.
   </div>` : ''}
 </div>
 
@@ -8798,15 +8025,15 @@ async function downloadShiftPack(shiftId, ref) {
   ${stamp('GS Reference', ref)}
   ${stamp('Timesheet sent to Parasol', fin?.ts_sent_at ? fmtT(fin.ts_sent_at) : '-')}
   ${stamp('Parasol invoice ref', fin?.parasol_invoice_ref || '-')}
-  ${stamp('Parasol invoice amount', fin?.parasol_invoice_amount ? '£'+fin.parasol_invoice_amount : '-')}
+  ${stamp('Parasol invoice amount', fin?.parasol_invoice_amount ? 'Â£'+fin.parasol_invoice_amount : '-')}
   ${stamp('Parasol paid', fin?.parasol_paid_at ? fmtT(fin.parasol_paid_at) : '-')}
   ${stamp('Bar invoice sent', fin?.bi_sent_at ? fmtT(fin.bi_sent_at) : '-')}
-  ${stamp('Bar invoice amount', '£'+barTotal)}
+  ${stamp('Bar invoice amount', 'Â£'+barTotal)}
   ${stamp('Bar payment received', fin?.bar_paid_at ? fmtT(fin.bar_paid_at) : '-')}
 </div>
 
 <div class="footer">
-  Glasi Ltd · Registered in England and Wales · hello@glasi.co.uk · glasi.co.uk<br>
+  Glasi Ltd Â· Registered in England and Wales Â· hello@glasi.co.uk Â· glasi.co.uk<br>
   Internal document - not for distribution
 </div>
 
@@ -8831,7 +8058,7 @@ function downloadTsForShift(shiftId) {
   const total = rate && hours ? (rate*hours).toFixed(2) : '';
   const date = s.created_at ? s.created_at.split('T')[0] : '';
   const headers = ['Reference','Worker Name','Bar','Date','Clock In','Clock Out','Total Hours','Pay Rate','Total Pay'];
-  const row = [ref, workerName, barName, date, fmtT(s.clock_in_confirmed_at), fmtT(s.clock_out_confirmed_at), fmtLen(hours), rate?'£'+rate.toFixed(2)+'/hr':'', total?'£'+total:''];
+  const row = [ref, workerName, barName, date, fmtT(s.clock_in_confirmed_at), fmtT(s.clock_out_confirmed_at), fmtLen(hours), rate?'Â£'+rate.toFixed(2)+'/hr':'', total?'Â£'+total:''];
   downloadCSV([headers,row].map(csvRow).join('\n'), 'glasi-ts-'+ref+'-'+date+'.csv');
 }
 
@@ -8847,10 +8074,10 @@ function openBiEmail(shiftId, ref) {
   const subject = encodeURIComponent('Glasi Invoice '+ref+' - '+barName+' - '+date);
   const body = encodeURIComponent(
     'Hi,\n\nPlease find attached your Glasi invoice '+ref+' for floor support on '+date+'.\n\n'
-    +hours+' hours floor support @ £30/hr\n'
-    +'Subtotal: £'+barNet+'\n'
-    +'VAT (20%): £'+barVat+'\n'
-    +'Total due: £'+barTotal+'\n\n'
+    +hours+' hours floor support @ Â£30/hr\n'
+    +'Subtotal: Â£'+barNet+'\n'
+    +'VAT (20%): Â£'+barVat+'\n'
+    +'Total due: Â£'+barTotal+'\n\n'
     +'Reference: '+ref+'\n'
     +'VAT Number: '+VAT_NUMBER+'\n\n'
     +'Payment due within 7 days.\n\n'
@@ -8884,10 +8111,10 @@ async function toggleBiSent(shiftId, checked, ref) {
     const subject = encodeURIComponent('Glasi Invoice '+ref+' - '+barName+' - '+date);
     const body = encodeURIComponent(
       'Hi,\n\nPlease find attached your Glasi invoice '+ref+' for floor support on '+date+'.\n\n'
-      +hours+' hours floor support @ £30/hr\n'
-      +'Subtotal: £'+barNet+'\n'
-      +'VAT (20%): £'+barVat+'\n'
-      +'Total due: £'+barTotal+'\n\n'
+      +hours+' hours floor support @ Â£30/hr\n'
+      +'Subtotal: Â£'+barNet+'\n'
+      +'VAT (20%): Â£'+barVat+'\n'
+      +'Total due: Â£'+barTotal+'\n\n'
       +'Reference: '+ref+'\n'
       +'VAT Number: '+VAT_NUMBER+'\n\n'
       +'Payment due within 7 days.\n\n'
@@ -8902,7 +8129,7 @@ async function toggleBiSent(shiftId, checked, ref) {
 async function logParasolInvoice(shiftId) {
   const ref = prompt('Parasol invoice reference:');
   if(!ref) return;
-  const amount = prompt('Invoice amount (£):');
+  const amount = prompt('Invoice amount (Â£):');
   await sbPatch('shift_financials','?shift_id=eq.'+shiftId,{
     parasol_invoice_ref: ref,
     parasol_invoice_amount: amount ? parseFloat(amount) : null
@@ -8961,8 +8188,8 @@ function exportShiftsCSV() {
       fmtT(s.clock_in_confirmed_at),
       fmtT(s.clock_out_confirmed_at),
       hours,
-      rate?'£'+parseFloat(rate).toFixed(2):'',
-      total?'£'+total:'',
+      rate?'Â£'+parseFloat(rate).toFixed(2):'',
+      total?'Â£'+total:'',
       s.clock_in_code||'',
       s.bar_rating||'',
       s.notes||'',
@@ -8980,26 +8207,9 @@ function exportShiftsCSV() {
   URL.revokeObjectURL(url);
 }
 
-// REQUESTS HISTORY
-async function loadRequestsHistory() {
-  const list = document.getElementById('requests-list');
-  list.innerHTML = '<div class="empty">Loading...</div>';
-  const data = await sbGet('shift_requests', '?order=created_at.desc&select=*,bars(name)');
-  if(!data.length) { list.innerHTML = '<div class="empty">No requests recorded yet.</div>'; return; }
-  list.innerHTML = `<table class="history-table">
-    <thead><tr>
-      <th>Venue</th><th>Request Time</th><th>Posted</th><th>Length</th><th>Status</th><th>Message</th>
-    </tr></thead>
-    <tbody>${data.map(r=>`<tr>
-      <td>${r.bars?.name||'Unknown'}</td>
-      <td><span class="mono">${fmtT(r.request_time)}</span></td>
-      <td><span class="mono">${fmtT(r.posted_at)}</span></td>
-      <td><span class="mono">${r.shift_length_hours||''}hr</span></td>
-      <td><span class="status-badge badge-${r.status||'pending'}">${r.status||'pending'}</span></td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--grey);">${r.raw_message||''}</td>
-    </tr>`).join('')}</tbody>
-  </table>`;
-}
+// Pre-v2 cleanup (18 May 2026): loadRequestsHistory removed alongside
+// #screen-requests and goToRequests. Aggregate request review moves to
+// Health → Engine quality + History → session detail Requests tab in v2.
 
 // F-28: optional zoneId filters the history to one zone (zone-detail Sessions
 // sub-tab). Omit zoneId for cross-zone (legacy callers).
@@ -9060,13 +8270,13 @@ async function loadSessionsHistory(zoneId) {
     return '<div onclick="loadSessionDetail('+s.id+')" style="background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:10px;cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor=\'var(--ice)\'" onmouseout="this.style.borderColor=\'var(--border)\'">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">'
       + '<div>'
-      + '<div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:2px;">'+zoneName+' &nbsp;·&nbsp; <span style="color:var(--grey);font-weight:400;">Session #'+s.id+'</span></div>'
+      + '<div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:2px;">'+zoneName+' &nbsp;Â·&nbsp; <span style="color:var(--grey);font-weight:400;">Session #'+s.id+'</span></div>'
       + '<div style="font-size:12px;color:var(--grey);">'+date+(time?' at '+time:'')+'</div>'
       + '</div>'
       + '<div style="display:flex;gap:20px;text-align:right;">'
       + '<div><div style="font-size:14px;font-weight:700;color:var(--white);">'+sessionReqs.length+'</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;">Requests</div></div>'
       + '<div><div style="font-size:14px;font-weight:700;color:var(--green);">'+completed+'</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;">Shifts</div></div>'
-      + (totalEarned > 0 ? '<div><div style="font-size:14px;font-weight:700;color:var(--amber);">£'+totalEarned.toFixed(2)+'</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;">Paid out</div></div>' : '')
+      + (totalEarned > 0 ? '<div><div style="font-size:14px;font-weight:700;color:var(--amber);">Â£'+totalEarned.toFixed(2)+'</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;">Paid out</div></div>' : '')
       + '</div>'
       + '</div>'
       + '</div>';
@@ -9077,7 +8287,7 @@ async function loadSessionDetail(sessionId) {
   const listEl = document.getElementById('sessions-history-list');
 
   // Fetch session data. F-31: ledgerRows + swRows added for the new
-  // WORKERS · POINTS section.
+  // WORKERS Â· POINTS section.
   const [sessionArr, requests, sessionShifts, invites, ledgerRows, swRows, basketRows] = await Promise.all([
     sbGet('sessions', '?id=eq.'+sessionId+'&select=id,session_date,start_time,end_time,zone_id,zones(name)'),
     sbGet('shift_requests', '?session_id=eq.'+sessionId+'&select=*,bars(name)'),
@@ -9098,11 +8308,11 @@ async function loadSessionDetail(sessionId) {
   const totalEarned = sessionShifts.reduce((sum, s) => sum + (parseFloat(s.total_earned) || 0), 0);
 
   listEl.innerHTML = '<div style="margin-bottom:20px;">'
-    + '<button onclick="loadSessionsHistory()" style="background:none;border:none;color:var(--ice);font-size:13px;cursor:pointer;padding:0;font-family:Inter,sans-serif;">← Back to Sessions</button>'
+    + '<button onclick="loadSessionsHistory()" style="background:none;border:none;color:var(--ice);font-size:13px;cursor:pointer;padding:0;font-family:Inter,sans-serif;">â† Back to Sessions</button>'
     + '</div>'
     + '<div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:24px;">'
-    + '<div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px;">'+session.zones?.name+' &nbsp;·&nbsp; <span style="color:var(--grey);font-weight:400;font-size:14px;">Session #'+sessionId+'</span></div>'
-    + '<div style="font-size:13px;color:var(--grey);margin-bottom:20px;">'+date+(session.start_time ? ' · Started '+session.start_time.slice(0,5) : '')+(session.end_time ? ' · Ended '+session.end_time.slice(0,5) : '')+'</div>'
+    + '<div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px;">'+session.zones?.name+' &nbsp;Â·&nbsp; <span style="color:var(--grey);font-weight:400;font-size:14px;">Session #'+sessionId+'</span></div>'
+    + '<div style="font-size:13px;color:var(--grey);margin-bottom:20px;">'+date+(session.start_time ? ' Â· Started '+session.start_time.slice(0,5) : '')+(session.end_time ? ' Â· Ended '+session.end_time.slice(0,5) : '')+'</div>'
     + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">'
     + '<div style="text-align:center;"><div style="font-size:20px;font-weight:700;color:var(--white);">'+invites.length+'</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;">Invited</div></div>'
     + '<div style="text-align:center;"><div style="font-size:20px;font-weight:700;color:var(--white);">'+confirmed+'</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;">Confirmed</div></div>'
@@ -9111,7 +8321,7 @@ async function loadSessionDetail(sessionId) {
     + '</div>'
     + '</div>'
 
-    // F-31: WORKERS · POINTS section. Per-worker row with total + expandable
+    // F-31: WORKERS Â· POINTS section. Per-worker row with total + expandable
     // breakdown + Add Correction button.
     + '<div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--grey);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">WORKERS &middot; POINTS</div>'
     + (() => {
@@ -9153,15 +8363,15 @@ async function loadSessionDetail(sessionId) {
           return '<div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:10px;">'
             + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px;">'
             + '<div>'
-            + '<div style="font-size:15px;font-weight:700;color:var(--white);">'+workerName+' &nbsp;·&nbsp; '+barName+'</div>'
+            + '<div style="font-size:15px;font-weight:700;color:var(--white);">'+workerName+' &nbsp;Â·&nbsp; '+barName+'</div>'
             + '<div style="display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;">'
             + '<div style="font-size:11px;color:var(--grey);font-family:\'JetBrains Mono\',monospace;">'+s.glasi_ref+'</div>'
-            + '<button onclick="downloadTimesheet('+s.id+')" style="background:none;border:1px solid var(--border);color:var(--ice);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;">↓ Timesheet</button>'
-            + '<button onclick="downloadBI('+s.id+')" style="background:none;border:1px solid var(--border);color:var(--ice);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;">↓ BI Report</button>'
+            + '<button onclick="downloadTimesheet('+s.id+')" style="background:none;border:1px solid var(--border);color:var(--ice);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;">â†“ Timesheet</button>'
+            + '<button onclick="downloadBI('+s.id+')" style="background:none;border:1px solid var(--border);color:var(--ice);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;">â†“ BI Report</button>'
             + '</div>'
             + '</div>'
             + '<div style="text-align:right;">'
-            + (s.total_earned ? '<div style="font-size:16px;font-weight:700;color:var(--amber);">£'+parseFloat(s.total_earned).toFixed(2)+'</div>' : '')
+            + (s.total_earned ? '<div style="font-size:16px;font-weight:700;color:var(--amber);">Â£'+parseFloat(s.total_earned).toFixed(2)+'</div>' : '')
             + '<div style="font-size:11px;color:'+(s.clock_out_confirmed_at?'var(--green)':'var(--amber)')+';">'+( s.clock_out_confirmed_at?'Completed':'On shift')+'</div>'
             + '</div>'
             + '</div>'
@@ -9213,8 +8423,8 @@ async function downloadTimesheet(shiftId) {
     ['Clock In', fmtDT(s.clock_in_confirmed_at)],
     ['Clock Out', fmtDT(s.clock_out_confirmed_at)],
     ['Hours Worked', hours],
-    ['Hourly Rate', '£'+rate.toFixed(2)],
-    ['Total Earned', '£'+earned],
+    ['Hourly Rate', 'Â£'+rate.toFixed(2)],
+    ['Total Earned', 'Â£'+earned],
     [''],
     ['Status', s.status || ''],
     ['Session ID', s.session_id || ''],
@@ -9342,9 +8552,9 @@ async function downloadBI(shiftId) {
     </p>
     <div class="impact-box">
       <p>During ${workerName}'s <strong>${hours}hr shift</strong>, your team reclaimed approximately <strong>${Math.round(recoveredMinsPerHour * hours)} minutes</strong> of bartending time that would otherwise have been spent on glass collection.</p>
-      <p style="margin-top:8px;">At your venue's pace, we estimate your team served an additional <strong>${totalExtraDrinks} drinks</strong> -- protecting an estimated <strong>£${revenueProtected.toLocaleString()}</strong> in revenue.</p>
+      <p style="margin-top:8px;">At your venue's pace, we estimate your team served an additional <strong>${totalExtraDrinks} drinks</strong> -- protecting an estimated <strong>Â£${revenueProtected.toLocaleString()}</strong> in revenue.</p>
       <p style="margin-top:8px;">More importantly, <strong>${totalExtraDrinks} customers</strong> got a faster, better experience.</p>
-      <div class="impact-note">Calculated using your venue data: ${bartenders} bartenders, ${lostMinsPerBartender} mins/hr recovered per bartender, ${drinksPerMin} drinks/min, £${drinkValue.toFixed(2)} average drink value.</div>
+      <div class="impact-note">Calculated using your venue data: ${bartenders} bartenders, ${lostMinsPerBartender} mins/hr recovered per bartender, ${drinksPerMin} drinks/min, Â£${drinkValue.toFixed(2)} average drink value.</div>
     </div>
     <p class="tagline">"Keeping trained staff where they are most valuable."</p>
   </div>
@@ -9363,11 +8573,11 @@ async function downloadBI(shiftId) {
   <div class="section">
     <div class="section-title">Invoice</div>
     <div class="total-section">
-      <div class="total-row"><span>Glasi rate</span><span>£${rate.toFixed(2)}/hr</span></div>
+      <div class="total-row"><span>Glasi rate</span><span>Â£${rate.toFixed(2)}/hr</span></div>
       <div class="total-row"><span>Shift length</span><span>${hours}hr</span></div>
-      <div class="total-row"><span>Subtotal</span><span>£${subtotal.toFixed(2)}</span></div>
-      <div class="total-row"><span>VAT (20%)</span><span>£${vat.toFixed(2)}</span></div>
-      <div class="total-final"><span>Total</span><span>£${total.toFixed(2)}</span></div>
+      <div class="total-row"><span>Subtotal</span><span>Â£${subtotal.toFixed(2)}</span></div>
+      <div class="total-row"><span>VAT (20%)</span><span>Â£${vat.toFixed(2)}</span></div>
+      <div class="total-final"><span>Total</span><span>Â£${total.toFixed(2)}</span></div>
       <div class="vat-note">VAT will be applied once Glasi Ltd VAT registration is confirmed. A revised invoice will be issued at that time.</div>
     </div>
   </div>
@@ -9388,8 +8598,8 @@ async function downloadBI(shiftId) {
   </div>
 
   <div class="footer">
-    Glasi Ltd &nbsp;·&nbsp; hello@glasi.co.uk &nbsp;·&nbsp; glasi.co.uk<br>
-    ${invoiceNum} &nbsp;·&nbsp; ${workerName} at ${barName}
+    Glasi Ltd &nbsp;Â·&nbsp; hello@glasi.co.uk &nbsp;Â·&nbsp; glasi.co.uk<br>
+    ${invoiceNum} &nbsp;Â·&nbsp; ${workerName} at ${barName}
   </div>
 
   </body></html>`;
@@ -9821,16 +9031,16 @@ function renderClassicLiveRoom() {
           <div style="width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0;margin-top:6px;"></div>
           <div>
             <div style="font-size:15px;font-weight:700;color:var(--white);" data-zone-name>${zoneName}</div>
-            <div style="font-size:11px;color:var(--grey);margin-top:2px;">${sessionDate} &nbsp;·&nbsp; Session #${liveSessionOps.sessionId}</div>
+            <div style="font-size:11px;color:var(--grey);margin-top:2px;">${sessionDate} &nbsp;Â·&nbsp; Session #${liveSessionOps.sessionId}</div>
             <!-- Round 4: invited / confirmed summary stats -->
             <div class="session-stats-row">
               <div class="session-stat-pill" onclick="openInviteListModal('all')" title="Show all invited workers">
                 <span class="session-stat-label">Invited</span>
-                <span class="session-stat-value" id="session-stat-invited">—</span>
+                <span class="session-stat-value" id="session-stat-invited">â€”</span>
               </div>
               <div class="session-stat-pill" onclick="openInviteListModal('confirmed')" title="Show confirmed workers only">
                 <span class="session-stat-label">Confirmed</span>
-                <span class="session-stat-value" id="session-stat-confirmed">—</span>
+                <span class="session-stat-value" id="session-stat-confirmed">â€”</span>
               </div>
             </div>
           </div>
@@ -9927,7 +9137,7 @@ function renderClassicLiveRoom() {
 // ============================================================================
 
 // Two distinct intervals (Phase 1-3 follow-up 4, 18 May 2026):
-//   _bvElapsedInterval: every 1s. Cheap in-memory pass — updates request
+//   _bvElapsedInterval: every 1s. Cheap in-memory pass â€” updates request
 //   elapsed-counter text on bar rows. No RPC, no full re-render. Sam
 //   expects a stopwatch tick, not a 5s jump.
 //   _bvDetailInterval: every 5s. Re-renders dispatched/onshift worker
@@ -9971,15 +9181,15 @@ function renderBipartiteView() {
           <div style="width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0;margin-top:6px;"></div>
           <div>
             <div style="font-size:15px;font-weight:700;color:var(--white);" data-zone-name>${zoneName}</div>
-            <div style="font-size:11px;color:var(--grey);margin-top:2px;">${sessionDate} &nbsp;·&nbsp; Session #${liveSessionOps.sessionId}</div>
+            <div style="font-size:11px;color:var(--grey);margin-top:2px;">${sessionDate} &nbsp;Â·&nbsp; Session #${liveSessionOps.sessionId}</div>
             <div class="session-stats-row">
               <div class="session-stat-pill" onclick="openInviteListModal('all')" title="Show all invited workers">
                 <span class="session-stat-label">Invited</span>
-                <span class="session-stat-value" id="session-stat-invited">—</span>
+                <span class="session-stat-value" id="session-stat-invited">â€”</span>
               </div>
               <div class="session-stat-pill" onclick="openInviteListModal('confirmed')" title="Show confirmed workers only">
                 <span class="session-stat-label">Confirmed</span>
-                <span class="session-stat-value" id="session-stat-confirmed">—</span>
+                <span class="session-stat-value" id="session-stat-confirmed">â€”</span>
               </div>
             </div>
           </div>
@@ -10139,7 +9349,7 @@ function bvOnWorkerRowClick(appId) {
   bvRenderWorkers();
   bvRenderLines();   // worker column heights changed, recompute endpoints
   // Phase 1-3 follow-up 6 (18 May 2026): if opening, fire a fresh
-  // f33_compute_ranking pass so the engine breakdown is current — quiet
+  // f33_compute_ranking pass so the engine breakdown is current â€” quiet
   // sessions (no realtime events for a while) would otherwise show stale
   // rankedAll. The promise resolution re-renders workers when the panel
   // is still open. Cheap; one RPC per pending request, fire and forget.
@@ -10211,7 +9421,7 @@ function bvRenderBars() {
       if(dispW && dispW.arrivedAt && !dispW.clockInAt) rowCls = ' is-arrived';
       else rowCls = ' is-dispatched';
     } else {
-      // Pending — bare elapsed counter + urgency classes.
+      // Pending â€” bare elapsed counter + urgency classes.
       const postedAt = req.posted_at ? new Date(req.posted_at) : (req.request_time ? new Date(req.request_time) : new Date(req.created_at));
       const secs = Math.max(0, Math.floor((Date.now() - postedAt.getTime()) / 1000));
       const m = Math.floor(secs / 60);
@@ -10233,7 +9443,7 @@ function bvRenderBars() {
 
     // Sibling action sub-row, rendered only when bar is active AND Sam
     // has expanded it. Phase 1-3 follow-up 10 (18 May 2026): full request-
-    // details panel inside the action sub-row — posted at, shift length,
+    // details panel inside the action sub-row â€” posted at, shift length,
     // requester (PIN-holder), notes, dispatch state, clock-in / clock-out
     // codes when dispatched. Action buttons retained at the bottom.
     if(isActive && isExpanded) {
@@ -10249,8 +9459,8 @@ function bvRenderBarDetailRow(b, req) {
     + '<div class="bv-bar-detail-stat-value">' + value + '</div>'
     + '</div>';
 
-  const postedAt    = req.posted_at ? fmtHm(req.posted_at) : (req.request_time ? fmtHm(req.request_time) : '–');
-  const shiftLen    = req.shift_length_hours != null ? parseFloat(req.shift_length_hours) + 'h' : '–';
+  const postedAt    = req.posted_at ? fmtHm(req.posted_at) : (req.request_time ? fmtHm(req.request_time) : 'â€“');
+  const shiftLen    = req.shift_length_hours != null ? parseFloat(req.shift_length_hours) + 'h' : 'â€“';
   const requester   = escapeBvHtml(req._requesterName || 'Unknown');
   const statusLabel = (req.status || '').toUpperCase();
   const barIdLabel  = '#' + b.id;
@@ -10264,7 +9474,7 @@ function bvRenderBarDetailRow(b, req) {
   const clockInCode    = dispW && dispW.clockInCode   ? escapeBvHtml(dispW.clockInCode)  : null;
   const clockOutCode   = dispW && dispW.clockOutCode  ? escapeBvHtml(dispW.clockOutCode) : null;
 
-  // Notes — only show when Sam-entered (suppress manager-portal boilerplate
+  // Notes â€” only show when Sam-entered (suppress manager-portal boilerplate
   // per the F-29 convention).
   const showNotes = req.raw_message && req.raw_message !== 'Bar manager request via portal';
   const notesLabel = showNotes ? 'Edit notes' : '+ Add notes';
@@ -10306,7 +9516,7 @@ function bvRenderBarDetailRow(b, req) {
     if(completed && dispW.clockInAt && dispW.clockOutAt) {
       const ms = new Date(dispW.clockOutAt).getTime() - new Date(dispW.clockInAt).getTime();
       const hrs = (Math.round((ms / 3600000) * 10) / 10);
-      const earned = dispW.totalEarned != null ? '£' + parseFloat(dispW.totalEarned).toFixed(2) : null;
+      const earned = dispW.totalEarned != null ? 'Â£' + parseFloat(dispW.totalEarned).toFixed(2) : null;
       shiftSummary = '<div class="bv-bar-detail-shift">'
         + '<div class="bv-bar-detail-shift-line"><span class="bv-bar-detail-shift-label">Started</span><span>' + fmtHm(dispW.clockInAt) + '</span></div>'
         + '<div class="bv-bar-detail-shift-line"><span class="bv-bar-detail-shift-label">Ended</span><span>' + fmtHm(dispW.clockOutAt) + '</span></div>'
@@ -10337,7 +9547,7 @@ function bvRenderBarDetailRow(b, req) {
     // Phase 1-3 follow-up 15 (18 May 2026): retry button shown only when
     // the request was auto-cancelled with no replacement found. Other
     // cancellations (Sam-clicked Remove, user-cancelled) don't get the
-    // retry — they were intentional.
+    // retry â€” they were intentional.
     + (req.status === 'cancelled' && req.cancellation_reason === 'no_replacement_found'
         ? '<div class="bv-bar-detail-no-replacement">'
           +   '<div class="bv-bar-detail-no-replacement-icon">!</div>'
@@ -10532,7 +9742,7 @@ function bvMovementStateFor(row) {
 
 // Live Dashboard Redesign Phase 1-3 follow-up (18 May 2026): worker row is
 // now a thin 2-column grid (Name | Status pill). The postcode/tier/reliability
-// subtitle is dropped from v1 — those become optional column additions
+// subtitle is dropped from v1 â€” those become optional column additions
 // later via the same render code (just extend grid-template-columns and
 // emit additional cell <div>s). Dispatched / onshift workers render a
 // sibling detail sub-row below the thin row, holding ETA, movement state
@@ -10583,17 +9793,17 @@ function bvRenderWorkers() {
 }
 
 // Click-expand worker detail (Phase 1-3 follow-up 5, 18 May 2026).
-// Always-derivable from existing liveSessionOps state — no new RPC.
+// Always-derivable from existing liveSessionOps state â€” no new RPC.
 // Shows tier + postcode + reliability snapshot + per-active-request
 // eligibility, response state (with response_seconds), or remaining
 // window. Reads workerBarDistances for catchment + walking minutes.
 function bvRenderWorkerExpandDetail(row, move) {
-  const tierLabel = row.tier ? 'Tier ' + row.tier : '–';
-  const postcode  = row.postcode_full || '–';
-  const rel       = row.reliability_score != null ? Math.round(parseFloat(row.reliability_score)) + '%' : '–';
-  const rate      = row.hourly_rate != null ? '£' + parseFloat(row.hourly_rate).toFixed(2) + '/hr' : '–';
-  const joinedAt  = row.joinedAt ? fmtHm(row.joinedAt) : '–';
-  const totalPts  = (row.worker && row.worker.total_points != null) ? row.worker.total_points : '–';
+  const tierLabel = row.tier ? 'Tier ' + row.tier : 'â€“';
+  const postcode  = row.postcode_full || 'â€“';
+  const rel       = row.reliability_score != null ? Math.round(parseFloat(row.reliability_score)) + '%' : 'â€“';
+  const rate      = row.hourly_rate != null ? 'Â£' + parseFloat(row.hourly_rate).toFixed(2) + '/hr' : 'â€“';
+  const joinedAt  = row.joinedAt ? fmtHm(row.joinedAt) : 'â€“';
+  const totalPts  = (row.worker && row.worker.total_points != null) ? row.worker.total_points : 'â€“';
 
   const summaryCard = (label, value) => '<div class="bv-expand-stat">'
     + '<div class="bv-expand-stat-label">' + escapeBvHtml(label) + '</div>'
@@ -10605,7 +9815,7 @@ function bvRenderWorkerExpandDetail(row, move) {
 
   // Phase 1-3 follow-up 14 (18 May 2026): committed-worker visibility.
   // A worker dispatched / onshift / completed sees ONLY their assigned
-  // shift_request in the Active Requests section — they are not
+  // shift_request in the Active Requests section â€” they are not
   // candidates for any other bar, so showing cross-bar entries was
   // misleading. Non-committed workers see only genuinely-pending
   // requests AND only those they're in catchment for.
@@ -10632,7 +9842,7 @@ function bvRenderWorkerExpandDetail(row, move) {
       : null;
     const walkMins = dist ? dist.walking_minutes : null;
     const inCatchment = walkMins != null && walkMins < 30;
-    // Non-committed workers also need eligibility — drop out-of-catchment.
+    // Non-committed workers also need eligibility â€” drop out-of-catchment.
     if(!isCommitted && !inCatchment) continue;
 
     const responses = (typeof liveSessionResponses !== 'undefined') ? (liveSessionResponses.get(r.id) || []) : [];
@@ -10640,7 +9850,7 @@ function bvRenderWorkerExpandDetail(row, move) {
 
     let respLabel;
     if(isCommitted && Number(r.id) === myShiftReqId) {
-      // Worker's own committed request — show their flow state.
+      // Worker's own committed request â€” show their flow state.
       if(wStatus === 'onshift' || wForFilter.clockInAt) {
         respLabel = '<span style="color:var(--green);">On shift here</span>';
       } else if(wStatus === 'completed') {
@@ -10653,9 +9863,9 @@ function bvRenderWorkerExpandDetail(row, move) {
         respLabel = '<span style="color:var(--green);">Dispatched to this bar</span>';
       }
     } else if(myResp && myResp.response === 'available') {
-      respLabel = '<span style="color:var(--ice);">Available · ' + (myResp.response_seconds != null ? myResp.response_seconds + 's' : '') + '</span>';
+      respLabel = '<span style="color:var(--ice);">Available Â· ' + (myResp.response_seconds != null ? myResp.response_seconds + 's' : '') + '</span>';
     } else if(myResp && myResp.response === 'pass') {
-      respLabel = '<span style="color:var(--grey);">Passed · ' + (myResp.response_seconds != null ? myResp.response_seconds + 's' : '') + '</span>';
+      respLabel = '<span style="color:var(--grey);">Passed Â· ' + (myResp.response_seconds != null ? myResp.response_seconds + 's' : '') + '</span>';
     } else if(myResp) {
       respLabel = '<span style="color:var(--grey);">' + escapeBvHtml(myResp.response) + '</span>';
     } else {
@@ -10670,7 +9880,7 @@ function bvRenderWorkerExpandDetail(row, move) {
     }
 
     // Engine ranking inset only relevant for non-committed workers on
-    // pending requests — once dispatched their rank is moot.
+    // pending requests â€” once dispatched their rank is moot.
     let rankBlock = '';
     if(!isCommitted && r.status === 'pending') {
       const rec = (typeof liveSessionRecommendations !== 'undefined')
@@ -10687,7 +9897,7 @@ function bvRenderWorkerExpandDetail(row, move) {
     reqRows.push('<div class="bv-expand-req-card">'
       + '<div class="bv-expand-req-row">'
       +   '<span class="bv-expand-req-bar">' + escapeBvHtml(barName) + '</span>'
-      +   '<span class="bv-expand-req-dist">' + (walkMins != null ? walkMins + ' min walk' : '–') + '</span>'
+      +   '<span class="bv-expand-req-dist">' + (walkMins != null ? walkMins + ' min walk' : 'â€“') + '</span>'
       +   '<span class="bv-expand-req-resp">' + respLabel + '</span>'
       + '</div>'
       + rankBlock
@@ -10759,7 +9969,7 @@ function bvRenderRankingInset(rankRow, totalRanked) {
   // Q/D when both available, otherwise fall back to the deficit integer.
   const deficitLabel = (qrc != null && dc != null)
     ? (qrc + 'Q / ' + dc + 'D' + (deficit != null ? ' = ' + (deficit >= 0 ? '+' : '') + deficit : ''))
-    : (deficit != null ? (deficit >= 0 ? '+' : '') + deficit : '–');
+    : (deficit != null ? (deficit >= 0 ? '+' : '') + deficit : 'â€“');
 
   const row = (label, value) => '<div class="bv-expand-rank-row">'
     + '<span>' + label + '</span><span>' + value + '</span>'
@@ -10767,10 +9977,10 @@ function bvRenderRankingInset(rankRow, totalRanked) {
 
   return '<div class="bv-expand-rank-block">'
     + '<div class="bv-expand-rank-line"><span class="bv-expand-rank-badge">Rank ' + rank + ' of ' + total + '</span></div>'
-    + row('Reliability', (rel != null ? rel : '–') + (showEff ? ' <span style="color:var(--grey);">(effective ' + effRel + ')</span>' : ''))
+    + row('Reliability', (rel != null ? rel : 'â€“') + (showEff ? ' <span style="color:var(--grey);">(effective ' + effRel + ')</span>' : ''))
     + row('Deficit',     deficitLabel)
-    + row('Walking',     walking != null ? (walking + ' min') : '–')
-    + row('Tier',        tier != null ? tier : '–')
+    + row('Walking',     walking != null ? (walking + ' min') : 'â€“')
+    + row('Tier',        tier != null ? tier : 'â€“')
     + (narrative ? '<div class="bv-expand-rank-narrative">"' + escapeBvHtml(narrative) + '"</div>' : '')
     + '</div>';
 }
@@ -10834,7 +10044,7 @@ function bvRenderCompletedDetail(w) {
     const ms = new Date(w.clockOutAt).getTime() - new Date(w.clockInAt).getTime();
     hoursStr = (Math.round((ms / 3600000) * 10) / 10) + 'h';
   }
-  const earnedStr = (w.totalEarned != null) ? ('£' + parseFloat(w.totalEarned).toFixed(2)) : '';
+  const earnedStr = (w.totalEarned != null) ? ('Â£' + parseFloat(w.totalEarned).toFixed(2)) : '';
   const metaRow = [hoursStr, earnedStr].filter(Boolean).join(' &middot; ');
   return '<div class="bv-worker-detail">'
     + (barName ? '<div class="bv-worker-detail-line">' + escapeBvHtml(barName) + '</div>' : '')
@@ -10949,7 +10159,7 @@ function bvRenderLines() {
       } else if(w.arrivedAt) {
         cls = 'bv-line-arrived';                    // State 9:  solid green, no flow
       } else if(w.departedAt) {
-        // State 8: en route — colour escalates with movement-state nudges.
+        // State 8: en route â€” colour escalates with movement-state nudges.
         // Phase 1-3 follow-up 10 (18 May 2026): green normal, amber on
         // nudge_1 (slowdown), red on nudge_2 (stop).
         if(move && move.cancelled_at)             cls = 'bv-line-cancelled';
@@ -10970,7 +10180,7 @@ function bvRenderLines() {
     // Pending: fanout to eligible workers.
     const responses = liveSessionResponses.get(req.id) || [];
     // Phase 1-3 follow-up 5 (18 May 2026): recommendation line is meaningful
-    // only when there's a CHOICE to be made — i.e. >= 2 Available responses.
+    // only when there's a CHOICE to be made â€” i.e. >= 2 Available responses.
     // With 0 or 1 available responses, the engine's pick is either nothing or
     // forced. Suppress the green-recommend glow until the count crosses 2 so
     // the visual is quiet during the early window.
@@ -11403,7 +10613,7 @@ async function openScheduleSession() {
         <input type="checkbox" class="sched-bar-cb" value="${b.id}" style="margin-top:3px;">
         <span style="flex:1;">
           <span style="display:block;font-size:13px;color:var(--white);font-weight:500;">${b.name}</span>
-          <span style="display:block;font-size:11px;color:var(--grey);margin-top:2px;">${b.address || ''} &nbsp;·&nbsp; <span style="color:var(--ice);">${b.status}</span></span>
+          <span style="display:block;font-size:11px;color:var(--grey);margin-top:2px;">${b.address || ''} &nbsp;Â·&nbsp; <span style="color:var(--ice);">${b.status}</span></span>
         </span>
       </label>
     `).join('');
@@ -11586,7 +10796,7 @@ async function loadLiveSessionWorkers(sessionId) {
     // rebuilt cache. Surfaced as: dispatched line briefly drew on restore
     // (tryRestoreSession built the full cache), then liveSessionOps.start
     // called THIS function which wiped the cache and rebuilt with the
-    // incomplete data — the dispatched line vanished a moment later.
+    // incomplete data â€” the dispatched line vanished a moment later.
     const existingSW = await sbGet('session_workers',
       '?session_id=eq.'+sessionId
       + '&select=id,application_id,status,shift_request_id,bar_id,clock_in_at,clock_in_code,clock_out_code,dispatched_at,departed_at,share_location_tapped_at,shift_length_hours,live_eta_minutes,live_eta_computed_at,arrived_at,expected_arrival_minutes');
@@ -11776,7 +10986,7 @@ async function loadInviteWorkers(sessionId) {
       <div style="margin-bottom:10px;">
         <div style="font-size:14px;color:var(--white);font-weight:600;">${w.name}</div>
         <div style="font-size:11px;color:var(--grey);margin-top:3px;font-family:'JetBrains Mono',monospace;">${w.postcode_full || ''}</div>
-        <div style="font-size:11px;color:var(--grey);margin-top:3px;">Tier ${w.tier || 1} &nbsp;·&nbsp; Reliability ${rel} &nbsp;·&nbsp; ${walking}</div>
+        <div style="font-size:11px;color:var(--grey);margin-top:3px;">Tier ${w.tier || 1} &nbsp;Â·&nbsp; Reliability ${rel} &nbsp;Â·&nbsp; ${walking}</div>
       </div>
       <div style="display:flex;gap:6px;">
         <button onclick="viewInvite(${sessionId}, ${w.id})" style="flex:1;background:none;border:1px solid var(--border);color:var(--grey);border-radius:6px;padding:8px 12px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;">View invite</button>
@@ -11928,7 +11138,7 @@ async function sendInvite(sessionId, applicationId, btnEl) {
 
     // Round 4 Decision 1 (Option B): last_invite_sent_at = "last sent at"
     // for any successful send (initial OR re-invite). PATCHed only after
-    // Edge Function success — if Edge Function fails, the row is rolled
+    // Edge Function success â€” if Edge Function fails, the row is rolled
     // back below and last_invite_sent_at never gets written.
     const nowIso = new Date().toISOString();
     try {
@@ -12003,17 +11213,17 @@ function f30FmtMonth(d) {
 function f30FmtCurrency(n) {
   const v = parseFloat(n);
   if(!isFinite(v)) return '';
-  return '£' + v.toFixed(2);
+  return 'Â£' + v.toFixed(2);
 }
 
 function f30Stars(n) {
   const v = parseInt(n) || 0;
   if(!v) return '';
-  return '★'.repeat(v) + '☆'.repeat(Math.max(0, 5 - v));
+  return 'â˜…'.repeat(v) + 'â˜†'.repeat(Math.max(0, 5 - v));
 }
 
 function f30TsRow(label, value) {
-  return '<div class="rc-timestamp-row"><span class="rc-ts-label">'+label+'</span><span class="rc-ts-value'+(value?'':' rc-ts-empty')+'">'+(value || '—')+'</span></div>';
+  return '<div class="rc-timestamp-row"><span class="rc-ts-label">'+label+'</span><span class="rc-ts-value'+(value?'':' rc-ts-empty')+'">'+(value || 'â€”')+'</span></div>';
 }
 
 function f30FeedbackBlock(label, stars, comment, wouldWantAgain) {
@@ -12067,7 +11277,7 @@ function computeSubscriptionPill(s) {
   const overdue = latest && latest.status === 'sent' && latest.due_date && new Date(latest.due_date) < new Date() && !latest.paid_at;
   if(s.status === 'trial')                 return { slug: 'dispatched', label: 'Trial' };
   if(s.status === 'inactive')              return { slug: 'cancelled',  label: 'Inactive' };
-  if(s.status === 'active' && overdue)     return { slug: 'expired',    label: 'Active · Overdue' };
+  if(s.status === 'active' && overdue)     return { slug: 'expired',    label: 'Active Â· Overdue' };
   if(s.status === 'active')                return { slug: 'onshift',    label: 'Active' };
   return { slug: 'pending', label: s.status };
 }
@@ -12123,8 +11333,8 @@ function renderPairedUnitCard(p, view /* 'shifts' | 'billing' */) {
       + '</div>';
   } else {
     body = '<div class="rc-body">'
-      + f30TsRow('Worker rate',  f30FmtCurrency(workerRate)+'/hr × '+shiftLen+'h = '+f30FmtCurrency(workerTotal))
-      + f30TsRow('Bar charge',   f30FmtCurrency(30)+'/hr × '+shiftLen+'h = '+f30FmtCurrency(barTotal))
+      + f30TsRow('Worker rate',  f30FmtCurrency(workerRate)+'/hr Ã— '+shiftLen+'h = '+f30FmtCurrency(workerTotal))
+      + f30TsRow('Bar charge',   f30FmtCurrency(30)+'/hr Ã— '+shiftLen+'h = '+f30FmtCurrency(barTotal))
       + f30TsRow('Parasol',      parasolStateLabel(p))
       + f30TsRow('Bar invoice',  barInvoiceStateLabel(p))
       + '</div>'
@@ -12297,7 +11507,7 @@ async function openPairedUnit(shiftId) {
   const opPill = computeShiftOperationalPill(p);
   const finPill = computeShiftFinancialPill(p);
 
-  document.getElementById('shp-title').textContent = (bar.name || 'Unknown') + ' · ' + (app.name || 'Unknown');
+  document.getElementById('shp-title').textContent = (bar.name || 'Unknown') + ' Â· ' + (app.name || 'Unknown');
   document.getElementById('shp-sub').textContent = f30FmtDateTime(p.clock_in_confirmed_at || p.created_at);
 
   const html = ''
@@ -12308,20 +11518,20 @@ async function openPairedUnit(shiftId) {
     + '</div>'
     + '<div class="pu-detail-section">'
     +   '<h3>Lifecycle</h3>'
-    +   '<div class="pu-detail-row"><span class="l">Request posted</span><span class="v">'+(f30FmtDateTime(sr.posted_at) || '—')+'</span></div>'
-    +   '<div class="pu-detail-row"><span class="l">Dispatched</span><span class="v">'+(f30FmtDateTime(p.accepted_at) || '—')+'</span></div>'
-    +   '<div class="pu-detail-row"><span class="l">Departed</span><span class="v">'+(f30FmtDateTime(p.departed_at) || '—')+'</span></div>'
-    +   '<div class="pu-detail-row"><span class="l">Clocked in</span><span class="v">'+(f30FmtDateTime(p.clock_in_confirmed_at) || '—')+'</span></div>'
-    +   '<div class="pu-detail-row"><span class="l">Clocked out</span><span class="v">'+(f30FmtDateTime(p.clock_out_confirmed_at) || '—')+'</span></div>'
+    +   '<div class="pu-detail-row"><span class="l">Request posted</span><span class="v">'+(f30FmtDateTime(sr.posted_at) || 'â€”')+'</span></div>'
+    +   '<div class="pu-detail-row"><span class="l">Dispatched</span><span class="v">'+(f30FmtDateTime(p.accepted_at) || 'â€”')+'</span></div>'
+    +   '<div class="pu-detail-row"><span class="l">Departed</span><span class="v">'+(f30FmtDateTime(p.departed_at) || 'â€”')+'</span></div>'
+    +   '<div class="pu-detail-row"><span class="l">Clocked in</span><span class="v">'+(f30FmtDateTime(p.clock_in_confirmed_at) || 'â€”')+'</span></div>'
+    +   '<div class="pu-detail-row"><span class="l">Clocked out</span><span class="v">'+(f30FmtDateTime(p.clock_out_confirmed_at) || 'â€”')+'</span></div>'
     + '</div>'
     + '<div class="pu-detail-section">'
     +   '<h3>Attribution</h3>'
-    +   '<div class="pu-detail-row"><span class="l">Bar</span><span class="v">'+(bar.name || '—')+'</span></div>'
-    +   '<div class="pu-detail-row"><span class="l">Bar manager</span><span class="v">'+(bm.name || '—')+'</span></div>'
-    +   '<div class="pu-detail-row"><span class="l">Worker</span><span class="v">'+(app.name || sw.worker_name || '—')+'</span></div>'
-    +   '<div class="pu-detail-row"><span class="l">Worker tier</span><span class="v">'+(app.tier != null ? 'Tier '+app.tier : '—')+'</span></div>'
-    +   '<div class="pu-detail-row"><span class="l">Worker rate</span><span class="v">'+(p.hourly_rate ? f30FmtCurrency(p.hourly_rate)+'/hr' : '—')+'</span></div>'
-    +   '<div class="pu-detail-row"><span class="l">Shift length</span><span class="v">'+(p.shift_length_hours || '—')+'h</span></div>'
+    +   '<div class="pu-detail-row"><span class="l">Bar</span><span class="v">'+(bar.name || 'â€”')+'</span></div>'
+    +   '<div class="pu-detail-row"><span class="l">Bar manager</span><span class="v">'+(bm.name || 'â€”')+'</span></div>'
+    +   '<div class="pu-detail-row"><span class="l">Worker</span><span class="v">'+(app.name || sw.worker_name || 'â€”')+'</span></div>'
+    +   '<div class="pu-detail-row"><span class="l">Worker tier</span><span class="v">'+(app.tier != null ? 'Tier '+app.tier : 'â€”')+'</span></div>'
+    +   '<div class="pu-detail-row"><span class="l">Worker rate</span><span class="v">'+(p.hourly_rate ? f30FmtCurrency(p.hourly_rate)+'/hr' : 'â€”')+'</span></div>'
+    +   '<div class="pu-detail-row"><span class="l">Shift length</span><span class="v">'+(p.shift_length_hours || 'â€”')+'h</span></div>'
     + '</div>'
     + (sr.raw_message && sr.raw_message !== 'Bar manager request via portal'
         ? '<div class="pu-detail-section"><h3>Request notes</h3><div style="font-size:13px;color:var(--white);line-height:1.5;">'+sr.raw_message+'</div></div>'
@@ -12551,8 +11761,8 @@ async function generateBarInvoices() {
     const bar = shiftRows[0].bars || {};
     const lineItems = shiftRows.map(r => ({
       desc: (r.session_workers?.applications?.name || 'Worker')
-            + ' · ' + (f30FmtDateTime(r.clock_in_confirmed_at) || '')
-            + ' · ' + (parseFloat(r.shift_length_hours)||0) + 'h @ £30/hr',
+            + ' Â· ' + (f30FmtDateTime(r.clock_in_confirmed_at) || '')
+            + ' Â· ' + (parseFloat(r.shift_length_hours)||0) + 'h @ Â£30/hr',
       amount: parseFloat(r.shift_length_hours||0) * 30
     }));
     const invoiceForRender = { invoice_number: invoiceNumber, period_start: from, period_end: to, total_amount: lineAmount, due_date: dueDate, sent_at: null, created_at: new Date().toISOString() };
@@ -12587,7 +11797,7 @@ function renderInvoiceHtml(invoice, type /* 'bar' | 'subscription' */, lineItems
     + '<div class="glasi-mark">GLASI</div>'
     + '<h1>'+(type === 'bar' ? 'Invoice' : 'Subscription Invoice')+' '+invoice.invoice_number+'</h1>'
     + '<div class="meta">Period '+f30FmtDate(invoice.period_start)+' to '+f30FmtDate(invoice.period_end)+'</div>'
-    + '<div class="meta">Issued '+(issued || '(set on send)')+' · Due '+(f30FmtDate(invoice.due_date) || '(set on send)')+'</div>'
+    + '<div class="meta">Issued '+(issued || '(set on send)')+' Â· Due '+(f30FmtDate(invoice.due_date) || '(set on send)')+'</div>'
     + '<h1>Billed to</h1>'
     + '<div class="meta">'+(bar?.name || '')+'</div>'
     + (bar?.address ? '<div class="meta">'+bar.address+'</div>' : '')
@@ -12685,7 +11895,7 @@ function renderSubscriptionCard(s) {
   })();
 
   const startedLine = s.started_at ? 'Started ' + f30FmtDate(s.started_at) : 'Not started';
-  const trialLine = s.status === 'trial' && s.trial_ends_at ? ' · Trial ends ' + f30FmtDate(s.trial_ends_at) : '';
+  const trialLine = s.status === 'trial' && s.trial_ends_at ? ' Â· Trial ends ' + f30FmtDate(s.trial_ends_at) : '';
 
   const topRow = '<div class="rc-top-row">'
     + '<span class="rc-bar-name">'+(bar.name || 'Unknown')+'</span>'
@@ -12703,7 +11913,7 @@ function renderSubscriptionCard(s) {
     + f30TsRow('Billing cycle', 'Day '+cycle+' of each month')
     + f30TsRow('Next bill date', nextBill)
     + f30TsRow('Latest invoice', latest
-        ? latest.invoice_number + ' · ' + (latest.status || 'draft') + (latest.paid_at ? ' · paid ' + f30FmtDate(latest.paid_at) : '')
+        ? latest.invoice_number + ' Â· ' + (latest.status || 'draft') + (latest.paid_at ? ' Â· paid ' + f30FmtDate(latest.paid_at) : '')
         : 'None yet')
     + (s.notes ? '<div class="rc-timestamp-row" style="margin-top:6px;"><span class="rc-ts-label">Notes</span><span class="rc-ts-value" style="font-family:Inter,sans-serif;font-weight:400;text-align:right;max-width:60%;">'+s.notes+'</span></div>' : '')
     + '</div>';
@@ -12833,7 +12043,7 @@ async function generateThisMonthInvoice(subId) {
   } catch(e) { console.error('subscription_invoices insert failed', e); }
   if(!inserted?.[0]?.id) { alert('Failed to create invoice.'); return; }
   // Open invoice print window
-  const lineItems = [{ desc: 'Glasi monthly subscription · '+f30FmtMonth(periodStart), amount: fee }];
+  const lineItems = [{ desc: 'Glasi monthly subscription Â· '+f30FmtMonth(periodStart), amount: fee }];
   if(discount > 0) lineItems.push({ desc: 'Discount', amount: -discount });
   const invoiceForRender = { invoice_number: invoiceNumber, period_start: fmt(periodStart), period_end: fmt(periodEnd), amount: parseFloat(amount), due_date: null, sent_at: null, created_at: new Date().toISOString() };
   openInvoicePrintWindow(renderInvoiceHtml(invoiceForRender, 'subscription', lineItems, sub.bars || {}));
@@ -13008,7 +12218,7 @@ function renderShiftPointsBlock(ctx) {
   const { appId, shiftId, requestId, sessionId, beforeTotal, afterTotal, linkedDelta, linked, baskets } = ctx;
 
   const summary = '<div class="pu-detail-row"><span class="l">Points before shift</span><span class="v">' + beforeTotal + '</span></div>'
-    + '<div class="pu-detail-row"><span class="l">Points after shift</span><span class="v">' + (afterTotal != null ? afterTotal : '—') + '</span></div>'
+    + '<div class="pu-detail-row"><span class="l">Points after shift</span><span class="v">' + (afterTotal != null ? afterTotal : 'â€”') + '</span></div>'
     + '<div class="pu-detail-row"><span class="l">Net for this shift</span><span class="v" style="color:' + (linkedDelta >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (linkedDelta >= 0 ? '+' : '') + linkedDelta + '</span></div>';
 
   // Phase 3 Batch 6: basket section.
@@ -13045,7 +12255,7 @@ function renderBasketBreakdown(baskets) {
     + (b.status === 'forfeit' && b.forfeit_reason ? ' <span style="color:var(--grey);font-size:11px;font-style:italic;">(' + String(b.forfeit_reason).replaceAll('<','&lt;').replaceAll('>','&gt;') + ')</span>' : '')
     + '</span>'
     + '<span class="v" style="color:' + color + ';font-family:JetBrains Mono,monospace;">'
-    + (b.status === 'forfeit' ? '−' : '+') + (parseInt(b.amount) || 0)
+    + (b.status === 'forfeit' ? 'âˆ’' : '+') + (parseInt(b.amount) || 0)
     + '</span></div>';
 
   let html = '<div style="margin-top:14px;font-size:11px;font-weight:600;letter-spacing:2px;color:var(--grey);text-transform:uppercase;">Basket</div>';
@@ -13166,7 +12376,7 @@ async function openCorrectionModal(ctx) {
   for(const r of scopedRows) {
     const o = document.createElement('option');
     o.value = String(r.id);
-    o.textContent = '#' + r.id + ' · ' + f31ReasonLabel(r.reason) + ' · ' + (r.amount >= 0 ? '+' : '') + r.amount + ' · ' + f30FmtDateTime(r.awarded_at);
+    o.textContent = '#' + r.id + ' Â· ' + f31ReasonLabel(r.reason) + ' Â· ' + (r.amount >= 0 ? '+' : '') + r.amount + ' Â· ' + f30FmtDateTime(r.awarded_at);
     sel.appendChild(o);
   }
   openOv('points-correction');
@@ -13550,15 +12760,18 @@ function stopAutoDispatchPillPoll() {
 async function refreshAutoDispatchPill() {
   const pill  = document.getElementById('auto-dispatch-pill');
   const label = document.getElementById('auto-dispatch-pill-label');
-  if(!pill || !label) return;
   try {
     const cfg = await loadAutoDispatchConfig();
     if(!cfg) return;
     adState.config = cfg;
     const on = !!cfg.global_auto_dispatch_enabled;
-    pill.classList.toggle('on',  on);
-    pill.classList.toggle('off', !on);
-    label.textContent = on ? 'AUTO' : 'MANUAL';
+    if(pill && label) {
+      pill.classList.toggle('on',  on);
+      pill.classList.toggle('off', !on);
+      label.textContent = on ? 'AUTO' : 'MANUAL';
+    }
+    // Dashboard v2 mirror: keep the header pill in lockstep.
+    if(typeof dv2UpdateAutoPill === 'function') dv2UpdateAutoPill(on);
   } catch(e) {
     console.error('[refreshAutoDispatchPill] failed', e);
   }
@@ -13792,7 +13005,7 @@ function paintDecisionsTable() {
     const source = d.dispatched_by || 'manual';
     const sourceLabel = source === 'auto_dispatch' ? 'Auto' : 'Manual';
     const matchClass = d.was_recommended_match ? 'match' : 'override';
-    const matchIcon  = d.was_recommended_match ? '✓' : '↪';
+    const matchIcon  = d.was_recommended_match ? 'âœ“' : 'â†ª';
     const matchTitle = d.was_recommended_match ? 'Followed engine recommendation' : 'Sam overrode the recommendation';
     const expanded = adState.expandedRowId === d.id;
     let rowHtml = '<tr class="ad-decision-row" onclick="toggleDecisionExpand(' + d.id + ')">'
@@ -13924,7 +13137,7 @@ async function renderDocumentsScreen() {
   const queueEl = document.getElementById('docs-approval-queue');
   const listEl = document.getElementById('docs-bar-list');
   if (!queueEl || !listEl) return;
-  queueEl.innerHTML = '<div class="empty">Loading…</div>';
+  queueEl.innerHTML = '<div class="empty">Loadingâ€¦</div>';
   listEl.innerHTML = '';
 
   try {
@@ -13955,7 +13168,7 @@ async function renderDocumentsScreen() {
               <div>
                 <div style="font-size:14px;font-weight:700;color:var(--white);">${bar.name}</div>
                 <div style="font-size:11px;color:var(--grey);margin-top:2px;">
-                  ${d.document_type === 'glasi_walkthrough' ? 'Walkthrough' : "Bar's H&S"} · v${d.version} · uploaded ${uploadedStr}
+                  ${d.document_type === 'glasi_walkthrough' ? 'Walkthrough' : "Bar's H&S"} Â· v${d.version} Â· uploaded ${uploadedStr}
                 </div>
               </div>
               <div style="display:flex;gap:8px;">
@@ -13980,7 +13193,7 @@ async function renderDocumentsScreen() {
       const hsPending = barDocs.find(d => d.document_type === 'bar_hs' && d.approval_status === 'pending');
       const wtActive = barDocs.find(d => d.document_type === 'glasi_walkthrough' && d.is_active && d.approval_status === 'approved');
       const hsLabel = hsActive
-        ? `Active v${hsActive.version}` + (hsPending ? ` · v${hsPending.version} pending` : '')
+        ? `Active v${hsActive.version}` + (hsPending ? ` Â· v${hsPending.version} pending` : '')
         : (hsPending ? `Pending v${hsPending.version}` : 'Not uploaded');
       const wtLabel = wtActive ? `Active v${wtActive.version}` : 'Not uploaded by Glasi';
       return `
@@ -14008,7 +13221,7 @@ async function renderDocumentsScreen() {
 }
 
 async function viewDocument(docId, path) {
-  // Authenticated download → object URL → open in new tab. Works for both PDF
+  // Authenticated download â†’ object URL â†’ open in new tab. Works for both PDF
   // (browser viewer) and video formats.
   try {
     const { data, error } = await sbAuth.storage.from('bar-documents').download(path);

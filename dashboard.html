@@ -3570,9 +3570,8 @@ async function markOnboarded() {
   setWorkersSubTab('onboarded');
 }
 
-// ZONES
-  ).join('');
-}
+// Pre-v2 cleanup hotfix (18 May 2026): ZONES section header + trailing two
+// lines of renderZones() were orphaned by the original PS line-range delete.
 
 async function loadWorkerFunnel() {
   const data = await sbGet('applications', '?select=worker_status');

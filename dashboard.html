@@ -5286,7 +5286,16 @@ function pickInitialPipelineSubtab() { return getPipelineSubtab() || 'bars'; }
 
 function showPipelineSubtab(name) {
   if(name !== 'bars' && name !== 'workers') return;
-  const root = document.querySelector('#workspace-network [data-subtab="pipeline"]');
+  // 19 May 2026 bug fix: selector must be specific to the content div.
+  // Previously '#workspace-network [data-subtab="pipeline"]' matched both
+  // the header <button class="ws-subtab" data-subtab="pipeline"> AND the
+  // <div class="ws-subtab-content" data-subtab="pipeline">, with the
+  // button coming first in document order; querySelector returned the
+  // button, the .net-pipeline-subtabs / .net-pipeline-pane forEach loops
+  // found nothing inside it, and the Workers pane stayed hidden by its
+  // inline style="display:none;" forever. Bars worked by accident because
+  // its pane had no default display:none.
+  const root = document.querySelector('#workspace-network .ws-subtab-content[data-subtab="pipeline"]');
   if(!root) return;
   root.querySelectorAll('.net-pipeline-subtabs .net-pill').forEach(b => {
     b.classList.toggle('active', b.dataset.pipelineTab === name);

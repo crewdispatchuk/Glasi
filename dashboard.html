@@ -3100,7 +3100,7 @@
     <div id="health-compliance-pane"><div class="health-loading">Loading Compliance...</div></div>
   </div>
 
-  <!-- Resolve flag modal (Phase 3.2) -->
+  <!-- Resolve flag modal (Phase 3.2 — used by Flags & Exceptions tab) -->
   <div id="health-resolve-flag-modal" class="prospect-form-modal" style="display:none;">
     <div class="prospect-form-card">
       <h3 class="prospect-form-h3">Resolve flag</h3>
@@ -3112,6 +3112,70 @@
       <div class="prospect-form-actions">
         <button class="ops-sched-btn" onclick="closeHealthResolveFlagModal()">Cancel</button>
         <button class="ops-sched-action" id="health-resolve-flag-save" onclick="submitHealthResolveFlag()">Resolve</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compliance Redesign (Batch 4c, 19 May 2026) — 3 new modals -->
+
+  <!-- KID Upload modal (Glasi Compliance → KIDs sub-block) -->
+  <div id="health-kid-upload-modal" class="prospect-form-modal" style="display:none;">
+    <div class="prospect-form-bg" onclick="closeHealthKidUploadModal()"></div>
+    <div class="prospect-form-card" style="max-width:560px;">
+      <h3 class="prospect-form-h3">Upload KID PDF</h3>
+      <div style="font-size:12px;color:var(--grey);margin-bottom:10px;" id="health-kid-upload-summary">,</div>
+      <label class="prospect-form-label">KID PDF file
+        <input id="health-kid-upload-file" type="file" accept="application/pdf">
+      </label>
+      <div style="font-size:11px;color:var(--grey);margin-top:4px;">Uploads to Supabase storage at <code>kids/{worker_id}/kid_{timestamp}.pdf</code>. The same file is recorded against every selected worker — typically the standardised Glasi KID.</div>
+      <div class="prospect-form-err" id="health-kid-upload-err"></div>
+      <div class="prospect-form-actions">
+        <button class="ops-sched-btn" onclick="closeHealthKidUploadModal()">Cancel</button>
+        <button class="ops-sched-action" id="health-kid-upload-save" onclick="submitHealthKidUpload()">Upload &amp; mark</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mark Numbermill Notified modal (Workers Flagged for Numbermill Review → Action Needed block) -->
+  <div id="health-numbermill-notify-modal" class="prospect-form-modal" style="display:none;">
+    <div class="prospect-form-bg" onclick="closeHealthNumbermillNotifyModal()"></div>
+    <div class="prospect-form-card">
+      <h3 class="prospect-form-h3">Mark Numbermill notified</h3>
+      <div style="font-size:12px;color:var(--grey);margin-bottom:10px;" id="health-numbermill-notify-summary">,</div>
+      <label class="prospect-form-label">Notification date
+        <input id="health-numbermill-notify-date" type="date">
+      </label>
+      <label class="prospect-form-label">Notes (optional)
+        <textarea id="health-numbermill-notify-notes" rows="3" placeholder="How did you contact Numbermill? Reference / case number / context."></textarea>
+      </label>
+      <div class="prospect-form-err" id="health-numbermill-notify-err"></div>
+      <div class="prospect-form-actions">
+        <button class="ops-sched-btn" onclick="closeHealthNumbermillNotifyModal()">Cancel</button>
+        <button class="ops-sched-action" id="health-numbermill-notify-save" onclick="submitHealthNumbermillNotify()">Mark notified</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resolve Flag modal (Workers Flagged for Numbermill Review → Awaiting Decision block) -->
+  <div id="health-numbermill-resolve-modal" class="prospect-form-modal" style="display:none;">
+    <div class="prospect-form-bg" onclick="closeHealthNumbermillResolveModal()"></div>
+    <div class="prospect-form-card">
+      <h3 class="prospect-form-h3">Resolve Numbermill flag</h3>
+      <div style="font-size:12px;color:var(--grey);margin-bottom:10px;" id="health-numbermill-resolve-summary">,</div>
+      <label class="prospect-form-label">Numbermill outcome
+        <select id="health-numbermill-resolve-outcome" class="field" style="width:100%;">
+          <option value="worker_continues">Worker continues — Numbermill cleared</option>
+          <option value="worker_dismissed">Worker dismissed by Numbermill</option>
+          <option value="review_extended">Review extended — keep flag, await further decision</option>
+        </select>
+      </label>
+      <label class="prospect-form-label">Resolution notes
+        <textarea id="health-numbermill-resolve-notes" rows="4" placeholder="Numbermill's reasoning, case reference, any follow-up Glasi needs to do."></textarea>
+      </label>
+      <div class="prospect-form-err" id="health-numbermill-resolve-err"></div>
+      <div class="prospect-form-actions">
+        <button class="ops-sched-btn" onclick="closeHealthNumbermillResolveModal()">Cancel</button>
+        <button class="ops-sched-action" id="health-numbermill-resolve-save" onclick="submitHealthNumbermillResolve()">Resolve flag</button>
       </div>
     </div>
   </div>
@@ -6029,9 +6093,20 @@ const healthState = {
   fulfilmentWindow: '30d',
   // Engine (Phase 3.5)
   engineMetrics: null, engineDecisions: null, engineWindow: '30d',
-  // Compliance (Phase 3.6)
-  complianceWorker: null, complianceBar: null, complianceOffboarded: null,
-  // Resolve modal
+  // Compliance Redesign (Batch 4c, 19 May 2026)
+  complianceKids: null, complianceWalkthroughs: null, complianceHsDocs: null,
+  complianceBars: null, complianceMatrix: null,
+  complianceFlagsAction: null, complianceFlagsAwaiting: null, complianceFlagsResolved: null,
+  complianceMatrixExpandedId: null, complianceMatrixDetailCache: {},
+  complianceBarExpandedId: null, complianceBarDetailCache: {},
+  complianceResolvedHistoryOpen: false,
+  // Modal context
+  kidUploadContext: null,   // { application_ids: [...] }
+  numbermillNotifyFlagId: null,
+  numbermillNotifyWorkerName: '',
+  numbermillResolveFlagId: null,
+  numbermillResolveWorkerName: '',
+  // Resolve modal (legacy — Flags & Exceptions tab)
   resolveFlagId: null,
   resolveFlagSummary: ''
 };
@@ -6060,7 +6135,7 @@ function _healthLoadIfNeeded(name) {
   if(name === 'coverage'   && !healthState.coverageMetrics)  return loadHealthCoverageData();
   if(name === 'fulfilment' && !healthState.fulfilmentMetrics) return loadHealthFulfilmentData();
   if(name === 'engine'     && !healthState.engineMetrics)    return loadHealthEngineData();
-  if(name === 'compliance' && !healthState.complianceWorker) return loadHealthComplianceData();
+  if(name === 'compliance' && !healthState.complianceMatrix) return loadHealthComplianceData();
   // Re-render from cache to ensure UI matches state.
   if(name === 'flags')      _renderHealthFlagsPane();
   if(name === 'coverage')   _renderHealthCoveragePane();
@@ -6080,7 +6155,7 @@ async function refreshHealthCurrent() {
     if(name === 'coverage')   { healthState.coverageMetrics = null;  await loadHealthCoverageData(); }
     if(name === 'fulfilment') { healthState.fulfilmentMetrics = null; await loadHealthFulfilmentData(); }
     if(name === 'engine')     { healthState.engineMetrics = null;    await loadHealthEngineData(); }
-    if(name === 'compliance') { healthState.complianceWorker = null; await loadHealthComplianceData(); }
+    if(name === 'compliance') { healthState.complianceMatrix = null; healthState.complianceMatrixDetailCache = {}; healthState.complianceBarDetailCache = {}; await loadHealthComplianceData(); }
   } finally {
     if(btn) btn.classList.remove('spinning');
   }
@@ -6166,7 +6241,13 @@ dv2RegisterLifecycle('health', {
     healthState.fulfilmentMetrics = null; healthState.fulfilmentByHour = null;
     healthState.fulfilmentByBar = null; healthState.fulfilmentUnfilled = null;
     healthState.engineMetrics = null; healthState.engineDecisions = null;
-    healthState.complianceWorker = null; healthState.complianceBar = null; healthState.complianceOffboarded = null;
+    healthState.complianceKids = null; healthState.complianceWalkthroughs = null;
+    healthState.complianceHsDocs = null; healthState.complianceBars = null;
+    healthState.complianceMatrix = null;
+    healthState.complianceFlagsAction = null; healthState.complianceFlagsAwaiting = null;
+    healthState.complianceFlagsResolved = null;
+    healthState.complianceMatrixExpandedId = null; healthState.complianceMatrixDetailCache = {};
+    healthState.complianceBarExpandedId = null; healthState.complianceBarDetailCache = {};
   }
 });
 
@@ -6719,133 +6800,574 @@ function _renderHealthEnginePane() {
 
 // ----- Phase 3.6: Compliance -----
 
+// ====================================================================
+// Compliance Redesign (Batch 4c, 19 May 2026): replaces the Batch 3 flat
+// Worker/Bar/PIN/Offboarded structure with 4 sections that match the
+// operational reality (Glasi vs Bar vs Worker obligations + Numbermill
+// flagging workflow). Data via 14 f40_* RPCs (introspected per Hard Rule
+// #11 before any DDL — H&S signatures read from hs_acknowledgements,
+// walkthrough from worker_bar_signatures, bar docs from bar_documents).
+// ====================================================================
+
 async function loadHealthComplianceData() {
   const pane = document.getElementById('health-compliance-pane');
   if(pane) pane.innerHTML = '<div class="health-loading">Loading Compliance...</div>';
   try {
-    const [w, b, o] = await Promise.all([
-      sbAuth.rpc('f37_health_compliance_worker_gaps'),
-      sbAuth.rpc('f37_health_compliance_bar_gaps'),
-      sbAuth.rpc('f37_health_compliance_offboarded')
+    const [kids, walk, hs, bars, matrix, fAct, fAw, fRes] = await Promise.all([
+      sbAuth.rpc('f40_glasi_compliance_kids_status'),
+      sbAuth.rpc('f40_glasi_compliance_bar_walkthroughs'),
+      sbAuth.rpc('f40_glasi_compliance_bar_hs_docs'),
+      sbAuth.rpc('f40_bar_compliance_overview'),
+      sbAuth.rpc('f40_worker_compliance_matrix'),
+      sbAuth.rpc('f40_numbermill_flags_action_needed'),
+      sbAuth.rpc('f40_numbermill_flags_awaiting_decision'),
+      sbAuth.rpc('f40_numbermill_flags_resolved', { p_limit: 50 })
     ]);
-    if(w.error || b.error || o.error) throw (w.error || b.error || o.error);
-    healthState.complianceWorker     = w.data || {};
-    healthState.complianceBar        = b.data || {};
-    healthState.complianceOffboarded = o.data || [];
+    if(kids.error || walk.error || hs.error || bars.error || matrix.error || fAct.error || fAw.error || fRes.error) {
+      throw (kids.error || walk.error || hs.error || bars.error || matrix.error || fAct.error || fAw.error || fRes.error);
+    }
+    healthState.complianceKids          = kids.data   || [];
+    healthState.complianceWalkthroughs  = walk.data   || [];
+    healthState.complianceHsDocs        = hs.data     || [];
+    healthState.complianceBars          = bars.data   || [];
+    healthState.complianceMatrix        = matrix.data || [];
+    healthState.complianceFlagsAction   = fAct.data   || [];
+    healthState.complianceFlagsAwaiting = fAw.data    || [];
+    healthState.complianceFlagsResolved = fRes.data   || [];
     _renderHealthCompliancePane();
   } catch(err) {
     if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadHealthComplianceData()">Retry</button></div>';
   }
 }
 
-function _healthComplianceSubTable(label, rows, columns, rowRender, emptyMsg) {
-  if(!rows || !rows.length) {
-    return '<div class="health-section-sub">' + _opsEscape(label) + '</div>'
-      + '<div style="font-size:12px;color:var(--grey);padding:6px 0 12px;">' + _opsEscape(emptyMsg) + '</div>';
-  }
-  const head = columns.map(c => '<th>' + _opsEscape(c) + '</th>').join('');
-  const body = rows.map(rowRender).join('');
-  return '<div class="health-section-sub">' + _opsEscape(label) + '</div>'
-    + '<table class="health-table" style="margin-bottom:14px;"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
-}
-
 function _renderHealthCompliancePane() {
   const pane = document.getElementById('health-compliance-pane');
   if(!pane) return;
-  const wg = healthState.complianceWorker || {};
-  const bg = healthState.complianceBar || {};
-  const off = healthState.complianceOffboarded || [];
+  pane.innerHTML = ''
+    + _renderGlasiComplianceSection()
+    + _renderBarComplianceSection()
+    + _renderWorkerComplianceSection()
+    + _renderNumbermillFlagsSection();
+}
 
-  const workerSection = ''
-    + '<section class="health-section">'
-    +   '<h3 class="health-section-h3">Worker compliance gaps</h3>'
-    +   _healthComplianceSubTable('Missing H&S signatures',
-        wg.missing_hs_signatures, ['Worker','Bar / Detail'],
-        r => '<tr>'
-          + '<td><button class="health-link" onclick="_healthGoToWorker(' + r.application_id + ')">' + _opsEscape(r.worker_name || '#' + r.application_id) + '</button></td>'
-          + '<td>' + _opsEscape(r.bar_name || '') + '</td>'
-          + '</tr>',
-        'All workers compliant on H&S signatures.')
-    +   _healthComplianceSubTable('Right-to-work flagged',
-        wg.expired_right_to_work, ['Worker','Status'],
-        r => '<tr>'
-          + '<td><button class="health-link" onclick="_healthGoToWorker(' + r.application_id + ')">' + _opsEscape(r.worker_name || '#' + r.application_id) + '</button></td>'
-          + '<td>' + _opsEscape(r.detail || '') + '</td>'
-          + '</tr>',
-        'All workers confirmed right-to-work.')
-    +   _healthComplianceSubTable('Overdue walkthroughs',
-        wg.overdue_walkthroughs, ['Worker','Detail'],
-        r => '<tr><td>' + _opsEscape(r.worker_name || '') + '</td><td>' + _opsEscape(r.detail || '') + '</td></tr>',
-        'Walkthrough tracking lands in a follow-up batch.')
-    +   _healthComplianceSubTable('Missing employment paperwork',
-        wg.missing_employment_paperwork, ['Worker','Detail'],
-        r => '<tr>'
-          + '<td><button class="health-link" onclick="_healthGoToWorker(' + r.application_id + ')">' + _opsEscape(r.worker_name || '#' + r.application_id) + '</button></td>'
-          + '<td>' + _opsEscape(r.detail || '') + '</td>'
-          + '</tr>',
-        'All onboarded workers have Numbermill paperwork.')
-    + '</section>';
+// ----- Section 1: Glasi Compliance -----
 
-  const barSection = ''
-    + '<section class="health-section">'
-    +   '<h3 class="health-section-h3">Bar compliance gaps</h3>'
-    +   _healthComplianceSubTable('Bars without contract / agreement',
-        bg.no_contract, ['Bar','Status'],
-        r => '<tr>'
-          + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '') + '</button></td>'
-          + '<td>' + _opsEscape(r.detail || '') + '</td>'
-          + '</tr>',
-        'All bars compliant on contracts.')
-    +   _healthComplianceSubTable('Bars without walkthrough video',
-        bg.no_walkthrough, ['Bar','Last session'],
-        r => '<tr>'
-          + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '') + '</button></td>'
-          + '<td>' + _opsEscape(r.detail, '<span style="color:var(--grey);">no sessions yet</span>') + '</td>'
-          + '</tr>',
-        'All bars compliant on walkthroughs.')
-    +   _healthComplianceSubTable('Bars without H&S document',
-        bg.no_hs_document, ['Bar','Status'],
-        r => '<tr>'
-          + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '') + '</button></td>'
-          + '<td>' + _opsEscape(r.detail || '') + '</td>'
-          + '</tr>',
-        'All bars compliant on H&S documents.')
-    +   _healthComplianceSubTable('Bars with pending PIN-holder approval',
-        bg.pin_holder_pending, ['Bar','Proposed PIN-holder','Requested by'],
-        r => '<tr>'
-          + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '') + '</button></td>'
-          + '<td>' + _opsEscape(r.proposed_name || '') + ' &middot; ' + _opsEscape(r.proposed_email || '') + '</td>'
-          + '<td>' + _opsEscape(r.requested_by_manager_name || '&mdash;') + '</td>'
-          + '</tr>',
-        'No PIN-holder approvals pending.')
-    + '</section>';
+function _renderGlasiComplianceSection() {
+  const kids = healthState.complianceKids || [];
+  const walk = healthState.complianceWalkthroughs || [];
+  const hs   = healthState.complianceHsDocs || [];
+  const kidsMissing = kids.filter(r => !r.kid_uploaded).length;
+  const walkMissing = walk.filter(r => !r.uploaded).length;
+  const hsMissing   = hs.filter(r => !r.uploaded).length;
+  const total = kidsMissing + walkMissing + hsMissing;
+  const overallPill = total === 0
+    ? '<span class="money-status-pill green">ALL CLEAR</span>'
+    : '<span class="money-status-pill amber">' + total + ' item' + (total === 1 ? '' : 's') + ' outstanding</span>';
 
-  const pinPendingCount = (bg.pin_holder_pending || []).length;
-  const pinSection = ''
-    + '<section class="health-section">'
-    +   '<h3 class="health-section-h3">PIN-Holder Approval Queue</h3>'
-    +   '<div style="font-size:13px;color:var(--white);">'
-    +     (pinPendingCount > 0
-        ? ('<strong style="color:var(--amber);">' + pinPendingCount + ' pending</strong> &middot; <button class="health-link" onclick="_healthGoToBarsList()">review in Network &rarr; Bars &rsaquo;</button> <span style="color:var(--grey);font-size:11px;">(canonical action surface; this view is visibility only)</span>')
-        : '0 - no pending approvals.')
-    +   '</div>'
-    + '</section>';
-
-  const offRows = off.length
-    ? off.map(r => '<tr>'
-        + '<td>' + _healthFmtDate(r.offboarded_at) + '</td>'
-        + '<td><button class="health-link" onclick="_healthGoToWorkersOffboarded(' + r.application_id + ')">' + _opsEscape(r.worker_name || '#' + r.application_id) + '</button></td>'
-        + '<td>' + _opsEscape(r.reason || '') + '</td>'
-        + '<td>' + _opsEscape(r.offboarded_by || 'unknown') + '</td>'
+  // KIDs sub-block
+  const missingKidIds = kids.filter(r => !r.kid_uploaded).map(r => r.application_id);
+  const kidsBulkBtn = missingKidIds.length
+    ? '<button class="ops-sched-btn primary" onclick="openHealthKidUploadModal(' + JSON.stringify(missingKidIds).replace(/"/g,'&quot;') + ')">Upload KID for all ' + missingKidIds.length + ' unconfirmed worker' + (missingKidIds.length === 1 ? '' : 's') + '</button>'
+    : '<span style="color:var(--grey);font-size:12px;">All active workers have a KID on file.</span>';
+  const kidsRows = kids.length
+    ? kids.map(r => '<tr>'
+        + '<td><button class="health-link" onclick="_healthGoToWorker(' + r.application_id + ')">' + _opsEscape(r.worker_name || '#' + r.application_id) + '</button>'
+              + (r.tier != null ? ' <span class="net-worker-tier">T' + r.tier + '</span>' : '') + '</td>'
+        + '<td>' + (r.kid_uploaded
+            ? '<span class="money-status-pill green">UPLOADED</span>'
+            : '<span class="money-status-pill red">NOT UPLOADED</span>') + '</td>'
+        + '<td>' + (r.kid_uploaded_at ? _healthFmtDate(r.kid_uploaded_at) : '<span class="muted">,</span>') + '</td>'
+        + '<td>' + (r.kid_uploaded
+            ? ('<button class="health-link" onclick="openHealthKidUploadModal([' + r.application_id + '])">Re-upload</button>')
+            : ('<button class="health-link" onclick="openHealthKidUploadModal([' + r.application_id + '])">Upload KID</button>')) + '</td>'
         + '</tr>').join('')
-    : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">No workers have been offboarded.</td></tr>';
-  const offSection = ''
-    + '<section class="health-section">'
-    +   '<h3 class="health-section-h3">Offboarded workers history</h3>'
-    +   '<table class="health-table"><thead><tr><th>Date offboarded</th><th>Worker</th><th>Reason</th><th>Offboarded by</th></tr></thead><tbody>' + offRows + '</tbody></table>'
-    + '</section>';
+    : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">No active workers in scope.</td></tr>';
+  const kidsBlock = ''
+    + '<div class="health-section-sub" style="margin-top:8px;">KIDs (Key Information Documents)</div>'
+    + '<div style="margin-bottom:10px;">' + kidsBulkBtn + '</div>'
+    + '<table class="health-table" style="margin-bottom:18px;"><thead><tr><th>Worker</th><th>KID Status</th><th>Uploaded</th><th>Action</th></tr></thead><tbody>' + kidsRows + '</tbody></table>';
 
-  pane.innerHTML = workerSection + barSection + pinSection + offSection;
+  // Bar walkthrough sub-block
+  const walkRows = walk.length
+    ? walk.map(r => '<tr>'
+        + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '') + '</button></td>'
+        + '<td>' + (r.uploaded
+            ? '<span class="money-status-pill green">UPLOADED</span>'
+            : '<span class="money-status-pill amber">NOT UPLOADED</span>') + '</td>'
+        + '<td>' + (r.uploaded_at ? _healthFmtDate(r.uploaded_at) : '<span class="muted">,</span>') + '</td>'
+        + '<td>' + (r.uploaded && r.document_url
+            ? ('<a class="health-link" href="' + _opsEscape(r.document_url) + '" target="_blank" rel="noopener">View walkthrough</a>')
+            : '<button class="health-link" onclick="alert(&quot;Walkthrough upload UI lands in a follow-up batch; use Network &rarr; Bars &rarr; Documents for now.&quot;)">Upload walkthrough</button>') + '</td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">No active bars in scope.</td></tr>';
+  const walkBlock = ''
+    + '<div class="health-section-sub">Bar walkthrough videos</div>'
+    + '<table class="health-table" style="margin-bottom:18px;"><thead><tr><th>Bar</th><th>Walkthrough Status</th><th>Uploaded</th><th>Action</th></tr></thead><tbody>' + walkRows + '</tbody></table>';
+
+  // Bar H&S docs sub-block
+  const hsRows = hs.length
+    ? hs.map(r => '<tr>'
+        + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '') + '</button></td>'
+        + '<td>' + (r.uploaded
+            ? '<span class="money-status-pill green">UPLOADED</span>'
+            : '<span class="money-status-pill amber">NOT UPLOADED</span>') + '</td>'
+        + '<td>' + (r.uploaded_at ? _healthFmtDate(r.uploaded_at) : (r.uploaded ? '<span class="muted" style="font-size:11px;">(legacy URL)</span>' : '<span class="muted">,</span>')) + '</td>'
+        + '<td>' + (r.uploaded && r.document_url
+            ? ('<a class="health-link" href="' + _opsEscape(r.document_url) + '" target="_blank" rel="noopener">View H&amp;S doc</a>')
+            : '<button class="health-link" onclick="alert(&quot;H&amp;S document upload UI lands in a follow-up batch; use Network &rarr; Bars &rarr; Documents for now.&quot;)">Upload H&amp;S document</button>') + '</td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">No active bars in scope.</td></tr>';
+  const hsBlock = ''
+    + '<div class="health-section-sub">Bar H&amp;S documents</div>'
+    + '<table class="health-table" style="margin-bottom:18px;"><thead><tr><th>Bar</th><th>H&amp;S Document</th><th>Uploaded</th><th>Action</th></tr></thead><tbody>' + hsRows + '</tbody></table>';
+
+  // Assignment schedule placeholder
+  const assignmentBlock = ''
+    + '<div class="health-section-sub">Assignment schedules</div>'
+    + '<div style="background:rgba(168,216,234,0.04);border:1px dashed var(--border);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--grey);line-height:1.5;">'
+    +   'Per-shift assignment schedule generation (worker dispatched &rarr; schedule auto-generated &rarr; stored in Supabase storage &rarr; viewable in worker app).'
+    +   ' <strong style="color:var(--ice);">Status: Coming in dispatch redesign (Batch 5+).</strong>'
+    + '</div>';
+
+  return ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Glasi compliance ' + overallPill + '</h3>'
+    +   '<div class="health-section-note">Documents and acknowledgements Glasi is responsible for providing.</div>'
+    +   kidsBlock + walkBlock + hsBlock + assignmentBlock
+    + '</section>';
+}
+
+// ----- Section 2: Bar Compliance -----
+
+function _renderBarComplianceSection() {
+  const bars = healthState.complianceBars || [];
+  const gaps = bars.filter(b => (b.items_complete || 0) < (b.items_total || 0)).length;
+  const overallPill = gaps === 0 && bars.length
+    ? '<span class="money-status-pill green">ALL BARS COMPLIANT</span>'
+    : (gaps > 0
+        ? '<span class="money-status-pill amber">' + gaps + ' bar' + (gaps === 1 ? '' : 's') + ' with gaps</span>'
+        : '<span class="money-status-pill grey">NO ACTIVE BARS</span>');
+
+  const rows = bars.length
+    ? bars.map(b => {
+        const isExpanded = healthState.complianceBarExpandedId === b.bar_id;
+        const contractCell = b.contract_signed
+          ? '<span class="money-status-pill green">SIGNED ' + _healthFmtDate(b.contract_signed_at) + '</span>'
+          : '<span class="money-status-pill red">NOT SIGNED</span>';
+        const pinCell = (b.pin_holder_pending_count || 0) > 0
+          ? '<button class="health-link" onclick="event.stopPropagation();_healthGoToBar(' + b.bar_id + ')">' + b.pin_holder_pending_count + ' pending &rsaquo;</button>'
+          : '<span style="color:var(--grey);">0</span>';
+        const pctCls = (b.compliance_pct >= 100) ? 'green' : ((b.compliance_pct >= 50) ? 'amber' : 'red');
+        const actionCell = !b.contract_signed
+          ? '<button class="health-link" onclick="event.stopPropagation();markHealthBarContractSigned(' + b.bar_id + ')">Mark contract signed</button>'
+          : ((b.pin_holder_pending_count || 0) > 0
+              ? '<button class="health-link" onclick="event.stopPropagation();_healthGoToBar(' + b.bar_id + ')">Review PIN-holders</button>'
+              : '<span style="color:var(--grey);font-size:11px;">—</span>');
+        const head = '<tr class="clickable" onclick="toggleHealthComplianceBarRow(' + b.bar_id + ')">'
+          + '<td><button class="health-link" onclick="event.stopPropagation();_healthGoToBar(' + b.bar_id + ')">' + _opsEscape(b.bar_name) + '</button></td>'
+          + '<td>' + contractCell + '</td>'
+          + '<td>' + pinCell + '</td>'
+          + '<td>' + (b.items_complete || 0) + '/' + (b.items_total || 0) + ' <span class="money-status-pill ' + pctCls + '">' + (b.compliance_pct || 0) + '%</span></td>'
+          + '<td>' + actionCell + '</td>'
+          + '</tr>';
+        const exp = isExpanded
+          ? '<tr><td colspan="5" style="padding:0;background:transparent;">' + (_renderHealthComplianceBarDetail(b.bar_id) || '<div class="health-loading" style="margin:8px 0;">Loading bar detail...</div>') + '</td></tr>'
+          : '';
+        return head + exp;
+      }).join('')
+    : '<tr><td colspan="5" style="padding:24px 10px;text-align:center;color:var(--grey);">No active bars.</td></tr>';
+
+  return ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Bar compliance ' + overallPill + '</h3>'
+    +   '<div class="health-section-note">Documents and approvals each bar owes Glasi. Sorted by compliance score ascending (least compliant first).</div>'
+    +   '<table class="health-table"><thead><tr><th>Bar</th><th>Contract / Agreement</th><th>Pending PIN-holders</th><th>Compliance score</th><th>Action</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    + '</section>';
+}
+
+async function toggleHealthComplianceBarRow(barId) {
+  if(healthState.complianceBarExpandedId === barId) {
+    healthState.complianceBarExpandedId = null;
+    _renderHealthCompliancePane();
+    return;
+  }
+  healthState.complianceBarExpandedId = barId;
+  _renderHealthCompliancePane();
+  if(!healthState.complianceBarDetailCache[barId]) {
+    const res = await sbAuth.rpc('f40_bar_compliance_bar_detail', { p_bar_id: barId });
+    if(res.error) healthState.complianceBarDetailCache[barId] = { _error: res.error.message };
+    else          healthState.complianceBarDetailCache[barId] = res.data || {};
+    _renderHealthCompliancePane();
+  }
+}
+
+function _renderHealthComplianceBarDetail(barId) {
+  const d = healthState.complianceBarDetailCache[barId];
+  if(!d) return null;
+  if(d._error) return '<div class="health-error">Failed to load detail: ' + _opsEscape(d._error) + '</div>';
+  const pending = (d.pending_pin_holders || []);
+  const contractRow = d.contract_signed
+    ? '<div><span class="k">Contract</span><span class="money-status-pill green">Signed ' + _healthFmtDate(d.contract_signed_at) + '</span></div>'
+    : '<div><span class="k">Contract</span><span class="money-status-pill red">NOT SIGNED</span> <button class="health-link" onclick="markHealthBarContractSigned(' + d.bar_id + ')">Mark contract signed</button></div>';
+  const pendingHtml = pending.length
+    ? '<table class="health-table" style="margin-top:8px;"><thead><tr><th>Proposed PIN-holder</th><th>Email</th><th>Requested at</th><th>Action</th></tr></thead><tbody>'
+      + pending.map(p => '<tr>'
+          + '<td>' + _opsEscape(p.proposed_name || '') + '</td>'
+          + '<td>' + _opsEscape(p.proposed_email || '') + '</td>'
+          + '<td>' + _healthFmtDate(p.requested_at) + '</td>'
+          + '<td><button class="health-link" onclick="_healthGoToBar(' + d.bar_id + ')">Review in Network &rsaquo;</button></td>'
+          + '</tr>').join('')
+      + '</tbody></table>'
+    : '<div style="color:var(--grey);font-size:12px;">No pending PIN-holder requests.</div>';
+  return ''
+    + '<div class="money-bar-expand">'
+    +   '<div class="section"><h4>Contract / agreement</h4><div class="kv">' + contractRow + '</div></div>'
+    +   '<div class="section"><h4>Pending PIN-holder requests</h4>' + pendingHtml + '</div>'
+    +   (d.notes ? '<div class="section"><h4>Notes</h4><div style="font-size:12px;color:var(--white);white-space:pre-wrap;">' + _opsEscape(d.notes) + '</div></div>' : '')
+    + '</div>';
+}
+
+async function markHealthBarContractSigned(barId) {
+  if(!barId) return;
+  const today = new Date().toISOString().slice(0,10);
+  const date = window.prompt('Contract signed date (YYYY-MM-DD)', today);
+  if(date === null) return;
+  const res = await sbAuth.rpc('f40_bar_compliance_mark_contract_signed', { p_bar_id: barId, p_signed_date: date });
+  if(res.error) { alert('Mark failed: ' + res.error.message); return; }
+  healthState.complianceMatrix = null; // re-fetch all sections
+  delete healthState.complianceBarDetailCache[barId];
+  await loadHealthComplianceData();
+}
+
+// ----- Section 3: Worker Compliance Matrix -----
+
+function _renderWorkerComplianceSection() {
+  const matrix = healthState.complianceMatrix || [];
+  const inScope = matrix.filter(w => (w.catchment_count || 0) > 0);
+  const fully = inScope.filter(w => w.status === 'FULLY_COMPLIANT').length;
+  const blocked = inScope.filter(w => w.status === 'BLOCKED').length;
+  const overallPill = inScope.length === 0
+    ? '<span class="money-status-pill grey">NO CATCHMENT DATA</span>'
+    : (blocked === 0
+        ? '<span class="money-status-pill green">' + fully + ' of ' + inScope.length + ' fully compliant</span>'
+        : '<span class="money-status-pill red">' + blocked + ' worker' + (blocked === 1 ? '' : 's') + ' blocked from all bars</span>');
+
+  const rows = inScope.length
+    ? inScope.map(w => {
+        const isExpanded = healthState.complianceMatrixExpandedId === w.application_id;
+        const kidCell = w.kid_uploaded ? '<span style="color:var(--green);">✓</span>' : '<span style="color:var(--red);">✗</span>';
+        const hsCell = (w.catchment_count > 0)
+          ? (w.hs_signed_count + '/' + w.catchment_count + ' '
+             + (w.hs_signed_count === w.catchment_count ? '<span style="color:var(--green);">✓</span>'
+                : (w.hs_signed_count === 0 ? '<span style="color:var(--red);">✗</span>'
+                   : '<span style="color:var(--amber);">!</span>')))
+          : '<span class="muted">,</span>';
+        const wtCell = (w.catchment_count > 0)
+          ? (w.walkthrough_signed_count + '/' + w.catchment_count + ' '
+             + (w.walkthrough_signed_count === w.catchment_count ? '<span style="color:var(--green);">✓</span>'
+                : (w.walkthrough_signed_count === 0 ? '<span style="color:var(--red);">✗</span>'
+                   : '<span style="color:var(--amber);">!</span>')))
+          : '<span class="muted">,</span>';
+        const dispCell = (w.dispatchable_count || 0) + '/' + (w.catchment_count || 0) + ' bars';
+        const statusPill = w.status === 'FULLY_COMPLIANT' ? 'green'
+                         : w.status === 'PARTIAL'         ? 'amber'
+                         : w.status === 'BLOCKED'         ? 'red'
+                         : 'grey';
+        const statusLabel = (w.status || '').replace(/_/g, ' ');
+        const head = '<tr class="clickable" onclick="toggleHealthComplianceMatrixRow(' + w.application_id + ')">'
+          + '<td><button class="health-link" onclick="event.stopPropagation();_healthGoToWorker(' + w.application_id + ')">' + _opsEscape(w.worker_name || '#' + w.application_id) + '</button>'
+              + (w.tier != null ? ' <span class="net-worker-tier">T' + w.tier + '</span>' : '') + '</td>'
+          + '<td>' + kidCell + '</td>'
+          + '<td>' + hsCell + '</td>'
+          + '<td>' + wtCell + '</td>'
+          + '<td>' + dispCell + '</td>'
+          + '<td><span class="money-status-pill ' + statusPill + '">' + statusLabel + '</span></td>'
+          + '</tr>';
+        const exp = isExpanded
+          ? '<tr><td colspan="6" style="padding:0;background:transparent;">' + (_renderHealthComplianceMatrixDetail(w.application_id) || '<div class="health-loading" style="margin:8px 0;">Loading per-bar detail...</div>') + '</td></tr>'
+          : '';
+        return head + exp;
+      }).join('')
+    : '<tr><td colspan="6" style="padding:24px 10px;text-align:center;color:var(--grey);">No workers in catchment of any active bar.</td></tr>';
+
+  const outOfScopeCount = matrix.length - inScope.length;
+  const note = '<div class="health-section-note">Worker is dispatchable to a bar only when both H&amp;S and walkthrough are signed AND KID is uploaded.'
+             + (outOfScopeCount > 0 ? ' <span style="color:var(--grey);">(' + outOfScopeCount + ' worker' + (outOfScopeCount === 1 ? '' : 's') + ' hidden: no bars in catchment.)</span>' : '')
+             + '</div>';
+
+  return ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Worker compliance ' + overallPill + '</h3>'
+    +   note
+    +   '<table class="health-table"><thead><tr><th>Worker</th><th>KID</th><th>H&amp;S signed</th><th>Walkthrough signed</th><th>Dispatchability</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    + '</section>';
+}
+
+async function toggleHealthComplianceMatrixRow(applicationId) {
+  if(healthState.complianceMatrixExpandedId === applicationId) {
+    healthState.complianceMatrixExpandedId = null;
+    _renderHealthCompliancePane();
+    return;
+  }
+  healthState.complianceMatrixExpandedId = applicationId;
+  _renderHealthCompliancePane();
+  if(!healthState.complianceMatrixDetailCache[applicationId]) {
+    const res = await sbAuth.rpc('f40_worker_compliance_bar_detail', { p_application_id: applicationId });
+    if(res.error) healthState.complianceMatrixDetailCache[applicationId] = { _error: res.error.message };
+    else          healthState.complianceMatrixDetailCache[applicationId] = res.data || {};
+    _renderHealthCompliancePane();
+  }
+}
+
+function _renderHealthComplianceMatrixDetail(applicationId) {
+  const d = healthState.complianceMatrixDetailCache[applicationId];
+  if(!d) return null;
+  if(d._error) return '<div class="health-error">Failed to load detail: ' + _opsEscape(d._error) + '</div>';
+  const bars = d.bars || [];
+  const kidLine = d.kid_uploaded
+    ? 'KID: <span style="color:var(--green);">✓ uploaded ' + _healthFmtDate(d.kid_uploaded_at) + '</span>'
+        + (d.kid_pdf_path ? (' &middot; <a class="health-link" href="' + _opsEscape(d.kid_pdf_path) + '" target="_blank" rel="noopener">View KID</a>') : '')
+    : 'KID: <span style="color:var(--red);">✗ not uploaded</span>'
+        + ' &middot; <button class="health-link" onclick="openHealthKidUploadModal([' + d.application_id + '])">Upload now</button>';
+  const barRows = bars.length
+    ? bars.map(b => '<tr>'
+        + '<td><button class="health-link" onclick="_healthGoToBar(' + b.bar_id + ')">' + _opsEscape(b.bar_name) + '</button></td>'
+        + '<td>' + (b.hs_signed
+            ? '<span style="color:var(--green);">✓ ' + _healthFmtDate(b.hs_signed_at) + '</span>'
+            : '<span style="color:var(--amber);">✗ Pending</span>') + '</td>'
+        + '<td>' + (b.walkthrough_signed
+            ? '<span style="color:var(--green);">✓ ' + _healthFmtDate(b.walkthrough_signed_at) + '</span>'
+            : '<span style="color:var(--amber);">✗ Pending</span>') + '</td>'
+        + '<td>' + (b.dispatchable
+            ? '<span class="money-status-pill green">DISPATCHABLE</span>'
+            : '<span class="money-status-pill red">BLOCKED</span>') + '</td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="4" style="padding:16px 10px;text-align:center;color:var(--grey);">No bars in catchment.</td></tr>';
+  return ''
+    + '<div class="money-bar-expand">'
+    +   '<div class="section"><h4>' + _opsEscape(d.worker_name) + '</h4><div style="font-size:13px;color:var(--white);">' + kidLine + '</div></div>'
+    +   '<div class="section"><h4>Per-bar matrix</h4>'
+    +     '<table class="health-table"><thead><tr><th>Bar</th><th>H&amp;S signed</th><th>Walkthrough signed</th><th>Dispatchable</th></tr></thead><tbody>' + barRows + '</tbody></table>'
+    +   '</div>'
+    + '</div>';
+}
+
+// ----- Section 4: Workers Flagged for Numbermill Review -----
+
+function _renderNumbermillFlagsSection() {
+  const action = healthState.complianceFlagsAction || [];
+  const awaiting = healthState.complianceFlagsAwaiting || [];
+  const resolved = healthState.complianceFlagsResolved || [];
+  const monthAgo = new Date(); monthAgo.setMonth(monthAgo.getMonth() - 1);
+  const resolvedThisMonth = resolved.filter(r => r.resolved_at && new Date(r.resolved_at) >= monthAgo).length;
+
+  const summaryLine = ''
+    + '<div style="font-size:12px;color:var(--grey);margin-bottom:14px;">'
+    +   '<strong style="color:var(--amber);">' + action.length + '</strong> flagged but not yet notified to Numbermill &middot; '
+    +   '<strong style="color:var(--ice);">' + awaiting.length + '</strong> awaiting Numbermill response &middot; '
+    +   '<strong style="color:var(--green);">' + resolvedThisMonth + '</strong> resolved this month'
+    + '</div>';
+
+  // Block A: Action Needed
+  const actionRows = action.length
+    ? action.map(f => '<tr>'
+        + '<td><button class="health-link" onclick="_healthGoToWorker(' + f.application_id + ')">' + _opsEscape(f.worker_name || '#' + f.application_id) + '</button></td>'
+        + '<td>' + _healthFmtDate(f.flagged_at) + '</td>'
+        + '<td>' + _opsEscape(f.reason || '') + '</td>'
+        + '<td><button class="ops-sched-btn primary" onclick="openHealthNumbermillNotifyModal(' + f.flag_id + ', &quot;' + _opsEscape(f.worker_name || '#' + f.application_id).replace(/"/g, '&quot;') + '&quot;)">Mark Numbermill notified</button></td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="4" style="padding:18px 10px;text-align:center;color:var(--grey);">No flags awaiting Numbermill notification.</td></tr>';
+  const actionBlock = ''
+    + '<div class="health-section-sub" style="color:var(--amber);">Action needed: flag Sam to notify Numbermill</div>'
+    + '<table class="health-table" style="margin-bottom:18px;"><thead><tr><th>Worker</th><th>Flagged</th><th>Reason</th><th>Action</th></tr></thead><tbody>' + actionRows + '</tbody></table>';
+
+  // Block B: Awaiting Numbermill Decision
+  const awaitingRows = awaiting.length
+    ? awaiting.map(f => '<tr>'
+        + '<td><button class="health-link" onclick="_healthGoToWorker(' + f.application_id + ')">' + _opsEscape(f.worker_name || '#' + f.application_id) + '</button></td>'
+        + '<td>' + _healthFmtDate(f.flagged_at) + '</td>'
+        + '<td>' + _opsEscape(f.reason || '') + '</td>'
+        + '<td>' + _healthFmtDate(f.numbermill_notified_at) + '</td>'
+        + '<td>' + (f.days_awaiting != null ? (f.days_awaiting + 'd') : '<span class="muted">,</span>') + '</td>'
+        + '<td><button class="ops-sched-btn primary" onclick="openHealthNumbermillResolveModal(' + f.flag_id + ', &quot;' + _opsEscape(f.worker_name || '#' + f.application_id).replace(/"/g, '&quot;') + '&quot;)">Resolve flag</button></td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="6" style="padding:18px 10px;text-align:center;color:var(--grey);">No flags awaiting Numbermill decision.</td></tr>';
+  const awaitingBlock = ''
+    + '<div class="health-section-sub" style="color:var(--ice);">Awaiting Numbermill decision</div>'
+    + '<table class="health-table" style="margin-bottom:18px;"><thead><tr><th>Worker</th><th>Flagged</th><th>Reason</th><th>Notified</th><th>Days awaiting</th><th>Action</th></tr></thead><tbody>' + awaitingRows + '</tbody></table>';
+
+  // History
+  const isOpen = healthState.complianceResolvedHistoryOpen;
+  const historyToggle = '<button class="net-cross-link" onclick="toggleHealthComplianceResolvedHistory()" style="text-align:left;padding:6px 0;">' + (isOpen ? '&#9662; Hide' : '&#9656; Show') + ' resolved flags history (' + resolved.length + ')</button>';
+  const historyRows = resolved.length
+    ? resolved.map(f => '<tr>'
+        + '<td>' + _healthFmtDate(f.resolved_at) + '</td>'
+        + '<td><button class="health-link" onclick="_healthGoToWorker(' + f.application_id + ')">' + _opsEscape(f.worker_name || '#' + f.application_id) + '</button></td>'
+        + '<td>' + _opsEscape(f.reason || '') + '</td>'
+        + '<td>' + (f.numbermill_notified_at ? _healthFmtDate(f.numbermill_notified_at) : '<span class="muted">,</span>') + '</td>'
+        + '<td>' + _opsEscape(f.resolution_notes || '<span class="muted">,</span>') + '</td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="5" style="padding:18px 10px;text-align:center;color:var(--grey);">No resolved flags yet.</td></tr>';
+  const historyBlock = ''
+    + historyToggle
+    + (isOpen
+        ? ('<table class="health-table" style="margin-top:8px;"><thead><tr><th>Resolved</th><th>Worker</th><th>Reason</th><th>Notified</th><th>Resolution</th></tr></thead><tbody>' + historyRows + '</tbody></table>')
+        : '');
+
+  return ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Workers flagged for Numbermill review</h3>'
+    +   '<div class="health-section-note">Glasi is not the employer — workers requiring action are flagged here and escalated to Numbermill for employer-side review.</div>'
+    +   summaryLine
+    +   actionBlock
+    +   awaitingBlock
+    +   historyBlock
+    + '</section>';
+}
+
+function toggleHealthComplianceResolvedHistory() {
+  healthState.complianceResolvedHistoryOpen = !healthState.complianceResolvedHistoryOpen;
+  _renderHealthCompliancePane();
+}
+
+// ----- Modal handlers -----
+
+function openHealthKidUploadModal(applicationIds) {
+  if(!applicationIds || !applicationIds.length) return;
+  healthState.kidUploadContext = { application_ids: applicationIds };
+  const summary = applicationIds.length === 1
+    ? 'Upload KID for 1 worker'
+    : 'Upload one KID PDF and apply to ' + applicationIds.length + ' workers';
+  document.getElementById('health-kid-upload-summary').textContent = summary;
+  document.getElementById('health-kid-upload-file').value = '';
+  document.getElementById('health-kid-upload-err').textContent = '';
+  const btn = document.getElementById('health-kid-upload-save');
+  btn.disabled = false; btn.textContent = 'Upload & mark';
+  document.getElementById('health-kid-upload-modal').style.display = 'flex';
+}
+function closeHealthKidUploadModal() {
+  document.getElementById('health-kid-upload-modal').style.display = 'none';
+  healthState.kidUploadContext = null;
+}
+async function submitHealthKidUpload() {
+  const ctx = healthState.kidUploadContext;
+  if(!ctx || !ctx.application_ids || !ctx.application_ids.length) { closeHealthKidUploadModal(); return; }
+  const fileInput = document.getElementById('health-kid-upload-file');
+  const errEl = document.getElementById('health-kid-upload-err');
+  if(!fileInput.files || !fileInput.files.length) { errEl.textContent = 'Pick a PDF file.'; return; }
+  const file = fileInput.files[0];
+  if(!file.type.includes('pdf')) { errEl.textContent = 'File must be a PDF.'; return; }
+  const btn = document.getElementById('health-kid-upload-save');
+  btn.disabled = true; btn.textContent = 'Uploading...';
+  try {
+    // Upload to Supabase storage. One canonical path per (application_id, timestamp);
+    // the same File blob is uploaded once per worker so each worker's storage row
+    // is independent (audit isolation; future per-worker variants can land here).
+    const ts = Date.now();
+    let uploadedPath = null;
+    for(const appId of ctx.application_ids) {
+      const path = appId + '/kid_' + ts + '.pdf';
+      const up = await sbAuth.storage.from('kids').upload(path, file, { contentType: 'application/pdf', upsert: false });
+      if(up.error) {
+        if(/Bucket not found|not.found/i.test(up.error.message || '')) {
+          throw new Error('Storage bucket "kids" not found. Sam: create it via Supabase Studio (Storage → New bucket → name "kids", private), then retry.');
+        }
+        throw up.error;
+      }
+      uploadedPath = path; // last path; the canonical record-keeper is the RPC below
+    }
+    // Mark all targeted workers as KID-uploaded. Path stored is the LAST worker's
+    // path; if you want per-worker paths recorded individually, extend the RPC.
+    const res = await sbAuth.rpc('f40_glasi_compliance_mark_kid_uploaded', {
+      p_application_ids: ctx.application_ids,
+      p_kid_pdf_path: uploadedPath
+    });
+    if(res.error) throw res.error;
+    closeHealthKidUploadModal();
+    healthState.complianceMatrix = null;
+    healthState.complianceMatrixDetailCache = {};
+    await loadHealthComplianceData();
+  } catch(e) {
+    errEl.textContent = 'Upload failed: ' + (e.message || 'unknown');
+    btn.disabled = false; btn.textContent = 'Upload & mark';
+  }
+}
+
+function openHealthNumbermillNotifyModal(flagId, workerName) {
+  healthState.numbermillNotifyFlagId = flagId;
+  healthState.numbermillNotifyWorkerName = workerName || '';
+  document.getElementById('health-numbermill-notify-summary').textContent = workerName ? ('For ' + workerName) : '';
+  document.getElementById('health-numbermill-notify-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('health-numbermill-notify-notes').value = '';
+  document.getElementById('health-numbermill-notify-err').textContent = '';
+  const btn = document.getElementById('health-numbermill-notify-save');
+  btn.disabled = false; btn.textContent = 'Mark notified';
+  document.getElementById('health-numbermill-notify-modal').style.display = 'flex';
+}
+function closeHealthNumbermillNotifyModal() {
+  document.getElementById('health-numbermill-notify-modal').style.display = 'none';
+  healthState.numbermillNotifyFlagId = null;
+}
+async function submitHealthNumbermillNotify() {
+  const flagId = healthState.numbermillNotifyFlagId;
+  if(!flagId) { closeHealthNumbermillNotifyModal(); return; }
+  const errEl = document.getElementById('health-numbermill-notify-err');
+  const date = document.getElementById('health-numbermill-notify-date').value;
+  const notes = document.getElementById('health-numbermill-notify-notes').value.trim() || null;
+  if(!date) { errEl.textContent = 'Pick a notification date.'; return; }
+  const btn = document.getElementById('health-numbermill-notify-save');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const res = await sbAuth.rpc('f40_numbermill_flags_mark_notified', {
+      p_flag_id: flagId,
+      p_notification_date: new Date(date + 'T12:00:00Z').toISOString(),
+      p_notes: notes
+    });
+    if(res.error) throw res.error;
+    closeHealthNumbermillNotifyModal();
+    await loadHealthComplianceData();
+  } catch(e) {
+    errEl.textContent = 'Save failed: ' + (e.message || 'unknown');
+    btn.disabled = false; btn.textContent = 'Mark notified';
+  }
+}
+
+function openHealthNumbermillResolveModal(flagId, workerName) {
+  healthState.numbermillResolveFlagId = flagId;
+  healthState.numbermillResolveWorkerName = workerName || '';
+  document.getElementById('health-numbermill-resolve-summary').textContent = workerName ? ('For ' + workerName) : '';
+  document.getElementById('health-numbermill-resolve-outcome').value = 'worker_continues';
+  document.getElementById('health-numbermill-resolve-notes').value = '';
+  document.getElementById('health-numbermill-resolve-err').textContent = '';
+  const btn = document.getElementById('health-numbermill-resolve-save');
+  btn.disabled = false; btn.textContent = 'Resolve flag';
+  document.getElementById('health-numbermill-resolve-modal').style.display = 'flex';
+}
+function closeHealthNumbermillResolveModal() {
+  document.getElementById('health-numbermill-resolve-modal').style.display = 'none';
+  healthState.numbermillResolveFlagId = null;
+}
+async function submitHealthNumbermillResolve() {
+  const flagId = healthState.numbermillResolveFlagId;
+  if(!flagId) { closeHealthNumbermillResolveModal(); return; }
+  const errEl = document.getElementById('health-numbermill-resolve-err');
+  const outcome = document.getElementById('health-numbermill-resolve-outcome').value;
+  const notes = document.getElementById('health-numbermill-resolve-notes').value.trim() || null;
+  const btn = document.getElementById('health-numbermill-resolve-save');
+  btn.disabled = true; btn.textContent = 'Resolving...';
+  try {
+    const res = await sbAuth.rpc('f40_numbermill_flags_resolve', {
+      p_flag_id: flagId,
+      p_outcome: outcome,
+      p_resolution_notes: notes
+    });
+    if(res.error) throw res.error;
+    closeHealthNumbermillResolveModal();
+    await loadHealthComplianceData();
+  } catch(e) {
+    errEl.textContent = 'Resolve failed: ' + (e.message || 'unknown');
+    btn.disabled = false; btn.textContent = 'Resolve flag';
+  }
 }
 
 // ====================================================================

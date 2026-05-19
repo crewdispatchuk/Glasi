@@ -165,7 +165,7 @@
     .engagement-timeline-pane .etp-event-tier-promoted { border-left: 3px solid #C084FC; }
     .engagement-timeline-pane .etp-event-time { font-family: JetBrains Mono, monospace; font-size: 10px; color: var(--grey); }
     .engagement-timeline-pane .etp-event-worker { font-weight: 600; color: var(--white); margin-right: 6px; }
-    .engagement-timeline-pane .etp-event-amount { font-family: JetBrains Mono, monospace; font-weight: 700; }
+    .engagement-timeline-pane .etp-event-amount { font-variant-numeric: tabular-nums; font-weight: 700; }
     .engagement-timeline-pane .etp-event-reason { color: var(--white); }
     .engagement-timeline-pane .etp-event-forfeit-reason { color: var(--grey); font-style: italic; font-size: 11px; margin-top: 4px; }
 
@@ -573,7 +573,7 @@
     }
     .bv-bar-detail-shift-line > span:nth-child(2) {
       color: var(--white);
-      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
     }
     /* Worker-detail-block (inside expand panel) replaces the previous
        always-on detail row's styling so the content sits cleanly inside
@@ -696,7 +696,7 @@
     .bv-expand-req-bar  { color: var(--white); font-weight: 600; }
     .bv-expand-req-dist {
       color: var(--grey);
-      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      font-variant-numeric: tabular-nums; font-size: 11px;
     }
     .bv-expand-req-resp {
       font-family: 'Inter', sans-serif; font-size: 11px;
@@ -723,7 +723,7 @@
       font-size: 11px;
     }
     .bv-expand-rank-row > span:first-child  { color: var(--grey); letter-spacing: 0.5px; }
-    .bv-expand-rank-row > span:nth-child(2) { color: var(--white); font-family: 'JetBrains Mono', monospace; }
+    .bv-expand-rank-row > span:nth-child(2) { color: var(--white); font-variant-numeric: tabular-nums; }
     .bv-expand-rank-narrative {
       margin-top: 6px;
       font-size: 11px; font-style: italic;
@@ -1069,7 +1069,7 @@
     }
     .workers-subtab:hover { color: var(--white); }
     .workers-subtab.active { color: var(--ice); border-bottom-color: var(--ice); }
-    .workers-coverage { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    .workers-coverage { font-variant-numeric: tabular-nums; font-size: 12px; }
     .workers-coverage.high { color: var(--green); }
     .workers-coverage.mid  { color: var(--ice); }
     .workers-coverage.low  { color: var(--grey); }
@@ -1078,7 +1078,7 @@
     .workers-edit-section-label { font-size: 9px; letter-spacing: 2px; color: var(--ice); text-transform: uppercase; margin-bottom: 10px; }
     .workers-readonly-row { display: grid; grid-template-columns: 130px 1fr; gap: 6px 12px; font-size: 12px; margin-bottom: 6px; }
     .workers-readonly-row > .label { color: var(--grey); letter-spacing: 1px; text-transform: uppercase; font-size: 10px; }
-    .workers-readonly-row > .value { color: var(--white); font-family: 'JetBrains Mono', monospace; }
+    .workers-readonly-row > .value { color: var(--white); font-variant-numeric: tabular-nums; }
     .vet-check-row { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; cursor: pointer; }
     .vet-check-row input[type=checkbox] { accent-color: var(--ice); width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; cursor: pointer; }
     .vet-check-row span { font-size: 12px; color: var(--white); line-height: 1.5; }
@@ -1152,7 +1152,7 @@
     .pu-date { font-size: 11px; color: var(--grey); font-family: 'JetBrains Mono', monospace; }
     .pu-detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
     .pu-detail-row .l { color: var(--grey); }
-    .pu-detail-row .v { color: var(--white); font-family: 'JetBrains Mono', monospace; }
+    .pu-detail-row .v { color: var(--white); font-variant-numeric: tabular-nums; }
 
     /* ================================================================
        Dashboard v2 scaffolding (18 May 2026, Batch 1).
@@ -1289,7 +1289,7 @@
       letter-spacing: 0.5px;
     }
     .ops-sched-count {
-      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+      font-variant-numeric: tabular-nums; font-size: 12px;
       color: var(--grey); letter-spacing: 1px; text-transform: uppercase;
     }
     .ops-sched-date-field {
@@ -1412,7 +1412,7 @@
     }
     .ops-sched-forecast > div { font-size: 13px; color: var(--white); }
     .ops-sched-forecast .label { display: block; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--grey); margin-bottom: 4px; }
-    .ops-sched-forecast .value strong { color: var(--ice); font-family: 'JetBrains Mono', monospace; }
+    .ops-sched-forecast .value strong { color: var(--ice); font-variant-numeric: tabular-nums; }
 
     .ops-sched-notes-textarea {
       width: 100%; min-height: 72px; resize: vertical;
@@ -1539,10 +1539,10 @@
     .net-worker-tier {
       display: inline-block; padding: 2px 8px; border-radius: 4px;
       background: rgba(168,216,234,0.10); color: var(--ice);
-      font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+      font-size: 11px; font-weight: 700;
     }
     .net-worker-rel {
-      font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+      font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 700;
     }
     .net-worker-rel.high   { color: var(--green); }
     .net-worker-rel.mid    { color: var(--ice); }
@@ -1563,16 +1563,16 @@
       display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px;
     }
     .net-f32-composite .value {
-      font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700;
+      font-variant-numeric: tabular-nums; font-size: 28px; font-weight: 700;
       color: var(--green);
     }
     .net-f32-composite .label { font-size: 11px; color: var(--grey); letter-spacing: 1px; text-transform: uppercase; }
     .net-f32-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .net-f32-table td { padding: 6px 0; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .net-f32-table td { padding: 8px 0; vertical-align: middle; }
     .net-f32-table td.label { color: var(--white); min-width: 200px; }
-    .net-f32-table td.weight { color: var(--grey); font-family: 'JetBrains Mono', monospace; font-size: 11px; min-width: 60px; text-align: right; padding-right: 12px; }
+    .net-f32-table td.weight { color: var(--grey); font-variant-numeric: tabular-nums; font-size: 11px; min-width: 60px; text-align: right; padding-right: 12px; }
     .net-f32-table td.bar { width: 100%; padding-right: 12px; }
-    .net-f32-table td.score { font-family: 'JetBrains Mono', monospace; font-weight: 700; min-width: 50px; text-align: right; }
+    .net-f32-table td.score { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 50px; text-align: right; }
     .net-f32-bar {
       height: 8px; background: rgba(168,216,234,0.08); border-radius: 4px; overflow: hidden;
     }
@@ -1599,7 +1599,7 @@
       margin-left: 12px;
     }
     .net-pipeline-funnel .stage { color: var(--grey); letter-spacing: 1px; text-transform: uppercase; font-size: 10px; margin-right: 4px; }
-    .net-pipeline-funnel .num   { font-family: 'JetBrains Mono', monospace; color: var(--white); font-weight: 700; font-size: 14px; }
+    .net-pipeline-funnel .num   { font-variant-numeric: tabular-nums; color: var(--white); font-weight: 700; font-size: 14px; }
     .net-pipeline-funnel .num.active { color: var(--ice); }
     .net-pipeline-funnel .link {
       color: var(--grey); cursor: pointer; border-bottom: 1px dashed transparent;
@@ -1653,7 +1653,7 @@
       color: var(--white); font-weight: 700;
     }
     .net-worker-flags-count {
-      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      font-variant-numeric: tabular-nums; font-size: 11px;
     }
     .net-worker-flags-count.active { color: var(--amber); }
     .net-worker-flags-count.muted  { color: var(--grey); }
@@ -1730,7 +1730,7 @@
       color: var(--grey); font-weight: 700;
     }
     .health-tile .value {
-      font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 700;
+      font-variant-numeric: tabular-nums; font-size: 30px; font-weight: 700;
       color: var(--white); line-height: 1;
     }
     .health-tile .value.muted { color: var(--grey); }
@@ -1782,7 +1782,7 @@
       border-radius: 10px; padding: 14px 16px;
     }
     .health-rej-card .count {
-      font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700;
+      font-variant-numeric: tabular-nums; font-size: 28px; font-weight: 700;
       color: var(--white); margin-bottom: 4px;
     }
     .health-rej-card .label {
@@ -1807,8 +1807,8 @@
       height: 14px; background: rgba(168,216,234,0.08); border-radius: 3px; overflow: hidden;
     }
     .health-hour-row .bar > span { display: block; height: 100%; background: var(--ice); transition: width 0.3s ease; }
-    .health-hour-row .count { color: var(--white); font-family: 'JetBrains Mono', monospace; text-align: right; }
-    .health-hour-row .rate { color: var(--ice); font-family: 'JetBrains Mono', monospace; text-align: right; }
+    .health-hour-row .count { color: var(--white); font-variant-numeric: tabular-nums; text-align: right; }
+    .health-hour-row .rate { color: var(--ice); font-variant-numeric: tabular-nums; text-align: right; }
     .health-hour-row.zero .count, .health-hour-row.zero .rate { color: var(--grey); }
 
     /* Time-range filter pill row (Fulfilment + Engine). */
@@ -1895,7 +1895,7 @@
     }
     .money-gen-invoice-lines .line { display: flex; justify-content: space-between; gap: 8px; }
     .money-gen-invoice-lines .line + .line { margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(168,216,234,0.05); }
-    .money-gen-invoice-lines .line .amt { color: var(--ice); font-family: 'JetBrains Mono', monospace; }
+    .money-gen-invoice-lines .line .amt { color: var(--ice); font-variant-numeric: tabular-nums; }
     .money-gen-invoice-lines .empty { color: var(--grey); font-style: italic; }
 
     .history-filter-bar {
@@ -3095,7 +3095,7 @@
         </label>
       </div>
       <div style="font-size:13px;color:var(--white);margin:8px 0;text-align:right;">
-        Total: <strong id="money-gen-invoice-total" style="color:var(--ice);font-family:JetBrains Mono,monospace;">&pound;0.00</strong>
+        Total: <strong id="money-gen-invoice-total" style="color:var(--ice);font-variant-numeric:tabular-nums;">&pound;0.00</strong>
       </div>
       <label class="prospect-form-label">Notes (optional)
         <textarea id="money-gen-invoice-notes" rows="3" placeholder="Anything to include on the invoice"></textarea>
@@ -4349,7 +4349,7 @@ function _renderNetworkBarsRow(b, isExpanded) {
   return ''
     + '<tr class="ops-sched-row' + expandedCls + '" data-id="' + b.id + '" onclick="toggleNetworkBarsRow(' + b.id + ')">'
     +   '<td style="font-weight:600;color:var(--white);">' + _opsEscape(b.name || '(unnamed bar)') + '</td>'
-    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode, '<span class="muted">,</span>') + '</span></td>'
+    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + _opsEscape(postcode, '<span class="muted">,</span>') + '</span></td>'
     +   '<td><span class="net-bar-status ' + status + '">' + status.toUpperCase() + '</span></td>'
     +   '<td><span class="net-bar-sub ' + subStatus + '">' + subLabel + '</span></td>'
     +   '<td>' + lastSessLabel + '</td>'
@@ -4367,8 +4367,8 @@ function _renderNetworkBarsExpansion(b) {
     +   '<span class="k">Contact name</span><span class="v">' + _opsEscape(b.contact_name, '<span class="muted">,</span>') + '</span>'
     +   '<span class="k">Contact phone</span><span class="v">' + _opsEscape(b.contact_phone, '<span class="muted">,</span>') + '</span>'
     +   '<span class="k">Google Maps</span><span class="v">' + (b.google_maps_link ? '<a href="' + _opsEscape(b.google_maps_link) + '" target="_blank" rel="noopener" style="color:var(--ice);">Open map</a>' : '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Opening</span><span class="v">' + (b.opening_time, '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Closing</span><span class="v">' + (b.closing_time, '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Opening</span><span class="v">' + _opsEscape(b.opening_time, '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Closing</span><span class="v">' + _opsEscape(b.closing_time, '<span class="muted">,</span>') + '</span>'
     +   '<span class="k">Created</span><span class="v">' + (b.created_at ? new Date(b.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '<span class="muted">,</span>') + '</span>'
     + '</div>'
     + '<div class="net-prof-edit-row" style="margin-top:12px;">'
@@ -4785,7 +4785,7 @@ function _renderNetworkWorkersRow(w, isExpanded) {
   return ''
     + '<tr class="ops-sched-row' + expandedCls + '" data-id="' + w.id + '" onclick="toggleNetworkWorkersRow(' + w.id + ')">'
     +   '<td style="font-weight:600;color:var(--white);">' + _opsEscape(w.name || '(no name)') + '</td>'
-    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode, '<span class="muted">,</span>') + '</span></td>'
+    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + _opsEscape(postcode, '<span class="muted">,</span>') + '</span></td>'
     +   '<td><span class="net-worker-tier">' + tier + '</span></td>'
     +   '<td><span class="net-worker-rel ' + relClass + '">' + relText + '</span></td>'
     +   '<td><span class="net-worker-status ' + status + '">' + status.toUpperCase() + '</span></td>'
@@ -5401,7 +5401,7 @@ function _renderPipelineBarsRow(b, isExpanded) {
   return ''
     + '<tr class="ops-sched-row' + expandedCls + '" data-id="' + b.id + '" onclick="togglePipelineBarsRow(' + b.id + ')">'
     +   '<td style="font-weight:600;color:var(--white);">' + _opsEscape(b.name || '(unnamed)') + '</td>'
-    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode, '<span class="muted">,</span>') + '</span></td>'
+    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + _opsEscape(postcode, '<span class="muted">,</span>') + '</span></td>'
     +   '<td><span class="net-stage-pill prospect">PROSPECT</span></td>'
     +   '<td>' + lastContact + '</td>'
     +   '<td><span class="ops-sched-time">' + days + 'd</span></td>'
@@ -5419,7 +5419,7 @@ function _renderPipelineBarsExpansion(b) {
     +     '<h3 class="ops-sched-exp-h3">Identity</h3>'
     +     '<div class="net-prof-grid">'
     +       '<span class="k">Bar name</span><span class="v">' + _opsEscape(b.name, '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Postcode</span><span class="v">' + (_netExtractPostcode(b.address), '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Postcode</span><span class="v">' + _opsEscape(_netExtractPostcode(b.address), '<span class="muted">,</span>') + '</span>'
     +       '<span class="k">Contact name</span><span class="v">' + _opsEscape(b.contact_name, '<span class="muted">,</span>') + '</span>'
     +       '<span class="k">Contact phone</span><span class="v">' + _opsEscape(b.contact_phone, '<span class="muted">,</span>') + '</span>'
     +     '</div>'
@@ -5629,7 +5629,7 @@ function _renderPipelineWorkersRow(w, isExpanded) {
   return ''
     + '<tr class="ops-sched-row' + expandedCls + '" data-id="' + w.id + '" onclick="togglePipelineWorkersRow(' + w.id + ')">'
     +   '<td style="font-weight:600;color:var(--white);">' + _opsEscape(w.name || '(no name)') + '</td>'
-    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode, '<span class="muted">,</span>') + '</span></td>'
+    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + _opsEscape(postcode, '<span class="muted">,</span>') + '</span></td>'
     +   '<td><span class="net-stage-pill ' + stage + '">' + stage.toUpperCase() + '</span></td>'
     +   '<td>' + date + '</td>'
     +   '<td>' + notesSummary + '</td>'
@@ -6254,7 +6254,7 @@ function _renderHealthFlagsPane() {
     : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">No active flags. Great.</td></tr>';
   const activeHtml = ''
     + '<section class="health-section">'
-    +   '<h3 class="health-section-h3">Active Worker Flags ' + (active.length ? '<span style="color:var(--amber);font-family:JetBrains Mono,monospace;font-size:11px;margin-left:8px;">' + active.length + ' unresolved</span>' : '') + '</h3>'
+    +   '<h3 class="health-section-h3">Active Worker Flags ' + (active.length ? '<span style="color:var(--amber);font-variant-numeric:tabular-nums;font-size:11px;margin-left:8px;">' + active.length + ' unresolved</span>' : '') + '</h3>'
     +   '<table class="health-table"><thead><tr><th>Worker</th><th>Reason</th><th>Flagged</th><th></th></tr></thead><tbody>' + activeRows + '</tbody></table>'
     + '</section>';
 
@@ -8613,7 +8613,7 @@ async function loadWorkerFunnel() {
   if(!funnel) return;
   const item = (label, count, colour) =>
     '<div style="flex:1;text-align:center;border-right:1px solid var(--border);padding-right:24px;margin-right:0;">'
-    +'<div style="font-size:24px;font-weight:700;font-family:\'JetBrains Mono\',monospace;color:'+colour+';">'+count+'</div>'
+    +'<div style="font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;color:'+colour+';">'+count+'</div>'
     +'<div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-top:4px;">'+label+'</div>'
     +'</div>';
   funnel.innerHTML =
@@ -8621,7 +8621,7 @@ async function loadWorkerFunnel() {
     +item('Applied', applied, 'var(--ice)')
     +item('Vetted', vetted, 'var(--amber)')
     +'<div style="flex:1;text-align:center;">'
-    +'<div style="font-size:24px;font-weight:700;font-family:\'JetBrains Mono\',monospace;color:var(--green);">'+onboarded+'</div>'
+    +'<div style="font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--green);">'+onboarded+'</div>'
     +'<div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;margin-top:4px;">Onboarded</div>'
     +'</div>';
 }
@@ -10157,7 +10157,7 @@ function downloadCSV(content, filename) {
 function scorebadge(score) {
   const s = parseFloat(score);
   const color = s >= 80 ? 'var(--green)' : s >= 60 ? 'var(--amber)' : 'var(--red)';
-  return '<span style="font-family:\'JetBrains Mono\',monospace;font-size:12px;font-weight:600;color:'+color+';">'+s.toFixed(0)+'%</span>';
+  return '<span style="font-variant-numeric:tabular-nums;font-size:12px;font-weight:600;color:'+color+';">'+s.toFixed(0)+'%</span>';
 }
 
 // F-32 reliability (Recommendation Engine Redesign, 17 May 2026): the
@@ -14012,7 +14012,7 @@ function renderShiftPointsBlock(ctx) {
       + linked.map(r => '<tr>'
           + '<td><span style="font-size:11px;color:var(--grey);font-family:JetBrains Mono,monospace;">' + f30FmtDateTime(r.awarded_at) + '</span></td>'
           + '<td>' + f31ReasonLabel(r.reason) + (r.correction_for_event_id ? ' <span style="color:var(--grey);font-size:10px;">(corrects #' + r.correction_for_event_id + ')</span>' : '') + '</td>'
-          + '<td><span style="color:' + (r.amount >= 0 ? 'var(--green)' : 'var(--red)') + ';font-weight:600;font-family:JetBrains Mono,monospace;">' + (r.amount >= 0 ? '+' : '') + r.amount + '</span></td>'
+          + '<td><span style="color:' + (r.amount >= 0 ? 'var(--green)' : 'var(--red)') + ';font-weight:600;font-variant-numeric:tabular-nums;">' + (r.amount >= 0 ? '+' : '') + r.amount + '</span></td>'
           + '<td><span style="font-size:11px;color:var(--grey);">' + (r.awarded_by || '') + '</span></td>'
           + '<td><span style="font-size:11px;color:var(--grey);">' + (r.notes ? String(r.notes).replaceAll('<','&lt;').replaceAll('>','&gt;') : '') + '</span></td>'
           + '</tr>').join('')
@@ -14036,7 +14036,7 @@ function renderBasketBreakdown(baskets) {
     + '<span class="l">' + f31ReasonLabel(b.reason)
     + (b.status === 'forfeit' && b.forfeit_reason ? ' <span style="color:var(--grey);font-size:11px;font-style:italic;">(' + String(b.forfeit_reason).replaceAll('<','&lt;').replaceAll('>','&gt;') + ')</span>' : '')
     + '</span>'
-    + '<span class="v" style="color:' + color + ';font-family:JetBrains Mono,monospace;">'
+    + '<span class="v" style="color:' + color + ';font-variant-numeric:tabular-nums;">'
     + (b.status === 'forfeit' ? 'âˆ’' : '+') + (parseInt(b.amount) || 0)
     + '</span></div>';
 
@@ -14076,7 +14076,7 @@ function renderSessionWorkerPointsRow(sw, rows, sessionId, baskets) {
       + rows.map(r => '<tr>'
           + '<td><span style="font-size:11px;color:var(--grey);font-family:JetBrains Mono,monospace;">' + f30FmtDateTime(r.awarded_at) + '</span></td>'
           + '<td>' + f31ReasonLabel(r.reason) + (r.correction_for_event_id ? ' <span style="color:var(--grey);font-size:10px;">(corrects #' + r.correction_for_event_id + ')</span>' : '') + '</td>'
-          + '<td><span style="color:' + (r.amount >= 0 ? 'var(--green)' : 'var(--red)') + ';font-weight:600;font-family:JetBrains Mono,monospace;">' + (r.amount >= 0 ? '+' : '') + r.amount + '</span></td>'
+          + '<td><span style="color:' + (r.amount >= 0 ? 'var(--green)' : 'var(--red)') + ';font-weight:600;font-variant-numeric:tabular-nums;">' + (r.amount >= 0 ? '+' : '') + r.amount + '</span></td>'
           + '<td><span style="font-size:11px;color:var(--grey);">' + (r.awarded_by || '') + '</span></td>'
           + '<td><span style="font-size:11px;color:var(--grey);">' + (r.notes ? String(r.notes).replaceAll('<','&lt;').replaceAll('>','&gt;') : '') + '</span></td>'
           + '</tr>').join('')

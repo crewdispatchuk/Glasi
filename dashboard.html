@@ -1438,9 +1438,12 @@
     .net-bar-sub.trial        { background: rgba(168,216,234,0.18); color: var(--ice); }
     .net-bar-sub.none         { background: rgba(100,116,139,0.10); color: var(--grey); }
 
-    /* Bar / Worker profile expansion sub-section layout (reused). */
+    /* Bar / Worker profile expansion sub-section layout (reused). The label
+       column is at least 140px but auto-grows per-grid-instance to fit the
+       widest label so long labels (e.g. "Lost minutes per bartender per
+       hour" on Baseline Data) do not overlap their value cell. */
     .net-prof-grid {
-      display: grid; grid-template-columns: 140px 1fr; gap: 6px 16px;
+      display: grid; grid-template-columns: minmax(140px, max-content) 1fr; gap: 6px 16px;
       align-items: baseline; font-size: 13px;
     }
     .net-prof-grid .k { color: var(--grey); font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; }
@@ -3983,12 +3986,12 @@ function _renderNetworkBarsExpansion(b) {
   // Identity block, address + notes editable, others read-only.
   const identityHtml = ''
     + '<div class="net-prof-grid">'
-    +   '<span class="k">Contact name</span><span class="v">' + _opsEscape(b.contact_name, '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Contact phone</span><span class="v">' + _opsEscape(b.contact_phone, '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Google Maps</span><span class="v">' + (b.google_maps_link ? '<a href="' + _opsEscape(b.google_maps_link) + '" target="_blank" rel="noopener" style="color:var(--ice);">Open map</a>' : '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Opening</span><span class="v">' + _opsEscape(b.opening_time, '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Closing</span><span class="v">' + _opsEscape(b.closing_time, '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Created</span><span class="v">' + (b.created_at ? new Date(b.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Contact name</span><span class="v">' + _opsEscape(b.contact_name, '<span class="muted">&mdash;</span>') + '</span>'
+    +   '<span class="k">Contact phone</span><span class="v">' + _opsEscape(b.contact_phone, '<span class="muted">&mdash;</span>') + '</span>'
+    +   '<span class="k">Google Maps</span><span class="v">' + (b.google_maps_link ? '<a href="' + _opsEscape(b.google_maps_link) + '" target="_blank" rel="noopener" style="color:var(--ice);">Open map</a>' : '<span class="muted">&mdash;</span>') + '</span>'
+    +   '<span class="k">Opening</span><span class="v">' + _opsEscape(b.opening_time, '<span class="muted">&mdash;</span>') + '</span>'
+    +   '<span class="k">Closing</span><span class="v">' + _opsEscape(b.closing_time, '<span class="muted">&mdash;</span>') + '</span>'
+    +   '<span class="k">Created</span><span class="v">' + (b.created_at ? new Date(b.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '<span class="muted">&mdash;</span>') + '</span>'
     + '</div>'
     + '<div class="net-prof-edit-row" style="margin-top:12px;">'
     +   '<span class="field-label">Address</span>'
@@ -4005,10 +4008,10 @@ function _renderNetworkBarsExpansion(b) {
   let subBody;
   if(sub) {
     const subStatus = (sub.status || 'none').toLowerCase();
-    const fee = sub.monthly_fee != null ? ('Â£' + Number(sub.monthly_fee).toFixed(2) + '/mo') : '<span class="muted">,</span>';
+    const fee = sub.monthly_fee != null ? ('£' + Number(sub.monthly_fee).toFixed(2) + '/mo') : '<span class="muted">&mdash;</span>';
     const disc = sub.discount_amount && Number(sub.discount_amount) > 0
-      ? ('Â£' + Number(sub.discount_amount).toFixed(2) + ' discount')
-      : '<span class="muted">,</span>';
+      ? ('£' + Number(sub.discount_amount).toFixed(2) + ' discount')
+      : '<span class="muted">&mdash;</span>';
     const trial = sub.trial_ends_at
       ? ('Trial ends ' + new Date(sub.trial_ends_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }))
       : '<span class="muted">No trial info</span>';
@@ -4017,7 +4020,7 @@ function _renderNetworkBarsExpansion(b) {
       + '<span class="k">Monthly fee</span><span class="v">' + fee + '</span>'
       + '<span class="k">Discount</span><span class="v">' + disc + '</span>'
       + '<span class="k">Trial</span><span class="v">' + trial + '</span>'
-      + '<span class="k">Billing cycle</span><span class="v">' + (sub.billing_cycle_day ? ('Day ' + sub.billing_cycle_day + ' of month') : '<span class="muted">,</span>') + '</span>'
+      + '<span class="k">Billing cycle</span><span class="v">' + (sub.billing_cycle_day ? ('Day ' + sub.billing_cycle_day + ' of month') : '<span class="muted">&mdash;</span>') + '</span>'
       + '</div>'
       + '<button class="net-cross-link" onclick="_netGoToMoneyForBar(' + bid + ')">View invoice history in Money &rsaquo;</button>';
   } else {
@@ -4455,13 +4458,13 @@ function _renderNetworkWorkersExpansion(w) {
   // admin_notes is the editable Sam-authored companion to vetting_notes).
   const identityHtml = ''
     + '<div class="net-prof-grid">'
-    +   '<span class="k">Name</span><span class="v">' + _opsEscape(w.name, '<span class="muted">,</span>') + ' <span class="muted" style="font-size:10px;">read-only (PII)</span></span>'
-    +   '<span class="k">Email</span><span class="v">' + _opsEscape(w.email, '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Phone</span><span class="v">' + _opsEscape(w.phone, '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Age group</span><span class="v">' + _opsEscape(w.age_group, '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Postcode</span><span class="v">' + _opsEscape(postcode, '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Onboarded</span><span class="v">' + (w.created_at ? new Date(w.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Numbermill ref</span><span class="v">' + _opsEscape(w.parasol_worker_ref, '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Name</span><span class="v">' + _opsEscape(w.name, '<span class="muted">&mdash;</span>') + ' <span class="muted" style="font-size:10px;">read-only (PII)</span></span>'
+    +   '<span class="k">Email</span><span class="v">' + _opsEscape(w.email, '<span class="muted">&mdash;</span>') + '</span>'
+    +   '<span class="k">Phone</span><span class="v">' + _opsEscape(w.phone, '<span class="muted">&mdash;</span>') + '</span>'
+    +   '<span class="k">Age group</span><span class="v">' + _opsEscape(w.age_group, '<span class="muted">&mdash;</span>') + '</span>'
+    +   '<span class="k">Postcode</span><span class="v">' + _opsEscape(postcode, '<span class="muted">&mdash;</span>') + '</span>'
+    +   '<span class="k">Onboarded</span><span class="v">' + (w.created_at ? new Date(w.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '<span class="muted">&mdash;</span>') + '</span>'
+    +   '<span class="k">Numbermill ref</span><span class="v">' + _opsEscape(w.parasol_worker_ref, '<span class="muted">&mdash;</span>') + '</span>'
     + '</div>'
     + '<div class="net-prof-edit-row" style="margin-top:12px;">'
     +   '<span class="field-label">Address</span>'
@@ -4495,7 +4498,7 @@ function _renderNetworkWorkersExpansion(w) {
   const perfHtml = ''
     + '<div class="net-prof-grid">'
     +   '<span class="k">Tier</span><span class="v"><span class="net-worker-tier">T' + (w.tier == null ? '?' : w.tier) + '</span></span>'
-    +   '<span class="k">Hourly rate</span><span class="v">' + (w.hourly_rate != null ? ('Â£' + Number(w.hourly_rate).toFixed(2) + '/hr') : '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Hourly rate</span><span class="v">' + (w.hourly_rate != null ? ('£' + Number(w.hourly_rate).toFixed(2) + '/hr') : '<span class="muted">,</span>') + '</span>'
     +   '<span class="k">Total points</span><span class="v">' + (w.total_points != null ? w.total_points : '<span class="muted">,</span>') + '</span>'
     +   '<span class="k">Composite recomputed</span><span class="v">' + (w.reliability_updated_at ? new Date(w.reliability_updated_at).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '<span class="muted">not yet</span>') + '</span>'
     + '</div>'
@@ -4601,7 +4604,7 @@ async function _populateWorkerShifts(w) {
         + '<td>' + (s.clock_in_confirmed_at ? new Date(s.clock_in_confirmed_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '&mdash;') + '</td>'
         + '<td>' + _opsEscape((s.bars && s.bars.name) || '&mdash;') + '</td>'
         + '<td>' + (s.shift_length_hours != null ? Number(s.shift_length_hours).toFixed(1) + 'h' : '&mdash;') + '</td>'
-        + '<td>' + (s.total_earned != null ? ('Â£' + Number(s.total_earned).toFixed(2)) : '&mdash;') + '</td>'
+        + '<td>' + (s.total_earned != null ? ('£' + Number(s.total_earned).toFixed(2)) : '&mdash;') + '</td>'
         + '<td>' + (s.bar_rating != null ? ('â˜…'.repeat(s.bar_rating) + 'â˜†'.repeat(5 - s.bar_rating)) : '<span class="muted">,</span>') + '</td>'
         + '</tr>').join('')
       + '</tbody></table>';
@@ -5071,10 +5074,10 @@ function _renderPipelineBarsExpansion(b) {
     +   '<div class="ops-sched-exp-section">'
     +     '<h3 class="ops-sched-exp-h3">Identity</h3>'
     +     '<div class="net-prof-grid">'
-    +       '<span class="k">Bar name</span><span class="v">' + _opsEscape(b.name, '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Postcode</span><span class="v">' + _opsEscape(_netExtractPostcode(b.address), '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Contact name</span><span class="v">' + _opsEscape(b.contact_name, '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Contact phone</span><span class="v">' + _opsEscape(b.contact_phone, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Bar name</span><span class="v">' + _opsEscape(b.name, '<span class="muted">&mdash;</span>') + '</span>'
+    +       '<span class="k">Postcode</span><span class="v">' + _opsEscape(_netExtractPostcode(b.address), '<span class="muted">&mdash;</span>') + '</span>'
+    +       '<span class="k">Contact name</span><span class="v">' + _opsEscape(b.contact_name, '<span class="muted">&mdash;</span>') + '</span>'
+    +       '<span class="k">Contact phone</span><span class="v">' + _opsEscape(b.contact_phone, '<span class="muted">&mdash;</span>') + '</span>'
     +     '</div>'
     +   '</div>'
     +   '<div class="ops-sched-exp-section">'
@@ -5297,10 +5300,10 @@ function _renderPipelineWorkersExpansion(w) {
       +   '<div class="ops-sched-exp-section">'
       +     '<h3 class="ops-sched-exp-h3">Identity</h3>'
       +     '<div class="net-prof-grid">'
-      +       '<span class="k">Name</span><span class="v">' + _opsEscape(w.name, '<span class="muted">,</span>') + ' <span class="muted" style="font-size:10px;">read-only (PII)</span></span>'
-      +       '<span class="k">Email</span><span class="v">' + _opsEscape(w.email, '<span class="muted">,</span>') + '</span>'
-      +       '<span class="k">Signup date</span><span class="v">' + (w.created_at ? new Date(w.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '<span class="muted">,</span>') + '</span>'
-      +       '<span class="k">Referred by</span><span class="v">' + _opsEscape(w.referred_by, '<span class="muted">,</span>') + '</span>'
+      +       '<span class="k">Name</span><span class="v">' + _opsEscape(w.name, '<span class="muted">&mdash;</span>') + ' <span class="muted" style="font-size:10px;">read-only (PII)</span></span>'
+      +       '<span class="k">Email</span><span class="v">' + _opsEscape(w.email, '<span class="muted">&mdash;</span>') + '</span>'
+      +       '<span class="k">Signup date</span><span class="v">' + (w.created_at ? new Date(w.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '<span class="muted">&mdash;</span>') + '</span>'
+      +       '<span class="k">Referred by</span><span class="v">' + _opsEscape(w.referred_by, '<span class="muted">&mdash;</span>') + '</span>'
       +     '</div>'
       +   '</div>'
       +   '<div class="ops-sched-actions-row">'
@@ -5316,11 +5319,11 @@ function _renderPipelineWorkersExpansion(w) {
     +   '<div class="ops-sched-exp-section">'
     +     '<h3 class="ops-sched-exp-h3">Identity (read-only per Hard Rule #1)</h3>'
     +     '<div class="net-prof-grid">'
-    +       '<span class="k">Name</span><span class="v">' + _opsEscape(w.name, '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Email</span><span class="v">' + _opsEscape(w.email, '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Phone</span><span class="v">' + _opsEscape(w.phone, '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Age group</span><span class="v">' + _opsEscape(w.age_group, '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Postcode (applicant)</span><span class="v">' + _opsEscape(w.postcode_full, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Name</span><span class="v">' + _opsEscape(w.name, '<span class="muted">&mdash;</span>') + '</span>'
+    +       '<span class="k">Email</span><span class="v">' + _opsEscape(w.email, '<span class="muted">&mdash;</span>') + '</span>'
+    +       '<span class="k">Phone</span><span class="v">' + _opsEscape(w.phone, '<span class="muted">&mdash;</span>') + '</span>'
+    +       '<span class="k">Age group</span><span class="v">' + _opsEscape(w.age_group, '<span class="muted">&mdash;</span>') + '</span>'
+    +       '<span class="k">Postcode (applicant)</span><span class="v">' + _opsEscape(w.postcode_full, '<span class="muted">&mdash;</span>') + '</span>'
     +     '</div>'
     +   '</div>'
     +   '<div class="ops-sched-exp-section">'
@@ -5328,8 +5331,8 @@ function _renderPipelineWorkersExpansion(w) {
     +     '<div class="net-prof-grid">'
     +       '<span class="k">Hospitality experience</span><span class="v">' + (w.hospitality_experience === true ? 'Yes' : (w.hospitality_experience === false ? 'No' : '<span class="muted">unknown</span>')) + '</span>'
     +       '<span class="k">UK right to work</span><span class="v">' + (w.uk_work_right === true ? '<span style="color:var(--green);">Yes</span>' : (w.uk_work_right === false ? '<span style="color:var(--red);">No</span>' : '<span class="muted">unknown</span>')) + '</span>'
-    +       '<span class="k">Available hours</span><span class="v">' + _opsEscape(w.available_hours, '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Instagram handle</span><span class="v">' + _opsEscape(w.instagram_handle, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Available hours</span><span class="v">' + _opsEscape(w.available_hours, '<span class="muted">&mdash;</span>') + '</span>'
+    +       '<span class="k">Instagram handle</span><span class="v">' + _opsEscape(w.instagram_handle, '<span class="muted">&mdash;</span>') + '</span>'
     +       '<span class="k">Speaks English</span><span class="v">' + (w.speaks_english === true ? 'Yes' : (w.speaks_english === false ? 'No' : '&mdash;')) + '</span>'
     +       '<span class="k">Has black clothing</span><span class="v">' + (w.has_black_clothing === true ? 'Yes' : (w.has_black_clothing === false ? 'No' : '&mdash;')) + '</span>'
     +     '</div>'
@@ -8520,8 +8523,8 @@ async function loadReports() {
       +'<td><span class="mono">'+(r.requests_filled||0)+'/'+(r.requests_total||0)+'</span></td>'
       +'<td><span class="mono">'+(r.avg_response_minutes!=null?r.avg_response_minutes+'m':'-')+'</span></td>'
       +'<td><span class="mono">'+(r.customers_per_hour!=null?r.customers_per_hour:'-')+'</span></td>'
-      +'<td><span class="mono">'+(r.revenue_protected!=null?'Â£'+parseFloat(r.revenue_protected).toFixed(0):'-')+'</span></td>'
-      +'<td><span class="mono" style="color:var(--green);">'+(r.net_value!=null?'Â£'+parseFloat(r.net_value).toFixed(0):'-')+'</span></td>'
+      +'<td><span class="mono">'+(r.revenue_protected!=null?'£'+parseFloat(r.revenue_protected).toFixed(0):'-')+'</span></td>'
+      +'<td><span class="mono" style="color:var(--green);">'+(r.net_value!=null?'£'+parseFloat(r.net_value).toFixed(0):'-')+'</span></td>'
       +'</tr>'
     ).join('')
     +'</tbody></table>';
@@ -8604,7 +8607,7 @@ async function openSavedReport(index) {
       +'<div style="font-size:9px;letter-spacing:3px;color:var(--ice);text-transform:uppercase;margin-bottom:14px;">The Impact</div>'
       +'<p style="margin:0 0 16px;font-size:15px;line-height:1.8;">'+onDutyName+' using Glasi at the right time meant that approximately <strong style="color:var(--white);font-size:18px;">'+(r.customers_per_hour||'-')+' additional customers per hour</strong> had a better experience in your venue. Instead of waiting, they were served quicker and had clear tables to sit at, getting the level of service you strive to deliver.</p>'
       +'<p style="margin:0 0 20px;font-size:15px;line-height:1.8;">As a result, those customers are more likely to come back. That\'s another benefit of using Glasi at the right moment.</p>'
-      +'<p style="margin:0 0 20px;font-size:15px;line-height:1.8;">Over '+r.total_hours+' hours of floor support, this translated to an estimated <strong style="color:var(--green);font-size:18px;">Â£'+parseFloat(r.revenue_protected).toFixed(0)+' in revenue protected</strong> against a Glasi cost of Â£'+glasiCost.toFixed(0)+'.</p>'
+      +'<p style="margin:0 0 20px;font-size:15px;line-height:1.8;">Over '+r.total_hours+' hours of floor support, this translated to an estimated <strong style="color:var(--green);font-size:18px;">£'+parseFloat(r.revenue_protected).toFixed(0)+' in revenue protected</strong> against a Glasi cost of £'+glasiCost.toFixed(0)+'.</p>'
       +'<div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;">'
       +'<div style="font-size:12px;color:var(--grey);margin-bottom:10px;letter-spacing:1px;text-transform:uppercase;">Tonight in numbers</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">'
@@ -8612,8 +8615,8 @@ async function openSavedReport(index) {
       +'<div style="color:var(--grey);">Response time</div><div style="'+monoStyle+'">'+(r.avg_response_minutes!=null?r.avg_response_minutes+' minutes':'-')+'</div>'
       +'<div style="color:var(--grey);">Floor support</div><div style="'+monoStyle+'">'+r.total_hours+' hours</div>'
       +'<div style="color:var(--grey);">Customers per hour</div><div style="'+monoStyle+'">'+(r.customers_per_hour||'-')+' additional</div>'
-      +'<div style="color:var(--grey);">Revenue protected</div><div style="color:var(--green);'+monoStyle+'">Â£'+parseFloat(r.revenue_protected).toFixed(0)+'</div>'
-      +'<div style="color:var(--grey);">Glasi cost</div><div style="'+monoStyle+'">Â£'+glasiCost.toFixed(0)+'</div>'
+      +'<div style="color:var(--grey);">Revenue protected</div><div style="color:var(--green);'+monoStyle+'">£'+parseFloat(r.revenue_protected).toFixed(0)+'</div>'
+      +'<div style="color:var(--grey);">Glasi cost</div><div style="'+monoStyle+'">£'+glasiCost.toFixed(0)+'</div>'
       +'</div></div></div>';
   }
 
@@ -8827,7 +8830,7 @@ function buildReadonlyHeader(w) {
   if(status === 'onboarded') {
     rows += ewRow('Onboarded',     w.onboarded_at ? fmtDate(w.onboarded_at) : 'not tracked');
     rows += ewRow('Full address',  w.full_address || '');
-    rows += ewRow('Tier',          'Tier '+(w.tier||1)+' (Â£'+(w.hourly_rate||tierRate(w.tier)).toFixed(2)+'/hr)');
+    rows += ewRow('Tier',          'Tier '+(w.tier||1)+' (£'+(w.hourly_rate||tierRate(w.tier)).toFixed(2)+'/hr)');
     rows += ewRow('Shifts',        String(w._shiftsCompleted||0));
     rows += ewRow('Reliability',   w.reliability_score != null ? parseFloat(w.reliability_score).toFixed(1)+'%' : 'No data');
     rows += ewRow('Total points',  String(w.total_points||0));
@@ -11499,7 +11502,7 @@ async function loadSessionsHistory() {
       + '<div style="display:flex;gap:20px;text-align:right;">'
       + '<div><div style="font-size:14px;font-weight:700;color:var(--white);">'+sessionReqs.length+'</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;">Requests</div></div>'
       + '<div><div style="font-size:14px;font-weight:700;color:var(--green);">'+completed+'</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;">Shifts</div></div>'
-      + (totalEarned > 0 ? '<div><div style="font-size:14px;font-weight:700;color:var(--amber);">Â£'+totalEarned.toFixed(2)+'</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;">Paid out</div></div>' : '')
+      + (totalEarned > 0 ? '<div><div style="font-size:14px;font-weight:700;color:var(--amber);">£'+totalEarned.toFixed(2)+'</div><div style="font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:1px;">Paid out</div></div>' : '')
       + '</div>'
       + '</div>'
       + '</div>';
@@ -11594,7 +11597,7 @@ async function loadSessionDetail(sessionId) {
             + '</div>'
             + '</div>'
             + '<div style="text-align:right;">'
-            + (s.total_earned ? '<div style="font-size:16px;font-weight:700;color:var(--amber);">Â£'+parseFloat(s.total_earned).toFixed(2)+'</div>' : '')
+            + (s.total_earned ? '<div style="font-size:16px;font-weight:700;color:var(--amber);">£'+parseFloat(s.total_earned).toFixed(2)+'</div>' : '')
             + '<div style="font-size:11px;color:'+(s.clock_out_confirmed_at?'var(--green)':'var(--amber)')+';">'+( s.clock_out_confirmed_at?'Completed':'On shift')+'</div>'
             + '</div>'
             + '</div>'
@@ -11646,8 +11649,8 @@ async function downloadTimesheet(shiftId) {
     ['Clock In', fmtDT(s.clock_in_confirmed_at)],
     ['Clock Out', fmtDT(s.clock_out_confirmed_at)],
     ['Hours Worked', hours],
-    ['Hourly Rate', 'Â£'+rate.toFixed(2)],
-    ['Total Earned', 'Â£'+earned],
+    ['Hourly Rate', '£'+rate.toFixed(2)],
+    ['Total Earned', '£'+earned],
     [''],
     ['Status', s.status || ''],
     ['Session ID', s.session_id || ''],
@@ -11775,9 +11778,9 @@ async function downloadBI(shiftId) {
     </p>
     <div class="impact-box">
       <p>During ${workerName}'s <strong>${hours}hr shift</strong>, your team reclaimed approximately <strong>${Math.round(recoveredMinsPerHour * hours)} minutes</strong> of bartending time that would otherwise have been spent on glass collection.</p>
-      <p style="margin-top:8px;">At your venue's pace, we estimate your team served an additional <strong>${totalExtraDrinks} drinks</strong> -- protecting an estimated <strong>Â£${revenueProtected.toLocaleString()}</strong> in revenue.</p>
+      <p style="margin-top:8px;">At your venue's pace, we estimate your team served an additional <strong>${totalExtraDrinks} drinks</strong> -- protecting an estimated <strong>£${revenueProtected.toLocaleString()}</strong> in revenue.</p>
       <p style="margin-top:8px;">More importantly, <strong>${totalExtraDrinks} customers</strong> got a faster, better experience.</p>
-      <div class="impact-note">Calculated using your venue data: ${bartenders} bartenders, ${lostMinsPerBartender} mins/hr recovered per bartender, ${drinksPerMin} drinks/min, Â£${drinkValue.toFixed(2)} average drink value.</div>
+      <div class="impact-note">Calculated using your venue data: ${bartenders} bartenders, ${lostMinsPerBartender} mins/hr recovered per bartender, ${drinksPerMin} drinks/min, £${drinkValue.toFixed(2)} average drink value.</div>
     </div>
     <p class="tagline">"Keeping trained staff where they are most valuable."</p>
   </div>
@@ -11796,11 +11799,11 @@ async function downloadBI(shiftId) {
   <div class="section">
     <div class="section-title">Invoice</div>
     <div class="total-section">
-      <div class="total-row"><span>Glasi rate</span><span>Â£${rate.toFixed(2)}/hr</span></div>
+      <div class="total-row"><span>Glasi rate</span><span>£${rate.toFixed(2)}/hr</span></div>
       <div class="total-row"><span>Shift length</span><span>${hours}hr</span></div>
-      <div class="total-row"><span>Subtotal</span><span>Â£${subtotal.toFixed(2)}</span></div>
-      <div class="total-row"><span>VAT (20%)</span><span>Â£${vat.toFixed(2)}</span></div>
-      <div class="total-final"><span>Total</span><span>Â£${total.toFixed(2)}</span></div>
+      <div class="total-row"><span>Subtotal</span><span>£${subtotal.toFixed(2)}</span></div>
+      <div class="total-row"><span>VAT (20%)</span><span>£${vat.toFixed(2)}</span></div>
+      <div class="total-final"><span>Total</span><span>£${total.toFixed(2)}</span></div>
       <div class="vat-note">VAT will be applied once Glasi Ltd VAT registration is confirmed. A revised invoice will be issued at that time.</div>
     </div>
   </div>
@@ -12600,7 +12603,7 @@ function bvRenderBarDetailRow(b, req) {
     if(completed && dispW.clockInAt && dispW.clockOutAt) {
       const ms = new Date(dispW.clockOutAt).getTime() - new Date(dispW.clockInAt).getTime();
       const hrs = (Math.round((ms / 3600000) * 10) / 10);
-      const earned = dispW.totalEarned != null ? 'Â£' + parseFloat(dispW.totalEarned).toFixed(2) : null;
+      const earned = dispW.totalEarned != null ? '£' + parseFloat(dispW.totalEarned).toFixed(2) : null;
       shiftSummary = '<div class="bv-bar-detail-shift">'
         + '<div class="bv-bar-detail-shift-line"><span class="bv-bar-detail-shift-label">Started</span><span>' + fmtHm(dispW.clockInAt) + '</span></div>'
         + '<div class="bv-bar-detail-shift-line"><span class="bv-bar-detail-shift-label">Ended</span><span>' + fmtHm(dispW.clockOutAt) + '</span></div>'
@@ -12885,7 +12888,7 @@ function bvRenderWorkerExpandDetail(row, move) {
   const tierLabel = row.tier ? 'Tier ' + row.tier : 'â€“';
   const postcode  = row.postcode_full || 'â€“';
   const rel       = row.reliability_score != null ? Math.round(parseFloat(row.reliability_score)) + '%' : 'â€“';
-  const rate      = row.hourly_rate != null ? 'Â£' + parseFloat(row.hourly_rate).toFixed(2) + '/hr' : 'â€“';
+  const rate      = row.hourly_rate != null ? '£' + parseFloat(row.hourly_rate).toFixed(2) + '/hr' : 'â€“';
   const joinedAt  = row.joinedAt ? fmtHm(row.joinedAt) : 'â€“';
   const totalPts  = (row.worker && row.worker.total_points != null) ? row.worker.total_points : 'â€“';
 
@@ -13128,7 +13131,7 @@ function bvRenderCompletedDetail(w) {
     const ms = new Date(w.clockOutAt).getTime() - new Date(w.clockInAt).getTime();
     hoursStr = (Math.round((ms / 3600000) * 10) / 10) + 'h';
   }
-  const earnedStr = (w.totalEarned != null) ? ('Â£' + parseFloat(w.totalEarned).toFixed(2)) : '';
+  const earnedStr = (w.totalEarned != null) ? ('£' + parseFloat(w.totalEarned).toFixed(2)) : '';
   const metaRow = [hoursStr, earnedStr].filter(Boolean).join(' &middot; ');
   return '<div class="bv-worker-detail">'
     + (barName ? '<div class="bv-worker-detail-line">' + escapeBvHtml(barName) + '</div>' : '')

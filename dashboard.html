@@ -311,11 +311,75 @@
     .ad-decision-row:hover { background: rgba(168,216,234,0.04); }
 
     /* ============================================================
+       Operations -> Live: per-session card chrome
+       (OPS LIVE REDESIGN, 2026-05-19). Replaces the prior
+       always-visible session header strip + bipartite stack with an
+       expandable card wrapping the bipartite view. Multi-session
+       ready in markup (stacked cards push following cards down); the
+       underlying liveSessionOps global is still single-session, so
+       at most one card renders at a time today. Future work tracked
+       in the OPS LIVE REDESIGN BUILD_STATE entry.
+       ============================================================ */
+    .ops-live-card {
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .ops-live-card-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      background: none;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--white);
+      text-align: left;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .ops-live-card-header:hover { background: rgba(168,216,234,0.04); }
+    .ops-live-card.collapsed .ops-live-card-header { border-bottom: none; }
+    .ops-live-pulse-dot {
+      display: inline-block;
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: dv2-pulse 1.8s infinite ease-in-out;
+      flex-shrink: 0;
+    }
+    .ops-live-card-id   { font-size: 14px; font-weight: 700; color: var(--white); }
+    .ops-live-card-sep  { font-size: 13px; color: var(--grey); }
+    .ops-live-card-meta { font-size: 13px; color: var(--grey); font-variant-numeric: tabular-nums; }
+    .ops-live-card-meta strong { color: var(--white); font-weight: 600; }
+    .ops-live-card-spacer { flex: 1 1 auto; }
+    .ops-live-card-elapsed {
+      font-size: 12px;
+      color: var(--ice);
+      font-variant-numeric: tabular-nums;
+      padding: 0 8px;
+    }
+    .ops-live-card-chevron {
+      display: inline-block;
+      font-size: 11px;
+      color: var(--grey);
+      margin-left: 4px;
+      transition: transform 0.2s;
+    }
+    .ops-live-card.collapsed .ops-live-card-chevron { transform: rotate(-90deg); }
+    .ops-live-card-body { padding: 18px; }
+    .ops-live-card.collapsed .ops-live-card-body { display: none; }
+
+    /* ============================================================
        Live Dashboard Redesign (18 May 2026): bipartite graph view.
        Bars (left) + Workers (right) + SVG line layer (centre).
-       Lives alongside the classic 3-column console behind the
-       glasi_live_view_mode localStorage feature flag. CSS scoped
-       to .bipartite-view so the classic console is unaffected.
+       Nested inside .ops-live-card-body post-OPS LIVE REDESIGN
+       (2026-05-19); CSS scoped to .bipartite-view so the card chrome
+       wraps cleanly without leaking margins.
        ============================================================ */
     .bipartite-view { position: relative; }
     .bv-toolbar {
@@ -10139,12 +10203,65 @@ function formatInviteTime(iso) {
 }
 
 function renderSessionStats() {
-  const invitedEl = document.getElementById('session-stat-invited');
-  const confirmedEl = document.getElementById('session-stat-confirmed');
-  if(!invitedEl || !confirmedEl) return; // session card not in DOM (silent no-op)
+  // OPS LIVE REDESIGN (2026-05-19): card-header counts are the canonical
+  // surface. The legacy session-stat-* IDs were removed with the prior
+  // session-header strip; ops-live-count-* are the new ones inside the
+  // .ops-live-card header.
+  const invitedEl   = document.getElementById('ops-live-count-invited');
+  const confirmedEl = document.getElementById('ops-live-count-confirmed');
+  const inSessionEl = document.getElementById('ops-live-count-in-session');
+  if(!invitedEl && !confirmedEl && !inSessionEl) return; // card not in DOM (silent no-op)
+
   const all = liveSessionOps.invites || [];
-  invitedEl.textContent = String(all.length);
-  confirmedEl.textContent = String(all.filter(i => i.attendance_confirmed === 'confirmed').length);
+  const inSessionCount = (liveSessionOps.workers || [])
+    .filter(w => w && w.status === 'in_session').length;
+  if(invitedEl)   invitedEl.textContent   = String(all.length);
+  if(confirmedEl) confirmedEl.textContent = String(all.filter(i => i.attendance_confirmed === 'confirmed').length);
+  if(inSessionEl) inSessionEl.textContent = String(inSessionCount);
+}
+
+// ====================================================================
+// Operations -> Live: per-session card toggle + expansion persistence
+// (OPS LIVE REDESIGN, 2026-05-19). The card chrome wraps the bipartite
+// view; expansion state per session_id persists in localStorage so a
+// page reload restores Sam's last-known collapsed/expanded preference
+// for each session independently.
+//
+// Multi-session deferral: liveSessionOps is currently a single-session
+// global (one .sessionId, one .workers array, one realtime sub set).
+// The card MARKUP is multi-session ready (cards stack and push each
+// other down), but only one card renders today because the state model
+// only tracks one live session. To activate N concurrent sessions we
+// would need to (a) shard liveSessionOps by session_id, (b) per-session
+// realtime sub filters (or one set scoped by session_id), (c) per-card
+// SVG line layer + scaffold + F-32 / F-33 recompute, (d) per-session
+// engagement timeline pane. Not trivial; tracked as a follow-up.
+// ====================================================================
+function _opsLiveCardStorageKey(sessionId) {
+  return 'glasi_live_session_expanded_' + sessionId;
+}
+function _opsLiveCardInitialState(sessionId) {
+  try {
+    const v = localStorage.getItem(_opsLiveCardStorageKey(sessionId));
+    return v === 'collapsed' ? 'collapsed' : 'expanded'; // default expanded
+  } catch(e) { return 'expanded'; }
+}
+function opsLiveCardToggle(sessionId) {
+  const card = document.getElementById('ops-live-card-' + sessionId);
+  if(!card) return;
+  const isCollapsed = card.classList.toggle('collapsed');
+  try {
+    localStorage.setItem(
+      _opsLiveCardStorageKey(sessionId),
+      isCollapsed ? 'collapsed' : 'expanded'
+    );
+  } catch(e) {}
+  // Expanding may have made the bipartite view visible for the first
+  // time since the last layout; re-draw the SVG line layer so connectors
+  // pick up the new viewport coordinates.
+  if(!isCollapsed && typeof bvRenderLines === 'function') {
+    setTimeout(() => { try { bvRenderLines(); } catch(e) {} }, 0);
+  }
 }
 
 function openInviteListModal(filter) {
@@ -12265,47 +12382,62 @@ function renderBipartiteView() {
   const room = getBipartiteRoomEl();
   if(!room) return;
 
-  const zoneName = liveSessionLabel || '';
-  const sessionDate = new Date().toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'short'});
+  const sessionId = liveSessionOps.sessionId;
+  const barsCount = (typeof liveSessionBars !== 'undefined' && Array.isArray(liveSessionBars))
+    ? liveSessionBars.length : 0;
 
-  // If room already has bipartite scaffold, do an incremental refresh.
+  // If room already has bipartite scaffold, do an incremental refresh,
+  // but only when the current scaffold belongs to the same session. A
+  // session-id mismatch (e.g. previous session closed and a new one went
+  // live) forces a full re-render so the card chrome rebinds to the new
+  // session_id and the expansion-state localStorage key flips with it.
   if(room.querySelector('#bv-grid')) {
-    bvUpdateHeader(zoneName);
-    bvRenderBars();
-    bvRenderWorkers();
-    bvRenderLines();
-    renderSessionStats();
-    return;
+    const existingCard = room.querySelector('.ops-live-card');
+    const existingSessionId = existingCard ? Number(existingCard.dataset.sessionId) : null;
+    if(existingSessionId === sessionId) {
+      bvRenderBars();
+      bvRenderWorkers();
+      bvRenderLines();
+      renderSessionStats();
+      const barsCountEl = document.getElementById('ops-live-count-bars');
+      if(barsCountEl) barsCountEl.textContent = String(barsCount);
+      return;
+    }
+    // Session changed; clear so the full-render branch below rebuilds.
+    room.innerHTML = '';
   }
 
+  // OPS LIVE REDESIGN (2026-05-19): the previous session-header strip
+  // (pulse dot + zone-name + date + invited/confirmed pills, all always
+  // visible) is replaced by an expandable card. The bipartite view +
+  // engagement-timeline pane live inside .ops-live-card-body; clicking
+  // the header toggles .collapsed (persisted per session in localStorage).
+  // Card markup is multi-session capable (stacked cards push each other
+  // down); single-session today because liveSessionOps is still a
+  // single-session global.
+  const initialState = _opsLiveCardInitialState(sessionId);
+  const collapsedClass = initialState === 'collapsed' ? ' collapsed' : '';
+
   room.innerHTML = `
-    <!-- Session header -->
-    <div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-        <div style="display:flex;align-items:flex-start;gap:12px;">
-          <div style="width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0;margin-top:6px;"></div>
-          <div>
-            <div style="font-size:15px;font-weight:700;color:var(--white);" data-zone-name>${zoneName}</div>
-            <div style="font-size:11px;color:var(--grey);margin-top:2px;">${sessionDate} &nbsp;Â·&nbsp; Session #${liveSessionOps.sessionId}</div>
-            <div class="session-stats-row">
-              <div class="session-stat-pill" onclick="openInviteListModal('all')" title="Show all invited workers">
-                <span class="session-stat-label">Invited</span>
-                <span class="session-stat-value" id="session-stat-invited">â€”</span>
-              </div>
-              <div class="session-stat-pill" onclick="openInviteListModal('confirmed')" title="Show confirmed workers only">
-                <span class="session-stat-label">Confirmed</span>
-                <span class="session-stat-value" id="session-stat-confirmed">â€”</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="font-size:12px;color:var(--ice);" id="live-session-elapsed">00:00</div>
-          <button class="ghost-btn" id="engagement-timeline-toggle" onclick="toggleEngagementTimelinePane()" title="Toggle engagement timeline (basket events + ledger writes, real-time)">Timeline</button>
-          <button class="ghost-btn" style="color:var(--red);border-color:rgba(248,113,113,0.3);" onclick="confirmCloseSession()">Close</button>
-        </div>
+    <div id="ops-live-card-${sessionId}" class="ops-live-card${collapsedClass}" data-session-id="${sessionId}">
+      <div class="ops-live-card-header" onclick="opsLiveCardToggle(${sessionId})" role="button" tabindex="0">
+        <span class="ops-live-pulse-dot" aria-hidden="true"></span>
+        <span class="ops-live-card-id">Session #${sessionId}</span>
+        <span class="ops-live-card-sep">&middot;</span>
+        <span class="ops-live-card-meta"><strong id="ops-live-count-bars">${barsCount}</strong> bars</span>
+        <span class="ops-live-card-sep">&middot;</span>
+        <span class="ops-live-card-meta">
+          <strong id="ops-live-count-invited">0</strong> invited &middot;
+          <strong id="ops-live-count-confirmed">0</strong> confirmed &middot;
+          <strong id="ops-live-count-in-session">0</strong> in session
+        </span>
+        <span class="ops-live-card-spacer"></span>
+        <span class="ops-live-card-elapsed" id="live-session-elapsed">00:00</span>
+        <button class="ghost-btn" id="engagement-timeline-toggle" onclick="event.stopPropagation();toggleEngagementTimelinePane()" title="Toggle engagement timeline (basket events + ledger writes, real-time)">Timeline</button>
+        <button class="ghost-btn" style="color:var(--red);border-color:rgba(248,113,113,0.3);" onclick="event.stopPropagation();confirmCloseSession()">Close</button>
+        <span class="ops-live-card-chevron" aria-hidden="true">&#9662;</span>
       </div>
-    </div>
+      <div class="ops-live-card-body">
 
     <div class="bipartite-view">
       <div class="bv-toolbar">
@@ -12351,6 +12483,9 @@ function renderBipartiteView() {
         <div class="empty">Waiting for engagement events...</div>
       </div>
     </div>
+
+      </div><!-- /.ops-live-card-body -->
+    </div><!-- /.ops-live-card -->
   `;
 
   // Elapsed timer.

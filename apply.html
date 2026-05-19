@@ -227,6 +227,20 @@
       color: #b91c1c;
       min-height: 16px;
     }
+    .kid-back-link {
+      display: block;
+      background: none;
+      border: none;
+      color: var(--navy);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 0 0 12px;
+      margin: 0;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .kid-back-link:hover { text-decoration: underline; }
 
     .quick-check-wrap {
       margin-top: 4px;
@@ -394,49 +408,7 @@
           <p class="section-heading">We have got your back</p>
           <p>We only work with well run venues that want you there. If anything feels off during a shift, contact us straight away. We are always on your side.</p>
 
-          <button id="show-kid-btn" type="button" class="continue-btn">
-            Continue to Application
-          </button>
-        </div>
-      </div>
-
-      <div id="kid-card" class="glass-card rounded-3xl shadow-sm p-6 mb-4 md:mb-0 hidden">
-        <div class="glasi-header">
-          <span class="glasi-wordmark">GLASI</span>
-          <p class="glasi-sub">Key Information Document</p>
-        </div>
-
-        <div class="space-y-3 text-sm leading-relaxed text-gray-500">
-          <p class="section-heading">Important: please review before applying</p>
-          <div class="kid-callout">
-            Before you apply, UK regulations require us to provide you with a <strong>Key Information Document</strong> (KID). This explains the terms of working with Glasi through our payroll partner Numbermill, including how you are paid, what deductions apply, and how holiday pay is handled. Please read it carefully before continuing.
-          </div>
-
-          <iframe id="kid-iframe"
-                  class="kid-iframe"
-                  src="Glasi_NM_PEO_KID_May_2026.pdf"
-                  title="Glasi Numbermill PEO Key Information Document, May 2026"
-                  loading="lazy"></iframe>
-
-          <div class="kid-download-row">
-            Trouble viewing the document above?
-            <a id="kid-download-link" href="Glasi_NM_PEO_KID_May_2026.pdf" target="_blank" rel="noopener">Download a copy</a>
-            to open it in a new tab.
-          </div>
-
-          <div class="kid-confirm-block">
-            <label for="kid-typed-name" class="kid-typed-name-label">Type your full name to confirm you have read this document *</label>
-            <input id="kid-typed-name" type="text" autocomplete="name" placeholder="e.g. Alex Morgan" class="kid-typed-name-input" />
-
-            <div class="kid-check-row">
-              <input id="kid-confirm-check" type="checkbox" />
-              <label for="kid-confirm-check">I confirm I have received and read the Key Information Document.</label>
-            </div>
-
-            <div id="kid-feedback" class="kid-err"></div>
-          </div>
-
-          <button id="kid-continue-btn" type="button" class="continue-btn" disabled>
+          <button id="show-form-btn" type="button" class="continue-btn">
             Continue to Application
           </button>
         </div>
@@ -575,16 +547,64 @@
           </div>
 
           <div class="text-xs text-gray-400 leading-relaxed pt-1">
-            This information will only be used for your application and shift coordination. Stored securely and handled in line with UK GDPR. By submitting you agree to our <a href="https://www.glasi.co.uk/privacy.html" target="_blank" style="color:#6b7280;text-decoration:underline;">Privacy Policy</a>.
+            This information will only be used for your application and shift coordination. Stored securely and handled in line with UK GDPR. By continuing you agree to our <a href="https://www.glasi.co.uk/privacy.html" target="_blank" style="color:#6b7280;text-decoration:underline;">Privacy Policy</a>.
           </div>
 
-          <button id="submit-btn" type="submit" class="submit-btn w-full text-white py-4 rounded-xl font-semibold mt-2">
-            Submit
+          <button id="form-continue-btn" type="submit" class="submit-btn w-full text-white py-4 rounded-xl font-semibold mt-2">
+            Continue
           </button>
 
         </form>
 
         <div id="feedback" class="mt-4 text-center"></div>
+      </div>
+
+      <div id="kid-card" class="glass-card rounded-3xl shadow-sm p-6 mb-4 md:mb-0 hidden">
+        <button id="kid-back-btn" type="button" class="kid-back-link">&#8592; Back to application</button>
+
+        <div class="glasi-header">
+          <span class="glasi-wordmark">GLASI</span>
+          <p class="glasi-sub">Key Information Document</p>
+        </div>
+
+        <div class="space-y-3 text-sm leading-relaxed text-gray-500">
+          <p class="section-heading">Almost done. One last thing to share with you.</p>
+          <div class="kid-callout">
+            Before submitting, regulations require us to share your <strong>Key Information Document</strong>. It explains how you are paid when working through Glasi.
+            <br><br>
+            This is <strong>not a contract or agreement</strong>. It is informational. It explains how payroll works through our partner Numbermill, what fees apply, and your rights as a worker.
+            <br><br>
+            Please read through, then confirm you have seen it below.
+          </div>
+
+          <iframe id="kid-iframe"
+                  class="kid-iframe"
+                  src="Glasi_NM_PEO_KID_May_2026.pdf"
+                  title="Glasi Numbermill PEO Key Information Document, May 2026"
+                  loading="lazy"></iframe>
+
+          <div class="kid-download-row">
+            Trouble viewing the document above?
+            <a id="kid-download-link" href="Glasi_NM_PEO_KID_May_2026.pdf" target="_blank" rel="noopener">Download a copy</a>
+            to open it in a new tab.
+          </div>
+
+          <div class="kid-confirm-block">
+            <label for="kid-typed-name" class="kid-typed-name-label">Type your full name to confirm you have received this document *</label>
+            <input id="kid-typed-name" type="text" autocomplete="name" placeholder="e.g. Alex Morgan" class="kid-typed-name-input" />
+
+            <div class="kid-check-row">
+              <input id="kid-confirm-check" type="checkbox" />
+              <label for="kid-confirm-check">I confirm I have received and read the Key Information Document.</label>
+            </div>
+
+            <div id="kid-feedback" class="kid-err"></div>
+          </div>
+
+          <button id="kid-submit-btn" type="button" class="continue-btn" disabled>
+            Submit Application
+          </button>
+        </div>
       </div>
 
     </div>
@@ -603,53 +623,52 @@ const SUPABASE_ANON_KEY = "sb_publishable_Qt-BL3-Qyb1cEBJ1ScDYSw_kNdxfYXs";
 // at apply time. The same string is written to applications.kid_acknowledged_version.
 const KID_VERSION = "May-2026";
 
-// Captured at the moment the worker clicks "Continue to Application" on
-// the KID card. Sent to submit_application as p_kid_acknowledged_at. The
-// RPC enforces non-NULL on this and the typed-name + version fields.
+// Captured at the moment the worker clicks "Submit Application" on the
+// KID card. Sent to submit_application as p_kid_acknowledged_at /
+// p_kid_acknowledged_typed_name. The RPC enforces non-NULL on these and
+// the version field. Set at submit click (NOT at card-advance) so
+// bouncing back to the form via "Back to application" and forward again
+// doesn't backdate the acknowledgement.
 let kidAcknowledgedAt = null;
 let kidAcknowledgedTypedName = null;
 
 const form = document.getElementById('onboarding-form');
-const submitBtn = document.getElementById('submit-btn');
 const feedback = document.getElementById('feedback');
-const showKidBtn = document.getElementById('show-kid-btn');
+const showFormBtn = document.getElementById('show-form-btn');
+const formCard = document.getElementById('form-card');
 const kidCard = document.getElementById('kid-card');
+const kidBackBtn = document.getElementById('kid-back-btn');
 const kidTypedNameInput = document.getElementById('kid-typed-name');
 const kidConfirmCheck = document.getElementById('kid-confirm-check');
-const kidContinueBtn = document.getElementById('kid-continue-btn');
+const kidSubmitBtn = document.getElementById('kid-submit-btn');
 const kidFeedback = document.getElementById('kid-feedback');
-const formCard = document.getElementById('form-card');
 
-// Step 1 -> 2: explainer "Continue" reveals the KID card.
-showKidBtn.addEventListener('click', () => {
-  kidCard.classList.remove('hidden');
-  kidCard.classList.add('reveal-form');
-  kidCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
-
-// KID card: button is enabled only when BOTH the typed-name field is
-// non-empty AND the checkbox is ticked. Mirrors the server-side gate in
-// submit_application (which rejects if any KID field is NULL).
-function updateKidContinueState() {
-  const nameOk = kidTypedNameInput.value.trim().length > 0;
-  const checkOk = kidConfirmCheck.checked;
-  kidContinueBtn.disabled = !(nameOk && checkOk);
-}
-kidTypedNameInput.addEventListener('input', updateKidContinueState);
-kidConfirmCheck.addEventListener('change', updateKidContinueState);
-
-// Step 2 -> 3: KID "Continue" captures acknowledgement state + reveals the form.
-kidContinueBtn.addEventListener('click', () => {
-  const typedName = kidTypedNameInput.value.trim();
-  if (!typedName || !kidConfirmCheck.checked) {
-    kidFeedback.textContent = 'Please type your full name and tick the confirmation box.';
-    return;
-  }
-  kidAcknowledgedAt = new Date().toISOString();
-  kidAcknowledgedTypedName = typedName;
-  kidFeedback.textContent = '';
+// Step 1 -> 2: explainer "Continue to Application" reveals the form card.
+showFormBtn.addEventListener('click', () => {
   formCard.classList.remove('hidden');
   formCard.classList.add('reveal-form');
+  formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+// KID submit button is enabled only when BOTH the typed-name field is
+// non-empty AND the checkbox is ticked. Mirrors the server-side gate in
+// submit_application (which rejects if any KID field is NULL).
+function updateKidSubmitState() {
+  const nameOk = kidTypedNameInput.value.trim().length > 0;
+  const checkOk = kidConfirmCheck.checked;
+  kidSubmitBtn.disabled = !(nameOk && checkOk);
+}
+kidTypedNameInput.addEventListener('input', updateKidSubmitState);
+kidConfirmCheck.addEventListener('change', updateKidSubmitState);
+
+// Card 3 -> 2: "Back to application" returns to the form card without
+// touching the form's <input> values (they live in the DOM and persist
+// even while the card is hidden). KID typed-name + checkbox also persist
+// for the same reason; a forward-trip preserves whatever was already
+// entered.
+kidBackBtn.addEventListener('click', () => {
+  kidCard.classList.add('hidden');
+  formCard.classList.remove('hidden');
   formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
@@ -657,66 +676,112 @@ function toBool(value) {
   return value === 'true';
 }
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  const email = document.getElementById('email').value.trim().toLowerCase();
-  const ageGroup = document.getElementById('age_group').value;
-  const hospitalityExperience = document.getElementById('hospitality_experience').value;
-  const ukWorkRight = document.getElementById('uk_work_right').value;
-  const hasBlackClothing = document.getElementById('has_black_clothing').value;
-  const hasTransport = document.getElementById('has_transport').value;
-  const physicallyAble = document.getElementById('physically_able').value;
-  const speaksEnglish = document.getElementById('speaks_english').value;
-  const agreesWorkStandard = document.getElementById('agrees_work_standard').value;
-  const reliabilityNotes = document.getElementById('reliability_notes').value.trim();
-
+// Pure read of the live form-card <input> state. Values persist in the
+// DOM across card transitions (hiding via .hidden doesn't clear them),
+// so the same function is used at form-submit (validate + advance to
+// KID) and at KID-submit (build the RPC payload). No global cache.
+function readFormValues() {
   const checkedHours = Array.from(document.querySelectorAll('input[name="hours"]:checked')).map(cb => cb.value);
-  const availableHours = checkedHours.length > 0 ? checkedHours.join(',') : null;
+  return {
+    email: document.getElementById('email').value.trim().toLowerCase(),
+    ageGroup: document.getElementById('age_group').value,
+    hospitalityExperience: document.getElementById('hospitality_experience').value,
+    ukWorkRight: document.getElementById('uk_work_right').value,
+    hasBlackClothing: document.getElementById('has_black_clothing').value,
+    hasTransport: document.getElementById('has_transport').value,
+    physicallyAble: document.getElementById('physically_able').value,
+    speaksEnglish: document.getElementById('speaks_english').value,
+    agreesWorkStandard: document.getElementById('agrees_work_standard').value,
+    reliabilityNotes: document.getElementById('reliability_notes').value.trim(),
+    availableHours: checkedHours.length > 0 ? checkedHours.join(',') : null,
+    q1: document.querySelector('input[name="question1"]:checked')?.value,
+    q2: document.querySelector('input[name="question2"]:checked')?.value,
+    q3: document.querySelector('input[name="question3"]:checked')?.value
+  };
+}
 
-  const q2 = document.querySelector('input[name="question2"]:checked')?.value;
-  const q3 = document.querySelector('input[name="question1"]:checked')?.value;
-  const q5 = document.querySelector('input[name="question3"]:checked')?.value;
+// Returns null if the form-card state is valid; an error message string
+// otherwise. Called on form submit (to gate the advance-to-KID
+// transition) and also defensively at KID submit time.
+function validateFormValues(v) {
+  if (!v.email || !v.ageGroup || !v.hospitalityExperience || !v.ukWorkRight
+      || !v.hasBlackClothing || !v.hasTransport || !v.physicallyAble
+      || !v.speaksEnglish || !v.agreesWorkStandard || !v.reliabilityNotes) {
+    return 'Please complete all required fields.';
+  }
+  if (!v.availableHours) {
+    return 'Please select at least one availability slot.';
+  }
+  if (!v.q1 || !v.q2 || !v.q3) {
+    return 'Please complete the quick check before continuing.';
+  }
+  if (v.q1 !== 'floor' || v.q2 !== 'whatsapp' || v.q3 !== 'manager') {
+    return 'One or more answers are not quite right. Please check the section above and try again.';
+  }
+  return null;
+}
 
-  if (!email || !ageGroup || !hospitalityExperience || !ukWorkRight || !hasBlackClothing || !hasTransport || !physicallyAble || !speaksEnglish || !agreesWorkStandard || !reliabilityNotes) {
-    feedback.innerHTML = `<div class="text-red-500 text-sm">Please complete all required fields.</div>`;
+// Card 2 -> 3. Form's existing HTML5 `required` attributes still fire
+// because the Continue button keeps type="submit". On a clean validate
+// pass, advance to the KID card; the form's <input> values stay in the
+// DOM untouched so Back-to-application restores them as-is.
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const values = readFormValues();
+  const err = validateFormValues(values);
+  if (err) {
+    feedback.innerHTML = `<div class="text-red-500 text-sm">${err}</div>`;
+    return;
+  }
+  feedback.innerHTML = '';
+  formCard.classList.add('hidden');
+  kidCard.classList.remove('hidden');
+  kidCard.classList.add('reveal-form');
+  kidCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+// Card 3 final action: this is the ACTUAL submit. Captures KID
+// acknowledgement state at click time (not at advance-to-KID time, so
+// re-entering the card via Back doesn't backdate the timestamp) and
+// fires the submit_application RPC with the form values + KID fields.
+kidSubmitBtn.addEventListener('click', async () => {
+  if (kidSubmitBtn.disabled) return;
+
+  const typedName = kidTypedNameInput.value.trim();
+  if (!typedName || !kidConfirmCheck.checked) {
+    kidFeedback.textContent = 'Please type your full name and tick the confirmation box.';
     return;
   }
 
-  if (!availableHours) {
-    feedback.innerHTML = `<div class="text-red-500 text-sm">Please select at least one availability slot.</div>`;
+  // Re-validate the form values defensively. If the worker tampered
+  // with form fields via DevTools between card transitions, bounce them
+  // back to the form card with the same error they would have hit on
+  // the Continue click.
+  const values = readFormValues();
+  const formErr = validateFormValues(values);
+  if (formErr) {
+    kidFeedback.textContent = '';
+    feedback.innerHTML = `<div class="text-red-500 text-sm">${formErr}</div>`;
+    kidCard.classList.add('hidden');
+    formCard.classList.remove('hidden');
+    formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
   }
 
-  if (!q2 || !q3 || !q5) {
-    feedback.innerHTML = `<div class="text-red-500 text-sm">Please complete the quick check before submitting.</div>`;
-    return;
-  }
+  kidAcknowledgedAt = new Date().toISOString();
+  kidAcknowledgedTypedName = typedName;
+  kidFeedback.textContent = '';
 
-  if (q2 !== 'whatsapp' || q3 !== 'floor' || q5 !== 'manager') {
-    feedback.innerHTML = `<div class="text-red-500 text-sm">One or more answers are not quite right. Please check the section above and try again.</div>`;
-    return;
-  }
-
-  // Belt-and-braces client-side check: if the worker reached the form
-  // without acknowledging the KID, refuse to submit. The server-side RPC
-  // is the legally binding gate; this just keeps the UX honest.
-  if (!kidAcknowledgedAt || !kidAcknowledgedTypedName) {
-    feedback.innerHTML = `<div class="text-red-500 text-sm">KID acknowledgement required before submitting. Please go back and complete the KID step.</div>`;
-    return;
-  }
-
-  submitBtn.disabled = true;
-  submitBtn.innerText = "Submitting...";
+  kidSubmitBtn.disabled = true;
+  kidSubmitBtn.innerText = 'Submitting...';
 
   // SEC-02: anon PATCH against applications was replaced with the
-  // submit_application SECURITY DEFINER RPC. Server-side the RPC enforces
-  // email regex, AND active = true, AND worker_status = 'registered'
-  // before promoting the row to 'applied'. The RPC returns boolean true
-  // on a successful promotion, boolean false if no matching row exists.
-  // 2026-05-19: RPC now also rejects if any of the three KID acknowledgement
-  // params are NULL; the row is updated with the acknowledgement metadata
-  // atomically with the worker_status promotion.
+  // submit_application SECURITY DEFINER RPC. Server-side the RPC
+  // enforces email regex, AND active = true, AND worker_status =
+  // 'registered' before promoting the row to 'applied'. Returns boolean
+  // true on a successful promotion, boolean false if no matching row
+  // exists. 2026-05-19: RPC also rejects if any of the three KID
+  // acknowledgement params are NULL.
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/submit_application`, {
       method: 'POST',
@@ -726,17 +791,17 @@ form.addEventListener('submit', async (e) => {
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
       },
       body: JSON.stringify({
-        p_email: email,
-        p_age_group: ageGroup,
-        p_hospitality_experience: toBool(hospitalityExperience),
-        p_uk_work_right: toBool(ukWorkRight),
-        p_has_black_clothing: toBool(hasBlackClothing),
-        p_has_transport: toBool(hasTransport),
-        p_physically_able: toBool(physicallyAble),
-        p_speaks_english: toBool(speaksEnglish),
-        p_agrees_work_standard: toBool(agreesWorkStandard),
-        p_reliability_notes: reliabilityNotes || null,
-        p_available_hours: availableHours,
+        p_email: values.email,
+        p_age_group: values.ageGroup,
+        p_hospitality_experience: toBool(values.hospitalityExperience),
+        p_uk_work_right: toBool(values.ukWorkRight),
+        p_has_black_clothing: toBool(values.hasBlackClothing),
+        p_has_transport: toBool(values.hasTransport),
+        p_physically_able: toBool(values.physicallyAble),
+        p_speaks_english: toBool(values.speaksEnglish),
+        p_agrees_work_standard: toBool(values.agreesWorkStandard),
+        p_reliability_notes: values.reliabilityNotes || null,
+        p_available_hours: values.availableHours,
         p_kid_acknowledged_at:         kidAcknowledgedAt,
         p_kid_acknowledged_version:    KID_VERSION,
         p_kid_acknowledged_typed_name: kidAcknowledgedTypedName
@@ -744,44 +809,49 @@ form.addEventListener('submit', async (e) => {
     });
 
     if (!res.ok) {
-      // Parse PostgREST error envelope. Compliance rejection surfaces the
-      // RAISE EXCEPTION message verbatim ("kid acknowledgement required").
       let serverMsg = '';
       try { const err = await res.json(); serverMsg = (err && (err.message || err.hint)) || ''; } catch (_e) {}
       if (/kid acknowledgement|kid_acknowledged/i.test(serverMsg)) {
-        feedback.innerHTML = `<div class="text-red-500 text-sm">KID acknowledgement required before submitting. Please go back and complete the KID step.</div>`;
+        kidFeedback.textContent = 'KID acknowledgement required. Please tick the confirmation box and type your name.';
       } else {
-        feedback.innerHTML = `<div class="text-red-500 text-sm">Something went wrong. Try again.</div>`;
+        kidFeedback.textContent = 'Something went wrong. Try again.';
       }
-      submitBtn.disabled = false;
-      submitBtn.innerText = "Submit";
+      kidSubmitBtn.disabled = false;
+      kidSubmitBtn.innerText = 'Submit Application';
       return;
     }
 
     const ok = await res.json();
 
     if (ok !== true) {
-      feedback.innerHTML = `<div class="text-red-500 text-sm">We couldn't find your registration. Please use the same email you signed up with.</div>`;
-      submitBtn.disabled = false;
-      submitBtn.innerText = "Submit";
+      kidFeedback.textContent = "We couldn't find your registration. Please use the same email you signed up with.";
+      kidSubmitBtn.disabled = false;
+      kidSubmitBtn.innerText = 'Submit Application';
       return;
     }
 
-    feedback.innerHTML = `
-      <div class="success-message text-green-600 text-sm space-y-2">
-        <p>Application received. We will be in touch with next steps.</p>
-        <p>Keep an eye on your inbox and your spam folder. If you have not heard from us within 5 days, email hello@glasi.co.uk.</p>
+    // Success. Replace the KID card body with a clean thank-you so the
+    // worker sees the confirmation in the card they were last
+    // interacting with; the (still-hidden) form card stays out of view.
+    kidCard.innerHTML = `
+      <div class="glasi-header">
+        <span class="glasi-wordmark">GLASI</span>
+        <p class="glasi-sub">Application Submitted</p>
+      </div>
+      <div class="space-y-3 text-sm leading-relaxed text-gray-500" style="padding-top:8px;">
+        <div class="success-message text-green-600 text-sm space-y-2" style="text-align:center;font-size:14px;line-height:1.6;">
+          <p>Application received. We will be in touch with next steps.</p>
+          <p>Keep an eye on your inbox and your spam folder. If you have not heard from us within 5 days, email <a href="mailto:hello@glasi.co.uk" style="color:#0F1F3D;font-weight:600;">hello@glasi.co.uk</a>.</p>
+        </div>
       </div>
     `;
-
     form.reset();
 
-  } catch {
-    feedback.innerHTML = `<div class="text-red-500 text-sm">Something went wrong. Try again.</div>`;
+  } catch (_e) {
+    kidFeedback.textContent = 'Something went wrong. Try again.';
+    kidSubmitBtn.disabled = false;
+    kidSubmitBtn.innerText = 'Submit Application';
   }
-
-  submitBtn.disabled = false;
-  submitBtn.innerText = "Submit";
 });
 </script>
 

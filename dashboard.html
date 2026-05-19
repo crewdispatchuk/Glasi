@@ -1887,16 +1887,8 @@
     .money-bar-expand .kv { font-size: 12px; color: var(--white); line-height: 1.7; }
     .money-bar-expand .kv .k { color: var(--grey); display: inline-block; min-width: 140px; }
 
-    .money-gen-invoice-lines {
-      background: var(--navy); border: 1px solid var(--border); border-radius: 8px;
-      padding: 10px 12px; font-size: 12px; color: var(--white); line-height: 1.6;
-      max-height: 220px; overflow-y: auto;
-      margin: 6px 0;
-    }
-    .money-gen-invoice-lines .line { display: flex; justify-content: space-between; gap: 8px; }
-    .money-gen-invoice-lines .line + .line { margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(168,216,234,0.05); }
-    .money-gen-invoice-lines .line .amt { color: var(--ice); font-variant-numeric: tabular-nums; }
-    .money-gen-invoice-lines .empty { color: var(--grey); font-style: italic; }
+    /* .money-gen-invoice-lines rules retired with the legacy Bar Billing
+       Generate Invoice modal (Batch 4b, 19 May 2026). */
 
     .history-filter-bar {
       display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
@@ -3021,13 +3013,15 @@
   <header class="ws-header">
     <h1 class="ws-title">Money</h1>
     <nav class="ws-subtabs" id="money-subtabs">
-      <button class="ws-subtab" data-subtab="worker-payroll" onclick="showMoneySubtab('worker-payroll')">Worker Payroll</button>
-      <button class="ws-subtab" data-subtab="bar-billing"    onclick="showMoneySubtab('bar-billing')">Bar Billing</button>
+      <button class="ws-subtab" data-subtab="worker-payroll"          onclick="showMoneySubtab('worker-payroll')">Worker Payroll</button>
+      <button class="ws-subtab" data-subtab="shift-invoices"          onclick="showMoneySubtab('shift-invoices')">Shift Invoices</button>
+      <button class="ws-subtab" data-subtab="subscription-invoices"   onclick="showMoneySubtab('subscription-invoices')">Subscription Invoices</button>
     </nav>
     <button class="health-refresh-btn" id="money-refresh-btn" onclick="refreshMoneyCurrent()" title="Refresh current sub-tab">&#8634; Refresh</button>
   </header>
   <div class="ws-subtab-content" data-subtab="worker-payroll"><div id="money-payroll-pane"><div class="health-loading">Loading Worker Payroll...</div></div></div>
-  <div class="ws-subtab-content" data-subtab="bar-billing"><div id="money-billing-pane"><div class="health-loading">Loading Bar Billing...</div></div></div>
+  <div class="ws-subtab-content" data-subtab="shift-invoices"><div id="money-shift-invoices-pane"><div class="health-loading">Loading Shift Invoices...</div></div></div>
+  <div class="ws-subtab-content" data-subtab="subscription-invoices"><div id="money-subscription-invoices-pane"><div class="health-loading">Loading Subscription Invoices...</div></div></div>
 
   <!-- Numbermill: Mark invoice received modal -->
   <div id="money-mark-received-modal" class="prospect-form-modal" style="display:none;">
@@ -3072,41 +3066,11 @@
     </div>
   </div>
 
-  <!-- Bar Billing: Generate invoice modal -->
-  <div id="money-gen-invoice-modal" class="prospect-form-modal" style="display:none;">
-    <div class="prospect-form-bg" onclick="closeMoneyGenInvoiceModal()"></div>
-    <div class="prospect-form-card" style="max-width:680px;">
-      <h3 class="prospect-form-h3" id="money-gen-invoice-title">Generate invoice</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;">
-        <label class="prospect-form-label" style="margin:0;">Period start
-          <input id="money-gen-invoice-period-start" type="date">
-        </label>
-        <label class="prospect-form-label" style="margin:0;">Period end
-          <input id="money-gen-invoice-period-end" type="date">
-        </label>
-      </div>
-      <div class="money-gen-invoice-lines" id="money-gen-invoice-lines"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
-        <label class="prospect-form-label" style="margin:0;">Subscription amount (&pound;)
-          <input id="money-gen-invoice-sub-amount" type="number" step="0.01" min="0" oninput="updateMoneyGenInvoiceTotal()">
-        </label>
-        <label class="prospect-form-label" style="margin:0;">Shift charges amount (&pound;)
-          <input id="money-gen-invoice-shift-amount" type="number" step="0.01" min="0" oninput="updateMoneyGenInvoiceTotal()">
-        </label>
-      </div>
-      <div style="font-size:13px;color:var(--white);margin:8px 0;text-align:right;">
-        Total: <strong id="money-gen-invoice-total" style="color:var(--ice);font-variant-numeric:tabular-nums;">&pound;0.00</strong>
-      </div>
-      <label class="prospect-form-label">Notes (optional)
-        <textarea id="money-gen-invoice-notes" rows="3" placeholder="Anything to include on the invoice"></textarea>
-      </label>
-      <div class="prospect-form-err" id="money-gen-invoice-err"></div>
-      <div class="prospect-form-actions">
-        <button class="ops-sched-btn" onclick="closeMoneyGenInvoiceModal()">Cancel</button>
-        <button class="ops-sched-action" id="money-gen-invoice-save" onclick="submitMoneyGenInvoice()">Generate</button>
-      </div>
-    </div>
-  </div>
+  <!-- Batch 4b (19 May 2026): legacy combined "Generate invoice" modal retired
+       with the old Bar Billing tab. Shift invoices are now generated per-shift
+       via f39_shift_invoice_generate from the Shift Invoices tab. Subscription
+       invoices are generated per-bar per-month from the Subscription Invoices
+       tab. -->
 </section>
 <section class="workspace" id="workspace-health">
   <header class="ws-header">
@@ -4246,6 +4210,7 @@ async function loadNetworkBarsData() {
   try {
     const rows = await sbGet('bars',
       '?order=name.asc&select=id,name,address,contact_name,contact_phone,google_maps_link,status,notes,created_at,opening_time,closing_time'
+      + ',bartenders,drinks_per_hour,avg_drink_value,avg_customer_spend,typical_rush_minutes,lost_minutes_per_bartender'
       + ',bar_managers(id,name,revoked_at,created_at)'
       + ',bar_subscriptions(id,status,monthly_fee,discount_amount,trial_ends_at,paused_at,cancelled_at,billing_cycle_day)'
       + ',session_bars(session_id,sessions(id,session_date,status,scheduled_start))');
@@ -4424,6 +4389,39 @@ function _renderNetworkBarsExpansion(b) {
   // existing Documents screen until v2 absorbs it.
   const docsHtml = '<div class="ops-sched-exp-body" id="net-bar-docs-' + bid + '">Loading documents&hellip;</div>';
 
+  // Baseline data block (19 May 2026): surfaces the 6 columns on `bars` populated
+  // by calculator (14).html?bar=<id>. Read-only display + pill + link out. Per-shift
+  // impact invoice generation lands in Batch 4b; today's surface just makes the
+  // captured baseline visible so Sam can see which bars still need a calculator
+  // session. Path to calculator is relative to the dashboard URL on glasi.co.uk
+  // (sibling file in glasi_dashboard/ folder).
+  const baselineFields = [
+    { label: 'Bartenders on during rush',           value: b.bartenders,                  fmt: 'int' },
+    { label: 'Drinks per hour per bartender',        value: b.drinks_per_hour,             fmt: 'int' },
+    { label: 'Average drink value',                  value: b.avg_drink_value,             fmt: 'gbp' },
+    { label: 'Average customer spend',               value: b.avg_customer_spend,          fmt: 'gbp' },
+    { label: 'Typical rush length',                  value: b.typical_rush_minutes,        fmt: 'minutes' },
+    { label: 'Lost minutes per bartender per hour',  value: b.lost_minutes_per_bartender,  fmt: 'int' }
+  ];
+  const baselineAllPopulated = baselineFields.every(f => f.value != null && f.value !== '');
+  const baselinePill = baselineAllPopulated
+    ? '<span class="money-status-pill green">BASELINE CAPTURED</span>'
+    : '<span class="money-status-pill amber">BASELINE INCOMPLETE</span>';
+  const baselineGrid = '<div class="net-prof-grid" style="margin-top:10px;">'
+    + baselineFields.map(f => {
+        let v;
+        if(f.value == null || f.value === '') v = '<span class="muted">&mdash;</span>';
+        else if(f.fmt === 'gbp')     v = '&pound;' + Number(f.value).toFixed(2);
+        else if(f.fmt === 'minutes') v = String(f.value) + ' minutes';
+        else                         v = String(f.value);
+        return '<span class="k">' + _opsEscape(f.label) + '</span><span class="v">' + v + '</span>';
+      }).join('')
+    + '</div>';
+  const calculatorHref = encodeURI('calculator (14).html') + '?bar=' + bid;
+  const baselineHtml = baselinePill
+    + baselineGrid
+    + '<a class="net-cross-link" style="display:inline-block;margin-top:10px;text-decoration:none;" href="' + calculatorHref + '" target="_blank" rel="noopener">Open calculator for this bar &#8599;</a>';
+
   // Recent sessions + upcoming sessions blocks.
   const allSessions = ((b.session_bars || []).map(sb => sb && sb.sessions).filter(Boolean));
   const closedSessions = allSessions.filter(s => s.status === 'closed').sort((a,c) => (c.scheduled_start || c.session_date || '').localeCompare(a.scheduled_start || a.session_date || '')).slice(0, 5);
@@ -4465,6 +4463,7 @@ function _renderNetworkBarsExpansion(b) {
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Contract &amp; Subscription</h3>' + subBody + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">PIN Holders</h3>' + pinPendingPlaceholder + pinHtml + '<div style="margin-top:8px;">' + pinAction + '</div></div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Documents</h3>' + docsHtml + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Baseline Data</h3>' + baselineHtml + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Recent Sessions</h3>' + recentHtml + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Upcoming Sessions</h3>' + upcomingHtml + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Performance</h3>' + perfHtml + '</div>'
@@ -6858,7 +6857,7 @@ function _renderHealthCompliancePane() {
 // ====================================================================
 
 const DV2_MONEY_SUBTAB_KEY = 'glasi_ws_money_subtab';
-const MONEY_SUBTABS = ['worker-payroll', 'bar-billing'];
+const MONEY_SUBTABS = ['worker-payroll', 'shift-invoices', 'subscription-invoices'];
 
 const moneyState = {
   // Worker Payroll
@@ -6870,12 +6869,22 @@ const moneyState = {
   payrollLastCsvBlobUrl: null,
   payrollMarkReceivedPeriod: null,
   payrollMarkPaidPeriod: null,
-  // Bar Billing
-  billingMetrics: null,
-  billingPerBar: null,
-  billingExpandedBarId: null,
-  billingBarDetailCache: {},           // bar_id -> detail jsonb
-  billingGenContext: null              // { bar_id, bar_name, suggested_period_start, ... }
+  // Shift Invoices (Batch 4b)
+  shiftInvDateFrom: null,
+  shiftInvDateTo: null,
+  shiftInvBarIds: [],
+  shiftInvStatuses: ['draft','sent','paid'],
+  shiftInvList: null,
+  shiftInvEligible: null,
+  shiftInvExpandedId: null,
+  shiftInvDetailCache: {},
+  // Subscription Invoices (Batch 4b)
+  subInvDateFrom: null,
+  subInvDateTo: null,
+  subInvBarIds: [],
+  subInvStatuses: ['draft','sent','paid'],
+  subInvList: null,
+  subInvExpandedId: null
 };
 
 function getMoneySubtab() {
@@ -6895,10 +6904,12 @@ function showMoneySubtab(name) {
 }
 
 function _moneyLoadIfNeeded(name) {
-  if(name === 'worker-payroll' && !moneyState.payrollSummary) return loadMoneyPayrollData();
-  if(name === 'bar-billing'    && !moneyState.billingMetrics) return loadMoneyBillingData();
-  if(name === 'worker-payroll') _renderMoneyPayrollPane();
-  if(name === 'bar-billing')    _renderMoneyBillingPane();
+  if(name === 'worker-payroll'        && !moneyState.payrollSummary) return loadMoneyPayrollData();
+  if(name === 'shift-invoices'        && !moneyState.shiftInvList)   return loadMoneyShiftInvoicesData();
+  if(name === 'subscription-invoices' && !moneyState.subInvList)     return loadMoneySubscriptionInvoicesData();
+  if(name === 'worker-payroll')        _renderMoneyPayrollPane();
+  if(name === 'shift-invoices')        _renderMoneyShiftInvoicesPane();
+  if(name === 'subscription-invoices') _renderMoneySubscriptionInvoicesPane();
 }
 
 async function refreshMoneyCurrent() {
@@ -6908,8 +6919,9 @@ async function refreshMoneyCurrent() {
   const btn = document.getElementById('money-refresh-btn');
   if(btn) btn.classList.add('spinning');
   try {
-    if(name === 'worker-payroll') { moneyState.payrollSummary = null; await loadMoneyPayrollData(); }
-    if(name === 'bar-billing')    { moneyState.billingMetrics = null; await loadMoneyBillingData(); }
+    if(name === 'worker-payroll')        { moneyState.payrollSummary = null; await loadMoneyPayrollData(); }
+    if(name === 'shift-invoices')        { moneyState.shiftInvList   = null; moneyState.shiftInvEligible = null; moneyState.shiftInvDetailCache = {}; await loadMoneyShiftInvoicesData(); }
+    if(name === 'subscription-invoices') { moneyState.subInvList     = null; await loadMoneySubscriptionInvoicesData(); }
   } finally {
     if(btn) btn.classList.remove('spinning');
   }
@@ -6972,9 +6984,9 @@ dv2RegisterLifecycle('money', {
   onTeardown: () => {
     moneyState.payrollSummary = null; moneyState.payrollBreakdown = null;
     moneyState.payrollRecentPeriods = null;
-    moneyState.billingMetrics = null; moneyState.billingPerBar = null;
-    moneyState.billingExpandedBarId = null;
-    moneyState.billingBarDetailCache = {};
+    moneyState.shiftInvList = null; moneyState.shiftInvEligible = null;
+    moneyState.shiftInvExpandedId = null; moneyState.shiftInvDetailCache = {};
+    moneyState.subInvList = null; moneyState.subInvExpandedId = null;
   }
 });
 
@@ -7002,8 +7014,14 @@ dv2RegisterLifecycle('money', {
         showWorkspace('money');
         if(segs[1] && MONEY_SUBTABS.includes(segs[1])) showMoneySubtab(segs[1]);
         const expandId = params.get('expand');
-        if(expandId && segs[1] === 'bar-billing') {
-          setTimeout(() => toggleMoneyBillingBarRow(parseInt(expandId, 10)), 600);
+        const filterBar = params.get('bar_id');
+        if(filterBar && (segs[1] === 'shift-invoices' || segs[1] === 'subscription-invoices')) {
+          const ids = filterBar.split(',').map(s => parseInt(s, 10)).filter(n => Number.isFinite(n));
+          if(segs[1] === 'shift-invoices')        { moneyState.shiftInvBarIds = ids; moneyState.shiftInvList = null; }
+          if(segs[1] === 'subscription-invoices') { moneyState.subInvBarIds   = ids; moneyState.subInvList   = null; }
+        }
+        if(expandId && segs[1] === 'shift-invoices') {
+          setTimeout(() => { moneyState.shiftInvExpandedId = parseInt(expandId, 10); _renderMoneyShiftInvoicesPane(); }, 600);
         }
         return;
       }
@@ -7088,13 +7106,14 @@ function _renderMoneyPayrollPane() {
     + '</div>';
 
   // Period status strip
+  const csvNoteHtml = '<div style="font-size:10px;color:var(--grey);margin-top:6px;line-height:1.4;">CSV includes Shift Reference (Glasi Ref) for cross-linking to bar invoices.</div>';
   const csvCellHtml = currentRecent.csv_exported_at
     ? '<div class="value"><span class="money-status-pill green">Generated ' + _moneyFmtDate(currentRecent.csv_exported_at) + '</span></div>'
       + '<div class="actions"><button class="ops-sched-btn primary" onclick="exportNumbermillCsv()">Re-export</button>'
       + (moneyState.payrollLastCsvBlobUrl ? ' <a class="health-link" href="' + moneyState.payrollLastCsvBlobUrl + '" download="' + _opsEscape(moneyState.payrollLastCsvFilename || 'numbermill.csv') + '">Download last export</a>' : '')
-      + '</div>'
+      + '</div>' + csvNoteHtml
     : '<div class="value"><span class="money-status-pill grey">Not yet generated</span></div>'
-      + '<div class="actions"><button class="ops-sched-btn primary" onclick="exportNumbermillCsv()">Export Numbermill CSV</button></div>';
+      + '<div class="actions"><button class="ops-sched-btn primary" onclick="exportNumbermillCsv()">Export Numbermill CSV</button></div>' + csvNoteHtml;
 
   const invRecCellHtml = currentRecent.invoice_received_at
     ? '<div class="value"><span class="money-status-pill amber">Received ' + _moneyFmtDate(currentRecent.invoice_received_at) + ', ' + _moneyFmtCurrency(currentRecent.invoice_amount) + '</span></div>'
@@ -7172,11 +7191,14 @@ async function exportNumbermillCsv() {
   const rows = data.rows || [];
   if(!rows.length) { alert('No completed shifts in this period - nothing to export.'); return; }
 
-  const headers = ['Worker ID','Worker Name','Pay Rate','Shift Start','Shift End','Hours','Shift Total'];
+  // Glasi Ref first column so Sam can audit per-shift P&L: same ref appears
+  // on the bar's shift invoice in Money / Shift Invoices.
+  const headers = ['Glasi Ref','Worker ID','Worker Name','Pay Rate','Shift Start','Shift End','Hours','Shift Total'];
   const csvLines = [headers.join(',')];
   for(const r of rows) {
     const fmtTs = ts => ts ? new Date(ts).toISOString() : '';
     const cells = [
+      String(r.glasi_ref || ''),
       String(r.worker_id || ''),
       String(r.worker_name || '').replace(/"/g,'""'),
       Number(r.pay_rate || 0).toFixed(2),
@@ -7290,293 +7312,289 @@ async function submitMoneyMarkPaid() {
   }
 }
 
-// ----- Phase 4.3: Bar Billing -----
+// ====================================================================
+// Phase 4b (19 May 2026): Shift Invoices + Subscription Invoices.
+// Replaces the legacy per-period Bar Billing tab. Shift invoices are
+// generated per-shift after clock-out; subscription invoices are
+// generated per-bar per-month. Legacy 'period' invoices stay in DB but
+// aren't surfaced in either tab (the 1 existing pre-Batch-4b row is
+// queryable via DB only -- a future follow-up could add a legacy view).
+// All data via f39_* RPCs. Status flow: draft -> sent -> paid via the
+// existing f38_money_billing_update_invoice_status (kind-agnostic).
+// ====================================================================
 
-async function loadMoneyBillingData() {
-  const pane = document.getElementById('money-billing-pane');
-  if(pane) pane.innerHTML = '<div class="health-loading">Loading Bar Billing...</div>';
+function _invoiceStatusPillClass(status) {
+  if(status === 'paid') return 'green';
+  if(status === 'sent') return 'amber';
+  return 'grey';
+}
+
+function _moneyInvoiceStatusLine(inv) {
+  const cls = _invoiceStatusPillClass(inv.status);
+  return '<span class="money-status-pill ' + cls + '">' + (inv.status || 'draft').toUpperCase() + '</span>';
+}
+
+// ----- Phase 4b.3a: Shift Invoices -----
+
+function _moneyShiftInvDefaultDateFrom() {
+  const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().slice(0,10);
+}
+function _moneyShiftInvDefaultDateTo() { return new Date().toISOString().slice(0,10); }
+
+async function loadMoneyShiftInvoicesData() {
+  const pane = document.getElementById('money-shift-invoices-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading Shift Invoices...</div>';
+  if(!moneyState.shiftInvDateFrom) moneyState.shiftInvDateFrom = _moneyShiftInvDefaultDateFrom();
+  if(!moneyState.shiftInvDateTo)   moneyState.shiftInvDateTo   = _moneyShiftInvDefaultDateTo();
   try {
-    const [m, p] = await Promise.all([
-      sbAuth.rpc('f38_money_billing_metrics'),
-      sbAuth.rpc('f38_money_billing_per_bar')
+    const [listRes, eligRes] = await Promise.all([
+      sbAuth.rpc('f39_shift_invoice_list', {
+        p_date_from: moneyState.shiftInvDateFrom,
+        p_date_to:   moneyState.shiftInvDateTo,
+        p_bar_ids:   (moneyState.shiftInvBarIds && moneyState.shiftInvBarIds.length ? moneyState.shiftInvBarIds : null),
+        p_statuses:  (moneyState.shiftInvStatuses && moneyState.shiftInvStatuses.length ? moneyState.shiftInvStatuses : null)
+      }),
+      sbAuth.rpc('f39_shift_invoice_eligible_shifts', { p_bar_id: null })
     ]);
-    if(m.error || p.error) throw (m.error || p.error);
-    moneyState.billingMetrics = m.data || {};
-    moneyState.billingPerBar = p.data || [];
-    _renderMoneyBillingPane();
+    if(listRes.error || eligRes.error) throw (listRes.error || eligRes.error);
+    moneyState.shiftInvList     = listRes.data || [];
+    moneyState.shiftInvEligible = eligRes.data || [];
+    _renderMoneyShiftInvoicesPane();
   } catch(err) {
-    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadMoneyBillingData()">Retry</button></div>';
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadMoneyShiftInvoicesData()">Retry</button></div>';
   }
 }
 
-function _subscriptionPillClass(status) {
-  switch((status || '').toLowerCase()) {
-    case 'active':    return 'green';
-    case 'trial':     return 'ice';
-    case 'paused':    return 'amber';
-    case 'inactive':  return 'amber';
-    case 'overdue':   return 'red';
-    case 'cancelled': return 'grey';
-    case 'none':      return 'grey';
-    default:          return 'grey';
-  }
+function setShiftInvDateFrom(v) { moneyState.shiftInvDateFrom = v; moneyState.shiftInvList = null; loadMoneyShiftInvoicesData(); }
+function setShiftInvDateTo(v)   { moneyState.shiftInvDateTo   = v; moneyState.shiftInvList = null; loadMoneyShiftInvoicesData(); }
+function toggleShiftInvStatus(s) {
+  const i = moneyState.shiftInvStatuses.indexOf(s);
+  if(i >= 0) moneyState.shiftInvStatuses.splice(i, 1);
+  else moneyState.shiftInvStatuses.push(s);
+  if(!moneyState.shiftInvStatuses.length) moneyState.shiftInvStatuses = ['draft','sent','paid'];
+  moneyState.shiftInvList = null;
+  loadMoneyShiftInvoicesData();
+}
+function toggleShiftInvBarFilter(barId) {
+  const id = parseInt(barId, 10);
+  const idx = moneyState.shiftInvBarIds.indexOf(id);
+  if(idx >= 0) moneyState.shiftInvBarIds.splice(idx, 1);
+  else moneyState.shiftInvBarIds.push(id);
+  moneyState.shiftInvList = null;
+  loadMoneyShiftInvoicesData();
+}
+function openShiftInvBarPicker(e) {
+  if(e) { e.preventDefault(); e.stopPropagation(); }
+  const bars = window.bars || [];
+  if(!bars.length) { alert('Bars cache empty; visit Network -> Bars first.'); return; }
+  const lines = bars.map(b => ((moneyState.shiftInvBarIds.includes(Number(b.id)) ? '● ' : '○ ') + b.id + '  ' + b.name)).join('\n');
+  const picked = window.prompt('Bar filter (toggle). Enter the bar IDs to TOGGLE, comma-separated. Currently selected: ' + (moneyState.shiftInvBarIds.length ? moneyState.shiftInvBarIds.join(',') : 'none') + '\n\n' + lines, '');
+  if(picked === null) return;
+  const ids = picked.split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isFinite(n));
+  for(const id of ids) toggleShiftInvBarFilter(id);
 }
 
-function _outstandingPillClass(amount, oldestUnpaidAt) {
-  const a = parseFloat(amount || 0);
-  if(a <= 0.001) return { cls: 'green', label: 'PAID' };
-  if(oldestUnpaidAt) {
-    const days = (Date.now() - new Date(oldestUnpaidAt).getTime()) / (1000 * 60 * 60 * 24);
-    if(days > 30) return { cls: 'red', label: 'OVERDUE' };
-  }
-  return { cls: 'amber', label: 'OUTSTANDING' };
+async function bulkGenerateShiftInvoices() {
+  const eligible = moneyState.shiftInvEligible || [];
+  if(!eligible.length) { alert('No uninvoiced completed shifts.'); return; }
+  if(!confirm('Generate invoices for ' + eligible.length + ' uninvoiced completed shift' + (eligible.length === 1 ? '' : 's') + '?')) return;
+  const ids = eligible.map(e => e.shift_id);
+  const res = await sbAuth.rpc('f39_shift_invoice_generate_bulk', { p_shift_ids: ids });
+  if(res.error) { alert('Bulk generate failed: ' + res.error.message); return; }
+  const created = (res.data && res.data.created) || [];
+  const skipped = (res.data && res.data.skipped) || [];
+  alert('Created ' + created.length + ' invoice' + (created.length === 1 ? '' : 's') + (skipped.length ? '; ' + skipped.length + ' skipped.' : '.'));
+  moneyState.shiftInvList = null; moneyState.shiftInvEligible = null; moneyState.shiftInvDetailCache = {};
+  await loadMoneyShiftInvoicesData();
 }
 
-function _renderMoneyBillingPane() {
-  const pane = document.getElementById('money-billing-pane');
+async function generateOneShiftInvoice(shiftId) {
+  if(!shiftId) return;
+  const res = await sbAuth.rpc('f39_shift_invoice_generate', { p_shift_id: shiftId });
+  if(res.error) { alert('Generate failed: ' + res.error.message); return; }
+  moneyState.shiftInvList = null; moneyState.shiftInvEligible = null; moneyState.shiftInvDetailCache = {};
+  await loadMoneyShiftInvoicesData();
+}
+
+function _renderMoneyShiftInvoicesPane() {
+  const pane = document.getElementById('money-shift-invoices-pane');
   if(!pane) return;
-  const m = moneyState.billingMetrics || {};
-  const rows = moneyState.billingPerBar || [];
+  const list = moneyState.shiftInvList || [];
+  const eligible = moneyState.shiftInvEligible || [];
 
-  const tilesHtml = ''
-    + '<div class="health-tile-row">'
-    +   '<div class="health-tile"><span class="label">Active subscriptions</span><span class="value">' + (m.active_subscriptions || 0) + '</span><span class="sub">bars on an active subscription</span></div>'
-    +   '<div class="health-tile"><span class="label">Subscription revenue</span><span class="value">' + _moneyFmtCurrency(m.subscription_revenue_30d) + '</span><span class="sub">last 30 days (sent + paid)</span></div>'
-    +   '<div class="health-tile"><span class="label">Shift revenue</span><span class="value">' + _moneyFmtCurrency(m.shift_revenue_30d) + '</span><span class="sub">last 30 days (sent + paid)</span></div>'
+  const allStatuses = ['draft','sent','paid'];
+  const statusPills = allStatuses.map(s => {
+    const active = moneyState.shiftInvStatuses.includes(s);
+    return '<button class="net-pill' + (active ? ' active' : '') + '" onclick="toggleShiftInvStatus(&quot;' + s + '&quot;)">' + s.toUpperCase() + '</button>';
+  }).join('');
+
+  const barChips = moneyState.shiftInvBarIds.length
+    ? moneyState.shiftInvBarIds.map(id => {
+        const b = (window.bars || []).find(x => Number(x.id) === id);
+        return '<span class="bar-chip" onclick="event.stopPropagation();toggleShiftInvBarFilter(' + id + ')">' + _opsEscape(b ? b.name : ('Bar #' + id)) + ' &times;</span>';
+      }).join('')
+    : '<span style="color:var(--grey);font-size:11px;">All bars (click to filter)</span>';
+
+  const filterBar = ''
+    + '<div class="history-filter-bar">'
+    +   '<input type="date" value="' + (moneyState.shiftInvDateFrom || '') + '" onchange="setShiftInvDateFrom(this.value)" />'
+    +   '<span style="color:var(--grey);font-size:11px;">to</span>'
+    +   '<input type="date" value="' + (moneyState.shiftInvDateTo || '') + '" onchange="setShiftInvDateTo(this.value)" />'
+    +   '<div class="bar-multi" onclick="openShiftInvBarPicker(event)">' + barChips + '</div>'
+    +   '<div class="pill-group">' + statusPills + '</div>'
     + '</div>';
 
-  const trRows = rows.length
-    ? rows.map(r => {
-        const subPill = _subscriptionPillClass(r.subscription_status);
-        const outPill = _outstandingPillClass(r.outstanding_balance, r.oldest_unpaid_at);
-        const isExpanded = moneyState.billingExpandedBarId === r.bar_id;
-        const headRow = '<tr class="clickable" onclick="toggleMoneyBillingBarRow(' + r.bar_id + ')">'
-          + '<td><button class="health-link" onclick="event.stopPropagation();_moneyGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '') + '</button></td>'
-          + '<td><span class="money-status-pill ' + subPill + '">' + (r.subscription_status || 'none').toUpperCase() + '</span></td>'
-          + '<td>' + _moneyFmtCurrency(r.subscription_monthly) + '/mo</td>'
-          + '<td>' + _moneyFmtCurrency(r.shift_charges_this_month) + '</td>'
-          + '<td>' + _moneyFmtCurrency(r.outstanding_balance) + '</td>'
-          + '<td><span class="money-status-pill ' + outPill.cls + '">' + outPill.label + '</span></td>'
+  const bulkBtnHtml = eligible.length
+    ? '<button class="ops-sched-btn primary" onclick="bulkGenerateShiftInvoices()">+ Generate invoices for ' + eligible.length + ' uninvoiced completed shift' + (eligible.length === 1 ? '' : 's') + '</button>'
+    : '<span style="color:var(--grey);font-size:12px;">No uninvoiced completed shifts at present.</span>';
+  const bulkRow = '<div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' + bulkBtnHtml + '</div>';
+
+  const rows = list.length
+    ? list.map(inv => {
+        const isExpanded = moneyState.shiftInvExpandedId === inv.invoice_id;
+        const head = '<tr class="clickable" onclick="toggleMoneyShiftInvoiceRow(' + inv.invoice_id + ')">'
+          + '<td>' + _opsEscape(inv.invoice_number) + '</td>'
+          + '<td><button class="health-link" onclick="event.stopPropagation();_moneyGoToBar(' + inv.bar_id + ')">' + _opsEscape(inv.bar_name || '') + '</button></td>'
+          + '<td style="font-variant-numeric:tabular-nums;color:var(--ice);">' + _opsEscape(inv.glasi_ref, '<span class="muted">,</span>') + '</td>'
+          + '<td>' + _moneyFmtDate(inv.shift_date) + '</td>'
+          + '<td>' + _opsEscape(inv.worker_name || '') + (inv.tier != null ? ' <span class="net-worker-tier">T' + inv.tier + '</span>' : '') + '</td>'
+          + '<td>' + (inv.hours || 0) + '</td>'
+          + '<td>' + _moneyFmtCurrency(inv.amount) + '</td>'
+          + '<td>' + _moneyInvoiceStatusLine(inv) + '</td>'
+          + '<td>'
+          +   (inv.status === 'draft' ? '<button class="health-link" onclick="event.stopPropagation();markBarInvoiceStatus(' + inv.invoice_id + ', &quot;sent&quot;)">Mark sent</button> &middot; ' : '')
+          +   (inv.status === 'sent'  ? '<button class="health-link" onclick="event.stopPropagation();markBarInvoiceStatus(' + inv.invoice_id + ', &quot;paid&quot;)">Mark paid</button> &middot; ' : '')
+          +   '<button class="health-link" onclick="event.stopPropagation();printShiftInvoice(' + inv.invoice_id + ')">Print / PDF</button>'
+          + '</td>'
           + '</tr>';
-        const expRow = isExpanded
-          ? '<tr><td colspan="6" style="padding:0;background:transparent;">' + (_renderMoneyBillingBarDetail(r.bar_id) || '<div class="health-loading" style="margin:8px 0;">Loading bar detail...</div>') + '</td></tr>'
+        const exp = isExpanded
+          ? '<tr><td colspan="9" style="padding:0;background:transparent;">' + (_renderMoneyShiftInvoiceDetail(inv.invoice_id) || '<div class="health-loading" style="margin:8px 0;">Loading invoice detail...</div>') + '</td></tr>'
           : '';
-        return headRow + expRow;
+        return head + exp;
       }).join('')
-    : '<tr><td colspan="6" style="padding:24px 10px;text-align:center;color:var(--grey);">No bars to bill.</td></tr>';
+    : '<tr><td colspan="9" style="padding:24px 10px;text-align:center;color:var(--grey);">No shift invoices match these filters.</td></tr>';
 
   const tableHtml = ''
     + '<section class="health-section">'
-    +   '<h3 class="health-section-h3">Per-bar billing</h3>'
-    +   '<div class="health-section-note">Sorted by outstanding balance descending. Click a row to expand subscription details + this month\'s shift charges + past invoices.</div>'
-    +   '<table class="health-table"><thead><tr><th>Bar</th><th>Subscription</th><th>Monthly</th><th>Shift charges (this month)</th><th>Outstanding</th><th>Status</th></tr></thead><tbody>' + trRows + '</tbody></table>'
+    +   '<h3 class="health-section-h3">Shift Invoices <span style="color:var(--grey);font-size:10px;margin-left:8px;">' + list.length + ' RESULTS</span></h3>'
+    +   '<table class="health-table"><thead><tr><th>Invoice #</th><th>Bar</th><th>Glasi Ref</th><th>Shift date</th><th>Worker</th><th>Hours</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
     + '</section>';
 
-  pane.innerHTML = tilesHtml + tableHtml;
+  pane.innerHTML = filterBar + bulkRow + tableHtml;
 }
 
-async function toggleMoneyBillingBarRow(barId) {
-  if(moneyState.billingExpandedBarId === barId) {
-    moneyState.billingExpandedBarId = null;
-    _renderMoneyBillingPane();
+async function toggleMoneyShiftInvoiceRow(invoiceId) {
+  if(moneyState.shiftInvExpandedId === invoiceId) {
+    moneyState.shiftInvExpandedId = null;
+    _renderMoneyShiftInvoicesPane();
     return;
   }
-  moneyState.billingExpandedBarId = barId;
-  _renderMoneyBillingPane();
-  if(!moneyState.billingBarDetailCache[barId]) {
-    const res = await sbAuth.rpc('f38_money_billing_bar_detail', { p_bar_id: barId });
-    if(res.error) {
-      moneyState.billingBarDetailCache[barId] = { _error: res.error.message };
-    } else {
-      moneyState.billingBarDetailCache[barId] = res.data || {};
-    }
-    _renderMoneyBillingPane();
+  moneyState.shiftInvExpandedId = invoiceId;
+  _renderMoneyShiftInvoicesPane();
+  if(!moneyState.shiftInvDetailCache[invoiceId]) {
+    const res = await sbAuth.rpc('f39_shift_invoice_detail', { p_invoice_id: invoiceId });
+    if(res.error) moneyState.shiftInvDetailCache[invoiceId] = { _error: res.error.message };
+    else          moneyState.shiftInvDetailCache[invoiceId] = res.data || {};
+    _renderMoneyShiftInvoicesPane();
   }
 }
 
-function _renderMoneyBillingBarDetail(barId) {
-  const d = moneyState.billingBarDetailCache[barId];
+function _renderMoneyShiftInvoiceDetail(invoiceId) {
+  const d = moneyState.shiftInvDetailCache[invoiceId];
   if(!d) return null;
   if(d._error) return '<div class="health-error">Failed to load detail: ' + _opsEscape(d._error) + '</div>';
-  const sub = d.subscription || {};
-  const shifts = d.current_month_shifts || [];
-  const invoices = d.past_invoices || [];
-
-  const subBlock = sub.id
-    ? '<div class="kv">'
-      +   '<div><span class="k">Plan</span>' + _moneyFmtCurrency(sub.monthly_fee) + '/mo' + (Number(sub.discount_amount) > 0 ? (' less ' + _moneyFmtCurrency(sub.discount_amount) + ' discount') : '') + '</div>'
-      +   '<div><span class="k">Status</span><span class="money-status-pill ' + _subscriptionPillClass(sub.status) + '">' + (sub.status || '').toUpperCase() + '</span></div>'
-      +   '<div><span class="k">Billing cycle day</span>Day ' + (sub.billing_cycle_day || 1) + ' of month</div>'
-      +   (sub.started_at ? '<div><span class="k">Started</span>' + _moneyFmtDate(sub.started_at) + '</div>' : '')
-      +   (sub.trial_ends_at ? '<div><span class="k">Trial ends</span>' + _moneyFmtDate(sub.trial_ends_at) + '</div>' : '')
-      +   (sub.notes ? '<div><span class="k">Notes</span>' + _opsEscape(sub.notes) + '</div>' : '')
-      + '</div>'
-    : '<div style="color:var(--grey);font-size:12px;">No subscription on file.</div>';
-
-  const shiftRows = shifts.length
-    ? '<table class="health-table"><thead><tr><th>Date</th><th>Session</th><th>Hours</th><th>Rate</th><th>Total</th></tr></thead><tbody>'
-      + shifts.map(s => '<tr>'
-          + '<td>' + _moneyFmtDate(s.date) + '</td>'
-          + '<td>' + (s.session_id ? '<button class="health-link" onclick="_moneyGoToSession(' + s.session_id + ')">#' + s.session_id + '</button>' : '<span class="muted">,</span>') + '</td>'
-          + '<td>' + (s.hours || 0) + '</td>'
-          + '<td>' + _moneyFmtCurrency(s.rate) + '/hr</td>'
-          + '<td>' + _moneyFmtCurrency(s.total) + '</td>'
-          + '</tr>').join('')
-      + '</tbody></table>'
-    : '<div style="color:var(--grey);font-size:12px;">No shifts this month.</div>';
-
-  const invRows = invoices.length
-    ? '<table class="health-table"><thead><tr><th>Date</th><th>Period</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>'
-      + invoices.map(i => {
-          const pillCls = i.status === 'paid' ? 'green' : (i.status === 'sent' ? 'amber' : 'grey');
-          const actions = [];
-          if(i.status === 'draft') actions.push('<button class="health-link" onclick="markBarInvoiceStatus(' + i.invoice_id + ', &quot;sent&quot;)">Mark sent</button>');
-          if(i.status === 'sent')  actions.push('<button class="health-link" onclick="markBarInvoiceStatus(' + i.invoice_id + ', &quot;paid&quot;)">Mark paid</button>');
-          actions.push('<button class="health-link" onclick="printBarInvoice(' + barId + ', ' + i.invoice_id + ')">Print / PDF</button>');
-          return '<tr>'
-            + '<td>' + _moneyFmtDate(i.generated_at) + '</td>'
-            + '<td>' + _moneyFmtDate(i.period_start) + ' &mdash; ' + _moneyFmtDate(i.period_end) + '</td>'
-            + '<td>' + _moneyFmtCurrency(i.total_amount) + '</td>'
-            + '<td><span class="money-status-pill ' + pillCls + '">' + (i.status || '').toUpperCase() + '</span></td>'
-            + '<td>' + actions.join(' &middot; ') + '</td>'
-            + '</tr>';
-        }).join('')
-      + '</tbody></table>'
-    : '<div style="color:var(--grey);font-size:12px;">No invoices generated for this bar.</div>';
-
+  const bar = d.bar || {};
+  const shift = d.shift || {};
+  const worker = d.worker || {};
+  const requester = d.requester || {};
+  const fmtTime = (ts) => ts ? new Date(ts).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '<span class="muted">,</span>';
+  const requesterLabel = requester.kind === 'bar_manager' ? 'Bar manager request'
+                     : requester.kind === 'session_proposer' ? 'Manager-proposed session'
+                     : 'Sam-initiated session';
   return ''
     + '<div class="money-bar-expand">'
-    +   '<div class="section"><h4>Subscription details</h4>' + subBlock + '</div>'
-    +   '<div class="section"><h4>Current month shift charges</h4>' + shiftRows + '</div>'
-    +   '<div class="section"><h4>Past invoices</h4>' + invRows + '</div>'
-    +   '<div class="section"><h4>Action</h4>'
-    +     '<button class="ops-sched-btn primary" onclick="openMoneyGenInvoiceModal(' + barId + ')">+ Generate Invoice</button>'
+    +   '<div class="section"><h4>Invoice header</h4>'
+    +     '<div style="font-size:13px;color:var(--white);margin-bottom:8px;">'
+    +       'Invoice <strong>' + _opsEscape(d.invoice_number) + '</strong>'
+    +       (d.glasi_ref ? (' &middot; Shift Reference: <strong style="color:var(--ice);font-variant-numeric:tabular-nums;">' + _opsEscape(d.glasi_ref) + '</strong>') : '')
+    +     '</div>'
+    +     '<div class="kv">'
+    +       '<div><span class="k">Status</span>' + _moneyInvoiceStatusLine(d) + '</div>'
+    +       '<div><span class="k">Generated</span>' + fmtTime(d.generated_at) + '</div>'
+    +       (d.paid_at ? ('<div><span class="k">Paid at</span>' + fmtTime(d.paid_at) + '</div>') : '')
+    +       '<div><span class="k">Bar</span>' + _opsEscape(bar.name || '') + '</div>'
+    +       (bar.address ? ('<div><span class="k">Address</span>' + _opsEscape(bar.address) + '</div>') : '')
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="section"><h4>Shift detail</h4>'
+    +     '<div class="kv">'
+    +       '<div><span class="k">Worker</span>' + _opsEscape(worker.name || '') + (worker.tier != null ? ' <span class="net-worker-tier">T' + worker.tier + '</span>' : '') + '</div>'
+    +       '<div><span class="k">Hours</span>' + (shift.hours || 0) + '</div>'
+    +       '<div><span class="k">Bar rate</span>' + _moneyFmtCurrency(shift.bar_rate) + '/hr</div>'
+    +       '<div><span class="k">Total</span><strong>' + _moneyFmtCurrency(d.total_amount) + '</strong></div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="section"><h4>Tracking</h4>'
+    +     '<div class="kv">'
+    +       '<div><span class="k">Requested by</span>' + _opsEscape(requester.name || '') + ' <span class="muted" style="font-size:11px;">(' + requesterLabel + ')</span></div>'
+    +       '<div><span class="k">Time of request</span>' + fmtTime(requester.request_time) + '</div>'
+    +       '<div><span class="k">Worker clocked in</span>' + fmtTime(shift.clock_in_at) + '</div>'
+    +       '<div><span class="k">Worker clocked out</span>' + fmtTime(shift.clock_out_at) + '</div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="section"><h4>Actions</h4>'
+    +     (d.status === 'draft' ? '<button class="ops-sched-btn" onclick="markBarInvoiceStatus(' + d.invoice_id + ', &quot;sent&quot;)">Mark sent</button> ' : '')
+    +     (d.status === 'sent'  ? '<button class="ops-sched-btn" onclick="markBarInvoiceStatus(' + d.invoice_id + ', &quot;paid&quot;)">Mark paid</button> ' : '')
+    +     '<button class="ops-sched-btn primary" onclick="printShiftInvoice(' + d.invoice_id + ')">Print / PDF</button>'
     +   '</div>'
     + '</div>';
 }
 
-function openMoneyGenInvoiceModal(barId) {
-  const d = moneyState.billingBarDetailCache[barId] || {};
-  const sub = d.subscription || {};
-  const shifts = d.current_month_shifts || [];
-
-  // Default period: previous calendar month
-  const now = new Date();
-  const periodEnd = new Date(now.getFullYear(), now.getMonth(), 0); // last day of last month
-  const periodStart = new Date(periodEnd.getFullYear(), periodEnd.getMonth(), 1);
-  const iso = d => d.toISOString().slice(0, 10);
-
-  const subAmount = sub.id ? (parseFloat(sub.monthly_fee || 0) - parseFloat(sub.discount_amount || 0)) : 0;
-  const shiftLines = shifts.map(s => ({ desc: _moneyFmtDate(s.date) + ' &middot; session #' + (s.session_id || '?') + ' &middot; ' + (s.hours || 0) + 'h @ ' + _moneyFmtCurrency(s.rate), amount: s.total }));
-  const shiftAmount = shiftLines.reduce((a,l) => a + parseFloat(l.amount || 0), 0);
-
-  moneyState.billingGenContext = {
-    bar_id: barId,
-    bar_name: d.bar_name || '',
-    invoice_lines: shiftLines,
-    sub_line: sub.id ? { desc: 'Glasi subscription &middot; ' + iso(periodStart) + ' &middot; ' + iso(periodEnd), amount: subAmount } : null
-  };
-
-  document.getElementById('money-gen-invoice-title').innerHTML = 'Generate invoice for <strong>' + _opsEscape(d.bar_name || '') + '</strong>';
-  document.getElementById('money-gen-invoice-period-start').value = iso(periodStart);
-  document.getElementById('money-gen-invoice-period-end').value = iso(periodEnd);
-  document.getElementById('money-gen-invoice-sub-amount').value = subAmount.toFixed(2);
-  document.getElementById('money-gen-invoice-shift-amount').value = shiftAmount.toFixed(2);
-
-  const linesHtml = (moneyState.billingGenContext.sub_line ? '<div class="line"><span>' + moneyState.billingGenContext.sub_line.desc + '</span><span class="amt">' + _moneyFmtCurrency(moneyState.billingGenContext.sub_line.amount) + '</span></div>' : '')
-    + (shiftLines.length
-        ? shiftLines.map(l => '<div class="line"><span>' + l.desc + '</span><span class="amt">' + _moneyFmtCurrency(l.amount) + '</span></div>').join('')
-        : '<div class="empty">No shift charges in selected period (auto-populated from current month).</div>');
-  document.getElementById('money-gen-invoice-lines').innerHTML = linesHtml;
-
-  document.getElementById('money-gen-invoice-notes').value = '';
-  document.getElementById('money-gen-invoice-err').textContent = '';
-  updateMoneyGenInvoiceTotal();
-  document.getElementById('money-gen-invoice-modal').style.display = 'flex';
-}
-function closeMoneyGenInvoiceModal() {
-  document.getElementById('money-gen-invoice-modal').style.display = 'none';
-  moneyState.billingGenContext = null;
-}
-function updateMoneyGenInvoiceTotal() {
-  const sub = parseFloat(document.getElementById('money-gen-invoice-sub-amount').value) || 0;
-  const shift = parseFloat(document.getElementById('money-gen-invoice-shift-amount').value) || 0;
-  document.getElementById('money-gen-invoice-total').innerHTML = _moneyFmtCurrency(sub + shift);
-}
-async function submitMoneyGenInvoice() {
-  const ctx = moneyState.billingGenContext;
-  if(!ctx) { closeMoneyGenInvoiceModal(); return; }
-  const errEl = document.getElementById('money-gen-invoice-err');
-  const periodStart = document.getElementById('money-gen-invoice-period-start').value;
-  const periodEnd   = document.getElementById('money-gen-invoice-period-end').value;
-  const subAmount   = parseFloat(document.getElementById('money-gen-invoice-sub-amount').value) || 0;
-  const shiftAmount = parseFloat(document.getElementById('money-gen-invoice-shift-amount').value) || 0;
-  const notes       = document.getElementById('money-gen-invoice-notes').value.trim() || null;
-  if(!periodStart || !periodEnd) { errEl.textContent = 'Period start and end required.'; return; }
-  if(periodEnd < periodStart)    { errEl.textContent = 'Period end must be on or after period start.'; return; }
-  const btn = document.getElementById('money-gen-invoice-save');
-  btn.disabled = true; btn.textContent = 'Generating...';
-  try {
-    const linesJson = [];
-    if(ctx.sub_line && subAmount > 0) linesJson.push({ desc: ctx.sub_line.desc, amount: subAmount });
-    for(const l of (ctx.invoice_lines || [])) linesJson.push({ desc: l.desc, amount: parseFloat(l.amount || 0) });
-    const res = await sbAuth.rpc('f38_money_billing_create_invoice', {
-      p_bar_id: ctx.bar_id,
-      p_period_start: periodStart,
-      p_period_end: periodEnd,
-      p_subscription_amount: subAmount,
-      p_shift_charges_amount: shiftAmount,
-      p_invoice_lines: linesJson,
-      p_notes: notes
-    });
-    if(res.error) throw res.error;
-    const invoiceId = res.data;
-    closeMoneyGenInvoiceModal();
-    // Bust cache and refresh.
-    delete moneyState.billingBarDetailCache[ctx.bar_id];
-    moneyState.billingMetrics = null;
-    await loadMoneyBillingData();
-    // Immediately offer the print window.
-    printBarInvoice(ctx.bar_id, invoiceId);
-  } catch(e) {
-    errEl.textContent = 'Generate failed: ' + (e.message || 'unknown');
-    btn.disabled = false; btn.textContent = 'Generate';
-  }
-}
-
 async function markBarInvoiceStatus(invoiceId, status) {
   let notes = null;
-  if(status === 'paid') {
-    notes = window.prompt('Payment notes (optional)') || null;
-  }
+  if(status === 'paid') notes = window.prompt('Payment notes (optional)') || null;
   const res = await sbAuth.rpc('f38_money_billing_update_invoice_status', {
     p_invoice_id: invoiceId, p_status: status, p_payment_notes: notes
   });
   if(res.error) { alert('Status update failed: ' + res.error.message); return; }
-  // Bust caches and re-render.
-  for(const k of Object.keys(moneyState.billingBarDetailCache)) delete moneyState.billingBarDetailCache[k];
-  moneyState.billingMetrics = null;
-  await loadMoneyBillingData();
+  // Bust both tab caches so whichever tab the user is on re-renders correctly.
+  moneyState.shiftInvList = null;
+  moneyState.shiftInvDetailCache = {};
+  moneyState.subInvList = null;
+  // Refresh whichever tab is active.
+  const active = document.querySelector('#workspace-money .ws-subtab.active');
+  if(active) {
+    const name = active.dataset.subtab;
+    if(name === 'shift-invoices')        await loadMoneyShiftInvoicesData();
+    if(name === 'subscription-invoices') await loadMoneySubscriptionInvoicesData();
+  }
 }
 
-function printBarInvoice(barId, invoiceId) {
-  const d = moneyState.billingBarDetailCache[barId] || {};
-  const inv = (d.past_invoices || []).find(i => Number(i.invoice_id) === Number(invoiceId));
-  if(!inv) { alert('Invoice not in cache; refresh and try again.'); return; }
-  const bar = { id: barId, name: d.bar_name, address: d.address };
-  const lines = inv.invoice_lines || [];
-  const html = _renderBarInvoiceHtml(inv, bar, lines);
+async function printShiftInvoice(invoiceId) {
+  let d = moneyState.shiftInvDetailCache[invoiceId];
+  if(!d || d._error) {
+    const res = await sbAuth.rpc('f39_shift_invoice_detail', { p_invoice_id: invoiceId });
+    if(res.error) { alert('Print failed: ' + res.error.message); return; }
+    d = res.data;
+    moneyState.shiftInvDetailCache[invoiceId] = d;
+  }
+  const html = _renderShiftInvoicePrintHtml(d);
   const w = window.open('', '_blank', 'width=820,height=1000');
   if(!w) { alert('Popup blocked. Allow popups for the dashboard to view invoices.'); return; }
   w.document.open(); w.document.write(html); w.document.close();
   w.onload = () => { try { w.print(); } catch(e) {} };
 }
-function _renderBarInvoiceHtml(invoice, bar, lines) {
-  const invoiceNo = 'BAR-' + invoice.invoice_id;
-  const total = parseFloat(invoice.total_amount || 0);
-  const linesHtml = (lines || []).map(li => '<tr><td>' + (li.desc || '') + '</td><td class="amt">&pound;' + parseFloat(li.amount || 0).toFixed(2) + '</td></tr>').join('');
+
+function _renderShiftInvoicePrintHtml(d) {
+  const bar = d.bar || {};
+  const shift = d.shift || {};
+  const worker = d.worker || {};
+  const requester = d.requester || {};
+  const total = parseFloat(d.total_amount || 0);
+  const fmtTime = (ts) => ts ? new Date(ts).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+  const fmtDate = (ts) => ts ? new Date(ts).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
   return '<!DOCTYPE html><html><head><meta charset="utf-8">'
-    + '<title>' + invoiceNo + '</title>'
+    + '<title>' + d.invoice_number + '</title>'
     + '<style>'
     +   '@media print { @page { margin: 18mm } }'
     +   'body{font-family:Inter,system-ui,sans-serif;color:#0F1F3D;max-width:760px;margin:24px auto;padding:24px}'
@@ -7585,23 +7603,286 @@ function _renderBarInvoiceHtml(invoice, bar, lines) {
     +   '.meta{font-size:13px;color:#475569;margin:4px 0}'
     +   'table{width:100%;border-collapse:collapse;margin:18px 0}'
     +   'th,td{text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;font-size:13px}'
-    +   '.amt{text-align:right;font-family:JetBrains Mono,monospace}'
+    +   '.amt{text-align:right;font-variant-numeric:tabular-nums}'
+    +   '.total-row td{font-weight:700;font-size:15px;border-bottom:none;border-top:2px solid #0F1F3D}'
+    +   '.tracking{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin:18px 0;font-size:12px;line-height:1.7}'
+    +   '.tracking strong{color:#0F1F3D}'
+    +   '.foot{font-size:12px;color:#64748B;margin-top:24px;line-height:1.6}'
+    + '</style></head><body>'
+    + '<div class="glasi-mark">GLASI</div>'
+    + '<h1>Shift Invoice ' + d.invoice_number + '</h1>'
+    + (d.glasi_ref ? '<div class="meta">Shift Reference: <strong>' + d.glasi_ref + '</strong></div>' : '')
+    + '<div class="meta">Generated ' + fmtDate(d.generated_at) + '</div>'
+    + '<h1>Billed to</h1>'
+    + '<div class="meta">' + (bar.name || '') + '</div>'
+    + (bar.address ? '<div class="meta">' + bar.address + '</div>' : '')
+    + '<table><thead><tr><th>Description</th><th class="amt">Amount</th></tr></thead>'
+    + '<tbody>'
+    +   '<tr><td>' + (worker.name || 'Worker') + ' ' + (worker.tier != null ? '(Tier ' + worker.tier + ')' : '') + ' &middot; ' + (shift.hours || 0) + 'h @ £' + parseFloat(shift.bar_rate || 0).toFixed(2) + '/hr</td><td class="amt">£' + total.toFixed(2) + '</td></tr>'
+    +   '<tr class="total-row"><td>Total</td><td class="amt">£' + total.toFixed(2) + '</td></tr>'
+    + '</tbody></table>'
+    + '<div class="tracking">'
+    +   '<div><strong>Requested by:</strong> ' + (requester.name || '') + '</div>'
+    +   '<div><strong>Time of request:</strong> ' + fmtTime(requester.request_time) + '</div>'
+    +   '<div><strong>Worker clocked in:</strong> ' + fmtTime(shift.clock_in_at) + '</div>'
+    +   '<div><strong>Worker clocked out:</strong> ' + fmtTime(shift.clock_out_at) + '</div>'
+    + '</div>'
+    + '<div class="foot">Payment within 30 days. Bank details on Glasi covering email. Reference ' + d.invoice_number + ' on payment.</div>'
+    + '</body></html>';
+}
+
+// ----- Phase 4b.3b: Subscription Invoices -----
+
+function _moneySubInvDefaultDateFrom() {
+  // Default last 12 months
+  const d = new Date(); d.setFullYear(d.getFullYear() - 1); return d.toISOString().slice(0,10);
+}
+function _moneySubInvDefaultDateTo() { return new Date().toISOString().slice(0,10); }
+
+async function loadMoneySubscriptionInvoicesData() {
+  const pane = document.getElementById('money-subscription-invoices-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading Subscription Invoices...</div>';
+  if(!moneyState.subInvDateFrom) moneyState.subInvDateFrom = _moneySubInvDefaultDateFrom();
+  if(!moneyState.subInvDateTo)   moneyState.subInvDateTo   = _moneySubInvDefaultDateTo();
+  try {
+    // Default "current period" for the bulk-generate eligibility check is the previous calendar month.
+    const periodStart = _moneyPreviousMonthStart();
+    const periodEnd   = _moneyPreviousMonthEnd();
+    const [listRes, eligRes] = await Promise.all([
+      sbAuth.rpc('f39_subscription_invoice_list', {
+        p_date_from: moneyState.subInvDateFrom,
+        p_date_to:   moneyState.subInvDateTo,
+        p_bar_ids:   (moneyState.subInvBarIds && moneyState.subInvBarIds.length ? moneyState.subInvBarIds : null),
+        p_statuses:  (moneyState.subInvStatuses && moneyState.subInvStatuses.length ? moneyState.subInvStatuses : null)
+      }),
+      sbAuth.rpc('f39_subscription_invoice_eligible_bars', { p_period_start: periodStart, p_period_end: periodEnd })
+    ]);
+    if(listRes.error || eligRes.error) throw (listRes.error || eligRes.error);
+    moneyState.subInvList = listRes.data || [];
+    moneyState._subInvEligible = { period_start: periodStart, period_end: periodEnd, bars: eligRes.data || [] };
+    _renderMoneySubscriptionInvoicesPane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadMoneySubscriptionInvoicesData()">Retry</button></div>';
+  }
+}
+
+function _moneyPreviousMonthStart() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0,10);
+}
+function _moneyPreviousMonthEnd() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0,10);
+}
+
+function setSubInvDateFrom(v) { moneyState.subInvDateFrom = v; moneyState.subInvList = null; loadMoneySubscriptionInvoicesData(); }
+function setSubInvDateTo(v)   { moneyState.subInvDateTo   = v; moneyState.subInvList = null; loadMoneySubscriptionInvoicesData(); }
+function toggleSubInvStatus(s) {
+  const i = moneyState.subInvStatuses.indexOf(s);
+  if(i >= 0) moneyState.subInvStatuses.splice(i, 1);
+  else moneyState.subInvStatuses.push(s);
+  if(!moneyState.subInvStatuses.length) moneyState.subInvStatuses = ['draft','sent','paid'];
+  moneyState.subInvList = null;
+  loadMoneySubscriptionInvoicesData();
+}
+function toggleSubInvBarFilter(barId) {
+  const id = parseInt(barId, 10);
+  const idx = moneyState.subInvBarIds.indexOf(id);
+  if(idx >= 0) moneyState.subInvBarIds.splice(idx, 1);
+  else moneyState.subInvBarIds.push(id);
+  moneyState.subInvList = null;
+  loadMoneySubscriptionInvoicesData();
+}
+function openSubInvBarPicker(e) {
+  if(e) { e.preventDefault(); e.stopPropagation(); }
+  const bars = window.bars || [];
+  if(!bars.length) { alert('Bars cache empty; visit Network -> Bars first.'); return; }
+  const lines = bars.map(b => ((moneyState.subInvBarIds.includes(Number(b.id)) ? '● ' : '○ ') + b.id + '  ' + b.name)).join('\n');
+  const picked = window.prompt('Bar filter (toggle). Enter the bar IDs to TOGGLE, comma-separated. Currently selected: ' + (moneyState.subInvBarIds.length ? moneyState.subInvBarIds.join(',') : 'none') + '\n\n' + lines, '');
+  if(picked === null) return;
+  const ids = picked.split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isFinite(n));
+  for(const id of ids) toggleSubInvBarFilter(id);
+}
+
+async function bulkGenerateSubscriptionInvoicesThisMonth() {
+  const elig = moneyState._subInvEligible || { bars: [] };
+  const bars = elig.bars || [];
+  if(!bars.length) { alert('No bars with active subscription are due for billing in ' + (elig.period_start || 'this period') + '.'); return; }
+  const monthLabel = new Date((elig.period_start || _moneyPreviousMonthStart()) + 'T00:00:00').toLocaleDateString('en-GB', { month:'long', year:'numeric' });
+  if(!confirm('Generate ' + bars.length + ' subscription invoice' + (bars.length === 1 ? '' : 's') + ' for ' + monthLabel + '?')) return;
+  let created = 0, failed = 0;
+  for(const b of bars) {
+    try {
+      const res = await sbAuth.rpc('f39_subscription_invoice_generate', {
+        p_bar_id: b.bar_id, p_period_start: elig.period_start, p_period_end: elig.period_end
+      });
+      if(res.error) throw res.error;
+      created++;
+    } catch(e) { failed++; }
+  }
+  alert('Created ' + created + ' subscription invoice' + (created === 1 ? '' : 's') + (failed ? '; ' + failed + ' failed.' : '.'));
+  moneyState.subInvList = null;
+  await loadMoneySubscriptionInvoicesData();
+}
+
+function _renderMoneySubscriptionInvoicesPane() {
+  const pane = document.getElementById('money-subscription-invoices-pane');
+  if(!pane) return;
+  const list = moneyState.subInvList || [];
+  const elig = moneyState._subInvEligible || { bars: [] };
+
+  const allStatuses = ['draft','sent','paid'];
+  const statusPills = allStatuses.map(s => {
+    const active = moneyState.subInvStatuses.includes(s);
+    return '<button class="net-pill' + (active ? ' active' : '') + '" onclick="toggleSubInvStatus(&quot;' + s + '&quot;)">' + s.toUpperCase() + '</button>';
+  }).join('');
+
+  const barChips = moneyState.subInvBarIds.length
+    ? moneyState.subInvBarIds.map(id => {
+        const b = (window.bars || []).find(x => Number(x.id) === id);
+        return '<span class="bar-chip" onclick="event.stopPropagation();toggleSubInvBarFilter(' + id + ')">' + _opsEscape(b ? b.name : ('Bar #' + id)) + ' &times;</span>';
+      }).join('')
+    : '<span style="color:var(--grey);font-size:11px;">All bars (click to filter)</span>';
+
+  const filterBar = ''
+    + '<div class="history-filter-bar">'
+    +   '<input type="date" value="' + (moneyState.subInvDateFrom || '') + '" onchange="setSubInvDateFrom(this.value)" />'
+    +   '<span style="color:var(--grey);font-size:11px;">to</span>'
+    +   '<input type="date" value="' + (moneyState.subInvDateTo || '') + '" onchange="setSubInvDateTo(this.value)" />'
+    +   '<div class="bar-multi" onclick="openSubInvBarPicker(event)">' + barChips + '</div>'
+    +   '<div class="pill-group">' + statusPills + '</div>'
+    + '</div>';
+
+  const monthLabel = new Date((elig.period_start || _moneyPreviousMonthStart()) + 'T00:00:00').toLocaleDateString('en-GB', { month:'long', year:'numeric' });
+  const bulkBtnHtml = (elig.bars && elig.bars.length)
+    ? '<button class="ops-sched-btn primary" onclick="bulkGenerateSubscriptionInvoicesThisMonth()">+ Generate ' + elig.bars.length + ' subscription invoice' + (elig.bars.length === 1 ? '' : 's') + ' for ' + monthLabel + '</button>'
+    : '<span style="color:var(--grey);font-size:12px;">No active subscriptions due for billing in ' + monthLabel + '.</span>';
+  const bulkRow = '<div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' + bulkBtnHtml + '</div>';
+
+  const rows = list.length
+    ? list.map(inv => {
+        const isExpanded = moneyState.subInvExpandedId === inv.invoice_id;
+        const periodLabel = new Date(inv.period_start + 'T00:00:00').toLocaleDateString('en-GB', { month:'long', year:'numeric' });
+        const head = '<tr class="clickable" onclick="toggleMoneySubInvoiceRow(' + inv.invoice_id + ')">'
+          + '<td>' + _opsEscape(inv.invoice_number) + '</td>'
+          + '<td><button class="health-link" onclick="event.stopPropagation();_moneyGoToBar(' + inv.bar_id + ')">' + _opsEscape(inv.bar_name || '') + '</button></td>'
+          + '<td>' + _opsEscape(periodLabel) + '</td>'
+          + '<td>' + _moneyFmtCurrency(inv.amount) + '</td>'
+          + '<td>' + _moneyInvoiceStatusLine(inv) + '</td>'
+          + '<td>'
+          +   (inv.status === 'draft' ? '<button class="health-link" onclick="event.stopPropagation();markBarInvoiceStatus(' + inv.invoice_id + ', &quot;sent&quot;)">Mark sent</button> &middot; ' : '')
+          +   (inv.status === 'sent'  ? '<button class="health-link" onclick="event.stopPropagation();markBarInvoiceStatus(' + inv.invoice_id + ', &quot;paid&quot;)">Mark paid</button> &middot; ' : '')
+          +   '<button class="health-link" onclick="event.stopPropagation();printSubscriptionInvoice(' + inv.invoice_id + ')">Print / PDF</button>'
+          + '</td>'
+          + '</tr>';
+        const exp = isExpanded
+          ? '<tr><td colspan="6" style="padding:0;background:transparent;">' + _renderMoneySubInvoiceDetail(inv) + '</td></tr>'
+          : '';
+        return head + exp;
+      }).join('')
+    : '<tr><td colspan="6" style="padding:24px 10px;text-align:center;color:var(--grey);">No subscription invoices match these filters.</td></tr>';
+
+  const tableHtml = ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Subscription Invoices <span style="color:var(--grey);font-size:10px;margin-left:8px;">' + list.length + ' RESULTS</span></h3>'
+    +   '<table class="health-table"><thead><tr><th>Invoice #</th><th>Bar</th><th>Billing period</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
+    + '</section>';
+
+  pane.innerHTML = filterBar + bulkRow + tableHtml;
+}
+
+function toggleMoneySubInvoiceRow(invoiceId) {
+  moneyState.subInvExpandedId = (moneyState.subInvExpandedId === invoiceId) ? null : invoiceId;
+  _renderMoneySubscriptionInvoicesPane();
+}
+
+function _renderMoneySubInvoiceDetail(inv) {
+  const lines = inv.invoice_lines || [];
+  const linesHtml = lines.length
+    ? '<table class="health-table" style="margin:6px 0;"><tbody>'
+      + lines.map(l => '<tr><td>' + _opsEscape(l.desc || '') + '</td><td style="text-align:right;font-variant-numeric:tabular-nums;">' + _moneyFmtCurrency(l.amount) + '</td></tr>').join('')
+      + '</tbody></table>'
+    : '<div style="color:var(--grey);font-size:12px;">No invoice lines recorded.</div>';
+  const fmtTime = (ts) => ts ? new Date(ts).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '<span class="muted">,</span>';
+  return ''
+    + '<div class="money-bar-expand">'
+    +   '<div class="section"><h4>Invoice lines</h4>' + linesHtml + '</div>'
+    +   '<div class="section"><h4>Header</h4>'
+    +     '<div class="kv">'
+    +       '<div><span class="k">Invoice #</span>' + _opsEscape(inv.invoice_number) + '</div>'
+    +       '<div><span class="k">Status</span>' + _moneyInvoiceStatusLine(inv) + '</div>'
+    +       '<div><span class="k">Generated</span>' + fmtTime(inv.generated_at) + '</div>'
+    +       (inv.paid_at ? ('<div><span class="k">Paid at</span>' + fmtTime(inv.paid_at) + '</div>') : '')
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="section"><h4>Actions</h4>'
+    +     (inv.status === 'draft' ? '<button class="ops-sched-btn" onclick="markBarInvoiceStatus(' + inv.invoice_id + ', &quot;sent&quot;)">Mark sent</button> ' : '')
+    +     (inv.status === 'sent'  ? '<button class="ops-sched-btn" onclick="markBarInvoiceStatus(' + inv.invoice_id + ', &quot;paid&quot;)">Mark paid</button> ' : '')
+    +     '<button class="ops-sched-btn primary" onclick="printSubscriptionInvoice(' + inv.invoice_id + ')">Print / PDF</button>'
+    +   '</div>'
+    + '</div>';
+}
+
+async function printSubscriptionInvoice(invoiceId) {
+  const inv = (moneyState.subInvList || []).find(x => Number(x.invoice_id) === Number(invoiceId));
+  if(!inv) { alert('Invoice not in cache; refresh and try again.'); return; }
+  // Fetch the bar info if not cached.
+  let barInfo = (window.bars || []).find(b => Number(b.id) === Number(inv.bar_id)) || { id: inv.bar_id, name: inv.bar_name };
+  const html = _renderSubscriptionInvoicePrintHtml(inv, barInfo);
+  const w = window.open('', '_blank', 'width=820,height=1000');
+  if(!w) { alert('Popup blocked. Allow popups for the dashboard to view invoices.'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+  w.onload = () => { try { w.print(); } catch(e) {} };
+}
+
+function _renderSubscriptionInvoicePrintHtml(inv, bar) {
+  const total = parseFloat(inv.amount || 0);
+  const lines = inv.invoice_lines || [];
+  const linesHtml = lines.map(li => '<tr><td>' + (li.desc || '') + '</td><td class="amt">£' + parseFloat(li.amount || 0).toFixed(2) + '</td></tr>').join('');
+  const fmtDate = (ts) => ts ? new Date(ts).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+  const periodLabel = fmtDate(inv.period_start) + ' to ' + fmtDate(inv.period_end);
+  return '<!DOCTYPE html><html><head><meta charset="utf-8">'
+    + '<title>' + inv.invoice_number + '</title>'
+    + '<style>'
+    +   '@media print { @page { margin: 18mm } }'
+    +   'body{font-family:Inter,system-ui,sans-serif;color:#0F1F3D;max-width:760px;margin:24px auto;padding:24px}'
+    +   '.glasi-mark{font-family:Raleway,sans-serif;letter-spacing:8px;font-weight:700;font-size:24px;border:1.5px solid #0F1F3D;display:inline-block;padding:6px 14px;border-radius:6px}'
+    +   'h1{font-size:18px;margin:24px 0 6px}'
+    +   '.meta{font-size:13px;color:#475569;margin:4px 0}'
+    +   'table{width:100%;border-collapse:collapse;margin:18px 0}'
+    +   'th,td{text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;font-size:13px}'
+    +   '.amt{text-align:right;font-variant-numeric:tabular-nums}'
     +   '.total-row td{font-weight:700;font-size:15px;border-bottom:none;border-top:2px solid #0F1F3D}'
     +   '.foot{font-size:12px;color:#64748B;margin-top:24px;line-height:1.6}'
     + '</style></head><body>'
     + '<div class="glasi-mark">GLASI</div>'
-    + '<h1>Invoice ' + invoiceNo + '</h1>'
-    + '<div class="meta">Period ' + invoice.period_start + ' to ' + invoice.period_end + '</div>'
-    + '<div class="meta">Generated ' + (invoice.generated_at || '') + '</div>'
+    + '<h1>Subscription Invoice ' + inv.invoice_number + '</h1>'
+    + '<div class="meta">Period ' + periodLabel + '</div>'
+    + '<div class="meta">Generated ' + fmtDate(inv.generated_at) + '</div>'
     + '<h1>Billed to</h1>'
     + '<div class="meta">' + (bar.name || '') + '</div>'
     + (bar.address ? '<div class="meta">' + bar.address + '</div>' : '')
     + '<table><thead><tr><th>Description</th><th class="amt">Amount</th></tr></thead>'
     + '<tbody>' + linesHtml
-    +   '<tr class="total-row"><td>Total</td><td class="amt">&pound;' + total.toFixed(2) + '</td></tr>'
+    +   '<tr class="total-row"><td>Total</td><td class="amt">£' + total.toFixed(2) + '</td></tr>'
     + '</tbody></table>'
-    + '<div class="foot">Payment within 30 days. Bank details on Glasi covering email. Reference ' + invoiceNo + ' on payment.</div>'
+    + '<div class="foot">Payment within 30 days. Bank details on Glasi covering email. Reference ' + inv.invoice_number + ' on payment.</div>'
     + '</body></html>';
+}
+
+// Batch 4b (19 May 2026): the legacy Bar Billing render chain
+// (_renderMoneyBillingPane through _renderBarInvoiceHtml -- ~270 lines)
+// was retired alongside the Bar Billing sub-tab. Shift Invoices +
+// Subscription Invoices replace it. Removal stub:
+function _money_legacy_bar_billing_removed_19_may_2026() {
+  // Removed bodies: _renderMoneyBillingPane, toggleMoneyBillingBarRow,
+  // _renderMoneyBillingBarDetail, openMoneyGenInvoiceModal,
+  // closeMoneyGenInvoiceModal, updateMoneyGenInvoiceTotal,
+  // submitMoneyGenInvoice, the legacy markBarInvoiceStatus (replaced above),
+  // printBarInvoice, _renderBarInvoiceHtml -- all dead with the Bar Billing
+  // sub-tab. The new shift / subscription invoice flows above own the
+  // equivalent surfaces. ~270 lines removed in the same Edit that scoped
+  // this comment.
 }
 
 // ====================================================================
@@ -7969,8 +8250,14 @@ function _renderHistoryDecisionsTab(rows) {
 // ----- Phase 4.6: cross-workspace navigation helpers (called from Network) -----
 
 function _netGoToMoneyForBar(barId) {
+  // Batch 4b (19 May 2026): the legacy combined Bar Billing tab is gone.
+  // Bar profile cross-link now lands on Shift Invoices with the bar filter
+  // pre-applied (subscription invoices for this bar are reachable via the
+  // adjacent sub-tab; the hash router clears either filter via the bar_id
+  // query param). Defaults to shift-invoices because that's the higher-
+  // volume billing surface.
   if(!barId) return;
-  try { history.pushState(null, '', '#money/bar-billing?expand=' + barId); } catch(e) {}
+  try { history.pushState(null, '', '#money/shift-invoices?bar_id=' + barId); } catch(e) {}
   if(typeof dv2ApplyHash === 'function') dv2ApplyHash();
 }
 function _netGoToHistoryForBar(barId) {

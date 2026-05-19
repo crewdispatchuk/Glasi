@@ -56,43 +56,11 @@
       overflow-y: auto;
       z-index: 50;
     }
-    .sidebar-brand { padding: 0 24px 24px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
-    .sidebar-wordmark {
-      font-family: 'Raleway', sans-serif;
-      font-size: 18px; font-weight: 400; letter-spacing: 6px;
-      color: var(--white);
-      border: 1.5px solid rgba(168,216,234,0.6);
-      border-radius: 6px;
-      padding: 6px 12px;
-      display: inline-block;
-      cursor: pointer;
-      transition: border-color 0.2s;
-    }
-    .sidebar-wordmark:hover { border-color: var(--ice); }
-    .sidebar-subtitle { font-size: 10px; color: var(--grey); letter-spacing: 2px; text-transform: uppercase; margin-top: 10px; font-family: 'Inter', sans-serif; }
-    .sidebar-nav { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
-    .sidebar-nav-item {
-      background: none; border: none; color: var(--grey);
-      text-align: left; padding: 10px 14px; border-radius: 8px;
-      font-size: 14px; font-family: 'Inter', sans-serif; cursor: pointer;
-      transition: background 0.15s, color 0.15s;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .sidebar-nav-item:hover { background: rgba(168,216,234,0.06); color: var(--white); }
-    .sidebar-nav-item.active { background: rgba(168,216,234,0.12); color: var(--ice); font-weight: 600; }
-    .sidebar-nav-chevron { display: inline-block; font-size: 10px; transition: transform 0.15s; }
-    .sidebar-nav-chevron.expanded { transform: rotate(90deg); }
-    /* Pre-v2 cleanup (18 May 2026): .sidebar-zones-children + .sidebar-zone-child
-       rules removed (CORE v7 zones-as-primary deprecation). */
-    .sidebar-divider { border-top: 1px solid var(--border); margin: 12px 12px 8px; }
-    .sidebar-signout {
-      background: none; border: 1px solid var(--border); color: var(--grey);
-      padding: 10px 14px; margin: 0 12px; border-radius: 8px;
-      font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer;
-      transition: color 0.15s, border-color 0.15s;
-    }
-    .sidebar-signout:hover { color: var(--red); border-color: rgba(239,68,68,0.3); }
-    body.dashboard-shell { padding-left: 240px; }
+    /* v1 sidebar CSS retired 2026-05-19 (Batch 5: v1 retirement). All
+       .sidebar-* rules and the 240px body padding-left lived here. v2 uses
+       the .dashboard-v2-header chrome (defined below) with a 56px top
+       padding applied to body.dashboard-shell post-batch. */
+    body.dashboard-shell { padding-top: 56px; }
     .ghost-btn { background: transparent; border: 1px solid var(--border); color: var(--grey); border-radius: 8px; padding: 6px 14px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
     .ghost-btn:hover { border-color: var(--ice); color: var(--ice); }
 
@@ -1155,21 +1123,16 @@
     .pu-detail-row .v { color: var(--white); font-variant-numeric: tabular-nums; }
 
     /* ================================================================
-       Dashboard v2 scaffolding (18 May 2026, Batch 1).
-       Feature-flag-gated; default OFF (localStorage.glasi_dashboard_v2='v1').
-       When body.dashboard-v2 is set:
-         - v1 sidebar + .screen elements are hidden
-         - v2 header + .workspace elements are shown
+       Dashboard v2 chrome (post-Batch 5: v2 is the only path; feature-
+       flag conditional CSS retired 2026-05-19). The body.dashboard-v2
+       class is added unconditionally on login via applyDashboardMode and
+       removed on logout, so the gated rules below activate the v2 chrome
+       only while a user is logged in (login screen stays clean).
        Spec: glasi_dashboard/audits/DASHBOARD_V2_TARGET_SPEC.md
-       Audit: glasi_dashboard/audits/DASHBOARD_V2_AUDIT_2026-05-18.md
     ================================================================ */
     .dashboard-v2-header { display: none; }
     .workspace { display: none; }
-    body.dashboard-v2 #sidebar { display: none !important; }
-    body.dashboard-v2 .screen { display: none !important; }
-    body.dashboard-v2 #auto-dispatch-pill { display: none !important; }
     body.dashboard-v2 .dashboard-v2-header { display: flex; }
-    body.dashboard-v2.dashboard-shell { padding-left: 0; padding-top: 56px; }
     body.dashboard-v2 .workspace.active { display: block; }
     .dashboard-v2-header {
       position: fixed; top: 0; left: 0; right: 0; height: 56px;
@@ -1952,29 +1915,14 @@
   </div>
 </div>
 
-<!-- SIDEBAR (F-28: replaces the prior top-nav #header) -->
-<aside id="sidebar" class="sidebar">
-  <div class="sidebar-brand">
-    <div class="sidebar-wordmark" onclick="safeNavigate(()=>{showScreen('home');setActiveNav(null);})">GLASI</div>
-    <div class="sidebar-subtitle">Dashboard</div>
-  </div>
+<!-- v1 sidebar markup retired 2026-05-19 (Batch 5: v1 retirement). The
+     <aside id="sidebar"> + six sidebar-nav buttons + safeNavigate/goTo*
+     wiring lived here. Workspace switcher in the v2 header below is the
+     sole navigation post-batch. -->
 
-  <nav class="sidebar-nav">
-    <button class="sidebar-nav-item" id="sidebar-nav-bars"     onclick="safeNavigate(goToBars)">Bars</button>
-    <button class="sidebar-nav-item" id="sidebar-nav-workers"  onclick="safeNavigate(goToWorkers)">Workers</button>
-    <button class="sidebar-nav-item" id="sidebar-nav-sessions" onclick="safeNavigate(goToSessions)">Sessions</button>
-    <button class="sidebar-nav-item" id="sidebar-nav-documents" onclick="safeNavigate(goToDocuments)">Documents</button>
-    <button class="sidebar-nav-item" id="sidebar-nav-auto-dispatch" onclick="safeNavigate(goToAutoDispatch)">Auto-dispatch</button>
-    <button class="sidebar-nav-item" id="sidebar-nav-settings" onclick="safeNavigate(goToSettings)">Settings</button>
-  </nav>
-
-  <div class="sidebar-divider"></div>
-  <button class="sidebar-signout" onclick="doLogout()">Sign Out</button>
-</aside>
-
-<!-- Dashboard v2 scaffolding (18 May 2026, Batch 1). Hidden by default;
-     activated when body.dashboard-v2 class is set (localStorage
-     glasi_dashboard_v2='v2'). Spec: DASHBOARD_V2_TARGET_SPEC.md. -->
+<!-- Dashboard v2 chrome (post-Batch 5: v2 is the only path). Workspace
+     switcher (Operations / Network / Money / Health / History) is the
+     primary nav. Spec: DASHBOARD_V2_TARGET_SPEC.md. -->
 <header class="dashboard-v2-header" id="dashboard-v2-header">
   <div class="dv2-brand" onclick="showWorkspace('operations')">GLASI</div>
   <nav class="dv2-switcher" id="dv2-switcher">
@@ -1995,196 +1943,21 @@
   </div>
 </header>
 
-<!-- Recommendation Engine Redesign Phase 2.5: persistent AUTO/MANUAL pill.
-     Fixed top-right across all dashboard screens. Display-only per spec;
-     Sam navigates to the Auto-dispatch sidebar entry to change state.
-     Polled every 30s in case another operator/console flipped the toggle. -->
-<div id="auto-dispatch-pill" class="auto-dispatch-pill off"
-     title="Auto-dispatch state (manage via sidebar)">
-  <span class="dot"></span>
-  <span id="auto-dispatch-pill-label">MANUAL</span>
-</div>
+<!-- v1 fixed auto-dispatch pill retired 2026-05-19 (Batch 5). The
+     dv2-auto-pill inside the v2 header is the canonical state surface
+     post-batch; refreshAutoDispatchPill keeps it in sync. -->
 
-<!-- HOME -->
-<div id="screen-home" class="screen">
-  <div style="padding:48px 24px;max-width:780px;margin:0 auto;">
-    <div class="page-title">Good to see you, Sam</div>
-    <div class="page-sub" id="home-date"></div>
-    <!-- Worker funnel -->
-    <div id="worker-funnel" style="display:flex;gap:24px;margin-top:20px;padding:16px 20px;background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;"></div>
-    <div style="margin-top:20px;">
-      <!-- Pre-v2 cleanup (18 May 2026): Zones card removed (CORE v7 deprecates
-           zones-as-primary). Sessions card target rerouted from the retiring
-           #screen-sessions-audit to the active #screen-sessions sidebar entry. -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
-        <button class="zone-card" onclick="goToSessions()" style="text-align:center;">
-          <div class="zone-card-name">Sessions</div>
-          <div class="zone-card-meta">Schedule, live, history</div>
-        </button>
-        <button class="zone-card" onclick="goToBars()" style="text-align:center;">
-          <div class="zone-card-name">Bars</div>
-          <div class="zone-card-meta">Pipeline, contacts and venues</div>
-        </button>
-        <button class="zone-card" onclick="goToWorkers()" style="text-align:center;">
-          <div class="zone-card-name">Workers</div>
-          <div class="zone-card-meta">Worker pool and tiers</div>
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- v1 screen shells retired 2026-05-19 (Batch 5: v1 retirement). The
+     eleven <div id="screen-*"> wrappers (home, bars, workers, documents,
+     auto-dispatch, settings, sessions-audit, sessions, session-detail,
+     report, reports) lived here. The v2 .workspace blocks in this file
+     are the sole content host post-batch; the #screen-login wrapper
+     above is the only retained v1 div (shown/hidden via inline style). -->
 
-<!-- BARS SCREEN -->
-<div id="screen-bars" class="screen">
-  <div style="padding:32px 24px;max-width:900px;margin:0 auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
-      <div>
-        <div class="page-title">Bars</div>
-        <div class="page-sub">Your pipeline, contacts and active venues</div>
-      </div>
-      <div style="display:flex;gap:10px;">
-        <button class="small-ice-btn" onclick="openOv('add-bar')">+ Add Bar</button>
-        <button class="ghost-btn" onclick="showScreen('home')">Back</button>
-      </div>
-    </div>
-    <div id="bars-screen-list"></div>
-  </div>
-</div>
-
-<!-- WORKERS SCREEN -->
-<div id="screen-workers" class="screen">
-  <div class="history-screen">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div>
-        <div class="page-title">Workers</div>
-        <div class="page-sub" id="workers-sub-header">Ready for vetting</div>
-      </div>
-    </div>
-
-    <div class="workers-subtabbar" role="tablist">
-      <button class="workers-subtab"        id="workers-subtab-registered" onclick="setWorkersSubTab('registered')">Registered</button>
-      <button class="workers-subtab active" id="workers-subtab-applied"    onclick="setWorkersSubTab('applied')">Applied</button>
-      <button class="workers-subtab"        id="workers-subtab-vetted"     onclick="setWorkersSubTab('vetted')">Vetted</button>
-      <button class="workers-subtab"        id="workers-subtab-onboarded"  onclick="setWorkersSubTab('onboarded')">Glasi's</button>
-    </div>
-
-    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
-      <input class="field" type="text" id="worker-filter-name"     placeholder="Search by name..."     style="max-width:220px;margin-bottom:0;" oninput="renderWorkerList()">
-      <input class="field" type="text" id="worker-filter-postcode" placeholder="Search by postcode..." style="max-width:180px;margin-bottom:0;" oninput="renderWorkerList()">
-    </div>
-
-    <div id="workers-list"><div class="empty">Loading workers...</div></div>
-  </div>
-</div>
-
-<!-- SHIFTS SCREEN -->
-<!-- Manager App Batch 2: Bar documents surface (Sam-side approval queue + per-bar status + walkthrough upload). -->
-<div id="screen-documents" class="screen">
-  <div style="padding:32px 24px;max-width:980px;margin:0 auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-      <div>
-        <div class="page-title">Bar documents</div>
-        <div class="page-sub">Approval queue + per-bar H&amp;S + Glasi walkthrough management.</div>
-      </div>
-      <button class="ghost-btn" onclick="showScreen('home')">Back</button>
-    </div>
-
-    <div style="margin-bottom:24px;">
-      <div style="font-size:10px;letter-spacing:2px;color:var(--grey);font-weight:600;margin-bottom:10px;">APPROVAL QUEUE</div>
-      <div id="docs-approval-queue"></div>
-    </div>
-
-    <div>
-      <div style="font-size:10px;letter-spacing:2px;color:var(--grey);font-weight:600;margin-bottom:10px;">PER-BAR DOCUMENT STATUS</div>
-      <div id="docs-bar-list"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Recommendation Engine Redesign Phase 2.5 (18 May 2026): Auto-dispatch
-     control screen. State indicator + toggle with confirmation modal +
-     decision window config + toggle history log + dispatch_decisions
-     audit panel. All RPCs land on backend functions shipped 17 May 2026:
-     set_auto_dispatch_enabled, set_decision_window_seconds, plus reads
-     from recommendation_engine_config, auto_dispatch_toggle_log, and
-     dispatch_decisions. -->
-<div id="screen-auto-dispatch" class="screen">
-  <div style="padding:32px 24px;max-width:980px;margin:0 auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-      <div>
-        <div class="page-title">Auto-dispatch</div>
-        <div class="page-sub">Recommendation engine settings, toggle history, and dispatch decision audit log.</div>
-      </div>
-      <button class="ghost-btn" onclick="showScreen('home')">Back</button>
-    </div>
-
-    <!-- Large state banner. -->
-    <div id="ad-state-banner" class="ad-banner off">
-      <div class="ad-banner-kicker" id="ad-state-kicker">Loading...</div>
-      <div class="ad-banner-title" id="ad-state-title">--</div>
-      <div class="ad-banner-sub"   id="ad-state-sub">--</div>
-      <button id="ad-toggle-btn" class="ad-toggle-btn enable" style="display:none;" onclick="adOpenToggleConfirm()">--</button>
-    </div>
-
-    <!-- Decision window config. -->
-    <div class="ad-card">
-      <div class="ad-card-title">Decision window</div>
-      <div style="font-size:12px;color:var(--grey);line-height:1.6;margin-bottom:14px;">
-        How long the engine waits for additional Available responses after the first one lands, before auto-dispatching the top-ranked worker. 30 to 300 seconds; default 90.
-      </div>
-      <div class="ad-row">
-        <input type="number" id="ad-window-input" class="ad-input-num" min="30" max="300" step="5" />
-        <span style="font-size:12px;color:var(--grey);">seconds</span>
-        <button class="small-ice-btn" onclick="adSaveDecisionWindow()">Save</button>
-        <span id="ad-window-msg" style="font-size:12px;color:var(--grey);margin-left:6px;"></span>
-      </div>
-    </div>
-
-    <!-- Toggle history log. -->
-    <div class="ad-card">
-      <div class="ad-card-title">Toggle history</div>
-      <div id="ad-history-empty" style="font-size:12px;color:var(--grey);">Loading...</div>
-      <div style="max-height:260px;overflow-y:auto;">
-        <table class="ad-history-table" id="ad-history-table" style="display:none;">
-          <thead>
-            <tr><th>When</th><th>Action</th><th>Window</th><th>Changed by</th></tr>
-          </thead>
-          <tbody id="ad-history-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Dispatch decisions audit panel. -->
-    <div class="ad-card">
-      <div class="ad-card-title">Dispatch decisions (last 30)</div>
-      <div class="ad-decisions-filters">
-        <select id="ad-decisions-source-filter" onchange="renderAutoDispatchScreen()">
-          <option value="all">All sources</option>
-          <option value="manual">Manual only</option>
-          <option value="auto_dispatch">Auto only</option>
-        </select>
-        <select id="ad-decisions-bar-filter" onchange="renderAutoDispatchScreen()">
-          <option value="all">All bars</option>
-        </select>
-      </div>
-      <div id="ad-decisions-empty" style="font-size:12px;color:var(--grey);">Loading...</div>
-      <div style="max-height:520px;overflow-y:auto;">
-        <table class="ad-decisions-table" id="ad-decisions-table" style="display:none;">
-          <thead>
-            <tr>
-              <th>When</th>
-              <th>Bar</th>
-              <th>Worker</th>
-              <th>Source</th>
-              <th style="text-align:center;">Followed rec</th>
-            </tr>
-          </thead>
-          <tbody id="ad-decisions-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- v1 screens retired 2026-05-19 (Batch 5): #screen-home, #screen-bars,
+     #screen-workers, #screen-documents, #screen-auto-dispatch. Replaced by
+     the v2 workspaces (Operations / Network / Health / Settings) and the
+     dv2 auto-dispatch surface inside Settings + dv2-auto-pill. -->
 
 <!-- Auto-dispatch toggle confirmation modal. -->
 <div id="ov-auto-dispatch-confirm" class="overlay">
@@ -2246,123 +2019,20 @@
      F-30 pipeline. Subscription creation moves to Money / Bar Billing in
      Batch 4. -->
 
-<!-- F-28: Settings placeholder -->
-<div id="screen-settings" class="screen">
-  <div class="history-screen">
-    <div class="page-title">Settings</div>
-    <div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:32px;margin-top:24px;">
-      <div style="font-size:14px;color:var(--white);font-weight:600;">Settings coming soon.</div>
-    </div>
-  </div>
-</div>
-
-<!-- F-28: Cross-zone Sessions audit list (replaces what was the top-level
-     #screen-sessions). Filterable by zone, date range, status. Read-only. -->
-<div id="screen-sessions-audit" class="screen">
-  <div class="history-screen">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-      <div>
-        <div class="page-title">Sessions</div>
-        <div class="page-sub">Cross-bar session audit</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:12px 16px;">
-      <input id="sa-date-from" class="field" type="date" style="margin:0;max-width:160px;" onchange="renderSessionsAudit()" />
-      <input id="sa-date-to"   class="field" type="date" style="margin:0;max-width:160px;" onchange="renderSessionsAudit()" />
-      <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sa-status-scheduled" checked onchange="renderSessionsAudit()"> Scheduled</label>
-      <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sa-status-live" checked onchange="renderSessionsAudit()"> Live</label>
-      <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sa-status-closed" checked onchange="renderSessionsAudit()"> Closed</label>
-      <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sa-status-cancelled" onchange="renderSessionsAudit()"> Cancelled</label>
-    </div>
-    <div id="sessions-audit-list">
-      <div class="empty">Loading...</div>
-    </div>
-  </div>
-</div>
+<!-- v1 screens retired 2026-05-19 (Batch 5): #screen-settings,
+     #screen-sessions-audit. Replaced by the v2 Settings + History
+     workspaces. -->
 
 <!-- Pre-v2 cleanup (18 May 2026): #screen-shift-detail removed.
      Pre-F-30 single-shift detail screen. F-30 paired-unit Shifts page
      (#screen-shifts â†’ #screen-shift-paired) replaced this entirely. -->
 
-<!-- F-37: top-level Sessions screen with three sub-tabs (Schedule, Live,
-     History). The legacy zone-detail Sessions sub-tabs are deprecated; this
-     screen is now the single home for all session operations. -->
-<div id="screen-sessions" class="screen">
-  <div class="history-screen">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-      <div>
-        <div class="page-title">Sessions</div>
-        <div class="page-sub">Schedule, run live, and review past sessions across all bars</div>
-      </div>
-    </div>
-
-    <!-- Sub-tab switcher -->
-    <div style="display:flex;gap:4px;margin-bottom:24px;background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:4px;width:fit-content;">
-      <button id="sessions-tab-schedule" onclick="switchSessionsTab('schedule')" style="background:var(--ice);color:var(--navy);border:none;border-radius:7px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Schedule</button>
-      <button id="sessions-tab-proposed" onclick="switchSessionsTab('proposed')" style="background:none;color:var(--grey);border:none;border-radius:7px;padding:8px 20px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;">Proposed <span id="proposed-count-badge" style="display:none;background:var(--amber);color:var(--navy);font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;min-width:18px;text-align:center;"></span></button>
-      <button id="sessions-tab-live" onclick="switchSessionsTab('live')" style="background:none;color:var(--grey);border:none;border-radius:7px;padding:8px 20px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">Live</button>
-      <button id="sessions-tab-history" onclick="switchSessionsTab('history')" style="background:none;color:var(--grey);border:none;border-radius:7px;padding:8px 20px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">History</button>
-    </div>
-
-    <div id="sessions-screen-body">
-
-      <!-- SCHEDULE SUB-TAB: upcoming sessions + Schedule button -->
-      <div id="sessions-schedule-tab">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
-          <div>
-            <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);margin-bottom:4px;text-transform:uppercase;">Upcoming Sessions</div>
-            <div class="page-sub">Scheduled sessions ready to go live</div>
-          </div>
-          <button class="small-ice-btn" onclick="openScheduleSession()">+ Schedule Session</button>
-        </div>
-        <div id="sessions-upcoming"><div class="empty">Loading...</div></div>
-      </div>
-
-      <!-- F-34: PROPOSED SUB-TAB. Combined inbox: bar-proposed sessions + PIN-holder requests. -->
-      <div id="sessions-proposed-tab" style="display:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
-          <div>
-            <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);margin-bottom:4px;text-transform:uppercase;">Pending Approval</div>
-            <div class="page-sub">Bar-initiated session proposals and PIN-holder requests awaiting your decision</div>
-          </div>
-        </div>
-        <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);margin-bottom:8px;text-transform:uppercase;">Session Proposals</div>
-        <div id="proposed-session-list"><div class="empty">Loading...</div></div>
-        <div style="border-top:1px solid var(--border);margin:32px 0;"></div>
-        <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:var(--ice);margin-bottom:8px;text-transform:uppercase;">PIN-Holder Requests</div>
-        <div id="proposed-pin-holder-list"><div class="empty">Loading...</div></div>
-      </div>
-
-      <!-- LIVE SUB-TAB: live console for the currently-live session -->
-      <div id="sessions-live-tab" style="display:none;">
-        <div id="sessions-live-empty" style="text-align:center;padding:60px 24px;">
-          <div style="font-size:40px;margin-bottom:16px;opacity:0.4;">&#128225;</div>
-          <div style="font-size:16px;font-weight:600;color:var(--white);margin-bottom:8px;">No active session</div>
-          <div style="font-size:13px;color:var(--grey);">Go live on a scheduled session to start dispatching.</div>
-        </div>
-        <div id="sessions-live-room" style="display:none;">
-          <!-- ROOM content injected by renderLiveRoom() -->
-        </div>
-      </div>
-
-      <!-- HISTORY SUB-TAB: closed sessions, filterable -->
-      <div id="sessions-history-tab" style="display:none;">
-        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:12px 16px;">
-          <input id="sh-date-from" class="field" type="date" style="margin:0;max-width:160px;" onchange="renderSessionsHistory()" />
-          <input id="sh-date-to"   class="field" type="date" style="margin:0;max-width:160px;" onchange="renderSessionsHistory()" />
-          <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-proposed" onchange="renderSessionsHistory()"> Proposed</label>
-          <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-scheduled" onchange="renderSessionsHistory()"> Scheduled</label>
-          <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-live" onchange="renderSessionsHistory()"> Live</label>
-          <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-closed" checked onchange="renderSessionsHistory()"> Closed</label>
-          <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-declined" onchange="renderSessionsHistory()"> Declined</label>
-          <label style="font-size:12px;color:var(--grey);display:flex;align-items:center;gap:4px;"><input type="checkbox" id="sh-status-cancelled" onchange="renderSessionsHistory()"> Cancelled</label>
-        </div>
-        <div id="sessions-history-list"><div class="empty">Loading...</div></div>
-      </div>
-
-    </div>
-  </div>
-</div>
+<!-- v1 #screen-sessions retired 2026-05-19 (Batch 5): F-37 top-level
+     Sessions screen with Schedule / Proposed / Live / History sub-tabs.
+     Replaced by the v2 Operations workspace (Live / Schedule / Proposed)
+     and the History workspace's Sessions sub-tab. #ops-live-room +
+     #ops-live-empty inside #workspace-operations are the bipartite live
+     view targets post-batch. -->
 
 <!-- SCHEDULE SESSION OVERLAY (F-37: bar-set replaces zone) -->
 <div id="ov-schedule" class="overlay">
@@ -2404,55 +2074,9 @@
   </div>
 </div>
 
-<!-- SESSION DETAIL SCREEN -->
-<div id="screen-session-detail" class="screen">
-  <div class="history-screen">
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
-      <button class="ghost-btn" onclick="goToSessions()">Back to Sessions</button>
-      <div>
-        <div class="page-title" id="session-detail-title"></div>
-        <div class="page-sub" id="session-detail-sub"></div>
-      </div>
-    </div>
-    <div id="session-detail-workers"></div>
-  </div>
-</div>
-
-<!-- Pre-v2 cleanup (18 May 2026): #screen-requests removed (Sam Q-H.3).
-     Standalone all-requests view; no callers in HTML. Per-session request
-     review lives on Sessions â†’ Live + future History session detail
-     Requests tab; aggregate analysis lives on future Health â†’ Engine
-     quality + fill rate. -->
-
-<!-- SESSION REPORT -->
-<div id="screen-report" class="screen">
-  <div class="history-screen" style="max-width:720px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
-      <div>
-        <div class="page-title">Session Report</div>
-        <div class="page-sub" id="report-subtitle"></div>
-      </div>
-      <div style="display:flex;gap:10px;">
-        <button class="ghost-btn" onclick="dismissReport()">Back</button>
-        <button class="small-ice-btn" onclick="exportReportPDF()">Export PDF</button>
-      </div>
-    </div>
-    <div id="report-body"></div>
-  </div>
-</div>
-
-<!-- REPORTS SCREEN -->
-<div id="screen-reports" class="screen">
-  <div class="history-screen">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
-      <div>
-        <div class="page-title">Session Reports</div>
-        <div class="page-sub">All session reports across every bar</div>
-      </div>
-    </div>
-    <div id="reports-list"><div class="empty">Loading reports...</div></div>
-  </div>
-</div>
+<!-- v1 screens retired 2026-05-19 (Batch 5): #screen-session-detail,
+     #screen-report, #screen-reports. Session detail + reports surface
+     move into the v2 History workspace. -->
 
 <!-- Pre-v2 cleanup (18 May 2026): #screen-chat-parser removed (Sam Q-H.1).
      Zoom chat paste path was the pre-portal mode. Worker portal + Flutter
@@ -3258,12 +2882,12 @@ const VAT_RATE = 0.20;
 const VAT_NUMBER = 'Pending';
 
 let currentUser = null;
-let activeZone = null; // CORE v7: zones deprecated. Retained as null sentinel for the brief tryRestoreSession shift-log builder that still reads activeZone?.name.
+let activeZone = null; // CORE v7: zones deprecated; sentinel retained because the live-session shift-log builder still reads activeZone?.name in a handful of branches.
 let liveSessionBars = []; // F-37: bars in the currently-live session.
 let liveSessionLabel = ''; // F-37: cached "First bar + N more" label.
 let workerBarDistances = [];
 let allWorkers = [];
-let shifts = []; // session-local completed-shift cache; populated by tryRestoreSession, read by updateCounts.
+let shifts = []; // session-local completed-shift cache; populated by tryRestoreSession + the live-session shift-log builder, read by the post-shift feedback / billing surfaces.
 // Live session state (sessionId, workers, requests) lives on liveSessionOps (defined below).
 
 const gen4 = () => String(Math.floor(1000 + Math.random() * 9000));
@@ -3299,39 +2923,24 @@ async function doLogin() {
 
 async function postLoginSetup() {
   document.getElementById('screen-login').style.display='none';
-
   document.body.classList.add('dashboard-shell');
-  const sidebarEl = document.getElementById('sidebar');
-  if(sidebarEl) sidebarEl.style.display = 'flex';
 
   await loadAllWorkers();
   loadWorkerFunnel();
 
-  // F-34: prefetch the Proposed inbox count so the sidebar badge surfaces
-  // immediately, then start the realtime sub so new arrivals update it live.
+  // F-34: prefetch the Proposed inbox count so the badge surfaces at boot,
+  // then start the realtime sub so new arrivals update it live.
   refreshProposedCountBadge();
   startProposedInboxRealtime();
 
   // Recommendation Engine Redesign Phase 2.5: kick off the auto-dispatch
-  // pill poll so the AUTO/MANUAL state is visible across every screen.
+  // pill poll so the AUTO/MANUAL state stays current in the v2 header.
   if(typeof startAutoDispatchPillPoll === 'function') startAutoDispatchPillPoll();
 
-  // F-37: boot lands on Sessions. Live sub-tab if a session is currently
-  // running, otherwise Schedule. liveSessionOps.resumeIfLive() reattaches
-  // the live console state to the in-progress session before navigation.
+  // Resume any in-flight live session. Sets _dv2BootLiveSession so
+  // getInitialWorkspace routes to Operations when a session is restoring.
   const restored = await liveSessionOps.resumeIfLive();
-  // Dashboard v2 boot hint (Batch 1): if a session is live, default
-  // workspace becomes Operations (Q-H.8). applyDashboardMode reads this.
   window._dv2BootLiveSession = !!restored;
-  if(restored) {
-    showScreen('sessions');
-    setActiveNav('sessions');
-    switchSessionsTab('live');
-    applyDashboardMode();
-    return;
-  }
-  await goToSessions();
-  // Dashboard v2: apply feature flag after v1 boot lands (no-op when v1).
   applyDashboardMode();
 }
 
@@ -3358,11 +2967,7 @@ async function doLogout() {
   await sbAuth.auth.signOut();
   H.Authorization = 'Bearer ' + KEY;
   document.getElementById('screen-login').style.display='flex';
-
-  // F-28: hide sidebar + remove body padding-left.
   document.body.classList.remove('dashboard-shell');
-  const sidebarEl = document.getElementById('sidebar');
-  if(sidebarEl) sidebarEl.style.display = 'none';
 
   // Recommendation Engine Redesign Phase 2.5: stop the pill poll on logout.
   if(typeof stopAutoDispatchPillPoll === 'function') stopAutoDispatchPillPoll();
@@ -3370,14 +2975,10 @@ async function doLogout() {
   document.getElementById('l-email').value='';
   document.getElementById('l-pass').value='';
   document.getElementById('l-err').textContent='';
-  showScreen(null);
-  setActiveNav(null);
   liveSessionOps.stop();
-  // Dashboard v2: teardown workspace hooks + clear v2 chrome on logout.
   if(typeof dv2TeardownAll === 'function') dv2TeardownAll();
   document.body.classList.remove('dashboard-v2');
   currentUser=null;
-  activeZone=null; shifts=[];
 }
 
 // Restore session on page reload. If a valid Supabase session exists, skip
@@ -3406,37 +3007,27 @@ function setActiveNav(name) {
 }
 
 // ====================================================================
-// Dashboard v2 scaffolding (18 May 2026, Batch 1).
-// Workspace switcher + lifecycle contract + feature flag.
-// Hidden by default; enable via dv2Enable() in browser console or by
-// setting localStorage.glasi_dashboard_v2='v2'. Workspace migrations
-// land content into the empty shells; this batch only ships the chrome.
+// Dashboard v2 (post-Batch 5: v2 is the only path).
+// The feature-flag scaffold (DV2_FLAG_KEY, setDashboardMode, dv2Enable /
+// dv2Disable / dv2Status console helpers) was retired 2026-05-19 alongside
+// the v1 sidebar and screen shells. body.dashboard-v2 is set
+// unconditionally at boot so the v2 chrome rules apply, and
+// applyDashboardMode is the single navigation entry point.
+// getDashboardMode is retained as a constant-'v2' accessor so legacy
+// callers keep working without a flag-by-flag rewrite; future polish can
+// inline the always-true branches.
 // Spec: glasi_dashboard/audits/DASHBOARD_V2_TARGET_SPEC.md
-// Audit: glasi_dashboard/audits/DASHBOARD_V2_AUDIT_2026-05-18.md
 // ====================================================================
-const DV2_FLAG_KEY = 'glasi_dashboard_v2';
 const DV2_LAST_WORKSPACE_KEY = 'glasi_dashboard_v2_last_workspace';
 const DV2_OPS_SUBTAB_KEY = 'glasi_ws_operations_subtab';
 const DV2_WORKSPACES = ['operations', 'network', 'money', 'health', 'history', 'settings', 'account'];
 const DV2_PRIMARY = ['operations', 'network', 'money', 'health', 'history'];
 
-function getDashboardMode() {
-  try { return localStorage.getItem(DV2_FLAG_KEY) === 'v2' ? 'v2' : 'v1'; }
-  catch(e) { return 'v1'; }
-}
-function setDashboardMode(mode) {
-  try { localStorage.setItem(DV2_FLAG_KEY, mode === 'v2' ? 'v2' : 'v1'); } catch(e) {}
-  applyDashboardMode();
-}
-// Console helpers (Sam: dv2Enable() / dv2Disable() to toggle without UI).
-window.dv2Enable  = () => setDashboardMode('v2');
-window.dv2Disable = () => setDashboardMode('v1');
-window.dv2Status  = () => ({ mode: getDashboardMode(), workspace: dv2CurrentWorkspace });
+function getDashboardMode() { return 'v2'; }
 
 function applyDashboardMode() {
-  const mode = getDashboardMode();
-  document.body.classList.toggle('dashboard-v2', mode === 'v2');
-  if(mode === 'v2') showWorkspace(getInitialWorkspace());
+  document.body.classList.add('dashboard-v2');
+  showWorkspace(getInitialWorkspace());
 }
 
 // Workspace lifecycle registry. Each workspace registers onEnter / onLeave /
@@ -3461,7 +3052,6 @@ let dv2CurrentWorkspace = null;
 
 function showWorkspace(name) {
   if(!DV2_WORKSPACES.includes(name)) return;
-  if(getDashboardMode() !== 'v2') return; // no-op silently if v2 off
   if(dv2CurrentWorkspace && dv2Lifecycle[dv2CurrentWorkspace]?.onLeave) {
     try { dv2Lifecycle[dv2CurrentWorkspace].onLeave(); } catch(e) { console.warn('[dv2] onLeave error', e); }
   }
@@ -9925,18 +9515,9 @@ async function updateBarStatus(barId, status) {
   await sbPatch('bars', `?id=eq.${barId}`, { status });
 }
 
-function updateCounts() {
-  const avail=liveSessionOps.workers.filter(w=>w.status==='in_session'||w.status==='left').length;
-  const invited=liveSessionOps.workers.filter(w=>w.status==='invited'||w.status==='no_show').length;
-  const onshift=liveSessionOps.workers.filter(w=>w.status==='dispatched'||w.status==='onshift').length;
-  const done=shifts.length;
-  const roomTotal=avail+invited;
-  document.getElementById('count-room').textContent=roomTotal||'';
-  document.getElementById('count-room').className='tab-count'+(roomTotal?' show':'');
-  document.getElementById('count-onshift').textContent=onshift;
-  document.getElementById('count-log').textContent=done||'';
-  document.getElementById('count-log').className='tab-count'+(done?' show':'');
-}
+// Batch 5 (2026-05-19): updateCounts retired. Targeted the v1
+// #count-room / #count-onshift / #count-log badges inside the removed
+// #screen-sessions Live sub-tab. Zero callers; safe to drop wholesale.
 
 // REALTIME
 //
@@ -10328,39 +9909,24 @@ const liveSessionOps = {
   }
 };
 
-// Is the live session view currently visible? True under either:
-//   v1: #screen-sessions is the active screen AND #sessions-live-tab is the
-//       active sub-tab (the original classic + bipartite location).
-//   v2 (Batch 2 Phase 2.2 onward): body.dashboard-v2 is set AND the
-//       Operations workspace is active AND the Live sub-tab is the active
-//       one. The realtime listeners' `if(isLiveViewActive()) renderLiveRoom()`
-//       guard fires identically in both modes.
+// Is the live session view currently visible? Post-Batch 5: v2 is the
+// only path. True when the Operations workspace is active AND its Live
+// sub-tab button carries .active.
 function isLiveViewActive() {
-  if(document.body.classList.contains('dashboard-v2')) {
-    if(dv2CurrentWorkspace !== 'operations') return false;
-    const liveBtn = document.querySelector('#workspace-operations .ws-subtab[data-subtab="live"]');
-    return !!(liveBtn && liveBtn.classList.contains('active'));
-  }
-  const screen = document.getElementById('screen-sessions');
-  const liveTab = document.getElementById('sessions-live-tab');
-  return !!(screen && screen.classList.contains('active') && liveTab && liveTab.style.display !== 'none');
+  if(dv2CurrentWorkspace !== 'operations') return false;
+  const liveBtn = document.querySelector('#workspace-operations .ws-subtab[data-subtab="live"]');
+  return !!(liveBtn && liveBtn.classList.contains('active'));
 }
 
-// Phase 2.2: dispatch the bipartite-view container based on dashboard mode.
-// In v2, the live view renders inside the Operations / Live sub-tab; in v1
-// it stays inside the original #sessions-live-room container. Both DOM
-// nodes exist in both modes — the helper just picks the visible one.
+// Bipartite live-view DOM targets (post-Batch 5: v2-only). The bipartite
+// view renders inside the Operations / Live sub-tab; #sessions-live-room
+// + #sessions-live-empty were the v1 targets and were retired with
+// #screen-sessions.
 function getBipartiteRoomEl() {
-  if(document.body.classList.contains('dashboard-v2') && dv2CurrentWorkspace === 'operations') {
-    return document.getElementById('ops-live-room');
-  }
-  return document.getElementById('sessions-live-room');
+  return document.getElementById('ops-live-room');
 }
 function getBipartiteEmptyEl() {
-  if(document.body.classList.contains('dashboard-v2') && dv2CurrentWorkspace === 'operations') {
-    return document.getElementById('ops-live-empty');
-  }
-  return document.getElementById('sessions-live-empty');
+  return document.getElementById('ops-live-empty');
 }
 
 // Wire default listeners that re-render the live view, or mark it dirty if the

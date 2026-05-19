@@ -3450,6 +3450,7 @@ function _renderOpsScheduleExpansion(s) {
   } else if(status === 'scheduled') {
     actionButtons = ''
       + '<button class="ops-sched-btn"' + editSessionDisabled + ' onclick="opsScheduleEdit(' + sessionId + ')">Edit Session</button>'
+      + '<button class="ops-sched-btn primary" onclick="opsScheduleGoLiveNow(' + sessionId + ')">Go Live Now</button>'
       + '<button class="ops-sched-btn danger" onclick="opsScheduleCancel(' + sessionId + ')">Cancel Session</button>';
   } else {
     actionButtons = '<span class="muted" style="font-size:12px;color:var(--grey);">This session is ' + status + ' &mdash; no further actions available.</span>';
@@ -3655,6 +3656,22 @@ async function opsScheduleRemoveInvite(sessionId, inviteId, workerName) {
 function opsScheduleInviteMore(sessionId) {
   // Reuse existing v1 invite-workers overlay.
   openInviteWorkers(sessionId);
+}
+// Operations -> Schedule "Go Live Now" button (2026-05-19). Sam-facing override
+// for scheduled sessions: lets him take a session live earlier than its
+// scheduled_start, useful for pre-launch end-to-end tests and "we're starting
+// earlier than scheduled" production cases. Schema note: sessions has no
+// actual_start_at column; the canonical go-live patch is status='live' +
+// start_time=now()::time (set inside goLiveSession). This wrapper just
+// pre-confirms with bespoke copy and hands off to the full goLiveSession
+// pipeline (cascade-close inflight RPC, IN_FLIGHT modal handler,
+// scheduled_end prompt with bar-close default, liveSessionOps.start).
+function opsScheduleGoLiveNow(sessionId) {
+  const s = opsScheduleState.sessions.find(x => x.id === sessionId);
+  if(!s) return;
+  if((s.status || '').toLowerCase() !== 'scheduled') return;
+  if(!confirm('Take session live now? This overrides the scheduled start time.')) return;
+  goLiveSession(sessionId, { preConfirmed: true });
 }
 async function opsScheduleReinviteNonResponders(sessionId) {
   if(!confirm('Re-send invites to every NO_RESPONSE worker on this session?')) return;
@@ -13763,8 +13780,13 @@ async function createScheduledSession() {
   }
 }
 
-async function goLiveSession(sessionId) {
-  if(!confirm('Go live with this session now? Workers with confirmed attendance will be able to join.')) return;
+async function goLiveSession(sessionId, opts) {
+  // opts.preConfirmed: caller has already shown its own confirmation prompt
+  // (e.g. the Operations -> Schedule "Go Live Now" button, which uses
+  // bespoke copy: "Take session live now? This overrides the scheduled
+  // start time."). Skips the default confirm so Sam isn't double-prompted.
+  const preConfirmed = !!(opts && opts.preConfirmed);
+  if(!preConfirmed && !confirm('Go live with this session now? Workers with confirmed attendance will be able to join.')) return;
 
   // F-38 L9 / scheduled_end pre-fill: compute min(bars.closing_time) across
   // the session's bar set. Sam can override before confirming.

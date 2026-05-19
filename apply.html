@@ -129,6 +129,105 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* KID acknowledgement card (UK regulatory requirement: worker
+       receives Key Information Document before entering a work-finding
+       arrangement). 3-card linear flow: Explainer -> KID -> Form. */
+    .kid-callout {
+      background: #fffaf0;
+      border: 1px solid #f5d78a;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #5a4a17;
+      margin-bottom: 16px;
+    }
+    .kid-callout strong { color: #2f2509; }
+    .kid-iframe {
+      width: 100%;
+      height: 70vh;
+      min-height: 420px;
+      max-height: 720px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+    .kid-download-row {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
+    }
+    .kid-download-row a {
+      color: var(--navy);
+      font-weight: 600;
+      text-decoration: underline;
+    }
+    .kid-confirm-block {
+      margin-top: 20px;
+      padding: 18px;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #f8fafc;
+    }
+    .kid-typed-name-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    .kid-typed-name-input {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      transition: all 0.2s ease;
+    }
+    .kid-typed-name-input:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(15,31,61,0.08);
+    }
+    .kid-check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 14px;
+      font-size: 13px;
+      color: #374151;
+      line-height: 1.45;
+    }
+    .kid-check-row input[type="checkbox"] {
+      accent-color: var(--navy);
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .kid-check-row label { cursor: pointer; }
+    .continue-btn:disabled {
+      background: #cbd5e1;
+      color: #f8fafc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .continue-btn:disabled:hover {
+      transform: none;
+      background: #cbd5e1;
+      box-shadow: none;
+    }
+    .kid-err {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #b91c1c;
+      min-height: 16px;
+    }
+
     .quick-check-wrap {
       margin-top: 4px;
       padding: 18px;
@@ -295,7 +394,49 @@
           <p class="section-heading">We have got your back</p>
           <p>We only work with well run venues that want you there. If anything feels off during a shift, contact us straight away. We are always on your side.</p>
 
-          <button id="show-form-btn" type="button" class="continue-btn">
+          <button id="show-kid-btn" type="button" class="continue-btn">
+            Continue to Application
+          </button>
+        </div>
+      </div>
+
+      <div id="kid-card" class="glass-card rounded-3xl shadow-sm p-6 mb-4 md:mb-0 hidden">
+        <div class="glasi-header">
+          <span class="glasi-wordmark">GLASI</span>
+          <p class="glasi-sub">Key Information Document</p>
+        </div>
+
+        <div class="space-y-3 text-sm leading-relaxed text-gray-500">
+          <p class="section-heading">Important: please review before applying</p>
+          <div class="kid-callout">
+            Before you apply, UK regulations require us to provide you with a <strong>Key Information Document</strong> (KID). This explains the terms of working with Glasi through our payroll partner Numbermill, including how you are paid, what deductions apply, and how holiday pay is handled. Please read it carefully before continuing.
+          </div>
+
+          <iframe id="kid-iframe"
+                  class="kid-iframe"
+                  src="Glasi_NM_PEO_KID_May_2026.pdf"
+                  title="Glasi Numbermill PEO Key Information Document, May 2026"
+                  loading="lazy"></iframe>
+
+          <div class="kid-download-row">
+            Trouble viewing the document above?
+            <a id="kid-download-link" href="Glasi_NM_PEO_KID_May_2026.pdf" target="_blank" rel="noopener">Download a copy</a>
+            to open it in a new tab.
+          </div>
+
+          <div class="kid-confirm-block">
+            <label for="kid-typed-name" class="kid-typed-name-label">Type your full name to confirm you have read this document *</label>
+            <input id="kid-typed-name" type="text" autocomplete="name" placeholder="e.g. Alex Morgan" class="kid-typed-name-input" />
+
+            <div class="kid-check-row">
+              <input id="kid-confirm-check" type="checkbox" />
+              <label for="kid-confirm-check">I confirm I have received and read the Key Information Document.</label>
+            </div>
+
+            <div id="kid-feedback" class="kid-err"></div>
+          </div>
+
+          <button id="kid-continue-btn" type="button" class="continue-btn" disabled>
             Continue to Application
           </button>
         </div>
@@ -457,13 +598,56 @@
 const SUPABASE_URL = "https://hweytbyrqvjsviydmacv.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Qt-BL3-Qyb1cEBJ1ScDYSw_kNdxfYXs";
 
+// KID compliance version. Bump this string when a new KID PDF is uploaded;
+// existing acknowledgements remain valid for whichever version was active
+// at apply time. The same string is written to applications.kid_acknowledged_version.
+const KID_VERSION = "May-2026";
+
+// Captured at the moment the worker clicks "Continue to Application" on
+// the KID card. Sent to submit_application as p_kid_acknowledged_at. The
+// RPC enforces non-NULL on this and the typed-name + version fields.
+let kidAcknowledgedAt = null;
+let kidAcknowledgedTypedName = null;
+
 const form = document.getElementById('onboarding-form');
 const submitBtn = document.getElementById('submit-btn');
 const feedback = document.getElementById('feedback');
-const showFormBtn = document.getElementById('show-form-btn');
+const showKidBtn = document.getElementById('show-kid-btn');
+const kidCard = document.getElementById('kid-card');
+const kidTypedNameInput = document.getElementById('kid-typed-name');
+const kidConfirmCheck = document.getElementById('kid-confirm-check');
+const kidContinueBtn = document.getElementById('kid-continue-btn');
+const kidFeedback = document.getElementById('kid-feedback');
 const formCard = document.getElementById('form-card');
 
-showFormBtn.addEventListener('click', () => {
+// Step 1 -> 2: explainer "Continue" reveals the KID card.
+showKidBtn.addEventListener('click', () => {
+  kidCard.classList.remove('hidden');
+  kidCard.classList.add('reveal-form');
+  kidCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+// KID card: button is enabled only when BOTH the typed-name field is
+// non-empty AND the checkbox is ticked. Mirrors the server-side gate in
+// submit_application (which rejects if any KID field is NULL).
+function updateKidContinueState() {
+  const nameOk = kidTypedNameInput.value.trim().length > 0;
+  const checkOk = kidConfirmCheck.checked;
+  kidContinueBtn.disabled = !(nameOk && checkOk);
+}
+kidTypedNameInput.addEventListener('input', updateKidContinueState);
+kidConfirmCheck.addEventListener('change', updateKidContinueState);
+
+// Step 2 -> 3: KID "Continue" captures acknowledgement state + reveals the form.
+kidContinueBtn.addEventListener('click', () => {
+  const typedName = kidTypedNameInput.value.trim();
+  if (!typedName || !kidConfirmCheck.checked) {
+    kidFeedback.textContent = 'Please type your full name and tick the confirmation box.';
+    return;
+  }
+  kidAcknowledgedAt = new Date().toISOString();
+  kidAcknowledgedTypedName = typedName;
+  kidFeedback.textContent = '';
   formCard.classList.remove('hidden');
   formCard.classList.add('reveal-form');
   formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -514,6 +698,14 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
+  // Belt-and-braces client-side check: if the worker reached the form
+  // without acknowledging the KID, refuse to submit. The server-side RPC
+  // is the legally binding gate; this just keeps the UX honest.
+  if (!kidAcknowledgedAt || !kidAcknowledgedTypedName) {
+    feedback.innerHTML = `<div class="text-red-500 text-sm">KID acknowledgement required before submitting. Please go back and complete the KID step.</div>`;
+    return;
+  }
+
   submitBtn.disabled = true;
   submitBtn.innerText = "Submitting...";
 
@@ -522,6 +714,9 @@ form.addEventListener('submit', async (e) => {
   // email regex, AND active = true, AND worker_status = 'registered'
   // before promoting the row to 'applied'. The RPC returns boolean true
   // on a successful promotion, boolean false if no matching row exists.
+  // 2026-05-19: RPC now also rejects if any of the three KID acknowledgement
+  // params are NULL; the row is updated with the acknowledgement metadata
+  // atomically with the worker_status promotion.
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/submit_application`, {
       method: 'POST',
@@ -541,11 +736,27 @@ form.addEventListener('submit', async (e) => {
         p_speaks_english: toBool(speaksEnglish),
         p_agrees_work_standard: toBool(agreesWorkStandard),
         p_reliability_notes: reliabilityNotes || null,
-        p_available_hours: availableHours
+        p_available_hours: availableHours,
+        p_kid_acknowledged_at:         kidAcknowledgedAt,
+        p_kid_acknowledged_version:    KID_VERSION,
+        p_kid_acknowledged_typed_name: kidAcknowledgedTypedName
       })
     });
 
-    if (!res.ok) throw new Error();
+    if (!res.ok) {
+      // Parse PostgREST error envelope. Compliance rejection surfaces the
+      // RAISE EXCEPTION message verbatim ("kid acknowledgement required").
+      let serverMsg = '';
+      try { const err = await res.json(); serverMsg = (err && (err.message || err.hint)) || ''; } catch (_e) {}
+      if (/kid acknowledgement|kid_acknowledged/i.test(serverMsg)) {
+        feedback.innerHTML = `<div class="text-red-500 text-sm">KID acknowledgement required before submitting. Please go back and complete the KID step.</div>`;
+      } else {
+        feedback.innerHTML = `<div class="text-red-500 text-sm">Something went wrong. Try again.</div>`;
+      }
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Submit";
+      return;
+    }
 
     const ok = await res.json();
 

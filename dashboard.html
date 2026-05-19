@@ -3722,7 +3722,12 @@ function _renderOpsScheduleRow(s, isExpanded) {
     + '</tr>';
 }
 
-function _opsEscape(s) {
+function _opsEscape(s, fallbackHtml) {
+  // 2-arg form: pass raw fallback HTML (e.g. '<span class="muted">,</span>')
+  // and it returns the fallback unescaped when the value is missing. Avoids
+  // the precedence trap of '...' + _opsEscape(x || fallback) which would
+  // escape the fallback's HTML tags into literal text. Bug fix 19 May 2026.
+  if((s == null || s === '') && fallbackHtml != null) return fallbackHtml;
   return String(s == null ? '' : s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -4344,7 +4349,7 @@ function _renderNetworkBarsRow(b, isExpanded) {
   return ''
     + '<tr class="ops-sched-row' + expandedCls + '" data-id="' + b.id + '" onclick="toggleNetworkBarsRow(' + b.id + ')">'
     +   '<td style="font-weight:600;color:var(--white);">' + _opsEscape(b.name || '(unnamed bar)') + '</td>'
-    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode || '<span class="muted">,</span>') + '</span></td>'
+    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode, '<span class="muted">,</span>') + '</span></td>'
     +   '<td><span class="net-bar-status ' + status + '">' + status.toUpperCase() + '</span></td>'
     +   '<td><span class="net-bar-sub ' + subStatus + '">' + subLabel + '</span></td>'
     +   '<td>' + lastSessLabel + '</td>'
@@ -4359,11 +4364,11 @@ function _renderNetworkBarsExpansion(b) {
   // Identity block, address + notes editable, others read-only.
   const identityHtml = ''
     + '<div class="net-prof-grid">'
-    +   '<span class="k">Contact name</span><span class="v">' + _opsEscape(b.contact_name || '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Contact phone</span><span class="v">' + _opsEscape(b.contact_phone || '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Contact name</span><span class="v">' + _opsEscape(b.contact_name, '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Contact phone</span><span class="v">' + _opsEscape(b.contact_phone, '<span class="muted">,</span>') + '</span>'
     +   '<span class="k">Google Maps</span><span class="v">' + (b.google_maps_link ? '<a href="' + _opsEscape(b.google_maps_link) + '" target="_blank" rel="noopener" style="color:var(--ice);">Open map</a>' : '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Opening</span><span class="v">' + (b.opening_time || '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Closing</span><span class="v">' + (b.closing_time || '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Opening</span><span class="v">' + (b.opening_time, '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Closing</span><span class="v">' + (b.closing_time, '<span class="muted">,</span>') + '</span>'
     +   '<span class="k">Created</span><span class="v">' + (b.created_at ? new Date(b.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '<span class="muted">,</span>') + '</span>'
     + '</div>'
     + '<div class="net-prof-edit-row" style="margin-top:12px;">'
@@ -4780,7 +4785,7 @@ function _renderNetworkWorkersRow(w, isExpanded) {
   return ''
     + '<tr class="ops-sched-row' + expandedCls + '" data-id="' + w.id + '" onclick="toggleNetworkWorkersRow(' + w.id + ')">'
     +   '<td style="font-weight:600;color:var(--white);">' + _opsEscape(w.name || '(no name)') + '</td>'
-    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode || '<span class="muted">,</span>') + '</span></td>'
+    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode, '<span class="muted">,</span>') + '</span></td>'
     +   '<td><span class="net-worker-tier">' + tier + '</span></td>'
     +   '<td><span class="net-worker-rel ' + relClass + '">' + relText + '</span></td>'
     +   '<td><span class="net-worker-status ' + status + '">' + status.toUpperCase() + '</span></td>'
@@ -4797,13 +4802,13 @@ function _renderNetworkWorkersExpansion(w) {
   // admin_notes is the editable Sam-authored companion to vetting_notes).
   const identityHtml = ''
     + '<div class="net-prof-grid">'
-    +   '<span class="k">Name</span><span class="v">' + _opsEscape(w.name || '<span class="muted">,</span>') + ' <span class="muted" style="font-size:10px;">read-only (PII)</span></span>'
-    +   '<span class="k">Email</span><span class="v">' + _opsEscape(w.email || '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Phone</span><span class="v">' + _opsEscape(w.phone || '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Age group</span><span class="v">' + _opsEscape(w.age_group || '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Postcode</span><span class="v">' + _opsEscape(postcode || '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Name</span><span class="v">' + _opsEscape(w.name, '<span class="muted">,</span>') + ' <span class="muted" style="font-size:10px;">read-only (PII)</span></span>'
+    +   '<span class="k">Email</span><span class="v">' + _opsEscape(w.email, '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Phone</span><span class="v">' + _opsEscape(w.phone, '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Age group</span><span class="v">' + _opsEscape(w.age_group, '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Postcode</span><span class="v">' + _opsEscape(postcode, '<span class="muted">,</span>') + '</span>'
     +   '<span class="k">Onboarded</span><span class="v">' + (w.created_at ? new Date(w.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '<span class="muted">,</span>') + '</span>'
-    +   '<span class="k">Parasol ref</span><span class="v">' + _opsEscape(w.parasol_worker_ref || '<span class="muted">,</span>') + '</span>'
+    +   '<span class="k">Numbermill ref</span><span class="v">' + _opsEscape(w.parasol_worker_ref, '<span class="muted">,</span>') + '</span>'
     + '</div>'
     + '<div class="net-prof-edit-row" style="margin-top:12px;">'
     +   '<span class="field-label">Address</span>'
@@ -5043,8 +5048,15 @@ async function _populateWorkerFlags(w) {
           : '');
     }
 
-    // Re-render the table pill in case the active-flag set just changed.
-    renderNetworkWorkersTable_keepExpanded(w.id);
+    // 19 May 2026 bug fix: removed renderNetworkWorkersTable_keepExpanded(w.id)
+    // call here. It caused an infinite render loop because the expansion's
+    // setTimeout(0) at the bottom of _renderNetworkWorkersExpansion re-fires
+    // every _populateWorker* helper including _populateWorkerFlags, which
+    // would then re-trigger the table render, ad infinitum. Symptoms: row
+    // impossible to collapse, "Loading recent shifts..." spinner never
+    // resolved (the DOM kept getting replaced before fetches landed). The
+    // FLAGGED collapsed-row pill now updates on the next natural re-render
+    // (toggle, filter change, manual reload) rather than mid-populate.
   } catch(e) {
     activeEl.innerHTML = '<span class="muted">Could not load flags.</span>';
     historyEl.innerHTML = '';
@@ -5380,7 +5392,7 @@ function _renderPipelineBarsRow(b, isExpanded) {
   return ''
     + '<tr class="ops-sched-row' + expandedCls + '" data-id="' + b.id + '" onclick="togglePipelineBarsRow(' + b.id + ')">'
     +   '<td style="font-weight:600;color:var(--white);">' + _opsEscape(b.name || '(unnamed)') + '</td>'
-    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode || '<span class="muted">,</span>') + '</span></td>'
+    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode, '<span class="muted">,</span>') + '</span></td>'
     +   '<td><span class="net-stage-pill prospect">PROSPECT</span></td>'
     +   '<td>' + lastContact + '</td>'
     +   '<td><span class="ops-sched-time">' + days + 'd</span></td>'
@@ -5397,10 +5409,10 @@ function _renderPipelineBarsExpansion(b) {
     +   '<div class="ops-sched-exp-section">'
     +     '<h3 class="ops-sched-exp-h3">Identity</h3>'
     +     '<div class="net-prof-grid">'
-    +       '<span class="k">Bar name</span><span class="v">' + _opsEscape(b.name || '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Postcode</span><span class="v">' + (_netExtractPostcode(b.address) || '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Contact name</span><span class="v">' + _opsEscape(b.contact_name || '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Contact phone</span><span class="v">' + _opsEscape(b.contact_phone || '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Bar name</span><span class="v">' + _opsEscape(b.name, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Postcode</span><span class="v">' + (_netExtractPostcode(b.address), '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Contact name</span><span class="v">' + _opsEscape(b.contact_name, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Contact phone</span><span class="v">' + _opsEscape(b.contact_phone, '<span class="muted">,</span>') + '</span>'
     +     '</div>'
     +   '</div>'
     +   '<div class="ops-sched-exp-section">'
@@ -5608,7 +5620,7 @@ function _renderPipelineWorkersRow(w, isExpanded) {
   return ''
     + '<tr class="ops-sched-row' + expandedCls + '" data-id="' + w.id + '" onclick="togglePipelineWorkersRow(' + w.id + ')">'
     +   '<td style="font-weight:600;color:var(--white);">' + _opsEscape(w.name || '(no name)') + '</td>'
-    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode || '<span class="muted">,</span>') + '</span></td>'
+    +   '<td><span class="ops-sched-time" style="letter-spacing:1px;">' + (postcode, '<span class="muted">,</span>') + '</span></td>'
     +   '<td><span class="net-stage-pill ' + stage + '">' + stage.toUpperCase() + '</span></td>'
     +   '<td>' + date + '</td>'
     +   '<td>' + notesSummary + '</td>'
@@ -5623,10 +5635,10 @@ function _renderPipelineWorkersExpansion(w) {
       +   '<div class="ops-sched-exp-section">'
       +     '<h3 class="ops-sched-exp-h3">Identity</h3>'
       +     '<div class="net-prof-grid">'
-      +       '<span class="k">Name</span><span class="v">' + _opsEscape(w.name || '<span class="muted">,</span>') + ' <span class="muted" style="font-size:10px;">read-only (PII)</span></span>'
-      +       '<span class="k">Email</span><span class="v">' + _opsEscape(w.email || '<span class="muted">,</span>') + '</span>'
+      +       '<span class="k">Name</span><span class="v">' + _opsEscape(w.name, '<span class="muted">,</span>') + ' <span class="muted" style="font-size:10px;">read-only (PII)</span></span>'
+      +       '<span class="k">Email</span><span class="v">' + _opsEscape(w.email, '<span class="muted">,</span>') + '</span>'
       +       '<span class="k">Signup date</span><span class="v">' + (w.created_at ? new Date(w.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '<span class="muted">,</span>') + '</span>'
-      +       '<span class="k">Referred by</span><span class="v">' + _opsEscape(w.referred_by || '<span class="muted">,</span>') + '</span>'
+      +       '<span class="k">Referred by</span><span class="v">' + _opsEscape(w.referred_by, '<span class="muted">,</span>') + '</span>'
       +     '</div>'
       +   '</div>'
       +   '<div class="ops-sched-actions-row">'
@@ -5642,11 +5654,11 @@ function _renderPipelineWorkersExpansion(w) {
     +   '<div class="ops-sched-exp-section">'
     +     '<h3 class="ops-sched-exp-h3">Identity (read-only per Hard Rule #1)</h3>'
     +     '<div class="net-prof-grid">'
-    +       '<span class="k">Name</span><span class="v">' + _opsEscape(w.name || '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Email</span><span class="v">' + _opsEscape(w.email || '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Phone</span><span class="v">' + _opsEscape(w.phone || '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Age group</span><span class="v">' + _opsEscape(w.age_group || '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Postcode (applicant)</span><span class="v">' + _opsEscape(w.postcode_full || '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Name</span><span class="v">' + _opsEscape(w.name, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Email</span><span class="v">' + _opsEscape(w.email, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Phone</span><span class="v">' + _opsEscape(w.phone, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Age group</span><span class="v">' + _opsEscape(w.age_group, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Postcode (applicant)</span><span class="v">' + _opsEscape(w.postcode_full, '<span class="muted">,</span>') + '</span>'
     +     '</div>'
     +   '</div>'
     +   '<div class="ops-sched-exp-section">'
@@ -5654,8 +5666,8 @@ function _renderPipelineWorkersExpansion(w) {
     +     '<div class="net-prof-grid">'
     +       '<span class="k">Hospitality experience</span><span class="v">' + (w.hospitality_experience === true ? 'Yes' : (w.hospitality_experience === false ? 'No' : '<span class="muted">unknown</span>')) + '</span>'
     +       '<span class="k">UK right to work</span><span class="v">' + (w.uk_work_right === true ? '<span style="color:var(--green);">Yes</span>' : (w.uk_work_right === false ? '<span style="color:var(--red);">No</span>' : '<span class="muted">unknown</span>')) + '</span>'
-    +       '<span class="k">Available hours</span><span class="v">' + _opsEscape(w.available_hours || '<span class="muted">,</span>') + '</span>'
-    +       '<span class="k">Instagram handle</span><span class="v">' + _opsEscape(w.instagram_handle || '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Available hours</span><span class="v">' + _opsEscape(w.available_hours, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Instagram handle</span><span class="v">' + _opsEscape(w.instagram_handle, '<span class="muted">,</span>') + '</span>'
     +       '<span class="k">Speaks English</span><span class="v">' + (w.speaks_english === true ? 'Yes' : (w.speaks_english === false ? 'No' : '&mdash;')) + '</span>'
     +       '<span class="k">Has black clothing</span><span class="v">' + (w.has_black_clothing === true ? 'Yes' : (w.has_black_clothing === false ? 'No' : '&mdash;')) + '</span>'
     +     '</div>'
@@ -5663,7 +5675,7 @@ function _renderPipelineWorkersExpansion(w) {
     +   '<div class="ops-sched-exp-section">'
     +     '<h3 class="ops-sched-exp-h3">Vet form (Sam input)</h3>'
     +     '<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--white);"><input type="checkbox" id="vet-v2-experience-' + wid + '" ' + expChecked + '> Experience confirmed</label>'
-    +     '<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--white);margin-top:6px;"><input type="checkbox" id="vet-v2-consent-' + wid + '"> Parasol contact consent confirmed</label>'
+    +     '<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--white);margin-top:6px;"><input type="checkbox" id="vet-v2-consent-' + wid + '"> Numbermill contact consent confirmed</label>'
     +     '<div class="net-prof-edit-row" style="margin-top:10px;">'
     +       '<span class="field-label">Address</span>'
     +       '<textarea id="vet-v2-address-' + wid + '" placeholder="Verified full address">' + _opsEscape(w.full_address || '') + '</textarea>'
@@ -6780,7 +6792,7 @@ function _renderHealthCompliancePane() {
         bg.no_walkthrough, ['Bar','Last session'],
         r => '<tr>'
           + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '') + '</button></td>'
-          + '<td>' + _opsEscape(r.detail || '<span style="color:var(--grey);">no sessions yet</span>') + '</td>'
+          + '<td>' + _opsEscape(r.detail, '<span style="color:var(--grey);">no sessions yet</span>') + '</td>'
           + '</tr>',
         'All bars compliant on walkthroughs.')
     +   _healthComplianceSubTable('Bars without H&S document',

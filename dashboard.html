@@ -3947,7 +3947,7 @@ async function loadNetworkBarsData() {
   }
   try {
     const rows = await sbGet('bars',
-      '?order=name.asc&select=id,name,address,contact_name,contact_phone,google_maps_link,status,notes,created_at,opening_time,closing_time'
+      '?order=name.asc&select=id,name,address,contact_name,contact_phone,google_maps_link,status,notes,nature_of_business,created_at,opening_time,closing_time'
       + ',bartenders,drinks_per_hour,avg_drink_value,avg_customer_spend,typical_rush_minutes,lost_minutes_per_bartender'
       + ',bar_managers(id,name,revoked_at,created_at)'
       + ',bar_subscriptions(id,status,monthly_fee,discount_amount,trial_ends_at,paused_at,cancelled_at,billing_cycle_day)'
@@ -4078,6 +4078,11 @@ function _renderNetworkBarsExpansion(b) {
     +   '<span class="field-label">Address</span>'
     +   '<textarea oninput="netBarInlineSave(' + bid + ', &quot;address&quot;, this.value)" placeholder="Postal address">' + _opsEscape(b.address || '') + '</textarea>'
     +   '<span class="field-status" id="net-bar-status-address-' + bid + '"></span>'
+    + '</div>'
+    + '<div class="net-prof-edit-row" style="margin-top:8px;">'
+    +   '<span class="field-label">Nature of business</span>'
+    +   '<input type="text" maxlength="80" oninput="netBarInlineSave(' + bid + ', &quot;nature_of_business&quot;, this.value)" placeholder="One line, e.g. Craft brewery and taproom (required before go-live)" value="' + _opsEscape(b.nature_of_business || '') + '">'
+    +   '<span class="field-status" id="net-bar-status-nature_of_business-' + bid + '"></span>'
     + '</div>'
     + '<div class="net-prof-edit-row" style="margin-top:8px;">'
     +   '<span class="field-label">Notes</span>'
@@ -4282,7 +4287,7 @@ function toggleNetworkBarsRow(barId) {
 }
 
 function netBarInlineSave(barId, field, value) {
-  if(field !== 'address' && field !== 'notes') return;
+  if(field !== 'address' && field !== 'notes' && field !== 'nature_of_business') return;
   const key = barId + '-' + field;
   const statusEl = document.getElementById('net-bar-status-' + field + '-' + barId);
   if(statusEl) { statusEl.textContent = 'Saving...'; statusEl.classList.remove('saved', 'err'); }
@@ -4292,7 +4297,14 @@ function netBarInlineSave(barId, field, value) {
     networkBarsState.inlineTimers.delete(key);
     try {
       const patch = {};
-      patch[field] = value || null;
+      // nature_of_business is a Reg 21 disclosure field: trim, cap at 80,
+      // store NULL when blank (the go-live gate refuses blank/missing).
+      if(field === 'nature_of_business') {
+        const trimmed = (value || '').trim().slice(0, 80);
+        patch[field] = trimmed.length ? trimmed : null;
+      } else {
+        patch[field] = value || null;
+      }
       await sbPatch('bars', '?id=eq.' + barId, patch);
       const b = networkBarsState.bars.find(x => x.id === barId);
       if(b) b[field] = value || null;
@@ -13998,7 +14010,15 @@ async function goLiveSession(sessionId, opts) {
     start_time: new Date().toLocaleTimeString('en-GB', {hour12:false})
   };
   if(scheduledEndIso) goLivePatch.scheduled_end = scheduledEndIso;
-  await sbPatch('sessions', '?id=eq.'+sessionId, goLivePatch);
+  const goLiveResult = await sbPatch('sessions', '?id=eq.'+sessionId, goLivePatch);
+  // The enforce_bar_disclosure_fields_on_go_live trigger refuses go-live if a
+  // bar in the set is missing nature_of_business or address. PostgREST returns
+  // an error object (not an array of rows) in that case; surface it and abort.
+  if(!Array.isArray(goLiveResult)) {
+    const msg = (goLiveResult && (goLiveResult.message || goLiveResult.hint)) || 'Could not take this session live.';
+    alert('Go live blocked: ' + msg);
+    return;
+  }
 
   liveSessionOps.sessionId = sessionId;
   liveSessionStart = Date.now();

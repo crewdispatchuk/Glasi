@@ -1446,6 +1446,11 @@
       color: var(--white);
       margin-bottom: 4px;
     }
+    .shift-post-card-v6 .spc-nature {
+      font-size: 12px;
+      color: var(--grey);
+      margin-bottom: 2px;
+    }
     .shift-post-card-v6 .spc-address {
       font-size: 12px;
       color: var(--grey);
@@ -1455,6 +1460,37 @@
       font-size: 13px;
       color: var(--grey);
       margin-bottom: 14px;
+    }
+    /* Reg 21 disclosure block on the broadcast card. */
+    .shift-post-card-v6 .spc-disclosure {
+      margin: 4px 0 16px;
+      padding: 12px 14px;
+      background: rgba(168,216,234,0.05);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .shift-post-card-v6 .spc-disc-row {
+      display: flex;
+      gap: 10px;
+      font-size: 12.5px;
+      line-height: 1.4;
+      margin-bottom: 5px;
+    }
+    .shift-post-card-v6 .spc-disc-k {
+      flex: 0 0 78px;
+      color: var(--grey);
+      letter-spacing: 0.4px;
+    }
+    .shift-post-card-v6 .spc-disc-v {
+      flex: 1;
+      color: var(--white);
+    }
+    .shift-post-card-v6 .spc-disc-hs {
+      margin-top: 8px;
+      font-size: 11px;
+      font-style: italic;
+      color: var(--grey);
+      line-height: 1.4;
     }
     .shift-post-card-v6 .spc-quick-response {
       font-size: 13px;
@@ -5715,7 +5751,7 @@
     })[c]);
   }
 
-  function renderShiftPostCard(record, walkingMinutes, barName, barAddress, existingResponse) {
+  function renderShiftPostCard(record, walkingMinutes, barName, barAddress, existingResponse, barNature, hourlyRate, hsSignedAt) {
     // UX invariant: the eligibility window is not shown to the worker.
     // Visible urgency = audio ping + the quick-response copy below. The
     // detail line matches the Flutter format: "Xh shift · N min walk".
@@ -5752,11 +5788,42 @@
         + '</div>';
     }
 
+    // Reg 21 disclosure block. Role, start requirement, and the no-expenses
+    // line are fixed strings matching the server-side payload constants on
+    // shift_request_disclosure_payloads. Every field below is a regulatory
+    // disclosure requirement and must be present. Walking time is a separate
+    // UX aid, clearly distinguished from the start requirement.
+    const ROLE = 'Bar Support: glass collection, clearing tables';
+    const rateStr = (hourlyRate != null) ? ('£' + Number(hourlyRate).toFixed(2) + '/hr') : 'Your tier rate';
+    let hsDateStr = '';
+    if(hsSignedAt) {
+      try {
+        const d = new Date(hsSignedAt);
+        hsDateStr = d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+      } catch(e) {}
+    }
+    const hsLine = hsDateStr
+      ? ("You signed this bar's H&S on " + hsDateStr + ". This shift assumes that signed information is unchanged.")
+      : "This shift assumes your signed H&S for this bar is unchanged.";
+    const discRow = (label, value) =>
+      '<div class="spc-disc-row"><span class="spc-disc-k">' + label + '</span><span class="spc-disc-v">' + value + '</span></div>';
+    const disclosure =
+        '<div class="spc-disclosure">'
+      + discRow('Start', 'Immediately on arrival')
+      + discRow('Role', escapeHtml(ROLE))
+      + discRow('Duration', hoursLabel + ' shift')
+      + discRow('Rate', rateStr)
+      + discRow('Walking', walkingMinutes + ' min walk (travel estimate, not your start time)')
+      + discRow('Expenses', 'No expenses are payable by or to the worker')
+      + '<div class="spc-disc-hs">' + escapeHtml(hsLine) + '</div>'
+      + '</div>';
+
     card.innerHTML =
         '<div class="spc-label">' + headerLabel + '</div>'
       + '<div class="spc-venue">' + escapeHtml(barName || 'Venue') + '</div>'
+      + (barNature ? '<div class="spc-nature">' + escapeHtml(barNature) + '</div>' : '')
       + (barAddress ? '<div class="spc-address">' + escapeHtml(barAddress) + '</div>' : '')
-      + '<div class="spc-detail">' + hoursLabel + ' shift · ' + walkingMinutes + ' min walk</div>'
+      + disclosure
       + body;
     if(!responded) {
       card.querySelector('.spc-available').addEventListener('click', () => handleAvailable(record.id));
@@ -5828,12 +5895,23 @@
 
       let barName = 'Venue';
       let barAddress = '';
+      let barNature = '';
       try {
-        const bars = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + record.bar_id + '&select=name,address', { headers: H }).then(r => r.json());
-        if(bars && bars[0]) { barName = bars[0].name; barAddress = bars[0].address || ''; }
+        const bars = await fetch(SUPABASE_URL + '/rest/v1/bars?id=eq.' + record.bar_id + '&select=name,address,nature_of_business', { headers: H }).then(r => r.json());
+        if(bars && bars[0]) { barName = bars[0].name; barAddress = bars[0].address || ''; barNature = bars[0].nature_of_business || ''; }
       } catch(e) {}
 
-      const cardEl = renderShiftPostCard(record, walkingMinutes, barName, barAddress, existingResponse);
+      // Reg 21 disclosure fields: the worker's tier rate and the date they
+      // signed this bar's H&S. Match the server-side snapshot on
+      // shift_request_disclosures; rendered live for display.
+      let hourlyRate = (currentWorker && currentWorker.hourly_rate != null) ? Number(currentWorker.hourly_rate) : null;
+      let hsSignedAt = null;
+      try {
+        const hsRows = await fetch(SUPABASE_URL + '/rest/v1/hs_acknowledgements?application_id=eq.' + currentWorker.id + '&bar_id=eq.' + record.bar_id + '&acknowledged_at=not.is.null&order=acknowledged_at.desc&limit=1&select=acknowledged_at', { headers: H }).then(r => r.json());
+        if(hsRows && hsRows[0]) hsSignedAt = hsRows[0].acknowledged_at;
+      } catch(e) {}
+
+      const cardEl = renderShiftPostCard(record, walkingMinutes, barName, barAddress, existingResponse, barNature, hourlyRate, hsSignedAt);
       const container = document.getElementById('live-shift-posts-container');
       if(!container) return;
       container.appendChild(cardEl);

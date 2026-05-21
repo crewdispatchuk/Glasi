@@ -916,6 +916,11 @@
             <div style="font-size:11px;letter-spacing:2px;color:var(--grey);text-transform:uppercase;margin-bottom:8px;">Give them this code on arrival</div>
             <div style="font-size:36px;font-weight:800;letter-spacing:10px;color:var(--white);font-family:'Inter',sans-serif;" id="status-clockin-code"></div>
           </div>
+          <div id="status-onway-reg19" style="margin-top:20px;text-align:left;background:rgba(168,216,234,0.05);border:1px solid rgba(168,216,234,0.2);border-radius:12px;padding:16px 18px;">
+            <div style="font-size:11px;letter-spacing:2px;color:var(--ice);text-transform:uppercase;margin-bottom:8px;">Compliance confirmation</div>
+            <div style="font-size:12.5px;color:var(--grey);line-height:1.55;">Glasi confirms that the supplied worker's identity has been verified through Numbermill onboarding, the worker holds the qualifications and authorisations required for this position, and the worker has confirmed willingness to work. This confirmation is given in accordance with Regulation 19 of the Conduct of Employment Agencies and Employment Businesses Regulations 2003.</div>
+            <div style="font-size:11px;color:var(--grey);margin-top:8px;">Assignment reference: <span id="status-onway-asgref" style="color:var(--white);font-weight:600;">pending</span></div>
+          </div>
         </div>
       </div>
 
@@ -1700,7 +1705,7 @@
             const onActive = document.getElementById('active-status-card').style.display === 'block';
             if(!onActive) {
               try {
-                const inFlightRows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?bar_id=eq.' + currentBar.id + '&status=in.(dispatched,onshift)&select=id,worker_name,dispatched_at,departed_at,clock_in_code,clock_out_code,clock_in_at,status,shift_length_hours,live_eta_minutes,live_eta_computed_at,arrived_at&order=id.desc&limit=1', { headers: H }).then(r => r.json());
+                const inFlightRows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?bar_id=eq.' + currentBar.id + '&status=in.(dispatched,onshift)&select=id,worker_name,dispatched_at,departed_at,clock_in_code,clock_out_code,clock_in_at,status,shift_length_hours,shift_request_id,live_eta_minutes,live_eta_computed_at,arrived_at&order=id.desc&limit=1', { headers: H }).then(r => r.json());
                 const active = inFlightRows?.[0];
                 if(active) {
                   if(active.status === 'dispatched') {
@@ -1836,7 +1841,7 @@
     // F-38: read session_workers.status only; do NOT gate on sessions.status.
     // The session may be closed while the worker is still in-flight; the
     // clock-out reveal must persist post-close until the worker clocks out.
-    const rows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?bar_id=eq.' + currentBar.id + '&status=in.(dispatched,onshift)&select=id,worker_name,dispatched_at,departed_at,clock_in_code,clock_out_code,clock_in_at,status,shift_length_hours,live_eta_minutes,live_eta_computed_at,arrived_at&order=id.desc&limit=1', { headers: H }).then(r => r.json());
+    const rows = await fetch(SUPABASE_URL + '/rest/v1/session_workers?bar_id=eq.' + currentBar.id + '&status=in.(dispatched,onshift)&select=id,worker_name,dispatched_at,departed_at,clock_in_code,clock_out_code,clock_in_at,status,shift_length_hours,shift_request_id,live_eta_minutes,live_eta_computed_at,arrived_at&order=id.desc&limit=1', { headers: H }).then(r => r.json());
     const active = rows?.[0];
 
     if(!active) {
@@ -1919,6 +1924,9 @@
         label = 'Dispatched ' + dispMins + ' min ago';
       }
       etaEl.textContent = label;
+      // Reg 19 (2026-05-20): surfacing the confirmation card is the delivery
+      // event. Log it once per dispatch on this channel and show the ASG ref.
+      mgrSurfaceReg19(sw);
       etaEl.style.color = color;
       etaEl.style.fontStyle = italic;
       etaEl.style.fontWeight = weight;
@@ -1941,6 +1949,28 @@
     // manager can submit a parallel request without losing sight of the
     // in-flight one.
     showRequestPill();
+  }
+
+  // Reg 19 (Conduct Regs 2003): surfacing the confirmation card to the manager
+  // is the disclosure delivery event. manager_surface_reg19 resolves the
+  // dispatch from the shift_request, logs the manager_web disclosure once
+  // (idempotent server-side), and returns the Assignment Schedule reference.
+  // The bar role cannot read dispatch_decisions or compliance_references
+  // directly under RLS, so this SECURITY DEFINER RPC is the only read path.
+  const _reg19SurfacedDispatch = new Set();
+  async function mgrSurfaceReg19(sw) {
+    const refEl = document.getElementById('status-onway-asgref');
+    const reqId = sw && sw.shift_request_id;
+    if(!reqId) { if(refEl) refEl.textContent = 'pending'; return; }
+    try {
+      const { data, error } = await sbAuth.rpc('manager_surface_reg19', {
+        p_shift_request_id: reqId, p_channel: 'manager_web'
+      });
+      if(error) { console.warn('reg19 surface failed', error); return; }
+      const ddId = data && data.dispatch_decision_id;
+      if(ddId) _reg19SurfacedDispatch.add(ddId);
+      if(refEl) refEl.textContent = (data && data.asg_reference) ? data.asg_reference : 'pending';
+    } catch(e) { console.warn('reg19 surface error', e); }
   }
 
   // Wraps showStatus('finding') and starts the 30-minute expiry timer for the

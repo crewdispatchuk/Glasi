@@ -2772,6 +2772,7 @@
       <button class="ws-subtab" data-subtab="fulfilment" onclick="showHealthSubtab('fulfilment')">Fulfilment</button>
       <button class="ws-subtab" data-subtab="engine"     onclick="showHealthSubtab('engine')">Engine Quality</button>
       <button class="ws-subtab" data-subtab="compliance" onclick="showHealthSubtab('compliance')">Compliance</button>
+      <button class="ws-subtab" data-subtab="regulatory" onclick="showHealthSubtab('regulatory')">Regulatory</button>
     </nav>
     <button class="health-refresh-btn" id="health-refresh-btn" onclick="refreshHealthCurrent()" title="Refresh current sub-tab">&#8634; Refresh</button>
   </header>
@@ -2789,6 +2790,9 @@
   </div>
   <div class="ws-subtab-content" data-subtab="compliance">
     <div id="health-compliance-pane"><div class="health-loading">Loading Compliance...</div></div>
+  </div>
+  <div class="ws-subtab-content" data-subtab="regulatory">
+    <div id="health-regulatory-pane"><div class="health-loading">Loading Regulatory...</div></div>
   </div>
 
   <!-- Resolve flag modal (Phase 3.2 — used by Flags & Exceptions tab) -->
@@ -5766,7 +5770,7 @@ function _dv2WaitForRowAndExpand(state, attempt) {
 // ====================================================================
 
 const DV2_HEALTH_SUBTAB_KEY = 'glasi_ws_health_subtab';
-const HEALTH_SUBTABS = ['flags', 'coverage', 'fulfilment', 'engine', 'compliance'];
+const HEALTH_SUBTABS = ['flags', 'coverage', 'fulfilment', 'engine', 'compliance', 'regulatory'];
 
 const healthState = {
   // Flags (Phase 3.2)
@@ -5822,12 +5826,14 @@ function _healthLoadIfNeeded(name) {
   if(name === 'fulfilment' && !healthState.fulfilmentMetrics) return loadHealthFulfilmentData();
   if(name === 'engine'     && !healthState.engineMetrics)    return loadHealthEngineData();
   if(name === 'compliance' && !healthState.complianceMatrix) return loadHealthComplianceData();
+  if(name === 'regulatory' && !healthState.regulatorySessions) return loadHealthRegulatoryData();
   // Re-render from cache to ensure UI matches state.
   if(name === 'flags')      _renderHealthFlagsPane();
   if(name === 'coverage')   _renderHealthCoveragePane();
   if(name === 'fulfilment') _renderHealthFulfilmentPane();
   if(name === 'engine')     _renderHealthEnginePane();
   if(name === 'compliance') _renderHealthCompliancePane();
+  if(name === 'regulatory') _renderHealthRegulatoryPane();
 }
 
 async function refreshHealthCurrent() {
@@ -5842,9 +5848,169 @@ async function refreshHealthCurrent() {
     if(name === 'fulfilment') { healthState.fulfilmentMetrics = null; await loadHealthFulfilmentData(); }
     if(name === 'engine')     { healthState.engineMetrics = null;    await loadHealthEngineData(); }
     if(name === 'compliance') { healthState.complianceMatrix = null; healthState.complianceMatrixDetailCache = {}; healthState.complianceBarDetailCache = {}; await loadHealthComplianceData(); }
+    if(name === 'regulatory') { healthState.regulatorySessions = null; healthState.regulatoryView = null; await loadHealthRegulatoryData(); }
   } finally {
     if(btn) btn.classList.remove('spinning');
   }
+}
+
+// ====================================================================
+// Health -> Regulatory tab (2026-05-20). Reg 28-30 record retrieval.
+// Sessions list -> workers in session -> per-worker record, with BRD
+// and ASG PDF downloads via the generate-compliance-pdf Edge Function.
+// Read RPCs are is_admin gated server-side.
+// ====================================================================
+async function loadHealthRegulatoryData() {
+  const pane = document.getElementById('health-regulatory-pane');
+  try {
+    const res = await sbAuth.rpc('f41_regulatory_sessions', { p_window: '90d', p_bar_id: null, p_status: null });
+    if(res.error) throw res.error;
+    healthState.regulatorySessions = Array.isArray(res.data) ? res.data : [];
+    healthState.regulatoryView = { mode: 'sessions' };
+    _renderHealthRegulatoryPane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || String(err)) + '. <button class="health-link" onclick="loadHealthRegulatoryData()">Retry</button></div>';
+  }
+}
+
+function _renderHealthRegulatoryPane() {
+  const pane = document.getElementById('health-regulatory-pane');
+  if(!pane) return;
+  const view = healthState.regulatoryView || { mode: 'sessions' };
+  if(view.mode === 'sessions') return _renderRegSessions(pane);
+  if(view.mode === 'workers')  return _renderRegWorkers(pane);
+  if(view.mode === 'worker')   return _renderRegWorker(pane);
+}
+
+function _renderRegSessions(pane) {
+  const rows = healthState.regulatorySessions || [];
+  let html = '<div class="health-section-sub">Sessions (last 90 days)</div>';
+  if(!rows.length) { pane.innerHTML = html + '<div class="health-loading">No sessions in range.</div>'; return; }
+  html += '<table class="health-table"><thead><tr><th>Date</th><th>Bars</th><th>In session</th><th>Broadcasts</th><th>Dispatches</th><th>Status</th><th></th></tr></thead><tbody>';
+  rows.forEach(s => {
+    const bars = (s.bars || []).map(b => _opsEscape(b.bar_name)).join(', ');
+    html += '<tr><td>' + _opsEscape(s.session_date) + '</td><td>' + bars + '</td><td>' + (s.workers_in_session||0)
+      + '</td><td>' + (s.broadcasts||0) + '</td><td>' + (s.dispatches||0) + '</td><td>' + _opsEscape(s.status||'') + '</td>'
+      + '<td><button class="health-link" onclick="regOpenSession(' + s.session_id + ')">Open &rsaquo;</button></td></tr>';
+  });
+  html += '</tbody></table>';
+  pane.innerHTML = html;
+}
+
+async function regOpenSession(sessionId) {
+  const pane = document.getElementById('health-regulatory-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading session...</div>';
+  try {
+    const res = await sbAuth.rpc('f41_regulatory_session_workers', { p_session_id: sessionId });
+    if(res.error) throw res.error;
+    healthState.regulatoryView = { mode: 'workers', sessionId, workers: Array.isArray(res.data) ? res.data : [] };
+    _renderHealthRegulatoryPane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed: ' + _opsEscape(err.message || String(err)) + '</div>';
+  }
+}
+
+function _renderRegWorkers(pane) {
+  const v = healthState.regulatoryView;
+  let html = '<button class="health-link" onclick="regBackToSessions()">&lsaquo; Sessions</button>'
+    + '<div class="health-section-sub" style="margin-top:8px;">Workers in session #' + v.sessionId + '</div>';
+  if(!v.workers.length) { pane.innerHTML = html + '<div class="health-loading">No broadcast or dispatch records for this session.</div>'; return; }
+  html += '<table class="health-table"><thead><tr><th>Worker</th><th>Broadcasts</th><th>Available</th><th>Pass</th><th>No response</th><th>Dispatched</th><th></th></tr></thead><tbody>';
+  v.workers.forEach(w => {
+    html += '<tr><td>' + _opsEscape(w.worker_name) + '</td><td>' + (w.broadcasts||0) + '</td><td>' + (w.available||0)
+      + '</td><td>' + (w.pass||0) + '</td><td>' + (w.no_response||0) + '</td><td>' + (w.dispatched ? 'Yes' : 'No') + '</td>'
+      + '<td><button class="health-link" onclick="regOpenWorker(' + v.sessionId + ',' + w.application_id + ')">Record &rsaquo;</button></td></tr>';
+  });
+  html += '</tbody></table>';
+  pane.innerHTML = html;
+}
+
+async function regOpenWorker(sessionId, applicationId) {
+  const pane = document.getElementById('health-regulatory-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading record...</div>';
+  try {
+    const res = await sbAuth.rpc('f41_regulatory_worker_record', { p_session_id: sessionId, p_application_id: applicationId });
+    if(res.error) throw res.error;
+    healthState.regulatoryView = { mode: 'worker', sessionId, record: res.data };
+    _renderHealthRegulatoryPane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed: ' + _opsEscape(err.message || String(err)) + '</div>';
+  }
+}
+
+function _renderRegWorker(pane) {
+  const v = healthState.regulatoryView;
+  const rec = v.record || {};
+  const id = rec.identity || {};
+  let html = '<button class="health-link" onclick="regOpenSession(' + v.sessionId + ')">&lsaquo; Workers</button>';
+  html += '<div class="health-section-sub" style="margin-top:8px;">' + _opsEscape(id.worker_name || 'Worker') + '</div>';
+  html += '<div style="font-size:12px;color:var(--grey);margin-bottom:10px;">Numbermill ref: ' + _opsEscape(id.numbermill_reference || 'not issued')
+    + ' &middot; KID: ' + (id.kid_acknowledged_at ? (_opsEscape(id.kid_acknowledged_version||'') + ' on ' + _opsEscape(String(id.kid_acknowledged_at).slice(0,10))) : 'not acknowledged') + '</div>';
+
+  const bds = rec.broadcasts || [];
+  html += '<div class="health-section-sub">Broadcasts</div>';
+  if(!bds.length) {
+    html += '<div style="font-size:12px;color:var(--grey);margin-bottom:12px;">No broadcast disclosure records for this session. The disclosure trail began on 2026-05-19; broadcasts before that date are not recorded.</div>';
+  } else {
+    html += '<table class="health-table"><thead><tr><th>Hirer</th><th>Delivered</th><th>Response</th><th></th></tr></thead><tbody>';
+    bds.forEach(b => {
+      html += '<tr><td>' + _opsEscape(b.bar_name||'') + '</td><td>' + _opsEscape(String(b.delivered_at||'').slice(0,16).replace('T',' '))
+        + '</td><td>' + _opsEscape(b.response||'(none)') + '</td>'
+        + '<td><button class="health-link" onclick="regDownloadBrd(' + b.disclosure_id + ')">Download disclosure PDF</button></td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  const dps = rec.dispatches || [];
+  html += '<div class="health-section-sub" style="margin-top:10px;">Assignments</div>';
+  if(!dps.length) {
+    html += '<div style="font-size:12px;color:var(--grey);">No dispatches for this worker in this session.</div>';
+  } else {
+    html += '<table class="health-table"><thead><tr><th>Reference</th><th>Dispatched</th><th>By</th><th>Shift state</th><th></th></tr></thead><tbody>';
+    dps.forEach(d => {
+      html += '<tr><td>' + _opsEscape(d.asg_reference||'(pending)') + '</td><td>' + _opsEscape(String(d.dispatched_at||'').slice(0,16).replace('T',' '))
+        + '</td><td>' + _opsEscape(d.dispatched_by||'') + '</td><td>' + _opsEscape(d.shift_status||'dispatched') + '</td>'
+        + '<td><button class="health-link" onclick="regDownloadAsg(' + d.dispatch_decision_id + ')">Download Assignment Schedule PDF</button></td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+  pane.innerHTML = html;
+}
+
+function regBackToSessions() {
+  healthState.regulatoryView = { mode: 'sessions' };
+  _renderHealthRegulatoryPane();
+}
+
+async function _regGenerateAndDownload(payload, fallbackName) {
+  try {
+    const { data: { session } } = await sbAuth.auth.getSession();
+    const token = session?.access_token || KEY;
+    const resp = await fetch(SB + '/functions/v1/generate-compliance-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(payload)
+    });
+    if(!resp.ok) {
+      let msg = 'Could not generate the PDF.';
+      try { const err = await resp.json(); msg = err.message || err.error || msg; } catch(e) {}
+      alert(msg);
+      return;
+    }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fallbackName; document.body.appendChild(a); a.click();
+    a.remove(); URL.revokeObjectURL(url);
+  } catch(e) {
+    alert('PDF generation failed: ' + (e && e.message ? e.message : 'network error'));
+  }
+}
+function regDownloadAsg(dispatchDecisionId) {
+  _regGenerateAndDownload({ type: 'asg', dispatch_decision_id: dispatchDecisionId }, 'assignment-schedule.pdf');
+}
+function regDownloadBrd(disclosureId) {
+  _regGenerateAndDownload({ type: 'brd', disclosure_id: disclosureId }, 'broadcast-disclosure.pdf');
 }
 
 // Deep-link helpers, route through Phase 2.8 hash + apply.
@@ -11386,6 +11552,18 @@ async function dispatchWorker(applicationId, requestId) {
   // somehow lands in onshift state without this column populated.
   const clockOutCode = String(Math.floor(1000 + Math.random() * 9000)); // 4 digit code
 
+  // 0. Compliance: write the dispatch_decisions audit row FIRST and block on
+  // it. The dispatch_decisions row anchors the Assignment Schedule reference
+  // (allocated by trg_allocate_asg_on_dispatch) and the manager Reg 19 record.
+  // If this write fails, abort the whole dispatch so a worker is never
+  // dispatched without its compliance anchor. (C3, 2026-05-20.)
+  try {
+    await f33WriteAuditAtDispatch(requestId, worker.applicationId);
+  } catch(e) {
+    alert('Dispatch aborted: could not record the dispatch decision (compliance anchor). Nothing was dispatched. ' + (e && e.message ? e.message : ''));
+    return;
+  }
+
   // 1. Update session_workers
   await sbPatch('session_workers', '?id=eq.'+worker.sessionWorkerId, {
     status: 'dispatched',
@@ -11439,15 +11617,9 @@ async function dispatchWorker(applicationId, requestId) {
   liveSessionResponses.delete(requestId);
   if(typeof renderLiveRoom === 'function') renderLiveRoom();
 
-  // F-33: dispatch_decisions audit write. Best-effort; failure logged but
-  // does not block dispatch. Reads liveSessionRecommendations for the
-  // request's snapshot at click time. The Map is cleaned up shortly after
-  // when request:updated arrives via realtime; this call captures the state
-  // before that cleanup runs.
-  if(typeof f33WriteAuditAtDispatch === 'function') {
-    f33WriteAuditAtDispatch(requestId, worker.applicationId);
-  }
-
+  // F-33 dispatch_decisions audit write now happens at the top of this
+  // function (blocking, abort-on-failure) so it anchors the compliance
+  // artefacts. See step 0 above. (C3, 2026-05-20.)
 }
 
 async function confirmClockIn(requestId, applicationId) {
@@ -14916,21 +15088,22 @@ async function dispatchRecommended(requestId) {
 // Recommendation Engine Redesign (17 May 2026): dispatched_by='manual' on this
 // path; auto_dispatch_request writes dispatched_by='auto_dispatch' from the
 // server side.
+// C3 (2026-05-20): no longer best-effort. The dispatch_decisions row is the
+// compliance anchor (Assignment Schedule reference + manager Reg 19 record),
+// so this write is blocking and throws on failure; the caller aborts the
+// dispatch if it throws. sbPost already throws on a non-ok response.
 async function f33WriteAuditAtDispatch(requestId, dispatchedAppId) {
-  try {
-    const rec = liveSessionRecommendations.get(requestId) || null;
-    const recAppId = rec?.recommendedAppId || null;
-    await sbPost('dispatch_decisions', {
-      request_id: requestId,
-      dispatched_application_id: dispatchedAppId,
-      recommended_application_id: recAppId,
-      was_recommended_match: recAppId !== null && Number(recAppId) === Number(dispatchedAppId),
-      recommendation_breakdown: rec?.breakdown || null,
-      dispatched_by: 'manual'
-    });
-  } catch(e) {
-    console.error('[f33WriteAuditAtDispatch] failed (best-effort)', e);
-  }
+  const rec = liveSessionRecommendations.get(requestId) || null;
+  const recAppId = rec?.recommendedAppId || null;
+  const res = await sbPost('dispatch_decisions', {
+    request_id: requestId,
+    dispatched_application_id: dispatchedAppId,
+    recommended_application_id: recAppId,
+    was_recommended_match: recAppId !== null && Number(recAppId) === Number(dispatchedAppId),
+    recommendation_breakdown: rec?.breakdown || null,
+    dispatched_by: 'manual'
+  });
+  return Array.isArray(res) && res[0] ? res[0].id : null;
 }
 
 // ============================================================================

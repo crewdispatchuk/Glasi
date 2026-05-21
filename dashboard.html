@@ -9401,8 +9401,10 @@ async function tryRestoreSession() {
     };
   }));
 
-  // restore UI
-  document.getElementById('home-date').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  // restore UI. home-date was a v1 header element retired in the v2 layout;
+  // guard the null so the live-session restore does not abort and blank the dashboard.
+  const homeDateEl = document.getElementById('home-date');
+  if (homeDateEl) homeDateEl.textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
 
   // Restore live session timer from actual start time
   if(session.start_time) {

@@ -12230,6 +12230,7 @@ let proposedPinHolderCache = [];
 let declineTargetId = null;
 let declineTargetKind = null; // 'session' or 'pinholder'
 let proposedInboxWs = null;
+let proposedSetupFlagCache = []; // open bar_setup_flags (manager setup confirm-or-flag)
 
 async function loadProposedTab() {
   const sessionListEl = document.getElementById('proposed-session-list');
@@ -12238,7 +12239,7 @@ async function loadProposedTab() {
   if(pinListEl) pinListEl.innerHTML = '<div class="empty">Loading...</div>';
 
   try {
-    const [sessions, pinReqs] = await Promise.all([
+    const [sessions, pinReqs, setupFlags] = await Promise.all([
       sbGet('sessions',
         '?status=eq.proposed'
         + '&select=id,session_date,start_time,scheduled_start,proposal_reason,created_at,proposed_by_manager_id,bar_managers!proposed_by_manager_id(name),session_bars(bars(id,name))'
@@ -12246,12 +12247,18 @@ async function loadProposedTab() {
       sbGet('pin_holder_requests',
         '?status=eq.pending'
         + '&order=created_at.asc'
-        + '&select=id,bar_id,proposed_name,proposed_email,created_at,bar_managers!requested_by_manager_id(name),bars(id,name)')
+        + '&select=id,bar_id,proposed_name,proposed_email,created_at,bar_managers!requested_by_manager_id(name),bars(id,name)'),
+      sbGet('bar_setup_flags',
+        '?resolved_at=is.null'
+        + '&order=created_at.asc'
+        + '&select=id,bar_id,field,note,created_at,bars(id,name)')
     ]);
     proposedSessionsCache = Array.isArray(sessions) ? sessions : [];
     proposedPinHolderCache = Array.isArray(pinReqs) ? pinReqs : [];
+    proposedSetupFlagCache = Array.isArray(setupFlags) ? setupFlags : [];
     renderProposedSessions();
     renderProposedPinHolders();
+    renderProposedSetupFlags();
     updateProposedCountBadge();
   } catch(e) {
     console.error('loadProposedTab failed', e);
@@ -12261,7 +12268,7 @@ async function loadProposedTab() {
 }
 
 function updateProposedCountBadge() {
-  const total = proposedSessionsCache.length + proposedPinHolderCache.length;
+  const total = proposedSessionsCache.length + proposedPinHolderCache.length + proposedSetupFlagCache.length;
   const badge = document.getElementById('proposed-count-badge');
   if(!badge) return;
   if(total > 0) { badge.style.display = 'inline-block'; badge.textContent = String(total); }
@@ -12331,6 +12338,53 @@ function escapeProposalHtml(s) {
   return String(s == null ? '' : s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Bar setup flags (manager flagged a Reg 18 detail as wrong during setup).
+// Self contained: creates its own list container after the PIN-holder list so
+// the surface works wherever the Proposed tab markup is rendered.
+function renderProposedSetupFlags() {
+  const pinList = document.getElementById('proposed-pin-holder-list');
+  let el = document.getElementById('proposed-setup-flag-list');
+  if(!el && pinList && pinList.parentNode) {
+    const heading = document.createElement('div');
+    heading.style.cssText = 'font-size:13px;font-weight:600;color:var(--white);margin:20px 0 10px;';
+    heading.textContent = 'Bar setup flags';
+    el = document.createElement('div');
+    el.id = 'proposed-setup-flag-list';
+    pinList.parentNode.appendChild(heading);
+    pinList.parentNode.appendChild(el);
+  }
+  if(!el) return;
+  if(!proposedSetupFlagCache.length) {
+    el.innerHTML = '<div class="empty">No open bar setup flags.</div>';
+    return;
+  }
+  el.innerHTML = proposedSetupFlagCache.map(f => {
+    const barName = (f.bars && f.bars.name) || ('Bar ' + f.bar_id);
+    const submitted = f.created_at ? new Date(f.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
+    return `<div class="zone-card" style="margin-bottom:12px;padding:16px 20px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--white);">${escapeProposalHtml(barName)} &middot; ${escapeProposalHtml(f.field)}</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:4px;line-height:1.5;">${escapeProposalHtml(f.note || 'No note')}</div>
+          <div style="font-size:11px;color:var(--grey);margin-top:6px;">flagged ${submitted}</div>
+        </div>
+        <button class="small-ice-btn" onclick="resolveBarSetupFlag(${f.id})">Mark resolved</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function resolveBarSetupFlag(flagId) {
+  if(!confirm('Mark this bar setup flag as resolved? Make sure you have corrected the detail first.')) return;
+  try {
+    await sbPatch('bar_setup_flags', '?id=eq.' + flagId, { resolved_at: new Date().toISOString() });
+    await loadProposedTab();
+  } catch(e) {
+    console.error('resolveBarSetupFlag failed', e);
+    alert('Could not resolve flag: ' + (e.message || 'unknown'));
+  }
 }
 
 async function approveSessionProposal(sessionId) {

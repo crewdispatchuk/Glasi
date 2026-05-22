@@ -12209,13 +12209,21 @@ function switchSessionsTab(tab, opts) {
     }
   }
   if(isLive && liveSessionOps.sessionId) {
-    document.getElementById('sessions-live-empty').style.display = 'none';
-    document.getElementById('sessions-live-room').style.display = 'block';
+    // sessions-live-empty / sessions-live-room are retired v1 sub-tab elements;
+    // the v2 layout renders the live view via renderLiveRoom's own bipartite
+    // container. Guard the nulls so the live-session restore does not throw and
+    // blank the dashboard. Same v1-vestigial guard pattern as the home-date fix.
+    const emptyEl = document.getElementById('sessions-live-empty');
+    if(emptyEl) emptyEl.style.display = 'none';
+    const roomEl = document.getElementById('sessions-live-room');
+    if(roomEl) roomEl.style.display = 'block';
     renderLiveRoom();
     liveSessionOps.consumeDirty('live');
   } else if(isLive) {
-    document.getElementById('sessions-live-empty').style.display = 'block';
-    document.getElementById('sessions-live-room').style.display = 'none';
+    const emptyEl = document.getElementById('sessions-live-empty');
+    if(emptyEl) emptyEl.style.display = 'block';
+    const roomEl = document.getElementById('sessions-live-room');
+    if(roomEl) roomEl.style.display = 'none';
   }
 }
 

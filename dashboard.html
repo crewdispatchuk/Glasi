@@ -2641,7 +2641,8 @@
           <button class="net-pill" data-filter="suspended"           onclick="setNetworkWorkersFilter('suspended')">Suspended</button>
           <button class="net-pill" data-filter="offboarded"          onclick="setNetworkWorkersFilter('offboarded')">Offboarded</button>
         </div>
-        <input type="search" class="net-search" id="net-workers-search" placeholder="Search a name, GW ref, NumberMill ref, id, GS shift ref, or ASG/BRD ref..." oninput="onNetworkWorkersSearch()" onkeydown="onNetworkWorkersSearchKey(event)">
+        <input type="search" class="net-search" id="net-workers-search" placeholder="Filter by name, or enter a GW ref, NumberMill ref, id, GS shift ref, or ASG/BRD ref then press Enter or Search..." oninput="onNetworkWorkersSearch()" onkeydown="onNetworkWorkersSearchKey(event)">
+        <button class="net-pill" onclick="onNetworkWorkersSearchSubmit()" title="Resolve a reference and open the worker">Search</button>
       </div>
     </div>
     <div class="ops-sched-table-wrap">
@@ -4569,14 +4570,14 @@ function setNetworkWorkersFilter(name) {
   renderNetworkWorkersTable();
 }
 function onNetworkWorkersSearch() {
+  // As-you-type ONLY filters the loaded list by name. Reference resolution
+  // (GW / NumberMill ref / id / glasi_ref / ASG-BRD) happens only on an explicit
+  // submit (Enter or the search button), so a part-typed reference like "1" does
+  // not jump to a worker before the full term is entered.
   const el = document.getElementById('net-workers-search');
   const raw = ((el && el.value) || '').trim();
   networkWorkersState.search = raw.toLowerCase();
   renderNetworkWorkersTable();
-  // Live resolution: if the typed string looks like a reference (not a plain
-  // name), try to resolve it to one worker and open the profile directly.
-  // Plain-name typing keeps the existing list-substring filtering above.
-  if(_netLooksLikeReference(raw)) _netResolveAndOpen(raw, false);
 }
 
 // Enter on the search box is an explicit submit: resolve any input (even a
@@ -4584,6 +4585,11 @@ function onNetworkWorkersSearch() {
 // worker is found.
 function onNetworkWorkersSearchKey(ev) {
   if(!ev || ev.key !== 'Enter') return;
+  onNetworkWorkersSearchSubmit();
+}
+// Explicit submit (Enter or the Search button): resolve any input (even a plain
+// name, which may match exactly) and open the profile if a single worker is found.
+function onNetworkWorkersSearchSubmit() {
   const el = document.getElementById('net-workers-search');
   const raw = ((el && el.value) || '').trim();
   if(!raw) return;

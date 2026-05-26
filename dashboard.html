@@ -2783,64 +2783,82 @@
   <header class="ws-header">
     <h1 class="ws-title">Money</h1>
     <nav class="ws-subtabs" id="money-subtabs">
-      <button class="ws-subtab" data-subtab="worker-payroll"          onclick="showMoneySubtab('worker-payroll')">Worker Payroll</button>
-      <button class="ws-subtab" data-subtab="shift-invoices"          onclick="showMoneySubtab('shift-invoices')">Shift Invoices</button>
+      <button class="ws-subtab" data-subtab="timesheets"             onclick="showMoneySubtab('timesheets')">Timesheets</button>
+      <button class="ws-subtab" data-subtab="numbermill-invoices"    onclick="showMoneySubtab('numbermill-invoices')">NumberMill Invoices</button>
+      <button class="ws-subtab" data-subtab="bar-invoices"           onclick="showMoneySubtab('bar-invoices')">Bar Invoices</button>
       <button class="ws-subtab" data-subtab="subscription-invoices"   onclick="showMoneySubtab('subscription-invoices')">Subscription Invoices</button>
+      <button class="ws-subtab" data-subtab="billing-config"         onclick="showMoneySubtab('billing-config')">Billing Config</button>
+      <button class="ws-subtab" data-subtab="asg-trail" style="display:none;" onclick="showMoneySubtab('asg-trail')">Money Trail</button>
     </nav>
     <button class="health-refresh-btn" id="money-refresh-btn" onclick="refreshMoneyCurrent()" title="Refresh current sub-tab">&#8634; Refresh</button>
   </header>
-  <div class="ws-subtab-content" data-subtab="worker-payroll"><div id="money-payroll-pane"><div class="health-loading">Loading Worker Payroll...</div></div></div>
-  <div class="ws-subtab-content" data-subtab="shift-invoices"><div id="money-shift-invoices-pane"><div class="health-loading">Loading Shift Invoices...</div></div></div>
+  <div class="ws-subtab-content" data-subtab="timesheets"><div id="money-timesheets-pane"><div class="health-loading">Loading Timesheets...</div></div></div>
+  <div class="ws-subtab-content" data-subtab="numbermill-invoices"><div id="money-numbermill-pane"><div class="health-loading">Loading NumberMill Invoices...</div></div></div>
+  <div class="ws-subtab-content" data-subtab="bar-invoices"><div id="money-bar-invoices-pane"><div class="health-loading">Loading Bar Invoices...</div></div></div>
   <div class="ws-subtab-content" data-subtab="subscription-invoices"><div id="money-subscription-invoices-pane"><div class="health-loading">Loading Subscription Invoices...</div></div></div>
+  <div class="ws-subtab-content" data-subtab="billing-config"><div id="money-billing-config-pane"><div class="health-loading">Loading Billing Config...</div></div></div>
+  <div class="ws-subtab-content" data-subtab="asg-trail"><div id="money-asg-trail-pane"><div class="health-loading">Search a worker reference or ASG to view the money trail.</div></div></div>
 
-  <!-- Numbermill: Mark invoice received modal -->
-  <div id="money-mark-received-modal" class="prospect-form-modal" style="display:none;">
-    <div class="prospect-form-bg" onclick="closeMoneyMarkReceivedModal()"></div>
-    <div class="prospect-form-card">
-      <h3 class="prospect-form-h3">Mark Numbermill invoice received</h3>
-      <div style="font-size:12px;color:var(--grey);" id="money-mark-received-summary">,</div>
-      <label class="prospect-form-label">Invoice amount (&pound;)
-        <input id="money-mark-received-amount" type="number" step="0.01" min="0" placeholder="e.g. 1234.56">
-      </label>
-      <label class="prospect-form-label">Received date
-        <input id="money-mark-received-date" type="date">
-      </label>
-      <label class="prospect-form-label">Notes (optional)
-        <textarea id="money-mark-received-notes" rows="3" placeholder="Anything noteworthy"></textarea>
-      </label>
-      <div class="prospect-form-err" id="money-mark-received-err"></div>
-      <div class="prospect-form-actions">
-        <button class="ops-sched-btn" onclick="closeMoneyMarkReceivedModal()">Cancel</button>
-        <button class="ops-sched-action" id="money-mark-received-save" onclick="submitMoneyMarkReceived()">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Numbermill: Mark invoice paid modal -->
-  <div id="money-mark-paid-modal" class="prospect-form-modal" style="display:none;">
-    <div class="prospect-form-bg" onclick="closeMoneyMarkPaidModal()"></div>
-    <div class="prospect-form-card">
-      <h3 class="prospect-form-h3">Mark Numbermill invoice paid</h3>
-      <div style="font-size:12px;color:var(--grey);" id="money-mark-paid-summary">,</div>
-      <label class="prospect-form-label">Payment date
-        <input id="money-mark-paid-date" type="date">
-      </label>
-      <label class="prospect-form-label">Payment notes (optional)
-        <textarea id="money-mark-paid-notes" rows="3" placeholder="Reference, channel, etc."></textarea>
-      </label>
-      <div class="prospect-form-err" id="money-mark-paid-err"></div>
-      <div class="prospect-form-actions">
-        <button class="ops-sched-btn" onclick="closeMoneyMarkPaidModal()">Cancel</button>
-        <button class="ops-sched-action" id="money-mark-paid-save" onclick="submitMoneyMarkPaid()">Save</button>
-      </div>
-    </div>
-  </div>
+  <!-- Worker Payroll mark-invoice-received / mark-invoice-paid modals retired
+       with the Worker Payroll tab. NumberMill Invoices tab now owns invoice
+       ingestion and settlement per assignment. -->
 
   <!-- Batch 4b (19 May 2026): legacy combined "Generate invoice" modal retired
        with the old Bar Billing tab. Shift invoices are now generated per-shift
        via f39_shift_invoice_generate from the Shift Invoices tab. Subscription
        invoices are generated per-bar per-month from the Subscription Invoices
        tab. -->
+
+  <!-- Money Trail: generate timesheet modal -->
+  <div id="money-gen-timesheet-modal" class="prospect-form-modal" style="display:none;">
+    <div class="prospect-form-bg" onclick="closeMoneyGenTimesheetModal()"></div>
+    <div class="prospect-form-card">
+      <h3 class="prospect-form-h3">Generate timesheet for period</h3>
+      <div style="font-size:12px;color:var(--grey);">Defaults to the last completed Monday to Sunday week. Assignments with a confirmed clock-out in this window are aggregated.</div>
+      <label class="prospect-form-label">Period start (Monday)
+        <input id="money-gen-timesheet-start" type="date">
+      </label>
+      <label class="prospect-form-label">Period end (Sunday)
+        <input id="money-gen-timesheet-end" type="date">
+      </label>
+      <div class="prospect-form-err" id="money-gen-timesheet-err"></div>
+      <div class="prospect-form-actions">
+        <button class="ops-sched-btn" onclick="closeMoneyGenTimesheetModal()">Cancel</button>
+        <button class="ops-sched-action" id="money-gen-timesheet-save" onclick="submitMoneyGenTimesheet()">Generate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Money Trail: ingest NumberMill invoice modal -->
+  <div id="money-ingest-nmbr-modal" class="prospect-form-modal" style="display:none;">
+    <div class="prospect-form-bg" onclick="closeMoneyIngestNmbrModal()"></div>
+    <div class="prospect-form-card" style="max-width:640px;">
+      <h3 class="prospect-form-h3">Ingest NumberMill invoice</h3>
+      <div style="font-size:12px;color:var(--grey);">Record an invoice NumberMill has sent for a pay period, with one line per assignment.</div>
+      <label class="prospect-form-label">NumberMill reference
+        <input id="money-ingest-nmbr-ref" type="text" placeholder="e.g. NMBR-2026-0042">
+      </label>
+      <div style="display:flex;gap:10px;">
+        <label class="prospect-form-label" style="flex:1;">Period start
+          <input id="money-ingest-nmbr-start" type="date">
+        </label>
+        <label class="prospect-form-label" style="flex:1;">Period end
+          <input id="money-ingest-nmbr-end" type="date">
+        </label>
+      </div>
+      <label class="prospect-form-label">Invoice total (&pound;)
+        <input id="money-ingest-nmbr-total" type="number" step="0.01" min="0" placeholder="e.g. 1234.56">
+      </label>
+      <div style="font-size:11px;font-weight:600;letter-spacing:1px;color:var(--grey);margin:8px 0 4px;">PER-ASSIGNMENT LINES</div>
+      <div id="money-ingest-nmbr-lines"></div>
+      <button class="ops-sched-btn" style="margin-top:6px;" onclick="addMoneyIngestNmbrLine()">+ Add line</button>
+      <div class="prospect-form-err" id="money-ingest-nmbr-err"></div>
+      <div class="prospect-form-actions">
+        <button class="ops-sched-btn" onclick="closeMoneyIngestNmbrModal()">Cancel</button>
+        <button class="ops-sched-action" id="money-ingest-nmbr-save" onclick="submitMoneyIngestNmbr()">Ingest invoice</button>
+      </div>
+    </div>
+  </div>
 </section>
 <section class="workspace" id="workspace-health">
   <header class="ws-header">
@@ -4033,7 +4051,7 @@ async function loadNetworkBarsData() {
   }
   try {
     const rows = await sbGet('bars',
-      '?order=name.asc&select=id,name,address,contact_name,contact_phone,google_maps_link,status,notes,nature_of_business,created_at,opening_time,closing_time'
+      '?order=name.asc&select=id,name,address,contact_name,contact_phone,google_maps_link,status,notes,nature_of_business,created_at,opening_time,closing_time,registered_name,invoice_email'
       + ',bartenders,drinks_per_hour,avg_drink_value,avg_customer_spend,typical_rush_minutes,lost_minutes_per_bartender'
       + ',bar_managers(id,name,revoked_at,created_at)'
       + ',bar_subscriptions(id,status,monthly_fee,discount_amount,trial_ends_at,paused_at,cancelled_at,billing_cycle_day)'
@@ -4200,6 +4218,21 @@ function _renderNetworkBarsExpansion(b) {
       + '<div style="font-size:12px;color:var(--grey);">No subscription on file. <button class="net-cross-link" onclick="_netGoToMoneyForBar(' + bid + ')">Open in Money &rsaquo;</button></div>';
   }
 
+  // Billing block (Shift Money Trail): registered_name + invoice_email feed the
+  // consolidated bar invoice. Saved via update_bar_billing.
+  const billingHtml = ''
+    + '<div class="net-prof-edit-row">'
+    +   '<span class="field-label">Registered name</span>'
+    +   '<input type="text" id="net-bar-registered_name-' + bid + '" placeholder="Legal billing name (appears on the invoice)" value="' + _opsEscape(b.registered_name || '') + '">'
+    +   '<span class="field-status" id="net-bar-status-billing-' + bid + '"></span>'
+    + '</div>'
+    + '<div class="net-prof-edit-row" style="margin-top:8px;">'
+    +   '<span class="field-label">Invoice email</span>'
+    +   '<input type="email" id="net-bar-invoice_email-' + bid + '" placeholder="Where invoices are sent" value="' + _opsEscape(b.invoice_email || '') + '">'
+    +   '<span class="field-status"></span>'
+    + '</div>'
+    + '<div style="margin-top:8px;"><button class="ops-sched-btn" onclick="netBarBillingSave(' + bid + ')">Save billing</button></div>';
+
   // Pin Holders block.
   const pinPendingPlaceholder = '<div id="net-bar-pending-pin-' + bid + '" style="display:none;"></div>';
   const pinHtml = managers.length
@@ -4290,6 +4323,7 @@ function _renderNetworkBarsExpansion(b) {
     + '<tr class="ops-sched-expanded-row"><td colspan="5"><div class="ops-sched-exp-inner">'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Identity</h3>' + identityHtml + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Contract &amp; Subscription</h3>' + subBody + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Billing</h3>' + billingHtml + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">PIN Holders</h3>' + pinPendingPlaceholder + pinHtml + '<div style="margin-top:8px;">' + pinAction + '</div></div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Documents</h3>' + docsHtml + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Baseline Data</h3>' + baselineHtml + '</div>'
@@ -4401,6 +4435,31 @@ function netBarInlineSave(barId, field, value) {
     }
   }, 600);
   networkBarsState.inlineTimers.set(key, timer);
+}
+
+// Save the bar billing fields (registered_name + invoice_email) via the
+// admin-gated update_bar_billing RPC. These feed the consolidated bar invoice.
+async function netBarBillingSave(barId) {
+  const nameEl = document.getElementById('net-bar-registered_name-' + barId);
+  const emailEl = document.getElementById('net-bar-invoice_email-' + barId);
+  const statusEl = document.getElementById('net-bar-status-billing-' + barId);
+  const registeredName = nameEl ? nameEl.value.trim() : '';
+  const invoiceEmail = emailEl ? emailEl.value.trim() : '';
+  if(statusEl) { statusEl.textContent = 'Saving...'; statusEl.classList.remove('saved', 'err'); }
+  try {
+    const res = await sbAuth.rpc('update_bar_billing', {
+      p_bar_id: barId,
+      p_registered_name: registeredName || null,
+      p_invoice_email: invoiceEmail || null
+    });
+    if(res.error) throw res.error;
+    const b = networkBarsState.bars.find(x => x.id === barId);
+    if(b) { b.registered_name = registeredName || null; b.invoice_email = invoiceEmail || null; }
+    if(statusEl) { statusEl.textContent = 'Saved'; statusEl.classList.add('saved'); }
+  } catch(e) {
+    if(statusEl) { statusEl.textContent = 'Save failed'; statusEl.classList.add('err'); }
+    else alert('Billing save failed: ' + (e.message || 'unknown'));
+  }
 }
 
 async function netBarSetStatus(barId, newStatus) {
@@ -4621,6 +4680,25 @@ async function _netResolveAndOpen(input, explicit) {
     if(res.error) throw res.error;
     const r = res.data || {};
     const appId = r.application_id != null ? Number(r.application_id) : null;
+    const matchedValue = r.matched_value || '';
+    const isAsg = /^ASG-/i.test(matchedValue) || /^ASG-/i.test(input);
+    // TS- reference: open the Timesheets tab focused on the matched timesheet.
+    if(r.matched_type === 'timesheet' && r.timesheet_id != null) {
+      const tsId = Number(r.timesheet_id);
+      showWorkspace('money');
+      showMoneySubtab('timesheets');
+      moneyState.timesheetsExpandedId = null;
+      moneyState.timesheetsList = null;
+      loadMoneyTimesheetsData().then(() => { if(typeof toggleMoneyTimesheetRow === 'function') toggleMoneyTimesheetRow(tsId); });
+      return;
+    }
+    // ASG- reference: open the per-ASG unified money trail. (BRD- compliance
+    // refs also resolve to a worker but have no money trail, so fall through
+    // to the worker profile for those.)
+    if(isAsg) {
+      openMoneyAsgTrail(matchedValue || input.trim());
+      return;
+    }
     if(appId) {
       openWorkerProfile(appId);
     } else if(explicit) {
@@ -5018,6 +5096,7 @@ const workerProfileState = {
 
 const WPROF_SECTIONS = [
   { key: 'shifts',        title: 'Shifts',        rpc: 'worker_profile_shifts' },
+  { key: 'dispatches',    title: 'Assignment schedules', rpc: 'worker_profile_dispatches' },
   { key: 'disclosures',   title: 'Disclosures',   rpc: 'worker_profile_disclosures' },
   { key: 'signatures',    title: 'H&amp;S signatures', rpc: 'worker_profile_signatures' },
   { key: 'points',        title: 'Points ledger', rpc: 'worker_profile_points' },
@@ -5291,6 +5370,19 @@ function _renderWorkerProfileSectionBody(key, data) {
       r.hourly_rate != null ? ('£' + Number(r.hourly_rate).toFixed(2)) : _wprofDash(),
       _wprofMoney(r.total_earned),
       _opsEscape(r.clock_out_source, _wprofDash())
+    ]));
+  }
+  if(key === 'dispatches') {
+    // Assignment schedules: one per dispatch (ASG reference minted at dispatch).
+    // Includes dispatches with no completed shift, which the Shifts section omits.
+    return _wprofTable(['Dispatched','Bar','ASG ref','Shift','Assignment schedule'], rows.map(r => [
+      _wprofFmtDateTime(r.dispatched_at) || _wprofDash(),
+      _opsEscape(r.bar_name, _wprofDash()),
+      _opsEscape(r.asg_reference, _wprofDash()),
+      (r.shift_status ? _opsEscape(String(r.shift_status).toUpperCase()) : '<span class="muted">no shift</span>'),
+      (r.asg_reference
+        ? '<button class="health-link" onclick="regDownloadAsg(' + r.dispatch_decision_id + ')">Download PDF</button>'
+        : _wprofDash())
     ]));
   }
   if(key === 'disclosures') {
@@ -8018,41 +8110,46 @@ async function submitHealthNumbermillResolve() {
 // ====================================================================
 
 const DV2_MONEY_SUBTAB_KEY = 'glasi_ws_money_subtab';
-const MONEY_SUBTABS = ['worker-payroll', 'shift-invoices', 'subscription-invoices'];
+// 'asg-trail' is reachable only via search (its nav button is hidden); the
+// persisted-subtab accessor falls back to timesheets if it is ever stored.
+const MONEY_SUBTABS = ['timesheets', 'numbermill-invoices', 'bar-invoices', 'subscription-invoices', 'billing-config', 'asg-trail'];
 
 const moneyState = {
-  // Worker Payroll
-  payrollPeriodStart: null,            // ISO date string (a Wednesday)
-  payrollSummary: null,
-  payrollBreakdown: null,
-  payrollRecentPeriods: null,
-  payrollLastCsvFilename: null,
-  payrollLastCsvBlobUrl: null,
-  payrollMarkReceivedPeriod: null,
-  payrollMarkPaidPeriod: null,
-  // Shift Invoices (Batch 4b)
-  shiftInvDateFrom: null,
-  shiftInvDateTo: null,
-  shiftInvBarIds: [],
-  shiftInvStatuses: ['draft','sent','paid'],
-  shiftInvList: null,
-  shiftInvEligible: null,
-  shiftInvExpandedId: null,
-  shiftInvDetailCache: {},
   // Subscription Invoices (Batch 4b)
   subInvDateFrom: null,
   subInvDateTo: null,
   subInvBarIds: [],
   subInvStatuses: ['draft','sent','paid'],
   subInvList: null,
-  subInvExpandedId: null
+  subInvExpandedId: null,
+  // Shift Money Trail (ASG-threaded). Timesheets / NumberMill / Bar invoices /
+  // per-ASG unified view / Billing config.
+  timesheetsList: null,
+  timesheetsExpandedId: null,
+  timesheetsDetailCache: {},        // timesheet_id -> { header, lines } | { _error }
+  nmbrList: null,
+  nmbrIngestLines: [],              // working array for the ingest modal
+  barInvList: null,
+  barInvStatusFilter: '',           // '' = all; else draft/sent/paid/overdue/cancelled
+  barInvBarFilter: '',              // '' = all; else bar_id
+  barInvExpandedId: null,
+  barInvDetailCache: {},            // invoice_id -> bar_invoice_detail | { _error }
+  asgTrail: null,                   // assignment_money_trail result
+  asgMargin: null,                  // glasi_margin_per_asg result
+  asgReference: null,
+  billingConfig: null               // get_billing_config result
 };
 
 function getMoneySubtab() {
   try { const v = localStorage.getItem(DV2_MONEY_SUBTAB_KEY); if(MONEY_SUBTABS.includes(v)) return v; } catch(e) {}
   return null;
 }
-function pickInitialMoneySubtab() { return getMoneySubtab() || 'worker-payroll'; }
+function pickInitialMoneySubtab() {
+  const v = getMoneySubtab();
+  // asg-trail is only meaningful with a reference loaded, so never auto-open it.
+  if(v && v !== 'asg-trail') return v;
+  return 'timesheets';
+}
 
 function showMoneySubtab(name) {
   if(!MONEY_SUBTABS.includes(name)) return;
@@ -8065,12 +8162,17 @@ function showMoneySubtab(name) {
 }
 
 function _moneyLoadIfNeeded(name) {
-  if(name === 'worker-payroll'        && !moneyState.payrollSummary) return loadMoneyPayrollData();
-  if(name === 'shift-invoices'        && !moneyState.shiftInvList)   return loadMoneyShiftInvoicesData();
+  if(name === 'timesheets'            && !moneyState.timesheetsList) return loadMoneyTimesheetsData();
+  if(name === 'numbermill-invoices'   && !moneyState.nmbrList)       return loadMoneyNmbrData();
+  if(name === 'bar-invoices'          && !moneyState.barInvList)     return loadMoneyBarInvoicesData();
   if(name === 'subscription-invoices' && !moneyState.subInvList)     return loadMoneySubscriptionInvoicesData();
-  if(name === 'worker-payroll')        _renderMoneyPayrollPane();
-  if(name === 'shift-invoices')        _renderMoneyShiftInvoicesPane();
+  if(name === 'billing-config'        && !moneyState.billingConfig)  return loadMoneyBillingConfig();
+  if(name === 'timesheets')            _renderMoneyTimesheetsPane();
+  if(name === 'numbermill-invoices')   _renderMoneyNmbrPane();
+  if(name === 'bar-invoices')          _renderMoneyBarInvoicesPane();
   if(name === 'subscription-invoices') _renderMoneySubscriptionInvoicesPane();
+  if(name === 'billing-config')        _renderMoneyBillingConfigPane();
+  if(name === 'asg-trail')             _renderMoneyAsgTrailPane();
 }
 
 async function refreshMoneyCurrent() {
@@ -8080,9 +8182,12 @@ async function refreshMoneyCurrent() {
   const btn = document.getElementById('money-refresh-btn');
   if(btn) btn.classList.add('spinning');
   try {
-    if(name === 'worker-payroll')        { moneyState.payrollSummary = null; await loadMoneyPayrollData(); }
-    if(name === 'shift-invoices')        { moneyState.shiftInvList   = null; moneyState.shiftInvEligible = null; moneyState.shiftInvDetailCache = {}; await loadMoneyShiftInvoicesData(); }
+    if(name === 'timesheets')            { moneyState.timesheetsList = null; moneyState.timesheetsDetailCache = {}; await loadMoneyTimesheetsData(); }
+    if(name === 'numbermill-invoices')   { moneyState.nmbrList = null; await loadMoneyNmbrData(); }
+    if(name === 'bar-invoices')          { moneyState.barInvList = null; moneyState.barInvDetailCache = {}; await loadMoneyBarInvoicesData(); }
     if(name === 'subscription-invoices') { moneyState.subInvList     = null; await loadMoneySubscriptionInvoicesData(); }
+    if(name === 'billing-config')        { moneyState.billingConfig = null; await loadMoneyBillingConfig(); }
+    if(name === 'asg-trail' && moneyState.asgReference) { await loadMoneyAsgTrail(moneyState.asgReference); }
   } finally {
     if(btn) btn.classList.remove('spinning');
   }
@@ -8143,11 +8248,12 @@ dv2RegisterLifecycle('money', {
   onEnter: () => { showMoneySubtab(pickInitialMoneySubtab()); },
   onLeave: () => {},
   onTeardown: () => {
-    moneyState.payrollSummary = null; moneyState.payrollBreakdown = null;
-    moneyState.payrollRecentPeriods = null;
-    moneyState.shiftInvList = null; moneyState.shiftInvEligible = null;
-    moneyState.shiftInvExpandedId = null; moneyState.shiftInvDetailCache = {};
     moneyState.subInvList = null; moneyState.subInvExpandedId = null;
+    moneyState.timesheetsList = null; moneyState.timesheetsExpandedId = null; moneyState.timesheetsDetailCache = {};
+    moneyState.nmbrList = null;
+    moneyState.barInvList = null; moneyState.barInvExpandedId = null; moneyState.barInvDetailCache = {};
+    moneyState.asgTrail = null; moneyState.asgMargin = null; moneyState.asgReference = null;
+    moneyState.billingConfig = null;
   }
 });
 
@@ -8176,13 +8282,16 @@ dv2RegisterLifecycle('money', {
         if(segs[1] && MONEY_SUBTABS.includes(segs[1])) showMoneySubtab(segs[1]);
         const expandId = params.get('expand');
         const filterBar = params.get('bar_id');
-        if(filterBar && (segs[1] === 'shift-invoices' || segs[1] === 'subscription-invoices')) {
+        if(filterBar && segs[1] === 'subscription-invoices') {
           const ids = filterBar.split(',').map(s => parseInt(s, 10)).filter(n => Number.isFinite(n));
-          if(segs[1] === 'shift-invoices')        { moneyState.shiftInvBarIds = ids; moneyState.shiftInvList = null; }
-          if(segs[1] === 'subscription-invoices') { moneyState.subInvBarIds   = ids; moneyState.subInvList   = null; }
+          moneyState.subInvBarIds = ids; moneyState.subInvList = null;
         }
-        if(expandId && segs[1] === 'shift-invoices') {
-          setTimeout(() => { moneyState.shiftInvExpandedId = parseInt(expandId, 10); _renderMoneyShiftInvoicesPane(); }, 600);
+        if(filterBar && segs[1] === 'bar-invoices') {
+          const first = parseInt(filterBar.split(',')[0], 10);
+          if(Number.isFinite(first)) { moneyState.barInvBarFilter = String(first); moneyState.barInvList = null; }
+        }
+        if(expandId && segs[1] === 'bar-invoices') {
+          setTimeout(() => { moneyState.barInvExpandedId = parseInt(expandId, 10); _renderMoneyBarInvoicesPane(); }, 600);
         }
         return;
       }
@@ -8198,280 +8307,10 @@ dv2RegisterLifecycle('money', {
   }
 })();
 
-// ----- Phase 4.2: Worker Payroll -----
-
-async function loadMoneyPayrollData() {
-  const pane = document.getElementById('money-payroll-pane');
-  if(pane) pane.innerHTML = '<div class="health-loading">Loading Worker Payroll...</div>';
-  if(!moneyState.payrollPeriodStart) moneyState.payrollPeriodStart = _moneyCurrentPeriodStart();
-  try {
-    const ps = moneyState.payrollPeriodStart;
-    const [summary, breakdown, recent] = await Promise.all([
-      sbAuth.rpc('f38_money_payroll_period_summary',    { p_period_start: ps }),
-      sbAuth.rpc('f38_money_payroll_worker_breakdown',  { p_period_start: ps }),
-      sbAuth.rpc('f38_money_payroll_recent_periods',    { p_limit: 12 })
-    ]);
-    if(summary.error || breakdown.error || recent.error) throw (summary.error || breakdown.error || recent.error);
-    moneyState.payrollSummary = summary.data || {};
-    moneyState.payrollBreakdown = breakdown.data || [];
-    moneyState.payrollRecentPeriods = recent.data || [];
-    _renderMoneyPayrollPane();
-  } catch(err) {
-    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadMoneyPayrollData()">Retry</button></div>';
-  }
-}
-
-function setMoneyPayrollPeriod(periodStartIso) {
-  moneyState.payrollPeriodStart = periodStartIso;
-  moneyState.payrollSummary = null;
-  loadMoneyPayrollData();
-}
-
-function _renderMoneyPayrollPane() {
-  const pane = document.getElementById('money-payroll-pane');
-  if(!pane) return;
-  const ps = moneyState.payrollPeriodStart;
-  const summary = moneyState.payrollSummary || {};
-  const breakdown = moneyState.payrollBreakdown || [];
-  const recent = moneyState.payrollRecentPeriods || [];
-
-  const currentRecent = recent.find(r => r.period_start === ps) || {};
-  const csvDot = currentRecent.csv_exported_at ? 'green' : 'grey';
-  const invDot = currentRecent.invoice_paid_at ? 'green' : (currentRecent.invoice_received_at ? 'red' : 'grey');
-
-  // Period selector dropdown
-  const periodOptions = recent.map(r => {
-    const sel = r.period_start === ps ? ' selected' : '';
-    const csvMark = r.csv_exported_at ? '●' : '○';
-    const invMark = r.invoice_paid_at ? '●' : (r.invoice_received_at ? '!' : '○');
-    return '<option value="' + r.period_start + '"' + sel + '>'
-      + _moneyFmtPeriod(r.period_start, r.period_end).replace('&mdash;','-')
-      + '  [csv ' + csvMark + ' / inv ' + invMark + ']'
-      + '</option>';
-  }).join('');
-
-  const selectorHtml = ''
-    + '<div class="money-period-selector">'
-    +   '<span class="label">Pay period</span>'
-    +   '<select onchange="setMoneyPayrollPeriod(this.value)">' + periodOptions + '</select>'
-    +   '<span style="color:var(--grey);font-size:11px;margin-left:6px;"><span class="dot ' + csvDot + '"></span>CSV  <span class="dot ' + invDot + '"></span>Invoice</span>'
-    + '</div>';
-
-  // Summary tiles
-  const tilesHtml = ''
-    + '<div class="health-tile-row">'
-    +   '<div class="health-tile"><span class="label">Total workers</span><span class="value">' + (summary.total_workers || 0) + '</span><span class="sub">distinct workers with shifts in period</span></div>'
-    +   '<div class="health-tile"><span class="label">Total shifts</span><span class="value">' + (summary.total_shifts || 0) + '</span><span class="sub">completed shifts</span></div>'
-    +   '<div class="health-tile"><span class="label">Total hours</span><span class="value">' + (summary.total_hours || 0) + '</span><span class="sub">sum of shift duration</span></div>'
-    +   '<div class="health-tile"><span class="label">Total gross pay</span><span class="value">' + _moneyFmtCurrency(summary.total_gross_pay) + '</span><span class="sub">hours &times; hourly rate</span></div>'
-    + '</div>';
-
-  // Period status strip
-  const csvNoteHtml = '<div style="font-size:10px;color:var(--grey);margin-top:6px;line-height:1.4;">CSV includes Shift Reference (Glasi Ref) for cross-linking to bar invoices.</div>';
-  const csvCellHtml = currentRecent.csv_exported_at
-    ? '<div class="value"><span class="money-status-pill green">Generated ' + _moneyFmtDate(currentRecent.csv_exported_at) + '</span></div>'
-      + '<div class="actions"><button class="ops-sched-btn primary" onclick="exportNumbermillCsv()">Re-export</button>'
-      + (moneyState.payrollLastCsvBlobUrl ? ' <a class="health-link" href="' + moneyState.payrollLastCsvBlobUrl + '" download="' + _opsEscape(moneyState.payrollLastCsvFilename || 'numbermill.csv') + '">Download last export</a>' : '')
-      + '</div>' + csvNoteHtml
-    : '<div class="value"><span class="money-status-pill grey">Not yet generated</span></div>'
-      + '<div class="actions"><button class="ops-sched-btn primary" onclick="exportNumbermillCsv()">Export Numbermill CSV</button></div>' + csvNoteHtml;
-
-  const invRecCellHtml = currentRecent.invoice_received_at
-    ? '<div class="value"><span class="money-status-pill amber">Received ' + _moneyFmtDate(currentRecent.invoice_received_at) + ', ' + _moneyFmtCurrency(currentRecent.invoice_amount) + '</span></div>'
-      + '<div class="actions"><button class="ops-sched-btn" onclick="openMoneyMarkReceivedModal(&quot;' + ps + '&quot;)">Edit</button></div>'
-    : '<div class="value"><span class="money-status-pill grey">Not yet received</span></div>'
-      + '<div class="actions"><button class="ops-sched-btn" onclick="openMoneyMarkReceivedModal(&quot;' + ps + '&quot;)">Mark invoice received</button></div>';
-
-  const paidEnabled = !!currentRecent.invoice_received_at;
-  const invPaidCellHtml = currentRecent.invoice_paid_at
-    ? '<div class="value"><span class="money-status-pill green">Paid ' + _moneyFmtDate(currentRecent.invoice_paid_at) + '</span></div>'
-      + '<div class="actions"><button class="ops-sched-btn" onclick="openMoneyMarkPaidModal(&quot;' + ps + '&quot;)">Edit</button></div>'
-    : '<div class="value"><span class="money-status-pill grey">Not yet paid</span></div>'
-      + '<div class="actions"><button class="ops-sched-btn primary" onclick="openMoneyMarkPaidModal(&quot;' + ps + '&quot;)"' + (paidEnabled ? '' : ' disabled title="Mark invoice received first"') + '>Mark paid</button></div>';
-
-  const stripHtml = ''
-    + '<div class="money-status-strip">'
-    +   '<div class="money-status-cell"><span class="label">Numbermill CSV export</span>' + csvCellHtml + '</div>'
-    +   '<div class="money-status-cell"><span class="label">Numbermill invoice received</span>' + invRecCellHtml + '</div>'
-    +   '<div class="money-status-cell"><span class="label">Numbermill invoice paid</span>' + invPaidCellHtml + '</div>'
-    + '</div>';
-
-  // Worker breakdown table
-  const wbRows = breakdown.length
-    ? breakdown.map(w => '<tr>'
-        + '<td><button class="health-link" onclick="_moneyGoToWorker(' + w.application_id + ')">' + _opsEscape(w.worker_name) + '</button></td>'
-        + '<td>' + (w.shifts_count || 0) + '</td>'
-        + '<td>' + (w.hours || 0) + '</td>'
-        + '<td>' + _moneyFmtCurrency(w.pay_rate) + '/hr</td>'
-        + '<td><strong>' + _moneyFmtCurrency(w.total_pay) + '</strong></td>'
-        + '</tr>').join('')
-    : '<tr><td colspan="5" style="padding:24px 10px;text-align:center;color:var(--grey);">No shifts in this period.</td></tr>';
-  const wbHtml = ''
-    + '<section class="health-section">'
-    +   '<h3 class="health-section-h3">Worker breakdown</h3>'
-    +   '<div class="health-section-note">Sorted by total pay (highest earners first). Click a worker name to jump to their profile.</div>'
-    +   '<table class="health-table"><thead><tr><th>Worker</th><th>Shifts</th><th>Hours</th><th>Pay rate</th><th>Total pay</th></tr></thead><tbody>' + wbRows + '</tbody></table>'
-    + '</section>';
-
-  // Recent CSV exports section
-  const recentRows = recent.length
-    ? recent.map(r => {
-        const invPill = r.invoice_paid_at
-          ? '<span class="money-status-pill green">Paid</span>'
-          : r.invoice_received_at
-            ? '<span class="money-status-pill amber">Received</span>'
-            : r.csv_exported_at
-              ? '<span class="money-status-pill grey">Awaiting invoice</span>'
-              : '<span class="money-status-pill grey">No invoice</span>';
-        return '<tr>'
-          + '<td>' + _moneyFmtPeriod(r.period_start, r.period_end) + '</td>'
-          + '<td>' + (r.csv_exported_at ? _moneyFmtDate(r.csv_exported_at) : '<span class="muted">,</span>') + '</td>'
-          + '<td>' + (r.total_workers || 0) + '</td>'
-          + '<td>' + _moneyFmtCurrency(r.total_pay) + '</td>'
-          + '<td>' + invPill + '</td>'
-          + '<td>' + (r.period_start === ps ? '<span style="color:var(--grey);font-size:11px;">current</span>' : '<button class="health-link" onclick="setMoneyPayrollPeriod(&quot;' + r.period_start + '&quot;)">Open</button>') + '</td>'
-          + '</tr>';
-      }).join('')
-    : '<tr><td colspan="6" style="padding:24px 10px;text-align:center;color:var(--grey);">No prior periods.</td></tr>';
-  const recentHtml = ''
-    + '<section class="health-section">'
-    +   '<h3 class="health-section-h3">Recent periods <span style="color:var(--grey);font-size:10px;margin-left:8px;">LAST 12</span></h3>'
-    +   '<table class="health-table"><thead><tr><th>Period</th><th>CSV exported</th><th>Workers</th><th>Total pay</th><th>Numbermill invoice</th><th></th></tr></thead><tbody>' + recentRows + '</tbody></table>'
-    + '</section>';
-
-  pane.innerHTML = selectorHtml + tilesHtml + stripHtml + wbHtml + recentHtml;
-}
-
-// CSV export: fetch shaped rows from the RPC, build CSV in browser, download.
-async function exportNumbermillCsv() {
-  const ps = moneyState.payrollPeriodStart;
-  if(!ps) return;
-  const res = await sbAuth.rpc('f38_money_payroll_csv_rows', { p_period_start: ps });
-  if(res.error) { alert('CSV export failed: ' + res.error.message); return; }
-  const data = res.data || {};
-  const rows = data.rows || [];
-  if(!rows.length) { alert('No completed shifts in this period - nothing to export.'); return; }
-
-  // Glasi Ref first column so Sam can audit per-shift P&L: same ref appears
-  // on the bar's shift invoice in Money / Shift Invoices.
-  const headers = ['Glasi Ref','Worker ID','Worker Name','Pay Rate','Shift Start','Shift End','Hours','Shift Total'];
-  const csvLines = [headers.join(',')];
-  for(const r of rows) {
-    const fmtTs = ts => ts ? new Date(ts).toISOString() : '';
-    const cells = [
-      String(r.glasi_ref || ''),
-      String(r.worker_id || ''),
-      String(r.worker_name || '').replace(/"/g,'""'),
-      Number(r.pay_rate || 0).toFixed(2),
-      fmtTs(r.shift_start),
-      fmtTs(r.shift_end),
-      Number(r.shift_hours || 0).toFixed(2),
-      Number(r.shift_total || 0).toFixed(2)
-    ].map(c => /[",\n]/.test(c) ? '"' + c + '"' : c);
-    csvLines.push(cells.join(','));
-  }
-  const csv = csvLines.join('\n');
-  const filename = 'numbermill-payroll-' + data.period_start + '-to-' + data.period_end + '.csv';
-
-  // Record export server-side so the Recent Periods view reflects it.
-  await sbAuth.rpc('f38_money_payroll_record_export', {
-    p_period_start: data.period_start,
-    p_period_end:   data.period_end,
-    p_filename:     filename
-  });
-
-  // Browser download.
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  moneyState.payrollLastCsvFilename = filename;
-  moneyState.payrollLastCsvBlobUrl = url;
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-
-  // Refresh the period state so the strip flips to "Generated".
-  moneyState.payrollSummary = null;
-  await loadMoneyPayrollData();
-}
-
-function openMoneyMarkReceivedModal(periodStartIso) {
-  moneyState.payrollMarkReceivedPeriod = periodStartIso;
-  const recent = (moneyState.payrollRecentPeriods || []).find(r => r.period_start === periodStartIso) || {};
-  document.getElementById('money-mark-received-summary').textContent = _moneyFmtPeriod(periodStartIso, _moneyPeriodEnd(periodStartIso)).replace('&mdash;','-');
-  document.getElementById('money-mark-received-amount').value = recent.invoice_amount != null ? recent.invoice_amount : '';
-  const today = new Date().toISOString().slice(0,10);
-  const dt = recent.invoice_received_at ? new Date(recent.invoice_received_at).toISOString().slice(0,10) : today;
-  document.getElementById('money-mark-received-date').value = dt;
-  document.getElementById('money-mark-received-notes').value = '';
-  document.getElementById('money-mark-received-err').textContent = '';
-  document.getElementById('money-mark-received-modal').style.display = 'flex';
-  setTimeout(() => document.getElementById('money-mark-received-amount').focus(), 50);
-}
-function closeMoneyMarkReceivedModal() {
-  document.getElementById('money-mark-received-modal').style.display = 'none';
-  moneyState.payrollMarkReceivedPeriod = null;
-}
-async function submitMoneyMarkReceived() {
-  const ps = moneyState.payrollMarkReceivedPeriod;
-  if(!ps) { closeMoneyMarkReceivedModal(); return; }
-  const errEl = document.getElementById('money-mark-received-err');
-  const amount = parseFloat(document.getElementById('money-mark-received-amount').value);
-  const date = document.getElementById('money-mark-received-date').value;
-  const notes = document.getElementById('money-mark-received-notes').value.trim() || null;
-  if(!isFinite(amount) || amount < 0) { errEl.textContent = 'Enter a non-negative invoice amount.'; return; }
-  if(!date) { errEl.textContent = 'Pick a received date.'; return; }
-  const btn = document.getElementById('money-mark-received-save');
-  btn.disabled = true; btn.textContent = 'Saving...';
-  try {
-    const res = await sbAuth.rpc('f38_money_payroll_mark_invoice_received', {
-      p_period_start: ps, p_amount: amount, p_received_date: new Date(date + 'T12:00:00Z').toISOString(), p_notes: notes
-    });
-    if(res.error) throw res.error;
-    closeMoneyMarkReceivedModal();
-    moneyState.payrollSummary = null;
-    await loadMoneyPayrollData();
-  } catch(e) {
-    errEl.textContent = 'Save failed: ' + (e.message || 'unknown');
-    btn.disabled = false; btn.textContent = 'Save';
-  }
-}
-
-function openMoneyMarkPaidModal(periodStartIso) {
-  moneyState.payrollMarkPaidPeriod = periodStartIso;
-  document.getElementById('money-mark-paid-summary').textContent = _moneyFmtPeriod(periodStartIso, _moneyPeriodEnd(periodStartIso)).replace('&mdash;','-');
-  const today = new Date().toISOString().slice(0,10);
-  document.getElementById('money-mark-paid-date').value = today;
-  document.getElementById('money-mark-paid-notes').value = '';
-  document.getElementById('money-mark-paid-err').textContent = '';
-  document.getElementById('money-mark-paid-modal').style.display = 'flex';
-  setTimeout(() => document.getElementById('money-mark-paid-date').focus(), 50);
-}
-function closeMoneyMarkPaidModal() {
-  document.getElementById('money-mark-paid-modal').style.display = 'none';
-  moneyState.payrollMarkPaidPeriod = null;
-}
-async function submitMoneyMarkPaid() {
-  const ps = moneyState.payrollMarkPaidPeriod;
-  if(!ps) { closeMoneyMarkPaidModal(); return; }
-  const errEl = document.getElementById('money-mark-paid-err');
-  const date = document.getElementById('money-mark-paid-date').value;
-  const notes = document.getElementById('money-mark-paid-notes').value.trim() || null;
-  if(!date) { errEl.textContent = 'Pick a payment date.'; return; }
-  const btn = document.getElementById('money-mark-paid-save');
-  btn.disabled = true; btn.textContent = 'Saving...';
-  try {
-    const res = await sbAuth.rpc('f38_money_payroll_mark_invoice_paid', {
-      p_period_start: ps, p_payment_date: date, p_payment_notes: notes
-    });
-    if(res.error) throw res.error;
-    closeMoneyMarkPaidModal();
-    moneyState.payrollSummary = null;
-    await loadMoneyPayrollData();
-  } catch(e) {
-    errEl.textContent = 'Save failed: ' + (e.message || 'unknown');
-    btn.disabled = false; btn.textContent = 'Save';
-  }
-}
+// ----- Worker Payroll subsystem (retired) -----
+// The per-worker Worker Payroll tab and its render / load / CSV-export /
+// mark-invoice handlers were removed. The Timesheets tab and NumberMill
+// Invoices tab now own per-period payroll and umbrella invoice settlement.
 
 // ====================================================================
 // Phase 4b (19 May 2026): Shift Invoices + Subscription Invoices.
@@ -8495,222 +8334,562 @@ function _moneyInvoiceStatusLine(inv) {
   return '<span class="money-status-pill ' + cls + '">' + (inv.status || 'draft').toUpperCase() + '</span>';
 }
 
-// ----- Phase 4b.3a: Shift Invoices -----
+// ====================================================================
+// Shift Money Trail (ASG-threaded). Four sub-tabs plus a per-ASG unified
+// view reachable from search:
+//   Timesheets         -> timesheets_list / timesheet_detail / generate_timesheet
+//   NumberMill Invoices -> numbermill_invoices_list / ingest_numbermill_invoice / settle_numbermill_invoice
+//   Bar Invoices       -> bar_invoices_list / bar_invoice_detail / f38_money_billing_update_invoice_status
+//   Money Trail (ASG)  -> assignment_money_trail / glasi_margin_per_asg
+//   Billing Config     -> get_billing_config / update_billing_config
+// The bar invoice reference IS the Assignment Schedule reference (ASG-...);
+// there is no shift-number derived string anywhere in this trail.
+// ====================================================================
 
-function _moneyShiftInvDefaultDateFrom() {
-  const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().slice(0,10);
+function _moneyFmtTimeLong(ts) {
+  return ts ? new Date(ts).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '<span class="muted">,</span>';
 }
-function _moneyShiftInvDefaultDateTo() { return new Date().toISOString().slice(0,10); }
 
-async function loadMoneyShiftInvoicesData() {
-  const pane = document.getElementById('money-shift-invoices-pane');
-  if(pane) pane.innerHTML = '<div class="health-loading">Loading Shift Invoices...</div>';
-  if(!moneyState.shiftInvDateFrom) moneyState.shiftInvDateFrom = _moneyShiftInvDefaultDateFrom();
-  if(!moneyState.shiftInvDateTo)   moneyState.shiftInvDateTo   = _moneyShiftInvDefaultDateTo();
+// ----- Timesheets -----
+
+// Last completed Monday to Sunday week. Returns { start, end } ISO dates.
+function _moneyLastCompletedWeek() {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const isoDow = ((d.getDay() + 6) % 7) + 1; // 1=Mon..7=Sun
+  // Step back to this week's Monday, then back one more week for the last completed week.
+  d.setDate(d.getDate() - (isoDow - 1) - 7);
+  const start = d.toISOString().slice(0, 10);
+  const e = new Date(d); e.setDate(e.getDate() + 6);
+  const end = e.toISOString().slice(0, 10);
+  return { start, end };
+}
+
+async function loadMoneyTimesheetsData() {
+  const pane = document.getElementById('money-timesheets-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading Timesheets...</div>';
   try {
-    const [listRes, eligRes] = await Promise.all([
-      sbAuth.rpc('f39_shift_invoice_list', {
-        p_date_from: moneyState.shiftInvDateFrom,
-        p_date_to:   moneyState.shiftInvDateTo,
-        p_bar_ids:   (moneyState.shiftInvBarIds && moneyState.shiftInvBarIds.length ? moneyState.shiftInvBarIds : null),
-        p_statuses:  (moneyState.shiftInvStatuses && moneyState.shiftInvStatuses.length ? moneyState.shiftInvStatuses : null)
-      }),
-      sbAuth.rpc('f39_shift_invoice_eligible_shifts', { p_bar_id: null })
-    ]);
-    if(listRes.error || eligRes.error) throw (listRes.error || eligRes.error);
-    moneyState.shiftInvList     = listRes.data || [];
-    moneyState.shiftInvEligible = eligRes.data || [];
-    _renderMoneyShiftInvoicesPane();
+    const res = await sbAuth.rpc('timesheets_list');
+    if(res.error) throw res.error;
+    moneyState.timesheetsList = res.data || [];
+    _renderMoneyTimesheetsPane();
   } catch(err) {
-    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadMoneyShiftInvoicesData()">Retry</button></div>';
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadMoneyTimesheetsData()">Retry</button></div>';
   }
 }
 
-function setShiftInvDateFrom(v) { moneyState.shiftInvDateFrom = v; moneyState.shiftInvList = null; loadMoneyShiftInvoicesData(); }
-function setShiftInvDateTo(v)   { moneyState.shiftInvDateTo   = v; moneyState.shiftInvList = null; loadMoneyShiftInvoicesData(); }
-function toggleShiftInvStatus(s) {
-  const i = moneyState.shiftInvStatuses.indexOf(s);
-  if(i >= 0) moneyState.shiftInvStatuses.splice(i, 1);
-  else moneyState.shiftInvStatuses.push(s);
-  if(!moneyState.shiftInvStatuses.length) moneyState.shiftInvStatuses = ['draft','sent','paid'];
-  moneyState.shiftInvList = null;
-  loadMoneyShiftInvoicesData();
-}
-function toggleShiftInvBarFilter(barId) {
-  const id = parseInt(barId, 10);
-  const idx = moneyState.shiftInvBarIds.indexOf(id);
-  if(idx >= 0) moneyState.shiftInvBarIds.splice(idx, 1);
-  else moneyState.shiftInvBarIds.push(id);
-  moneyState.shiftInvList = null;
-  loadMoneyShiftInvoicesData();
-}
-function openShiftInvBarPicker(e) {
-  if(e) { e.preventDefault(); e.stopPropagation(); }
-  const bars = window.bars || [];
-  if(!bars.length) { alert('Bars cache empty; visit Network -> Bars first.'); return; }
-  const lines = bars.map(b => ((moneyState.shiftInvBarIds.includes(Number(b.id)) ? '● ' : '○ ') + b.id + '  ' + b.name)).join('\n');
-  const picked = window.prompt('Bar filter (toggle). Enter the bar IDs to TOGGLE, comma-separated. Currently selected: ' + (moneyState.shiftInvBarIds.length ? moneyState.shiftInvBarIds.join(',') : 'none') + '\n\n' + lines, '');
-  if(picked === null) return;
-  const ids = picked.split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isFinite(n));
-  for(const id of ids) toggleShiftInvBarFilter(id);
-}
-
-async function bulkGenerateShiftInvoices() {
-  const eligible = moneyState.shiftInvEligible || [];
-  if(!eligible.length) { alert('No uninvoiced completed shifts.'); return; }
-  if(!confirm('Generate invoices for ' + eligible.length + ' uninvoiced completed shift' + (eligible.length === 1 ? '' : 's') + '?')) return;
-  const ids = eligible.map(e => e.shift_id);
-  const res = await sbAuth.rpc('f39_shift_invoice_generate_bulk', { p_shift_ids: ids });
-  if(res.error) { alert('Bulk generate failed: ' + res.error.message); return; }
-  const created = (res.data && res.data.created) || [];
-  const skipped = (res.data && res.data.skipped) || [];
-  alert('Created ' + created.length + ' invoice' + (created.length === 1 ? '' : 's') + (skipped.length ? '; ' + skipped.length + ' skipped.' : '.'));
-  moneyState.shiftInvList = null; moneyState.shiftInvEligible = null; moneyState.shiftInvDetailCache = {};
-  await loadMoneyShiftInvoicesData();
-}
-
-async function generateOneShiftInvoice(shiftId) {
-  if(!shiftId) return;
-  const res = await sbAuth.rpc('f39_shift_invoice_generate', { p_shift_id: shiftId });
-  if(res.error) { alert('Generate failed: ' + res.error.message); return; }
-  moneyState.shiftInvList = null; moneyState.shiftInvEligible = null; moneyState.shiftInvDetailCache = {};
-  await loadMoneyShiftInvoicesData();
-}
-
-function _renderMoneyShiftInvoicesPane() {
-  const pane = document.getElementById('money-shift-invoices-pane');
+function _renderMoneyTimesheetsPane() {
+  const pane = document.getElementById('money-timesheets-pane');
   if(!pane) return;
-  const list = moneyState.shiftInvList || [];
-  const eligible = moneyState.shiftInvEligible || [];
+  const list = moneyState.timesheetsList || [];
 
-  const allStatuses = ['draft','sent','paid'];
-  const statusPills = allStatuses.map(s => {
-    const active = moneyState.shiftInvStatuses.includes(s);
-    return '<button class="net-pill' + (active ? ' active' : '') + '" onclick="toggleShiftInvStatus(&quot;' + s + '&quot;)">' + s.toUpperCase() + '</button>';
-  }).join('');
-
-  const barChips = moneyState.shiftInvBarIds.length
-    ? moneyState.shiftInvBarIds.map(id => {
-        const b = (window.bars || []).find(x => Number(x.id) === id);
-        return '<span class="bar-chip" onclick="event.stopPropagation();toggleShiftInvBarFilter(' + id + ')">' + _opsEscape(b ? b.name : ('Bar #' + id)) + ' &times;</span>';
-      }).join('')
-    : '<span style="color:var(--grey);font-size:11px;">All bars (click to filter)</span>';
-
-  const filterBar = ''
-    + '<div class="history-filter-bar">'
-    +   '<input type="date" value="' + (moneyState.shiftInvDateFrom || '') + '" onchange="setShiftInvDateFrom(this.value)" />'
-    +   '<span style="color:var(--grey);font-size:11px;">to</span>'
-    +   '<input type="date" value="' + (moneyState.shiftInvDateTo || '') + '" onchange="setShiftInvDateTo(this.value)" />'
-    +   '<div class="bar-multi" onclick="openShiftInvBarPicker(event)">' + barChips + '</div>'
-    +   '<div class="pill-group">' + statusPills + '</div>'
+  const genRow = '<div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
+    + '<button class="ops-sched-btn primary" onclick="openMoneyGenTimesheetModal()">+ Generate timesheet for period</button>'
+    + '<span style="color:var(--grey);font-size:11px;">Aggregates assignments by ISO week. Download the CSV to email NumberMill.</span>'
     + '</div>';
 
-  const bulkBtnHtml = eligible.length
-    ? '<button class="ops-sched-btn primary" onclick="bulkGenerateShiftInvoices()">+ Generate invoices for ' + eligible.length + ' uninvoiced completed shift' + (eligible.length === 1 ? '' : 's') + '</button>'
-    : '<span style="color:var(--grey);font-size:12px;">No uninvoiced completed shifts at present.</span>';
-  const bulkRow = '<div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' + bulkBtnHtml + '</div>';
-
   const rows = list.length
-    ? list.map(inv => {
-        const isExpanded = moneyState.shiftInvExpandedId === inv.invoice_id;
-        const head = '<tr class="clickable" onclick="toggleMoneyShiftInvoiceRow(' + inv.invoice_id + ')">'
-          + '<td>' + _opsEscape(inv.invoice_number) + '</td>'
-          + '<td><button class="health-link" onclick="event.stopPropagation();_moneyGoToBar(' + inv.bar_id + ')">' + _opsEscape(inv.bar_name || '') + '</button></td>'
-          + '<td style="font-variant-numeric:tabular-nums;color:var(--ice);">' + _opsEscape(inv.glasi_ref, '<span class="muted">,</span>') + '</td>'
-          + '<td>' + _moneyFmtDate(inv.shift_date) + '</td>'
-          + '<td>' + _opsEscape(inv.worker_name || '') + (inv.tier != null ? ' <span class="net-worker-tier">T' + inv.tier + '</span>' : '') + '</td>'
-          + '<td>' + (inv.hours || 0) + '</td>'
-          + '<td>' + _moneyFmtCurrency(inv.amount) + '</td>'
-          + '<td>' + _moneyInvoiceStatusLine(inv) + '</td>'
+    ? list.map(t => {
+        const isExpanded = moneyState.timesheetsExpandedId === t.timesheet_id;
+        const statusPill = '<span class="money-status-pill ' + (t.status === 'sent' ? 'green' : (t.status === 'generated' ? 'amber' : 'grey')) + '">' + (t.status || 'draft').toUpperCase() + '</span>';
+        const head = '<tr class="clickable" onclick="toggleMoneyTimesheetRow(' + t.timesheet_id + ')">'
+          + '<td style="font-variant-numeric:tabular-nums;color:var(--ice);">' + _opsEscape(t.reference, '<span class="muted">,</span>') + '</td>'
+          + '<td>' + _moneyFmtPeriod(t.period_start, t.period_end).replace('&mdash;', '-') + '</td>'
+          + '<td>' + (t.assignment_count || 0) + '</td>'
+          + '<td><strong>' + _moneyFmtCurrency(t.total_worker_pay) + '</strong></td>'
+          + '<td>' + statusPill + '</td>'
+          + '<td>' + _moneyFmtDate(t.generated_at) + '</td>'
+          + '<td>' + (t.sent_at ? _moneyFmtDate(t.sent_at) : '<span class="muted">,</span>') + '</td>'
           + '<td>'
-          +   (inv.status === 'draft' ? '<button class="health-link" onclick="event.stopPropagation();markBarInvoiceStatus(' + inv.invoice_id + ', &quot;sent&quot;)">Mark sent</button> &middot; ' : '')
-          +   (inv.status === 'sent'  ? '<button class="health-link" onclick="event.stopPropagation();markBarInvoiceStatus(' + inv.invoice_id + ', &quot;paid&quot;)">Mark paid</button> &middot; ' : '')
-          +   '<button class="health-link" onclick="event.stopPropagation();printShiftInvoice(' + inv.invoice_id + ')">Print / PDF</button>'
+          +   '<button class="health-link" onclick="event.stopPropagation();downloadTimesheetCsv(' + t.timesheet_id + ')">Download CSV</button> &middot; '
+          +   '<button class="health-link" onclick="event.stopPropagation();downloadTimesheetPdf(' + t.timesheet_id + ')">Download PDF</button>'
           + '</td>'
           + '</tr>';
         const exp = isExpanded
-          ? '<tr><td colspan="9" style="padding:0;background:transparent;">' + (_renderMoneyShiftInvoiceDetail(inv.invoice_id) || '<div class="health-loading" style="margin:8px 0;">Loading invoice detail...</div>') + '</td></tr>'
+          ? '<tr><td colspan="8" style="padding:0;background:transparent;">' + (_renderMoneyTimesheetDetail(t.timesheet_id) || '<div class="health-loading" style="margin:8px 0;">Loading timesheet detail...</div>') + '</td></tr>'
           : '';
         return head + exp;
       }).join('')
-    : '<tr><td colspan="9" style="padding:24px 10px;text-align:center;color:var(--grey);">No shift invoices match these filters.</td></tr>';
+    : '<tr><td colspan="8" style="padding:24px 10px;text-align:center;color:var(--grey);">No timesheets generated yet.</td></tr>';
 
-  const tableHtml = ''
+  pane.innerHTML = genRow
     + '<section class="health-section">'
-    +   '<h3 class="health-section-h3">Shift Invoices <span style="color:var(--grey);font-size:10px;margin-left:8px;">' + list.length + ' RESULTS</span></h3>'
-    +   '<table class="health-table"><thead><tr><th>Invoice #</th><th>Bar</th><th>Glasi Ref</th><th>Shift date</th><th>Worker</th><th>Hours</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
+    +   '<h3 class="health-section-h3">Timesheets <span style="color:var(--grey);font-size:10px;margin-left:8px;">' + list.length + ' RESULTS</span></h3>'
+    +   '<table class="health-table"><thead><tr><th>Reference</th><th>Period</th><th>Assignments</th><th>Worker pay</th><th>Status</th><th>Generated</th><th>Sent</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
     + '</section>';
-
-  pane.innerHTML = filterBar + bulkRow + tableHtml;
 }
 
-async function toggleMoneyShiftInvoiceRow(invoiceId) {
-  if(moneyState.shiftInvExpandedId === invoiceId) {
-    moneyState.shiftInvExpandedId = null;
-    _renderMoneyShiftInvoicesPane();
+async function toggleMoneyTimesheetRow(timesheetId) {
+  if(moneyState.timesheetsExpandedId === timesheetId) {
+    moneyState.timesheetsExpandedId = null;
+    _renderMoneyTimesheetsPane();
     return;
   }
-  moneyState.shiftInvExpandedId = invoiceId;
-  _renderMoneyShiftInvoicesPane();
-  if(!moneyState.shiftInvDetailCache[invoiceId]) {
-    const res = await sbAuth.rpc('f39_shift_invoice_detail', { p_invoice_id: invoiceId });
-    if(res.error) moneyState.shiftInvDetailCache[invoiceId] = { _error: res.error.message };
-    else          moneyState.shiftInvDetailCache[invoiceId] = res.data || {};
-    _renderMoneyShiftInvoicesPane();
+  moneyState.timesheetsExpandedId = timesheetId;
+  _renderMoneyTimesheetsPane();
+  if(!moneyState.timesheetsDetailCache[timesheetId]) {
+    const res = await sbAuth.rpc('timesheet_detail', { p_timesheet_id: timesheetId });
+    if(res.error) moneyState.timesheetsDetailCache[timesheetId] = { _error: res.error.message };
+    else          moneyState.timesheetsDetailCache[timesheetId] = res.data || {};
+    _renderMoneyTimesheetsPane();
   }
 }
 
-function _renderMoneyShiftInvoiceDetail(invoiceId) {
-  const d = moneyState.shiftInvDetailCache[invoiceId];
+function _renderMoneyTimesheetDetail(timesheetId) {
+  const d = moneyState.timesheetsDetailCache[timesheetId];
+  if(!d) return null;
+  if(d._error) return '<div class="health-error">Failed to load detail: ' + _opsEscape(d._error) + '</div>';
+  const header = d.header || {};
+  const lines = d.lines || [];
+  const lineRows = lines.length
+    ? lines.map(l => '<tr>'
+        + '<td style="font-variant-numeric:tabular-nums;"><button class="health-link" onclick="openMoneyAsgTrail(&quot;' + _opsEscape(l.asg_reference) + '&quot;)">' + _opsEscape(l.asg_reference, '<span class="muted">,</span>') + '</button></td>'
+        + '<td>' + _opsEscape(l.glasi_worker_ref, '<span class="muted">,</span>') + '</td>'
+        + '<td>' + _opsEscape(l.numbermill_worker_ref, '<span class="muted">,</span>') + '</td>'
+        + '<td>' + (l.tier != null ? ('T' + l.tier) : '<span class="muted">,</span>') + '</td>'
+        + '<td>' + (l.requested_hours || 0) + '</td>'
+        + '<td>' + _moneyFmtCurrency(l.hourly_rate) + '/hr</td>'
+        + '<td><strong>' + _moneyFmtCurrency(l.worker_pay) + '</strong></td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="7" style="padding:16px 10px;text-align:center;color:var(--grey);">No lines on this timesheet.</td></tr>';
+  return ''
+    + '<div class="money-bar-expand">'
+    +   '<div class="section"><h4>Timesheet ' + _opsEscape(header.reference) + '</h4>'
+    +     '<div class="kv">'
+    +       '<div><span class="k">Period</span>' + _moneyFmtPeriod(header.period_start, header.period_end).replace('&mdash;', '-') + '</div>'
+    +       '<div><span class="k">Assignments</span>' + (header.assignment_count || lines.length) + '</div>'
+    +       '<div><span class="k">Total worker pay</span><strong>' + _moneyFmtCurrency(header.total_worker_pay) + '</strong></div>'
+    +       '<div><span class="k">Generated</span>' + _moneyFmtTimeLong(header.generated_at) + '</div>'
+    +       (header.sent_at ? ('<div><span class="k">Sent</span>' + _moneyFmtTimeLong(header.sent_at) + '</div>') : '')
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="section"><h4>Lines</h4>'
+    +     '<table class="health-table"><thead><tr><th>ASG reference</th><th>Glasi ref</th><th>NumberMill ref</th><th>Tier</th><th>Hours</th><th>Rate</th><th>Worker pay</th></tr></thead><tbody>' + lineRows + '</tbody></table>'
+    +   '</div>'
+    +   '<div class="section"><h4>Export</h4>'
+    +     '<button class="ops-sched-btn primary" onclick="downloadTimesheetCsv(' + timesheetId + ')">Download CSV</button> '
+    +     '<button class="ops-sched-btn" onclick="downloadTimesheetPdf(' + timesheetId + ')">Download PDF</button>'
+    +   '</div>'
+    + '</div>';
+}
+
+function openMoneyGenTimesheetModal() {
+  const wk = _moneyLastCompletedWeek();
+  const startEl = document.getElementById('money-gen-timesheet-start');
+  const endEl = document.getElementById('money-gen-timesheet-end');
+  const errEl = document.getElementById('money-gen-timesheet-err');
+  const modal = document.getElementById('money-gen-timesheet-modal');
+  if(startEl) startEl.value = wk.start;
+  if(endEl) endEl.value = wk.end;
+  if(errEl) errEl.textContent = '';
+  if(modal) modal.style.display = 'flex';
+}
+function closeMoneyGenTimesheetModal() {
+  const modal = document.getElementById('money-gen-timesheet-modal');
+  if(modal) modal.style.display = 'none';
+}
+async function submitMoneyGenTimesheet() {
+  const startEl = document.getElementById('money-gen-timesheet-start');
+  const endEl = document.getElementById('money-gen-timesheet-end');
+  const errEl = document.getElementById('money-gen-timesheet-err');
+  const btn = document.getElementById('money-gen-timesheet-save');
+  const start = startEl ? startEl.value : '';
+  const end = endEl ? endEl.value : '';
+  if(!start || !end) { if(errEl) errEl.textContent = 'Pick both a start and end date.'; return; }
+  if(start > end) { if(errEl) errEl.textContent = 'Start must be on or before end.'; return; }
+  if(btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+  try {
+    const res = await sbAuth.rpc('generate_timesheet', { p_period_start: start, p_period_end: end });
+    if(res.error) throw res.error;
+    closeMoneyGenTimesheetModal();
+    moneyState.timesheetsList = null;
+    const newId = res.data != null ? Number(res.data) : null;
+    await loadMoneyTimesheetsData();
+    if(newId) toggleMoneyTimesheetRow(newId);
+  } catch(e) {
+    if(errEl) errEl.textContent = 'Generate failed: ' + (e.message || 'unknown');
+  } finally {
+    if(btn) { btn.disabled = false; btn.textContent = 'Generate'; }
+  }
+}
+
+// Build the NumberMill CSV client-side from timesheet_detail lines.
+async function downloadTimesheetCsv(timesheetId) {
+  let d = moneyState.timesheetsDetailCache[timesheetId];
+  if(!d || d._error) {
+    const res = await sbAuth.rpc('timesheet_detail', { p_timesheet_id: timesheetId });
+    if(res.error) { alert('CSV export failed: ' + res.error.message); return; }
+    d = res.data || {};
+    moneyState.timesheetsDetailCache[timesheetId] = d;
+  }
+  const header = d.header || {};
+  const lines = d.lines || [];
+  if(!lines.length) { alert('This timesheet has no lines to export.'); return; }
+  const cols = ['ASG reference','Glasi worker ref','NumberMill ref','Tier','Requested hours','Hourly rate','Worker pay'];
+  const csvLines = [cols.join(',')];
+  const esc = v => { const s = String(v == null ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  for(const l of lines) {
+    csvLines.push([
+      esc(l.asg_reference),
+      esc(l.glasi_worker_ref),
+      esc(l.numbermill_worker_ref),
+      esc(l.tier),
+      Number(l.requested_hours || 0).toFixed(2),
+      Number(l.hourly_rate || 0).toFixed(2),
+      Number(l.worker_pay || 0).toFixed(2)
+    ].join(','));
+  }
+  const csv = csvLines.join('\n');
+  const filename = (header.reference || 'timesheet') + '.csv';
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// TODO(PDF-via-EF): the generate-compliance-pdf Edge Function currently only
+// supports type 'asg' and type 'brd'. When a 'timesheet' PDF type is added to
+// that function, POST { type:'timesheet', timesheet_id } with the Bearer JWT
+// and stream the PDF response (mirror the bar-invoice browser-print path used
+// today). Until then, the timesheet PDF reuses the browser-print path built
+// from timesheet_detail.
+async function downloadTimesheetPdf(timesheetId) {
+  let d = moneyState.timesheetsDetailCache[timesheetId];
+  if(!d || d._error) {
+    const res = await sbAuth.rpc('timesheet_detail', { p_timesheet_id: timesheetId });
+    if(res.error) { alert('PDF export failed: ' + res.error.message); return; }
+    d = res.data || {};
+    moneyState.timesheetsDetailCache[timesheetId] = d;
+  }
+  const header = d.header || {};
+  const lines = d.lines || [];
+  const fmtDate = (ts) => ts ? new Date(ts).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+  const lineRows = lines.map(l => '<tr>'
+    + '<td>' + (l.asg_reference || '') + '</td>'
+    + '<td>' + (l.glasi_worker_ref || '') + '</td>'
+    + '<td>' + (l.numbermill_worker_ref || '') + '</td>'
+    + '<td>' + (l.tier != null ? ('T' + l.tier) : '') + '</td>'
+    + '<td class="amt">' + Number(l.requested_hours || 0).toFixed(2) + '</td>'
+    + '<td class="amt">GBP ' + Number(l.hourly_rate || 0).toFixed(2) + '</td>'
+    + '<td class="amt">GBP ' + Number(l.worker_pay || 0).toFixed(2) + '</td>'
+    + '</tr>').join('');
+  const html = '<!DOCTYPE html><html><head><meta charset="utf-8">'
+    + '<title>' + (header.reference || 'Timesheet') + '</title>'
+    + '<style>'
+    +   '@media print { @page { margin: 16mm } }'
+    +   'body{font-family:Inter,system-ui,sans-serif;color:#0F1F3D;max-width:860px;margin:24px auto;padding:24px}'
+    +   '.glasi-mark{font-family:Raleway,sans-serif;letter-spacing:8px;font-weight:700;font-size:24px;border:1.5px solid #0F1F3D;display:inline-block;padding:6px 14px;border-radius:6px}'
+    +   'h1{font-size:18px;margin:24px 0 6px}.meta{font-size:13px;color:#475569;margin:4px 0}'
+    +   'table{width:100%;border-collapse:collapse;margin:18px 0}'
+    +   'th,td{text-align:left;padding:7px;border-bottom:1px solid #e2e8f0;font-size:12px}'
+    +   '.amt{text-align:right;font-variant-numeric:tabular-nums}'
+    +   '.total-row td{font-weight:700;font-size:14px;border-bottom:none;border-top:2px solid #0F1F3D}'
+    + '</style></head><body>'
+    + '<div class="glasi-mark">GLASI</div>'
+    + '<h1>Timesheet ' + (header.reference || '') + '</h1>'
+    + '<div class="meta">Period ' + fmtDate(header.period_start) + ' to ' + fmtDate(header.period_end) + '</div>'
+    + '<div class="meta">Generated ' + fmtDate(header.generated_at) + '</div>'
+    + '<table><thead><tr><th>ASG reference</th><th>Glasi ref</th><th>NumberMill ref</th><th>Tier</th><th class="amt">Hours</th><th class="amt">Rate</th><th class="amt">Worker pay</th></tr></thead>'
+    + '<tbody>' + lineRows
+    +   '<tr class="total-row"><td colspan="6">Total worker pay</td><td class="amt">GBP ' + Number(header.total_worker_pay || 0).toFixed(2) + '</td></tr>'
+    + '</tbody></table>'
+    + '</body></html>';
+  const w = window.open('', '_blank', 'width=900,height=1000');
+  if(!w) { alert('Popup blocked. Allow popups for the dashboard to view the timesheet.'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+  w.onload = () => { try { w.print(); } catch(e) {} };
+}
+
+// ----- NumberMill Invoices -----
+
+async function loadMoneyNmbrData() {
+  const pane = document.getElementById('money-numbermill-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading NumberMill Invoices...</div>';
+  try {
+    const res = await sbAuth.rpc('numbermill_invoices_list');
+    if(res.error) throw res.error;
+    moneyState.nmbrList = res.data || [];
+    _renderMoneyNmbrPane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadMoneyNmbrData()">Retry</button></div>';
+  }
+}
+
+function _renderMoneyNmbrPane() {
+  const pane = document.getElementById('money-numbermill-pane');
+  if(!pane) return;
+  const list = moneyState.nmbrList || [];
+  const genRow = '<div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
+    + '<button class="ops-sched-btn primary" onclick="openMoneyIngestNmbrModal()">+ Ingest NumberMill invoice</button>'
+    + '<span style="color:var(--grey);font-size:11px;">Record an invoice NumberMill has sent, one line per assignment, then settle once paid.</span>'
+    + '</div>';
+  const rows = list.length
+    ? list.map(inv => {
+        const settled = !!inv.settled_at;
+        return '<tr>'
+          + '<td style="font-variant-numeric:tabular-nums;color:var(--ice);">' + _opsEscape(inv.nmbr_reference, '<span class="muted">,</span>') + '</td>'
+          + '<td>' + _moneyFmtPeriod(inv.period_start, inv.period_end).replace('&mdash;', '-') + '</td>'
+          + '<td>' + (inv.line_count || 0) + '</td>'
+          + '<td><strong>' + _moneyFmtCurrency(inv.invoice_amount) + '</strong></td>'
+          + '<td>' + (settled ? '<span class="money-status-pill green">Settled ' + _moneyFmtDate(inv.settled_at) + '</span>' : '<span class="money-status-pill amber">Unsettled</span>') + '</td>'
+          + '<td>' + (settled ? '<span class="muted">,</span>' : '<button class="health-link" onclick="settleNmbrInvoice(' + inv.invoice_id + ')">Settle</button>') + '</td>'
+          + '</tr>';
+      }).join('')
+    : '<tr><td colspan="6" style="padding:24px 10px;text-align:center;color:var(--grey);">No NumberMill invoices ingested yet.</td></tr>';
+  pane.innerHTML = genRow
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">NumberMill Invoices <span style="color:var(--grey);font-size:10px;margin-left:8px;">' + list.length + ' RESULTS</span></h3>'
+    +   '<table class="health-table"><thead><tr><th>Reference</th><th>Period</th><th>Lines</th><th>Amount</th><th>Settlement</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
+    + '</section>';
+}
+
+async function settleNmbrInvoice(invoiceId) {
+  if(!confirm('Mark this NumberMill invoice as settled (paid)?')) return;
+  const res = await sbAuth.rpc('settle_numbermill_invoice', { p_invoice_id: invoiceId });
+  if(res.error) { alert('Settle failed: ' + res.error.message); return; }
+  moneyState.nmbrList = null;
+  await loadMoneyNmbrData();
+}
+
+function openMoneyIngestNmbrModal() {
+  moneyState.nmbrIngestLines = [];
+  const refEl = document.getElementById('money-ingest-nmbr-ref');
+  const totalEl = document.getElementById('money-ingest-nmbr-total');
+  const errEl = document.getElementById('money-ingest-nmbr-err');
+  const startEl = document.getElementById('money-ingest-nmbr-start');
+  const endEl = document.getElementById('money-ingest-nmbr-end');
+  const wk = _moneyLastCompletedWeek();
+  if(refEl) refEl.value = '';
+  if(totalEl) totalEl.value = '';
+  if(startEl) startEl.value = wk.start;
+  if(endEl) endEl.value = wk.end;
+  if(errEl) errEl.textContent = '';
+  addMoneyIngestNmbrLine();
+  const modal = document.getElementById('money-ingest-nmbr-modal');
+  if(modal) modal.style.display = 'flex';
+}
+function closeMoneyIngestNmbrModal() {
+  const modal = document.getElementById('money-ingest-nmbr-modal');
+  if(modal) modal.style.display = 'none';
+  moneyState.nmbrIngestLines = [];
+}
+function addMoneyIngestNmbrLine() {
+  moneyState.nmbrIngestLines.push({ asg: '', dispatch: '', pay: '', margin: '', total: '' });
+  _renderMoneyIngestNmbrLines();
+}
+function removeMoneyIngestNmbrLine(idx) {
+  moneyState.nmbrIngestLines.splice(idx, 1);
+  _renderMoneyIngestNmbrLines();
+}
+function _moneyIngestLineField(idx, key, value) {
+  if(moneyState.nmbrIngestLines[idx]) moneyState.nmbrIngestLines[idx][key] = value;
+}
+function _renderMoneyIngestNmbrLines() {
+  const wrap = document.getElementById('money-ingest-nmbr-lines');
+  if(!wrap) return;
+  wrap.innerHTML = moneyState.nmbrIngestLines.map((ln, i) => ''
+    + '<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap;">'
+    +   '<input style="flex:2;min-width:140px;" type="text" placeholder="ASG reference" value="' + _opsEscape(ln.asg) + '" oninput="_moneyIngestLineField(' + i + ', &quot;asg&quot;, this.value)">'
+    +   '<input style="flex:1;min-width:90px;" type="number" placeholder="Dispatch id" value="' + _opsEscape(ln.dispatch) + '" oninput="_moneyIngestLineField(' + i + ', &quot;dispatch&quot;, this.value)">'
+    +   '<input style="flex:1;min-width:80px;" type="number" step="0.01" placeholder="Worker pay" value="' + _opsEscape(ln.pay) + '" oninput="_moneyIngestLineField(' + i + ', &quot;pay&quot;, this.value)">'
+    +   '<input style="flex:1;min-width:80px;" type="number" step="0.01" placeholder="NM margin" value="' + _opsEscape(ln.margin) + '" oninput="_moneyIngestLineField(' + i + ', &quot;margin&quot;, this.value)">'
+    +   '<input style="flex:1;min-width:80px;" type="number" step="0.01" placeholder="Line total" value="' + _opsEscape(ln.total) + '" oninput="_moneyIngestLineField(' + i + ', &quot;total&quot;, this.value)">'
+    +   '<button class="ops-sched-btn danger" style="flex:0 0 auto;" onclick="removeMoneyIngestNmbrLine(' + i + ')">&times;</button>'
+    + '</div>').join('')
+    + '<div style="font-size:10px;color:var(--grey);">Provide an ASG reference or a dispatch id per line (both is fine). Worker pay, NumberMill margin and line total are numeric.</div>';
+}
+async function submitMoneyIngestNmbr() {
+  const errEl = document.getElementById('money-ingest-nmbr-err');
+  const ref = (document.getElementById('money-ingest-nmbr-ref') || {}).value || '';
+  const start = (document.getElementById('money-ingest-nmbr-start') || {}).value || '';
+  const end = (document.getElementById('money-ingest-nmbr-end') || {}).value || '';
+  const total = parseFloat((document.getElementById('money-ingest-nmbr-total') || {}).value);
+  if(!ref.trim()) { if(errEl) errEl.textContent = 'Enter the NumberMill reference.'; return; }
+  if(!start || !end) { if(errEl) errEl.textContent = 'Pick the period start and end.'; return; }
+  if(!isFinite(total) || total < 0) { if(errEl) errEl.textContent = 'Enter a non-negative invoice total.'; return; }
+  const lines = [];
+  for(const ln of (moneyState.nmbrIngestLines || [])) {
+    const hasAsg = (ln.asg || '').trim() !== '';
+    const hasDispatch = (ln.dispatch || '').trim() !== '';
+    if(!hasAsg && !hasDispatch) continue; // skip blank rows
+    lines.push({
+      dispatch_decision_id: hasDispatch ? parseInt(ln.dispatch, 10) : null,
+      asg_reference: hasAsg ? ln.asg.trim() : null,
+      worker_pay: ln.pay !== '' ? Number(ln.pay) : 0,
+      numbermill_margin: ln.margin !== '' ? Number(ln.margin) : 0,
+      line_total: ln.total !== '' ? Number(ln.total) : 0
+    });
+  }
+  if(!lines.length) { if(errEl) errEl.textContent = 'Add at least one line with an ASG reference or dispatch id.'; return; }
+  const btn = document.getElementById('money-ingest-nmbr-save');
+  if(btn) { btn.disabled = true; btn.textContent = 'Ingesting...'; }
+  try {
+    const res = await sbAuth.rpc('ingest_numbermill_invoice', {
+      p_nmbr_reference: ref.trim(),
+      p_period_start: start,
+      p_period_end: end,
+      p_invoice_amount: total,
+      p_lines: lines
+    });
+    if(res.error) throw res.error;
+    closeMoneyIngestNmbrModal();
+    moneyState.nmbrList = null;
+    await loadMoneyNmbrData();
+  } catch(e) {
+    if(errEl) errEl.textContent = 'Ingest failed: ' + (e.message || 'unknown');
+  } finally {
+    if(btn) { btn.disabled = false; btn.textContent = 'Ingest invoice'; }
+  }
+}
+
+// ----- Bar Invoices (reference IS the ASG) -----
+
+async function loadMoneyBarInvoicesData() {
+  const pane = document.getElementById('money-bar-invoices-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading Bar Invoices...</div>';
+  try {
+    const statusArg = moneyState.barInvStatusFilter ? moneyState.barInvStatusFilter : null;
+    const barArg = moneyState.barInvBarFilter ? parseInt(moneyState.barInvBarFilter, 10) : null;
+    const res = await sbAuth.rpc('bar_invoices_list', { p_status: statusArg, p_bar_id: barArg });
+    if(res.error) throw res.error;
+    moneyState.barInvList = res.data || [];
+    _renderMoneyBarInvoicesPane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadMoneyBarInvoicesData()">Retry</button></div>';
+  }
+}
+
+function setBarInvStatusFilter(v) { moneyState.barInvStatusFilter = v; moneyState.barInvList = null; loadMoneyBarInvoicesData(); }
+function setBarInvBarFilter(v)    { moneyState.barInvBarFilter = v;    moneyState.barInvList = null; loadMoneyBarInvoicesData(); }
+
+function _barInvStatusPill(status) {
+  const s = (status || 'draft').toLowerCase();
+  let cls = 'grey';
+  if(s === 'paid') cls = 'green';
+  else if(s === 'sent') cls = 'amber';
+  else if(s === 'overdue') cls = 'red';
+  else if(s === 'cancelled') cls = 'grey';
+  return '<span class="money-status-pill ' + cls + '">' + s.toUpperCase() + '</span>';
+}
+
+function _renderMoneyBarInvoicesPane() {
+  const pane = document.getElementById('money-bar-invoices-pane');
+  if(!pane) return;
+  const list = moneyState.barInvList || [];
+
+  const statuses = ['', 'draft', 'sent', 'paid', 'overdue', 'cancelled'];
+  const statusOpts = statuses.map(s => '<option value="' + s + '"' + (moneyState.barInvStatusFilter === s ? ' selected' : '') + '>' + (s === '' ? 'All statuses' : s.toUpperCase()) + '</option>').join('');
+  // Bar options: prefer the global bars cache, fall back to the Network bars
+  // state, then to the bar names already present in the invoice list.
+  let barOptsSource = (typeof bars !== 'undefined' && bars && bars.length) ? bars
+    : (window.bars && window.bars.length) ? window.bars
+    : (networkBarsState && networkBarsState.bars && networkBarsState.bars.length) ? networkBarsState.bars
+    : [];
+  if(!barOptsSource.length && list.length) {
+    const seen = new Map();
+    list.forEach(inv => { if(inv.bar_id != null && !seen.has(inv.bar_id)) seen.set(inv.bar_id, { id: inv.bar_id, name: inv.bar_name }); });
+    barOptsSource = Array.from(seen.values());
+  }
+  const barOpts = '<option value="">All bars</option>' + barOptsSource.map(b => '<option value="' + b.id + '"' + (String(moneyState.barInvBarFilter) === String(b.id) ? ' selected' : '') + '>' + _opsEscape(b.name || ('Bar #' + b.id)) + '</option>').join('');
+
+  const filterBar = '<div class="history-filter-bar">'
+    + '<select onchange="setBarInvStatusFilter(this.value)">' + statusOpts + '</select>'
+    + '<select onchange="setBarInvBarFilter(this.value)">' + barOpts + '</select>'
+    + '</div>';
+
+  const rows = list.length
+    ? list.map(inv => {
+        const isExpanded = moneyState.barInvExpandedId === inv.invoice_id;
+        const head = '<tr class="clickable" onclick="toggleMoneyBarInvoiceRow(' + inv.invoice_id + ')">'
+          + '<td style="font-variant-numeric:tabular-nums;color:var(--ice);"><button class="health-link" onclick="event.stopPropagation();openMoneyAsgTrail(&quot;' + _opsEscape(inv.reference) + '&quot;)">' + _opsEscape(inv.reference, '<span class="muted">,</span>') + '</button></td>'
+          + '<td><button class="health-link" onclick="event.stopPropagation();_moneyGoToBar(' + inv.bar_id + ')">' + _opsEscape(inv.bar_name || '') + '</button></td>'
+          + '<td>' + (inv.requested_hours || 0) + '</td>'
+          + '<td>' + _moneyFmtCurrency(inv.line_amount) + '</td>'
+          + '<td>' + _moneyFmtCurrency(inv.vat_amount) + '</td>'
+          + '<td><strong>' + _moneyFmtCurrency(inv.grand_total) + '</strong></td>'
+          + '<td>' + _barInvStatusPill(inv.status) + '</td>'
+          + '<td>'
+          +   (inv.status === 'draft' ? '<button class="health-link" onclick="event.stopPropagation();markBarInvoiceStatus(' + inv.invoice_id + ', &quot;sent&quot;)">Mark sent</button> &middot; ' : '')
+          +   ((inv.status === 'sent' || inv.status === 'overdue') ? '<button class="health-link" onclick="event.stopPropagation();markBarInvoiceStatus(' + inv.invoice_id + ', &quot;paid&quot;)">Mark paid</button> &middot; ' : '')
+          +   '<button class="health-link" onclick="event.stopPropagation();printBarInvoice(' + inv.invoice_id + ')">Print / PDF</button>'
+          + '</td>'
+          + '</tr>';
+        const exp = isExpanded
+          ? '<tr><td colspan="8" style="padding:0;background:transparent;">' + (_renderMoneyBarInvoiceDetail(inv.invoice_id) || '<div class="health-loading" style="margin:8px 0;">Loading invoice detail...</div>') + '</td></tr>'
+          : '';
+        return head + exp;
+      }).join('')
+    : '<tr><td colspan="8" style="padding:24px 10px;text-align:center;color:var(--grey);">No bar invoices match these filters.</td></tr>';
+
+  pane.innerHTML = filterBar
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Bar Invoices <span style="color:var(--grey);font-size:10px;margin-left:8px;">' + list.length + ' RESULTS</span></h3>'
+    +   '<div class="health-section-note">The invoice reference is the Assignment Schedule reference (ASG). Click it to open the full money trail.</div>'
+    +   '<table class="health-table"><thead><tr><th>Reference (ASG)</th><th>Bar</th><th>Hours</th><th>Line</th><th>VAT</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
+    + '</section>';
+}
+
+async function toggleMoneyBarInvoiceRow(invoiceId) {
+  if(moneyState.barInvExpandedId === invoiceId) {
+    moneyState.barInvExpandedId = null;
+    _renderMoneyBarInvoicesPane();
+    return;
+  }
+  moneyState.barInvExpandedId = invoiceId;
+  _renderMoneyBarInvoicesPane();
+  if(!moneyState.barInvDetailCache[invoiceId]) {
+    const res = await sbAuth.rpc('bar_invoice_detail', { p_invoice_id: invoiceId });
+    if(res.error) moneyState.barInvDetailCache[invoiceId] = { _error: res.error.message };
+    else          moneyState.barInvDetailCache[invoiceId] = res.data || {};
+    _renderMoneyBarInvoicesPane();
+  }
+}
+
+function _renderMoneyBarInvoiceDetail(invoiceId) {
+  const d = moneyState.barInvDetailCache[invoiceId];
   if(!d) return null;
   if(d._error) return '<div class="health-error">Failed to load detail: ' + _opsEscape(d._error) + '</div>';
   const bar = d.bar || {};
-  const shift = d.shift || {};
   const worker = d.worker || {};
-  const requester = d.requester || {};
-  const fmtTime = (ts) => ts ? new Date(ts).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '<span class="muted">,</span>';
-  const requesterLabel = requester.kind === 'bar_manager' ? 'Bar manager request'
-                     : requester.kind === 'session_proposer' ? 'Manager-proposed session'
-                     : 'Sam-initiated session';
+  const glasi = d.glasi || {};
+  const vatLine = glasi.vat_status === 'registered'
+    ? ('VAT number ' + _opsEscape(glasi.vat_number || ''))
+    : 'VAT registration pending';
   return ''
     + '<div class="money-bar-expand">'
-    +   '<div class="section"><h4>Invoice header</h4>'
-    +     '<div style="font-size:13px;color:var(--white);margin-bottom:8px;">'
-    +       'Invoice <strong>' + _opsEscape(d.invoice_number) + '</strong>'
-    +       (d.glasi_ref ? (' &middot; Shift Reference: <strong style="color:var(--ice);font-variant-numeric:tabular-nums;">' + _opsEscape(d.glasi_ref) + '</strong>') : '')
-    +     '</div>'
+    +   '<div class="section"><h4>Invoice ' + _opsEscape(d.reference) + '</h4>'
     +     '<div class="kv">'
-    +       '<div><span class="k">Status</span>' + _moneyInvoiceStatusLine(d) + '</div>'
-    +       '<div><span class="k">Generated</span>' + fmtTime(d.generated_at) + '</div>'
-    +       (d.paid_at ? ('<div><span class="k">Paid at</span>' + fmtTime(d.paid_at) + '</div>') : '')
-    +       '<div><span class="k">Bar</span>' + _opsEscape(bar.name || '') + '</div>'
+    +       '<div><span class="k">Status</span>' + _barInvStatusPill(d.status) + '</div>'
+    +       '<div><span class="k">Generated</span>' + _moneyFmtTimeLong(d.generated_at) + '</div>'
+    +       (d.paid_at ? ('<div><span class="k">Paid</span>' + _moneyFmtTimeLong(d.paid_at) + '</div>') : '')
+    +       '<div><span class="k">Worker</span>' + _opsEscape(worker.name || '') + ' (' + _opsEscape(worker.glasi_worker_ref || '') + ')</div>'
+    +       '<div><span class="k">Hours</span>' + (d.requested_hours || 0) + ' @ ' + _moneyFmtCurrency(d.bar_rate) + '/hr</div>'
+    +       '<div><span class="k">Line amount</span>' + _moneyFmtCurrency(d.line_amount) + '</div>'
+    +       '<div><span class="k">VAT</span>' + _moneyFmtCurrency(d.vat_amount) + ' (' + _opsEscape(vatLine) + ')</div>'
+    +       '<div><span class="k">Grand total</span><strong>' + _moneyFmtCurrency(d.grand_total) + '</strong></div>'
+    +       '<div><span class="k">Requested by</span>' + _opsEscape(d.requested_by || '') + '</div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="section"><h4>Billed to</h4>'
+    +     '<div class="kv">'
+    +       '<div><span class="k">Registered name</span>' + _opsEscape(bar.billed_name || bar.trading_name || '') + '</div>'
     +       (bar.address ? ('<div><span class="k">Address</span>' + _opsEscape(bar.address) + '</div>') : '')
-    +     '</div>'
-    +   '</div>'
-    +   '<div class="section"><h4>Shift detail</h4>'
-    +     '<div class="kv">'
-    +       '<div><span class="k">Worker</span>' + _opsEscape(worker.name || '') + (worker.tier != null ? ' <span class="net-worker-tier">T' + worker.tier + '</span>' : '') + '</div>'
-    +       '<div><span class="k">Hours</span>' + (shift.hours || 0) + '</div>'
-    +       '<div><span class="k">Bar rate</span>' + _moneyFmtCurrency(shift.bar_rate) + '/hr</div>'
-    +       '<div><span class="k">Total</span><strong>' + _moneyFmtCurrency(d.total_amount) + '</strong></div>'
-    +     '</div>'
-    +   '</div>'
-    +   '<div class="section"><h4>Tracking</h4>'
-    +     '<div class="kv">'
-    +       '<div><span class="k">Requested by</span>' + _opsEscape(requester.name || '') + ' <span class="muted" style="font-size:11px;">(' + requesterLabel + ')</span></div>'
-    +       '<div><span class="k">Time of request</span>' + fmtTime(requester.request_time) + '</div>'
-    +       '<div><span class="k">Worker clocked in</span>' + fmtTime(shift.clock_in_at) + '</div>'
-    +       '<div><span class="k">Worker clocked out</span>' + fmtTime(shift.clock_out_at) + '</div>'
+    +       (bar.invoice_email ? ('<div><span class="k">Invoice email</span>' + _opsEscape(bar.invoice_email) + '</div>') : '')
     +     '</div>'
     +   '</div>'
     +   '<div class="section"><h4>Actions</h4>'
     +     (d.status === 'draft' ? '<button class="ops-sched-btn" onclick="markBarInvoiceStatus(' + d.invoice_id + ', &quot;sent&quot;)">Mark sent</button> ' : '')
-    +     (d.status === 'sent'  ? '<button class="ops-sched-btn" onclick="markBarInvoiceStatus(' + d.invoice_id + ', &quot;paid&quot;)">Mark paid</button> ' : '')
-    +     '<button class="ops-sched-btn primary" onclick="printShiftInvoice(' + d.invoice_id + ')">Print / PDF</button>'
+    +     ((d.status === 'sent' || d.status === 'overdue') ? '<button class="ops-sched-btn" onclick="markBarInvoiceStatus(' + d.invoice_id + ', &quot;paid&quot;)">Mark paid</button> ' : '')
+    +     '<button class="ops-sched-btn primary" onclick="printBarInvoice(' + d.invoice_id + ')">Print / PDF</button> '
+    +     '<button class="ops-sched-btn" onclick="openMoneyAsgTrail(&quot;' + _opsEscape(d.reference) + '&quot;)">View money trail</button>'
     +   '</div>'
     + '</div>';
 }
 
+// Shared by Bar Invoices + Subscription Invoices. Marks a bar/subscription
+// invoice 'sent' or 'paid' via the kind-agnostic status RPC.
 async function markBarInvoiceStatus(invoiceId, status) {
   let notes = null;
   if(status === 'paid') notes = window.prompt('Payment notes (optional)') || null;
@@ -8718,79 +8897,305 @@ async function markBarInvoiceStatus(invoiceId, status) {
     p_invoice_id: invoiceId, p_status: status, p_payment_notes: notes
   });
   if(res.error) { alert('Status update failed: ' + res.error.message); return; }
-  // Bust both tab caches so whichever tab the user is on re-renders correctly.
-  moneyState.shiftInvList = null;
-  moneyState.shiftInvDetailCache = {};
+  // Bust the relevant caches so whichever tab is active re-renders correctly.
+  moneyState.barInvList = null;
+  moneyState.barInvDetailCache = {};
   moneyState.subInvList = null;
-  // Refresh whichever tab is active.
   const active = document.querySelector('#workspace-money .ws-subtab.active');
   if(active) {
     const name = active.dataset.subtab;
-    if(name === 'shift-invoices')        await loadMoneyShiftInvoicesData();
+    if(name === 'bar-invoices')          await loadMoneyBarInvoicesData();
     if(name === 'subscription-invoices') await loadMoneySubscriptionInvoicesData();
   }
 }
 
-async function printShiftInvoice(invoiceId) {
-  let d = moneyState.shiftInvDetailCache[invoiceId];
+// Consolidated bar invoice template (browser print). The single invoice
+// template for the money trail. The header reference IS the ASG.
+async function printBarInvoice(invoiceId) {
+  let d = moneyState.barInvDetailCache[invoiceId];
   if(!d || d._error) {
-    const res = await sbAuth.rpc('f39_shift_invoice_detail', { p_invoice_id: invoiceId });
+    const res = await sbAuth.rpc('bar_invoice_detail', { p_invoice_id: invoiceId });
     if(res.error) { alert('Print failed: ' + res.error.message); return; }
-    d = res.data;
-    moneyState.shiftInvDetailCache[invoiceId] = d;
+    d = res.data || {};
+    moneyState.barInvDetailCache[invoiceId] = d;
   }
-  const html = _renderShiftInvoicePrintHtml(d);
+  const html = _renderBarInvoicePrintHtml(d);
   const w = window.open('', '_blank', 'width=820,height=1000');
   if(!w) { alert('Popup blocked. Allow popups for the dashboard to view invoices.'); return; }
   w.document.open(); w.document.write(html); w.document.close();
   w.onload = () => { try { w.print(); } catch(e) {} };
 }
 
-function _renderShiftInvoicePrintHtml(d) {
+function _renderBarInvoicePrintHtml(d) {
   const bar = d.bar || {};
-  const shift = d.shift || {};
   const worker = d.worker || {};
-  const requester = d.requester || {};
-  const total = parseFloat(d.total_amount || 0);
-  const fmtTime = (ts) => ts ? new Date(ts).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+  const glasi = d.glasi || {};
+  const ref = d.reference || '';
+  const lineAmount = parseFloat(d.line_amount || 0);
+  const vatAmount = parseFloat(d.vat_amount || 0);
+  const grand = parseFloat(d.grand_total || 0);
+  const rate = parseFloat(d.bar_rate || 0);
+  const hours = d.requested_hours || 0;
   const fmtDate = (ts) => ts ? new Date(ts).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+  const vatRegistered = glasi.vat_status === 'registered';
+  const vatIdentityLine = vatRegistered
+    ? ('VAT number: ' + (glasi.vat_number || ''))
+    : 'VAT registration pending';
+  const billedName = bar.billed_name || bar.trading_name || '';
+  const workerLabel = (worker.name || 'Worker') + ' (' + (worker.glasi_worker_ref || '') + ')';
+  const termsDays = glasi.payment_terms_days != null ? glasi.payment_terms_days : 30;
   return '<!DOCTYPE html><html><head><meta charset="utf-8">'
-    + '<title>' + d.invoice_number + '</title>'
+    + '<title>' + ref + '</title>'
     + '<style>'
     +   '@media print { @page { margin: 18mm } }'
     +   'body{font-family:Inter,system-ui,sans-serif;color:#0F1F3D;max-width:760px;margin:24px auto;padding:24px}'
     +   '.glasi-mark{font-family:Raleway,sans-serif;letter-spacing:8px;font-weight:700;font-size:24px;border:1.5px solid #0F1F3D;display:inline-block;padding:6px 14px;border-radius:6px}'
-    +   'h1{font-size:18px;margin:24px 0 6px}'
-    +   '.meta{font-size:13px;color:#475569;margin:4px 0}'
+    +   '.two-col{display:flex;justify-content:space-between;gap:32px;margin:24px 0}'
+    +   '.two-col .block{flex:1}'
+    +   'h1{font-size:18px;margin:18px 0 6px}'
+    +   '.label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#9ca3af;margin-bottom:4px}'
+    +   '.meta{font-size:13px;color:#475569;margin:3px 0}'
     +   'table{width:100%;border-collapse:collapse;margin:18px 0}'
     +   'th,td{text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;font-size:13px}'
     +   '.amt{text-align:right;font-variant-numeric:tabular-nums}'
     +   '.total-row td{font-weight:700;font-size:15px;border-bottom:none;border-top:2px solid #0F1F3D}'
-    +   '.tracking{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin:18px 0;font-size:12px;line-height:1.7}'
-    +   '.tracking strong{color:#0F1F3D}'
-    +   '.foot{font-size:12px;color:#64748B;margin-top:24px;line-height:1.6}'
+    +   '.foot{font-size:12px;color:#64748B;margin-top:24px;line-height:1.7}'
+    +   '.bank{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin:18px 0;font-size:12px;line-height:1.7}'
     + '</style></head><body>'
     + '<div class="glasi-mark">GLASI</div>'
-    + '<h1>Shift Invoice ' + d.invoice_number + '</h1>'
-    + (d.glasi_ref ? '<div class="meta">Shift Reference: <strong>' + d.glasi_ref + '</strong></div>' : '')
-    + '<div class="meta">Generated ' + fmtDate(d.generated_at) + '</div>'
-    + '<h1>Billed to</h1>'
-    + '<div class="meta">' + (bar.name || '') + '</div>'
-    + (bar.address ? '<div class="meta">' + bar.address + '</div>' : '')
+    + '<h1>Invoice: ' + ref + '</h1>'
+    + '<div class="meta">Invoice date: ' + fmtDate(d.generated_at) + '</div>'
+    + '<div class="two-col">'
+    +   '<div class="block">'
+    +     '<div class="label">From</div>'
+    +     '<div class="meta"><strong>' + (glasi.legal_name || 'Glasi Ltd') + '</strong></div>'
+    +     (glasi.company_number ? ('<div class="meta">Company number: ' + glasi.company_number + '</div>') : '')
+    +     (glasi.registered_address ? ('<div class="meta">' + glasi.registered_address + '</div>') : '')
+    +     '<div class="meta">' + vatIdentityLine + '</div>'
+    +   '</div>'
+    +   '<div class="block">'
+    +     '<div class="label">Billed to</div>'
+    +     '<div class="meta"><strong>' + billedName + '</strong></div>'
+    +     (bar.address ? ('<div class="meta">' + bar.address + '</div>') : '')
+    +     (bar.invoice_email ? ('<div class="meta">' + bar.invoice_email + '</div>') : '')
+    +   '</div>'
+    + '</div>'
     + '<table><thead><tr><th>Description</th><th class="amt">Amount</th></tr></thead>'
     + '<tbody>'
-    +   '<tr><td>' + (worker.name || 'Worker') + ' ' + (worker.tier != null ? '(Tier ' + worker.tier + ')' : '') + ' &middot; ' + (shift.hours || 0) + 'h @ £' + parseFloat(shift.bar_rate || 0).toFixed(2) + '/hr</td><td class="amt">£' + total.toFixed(2) + '</td></tr>'
-    +   '<tr class="total-row"><td>Total</td><td class="amt">£' + total.toFixed(2) + '</td></tr>'
+    +   '<tr><td>' + workerLabel + ' &middot; ' + hours + 'h @ GBP ' + rate.toFixed(2) + '/hr</td><td class="amt">GBP ' + lineAmount.toFixed(2) + '</td></tr>'
+    +   '<tr><td>VAT (20%)</td><td class="amt">GBP ' + vatAmount.toFixed(2) + '</td></tr>'
+    +   '<tr class="total-row"><td>Total</td><td class="amt">GBP ' + grand.toFixed(2) + '</td></tr>'
     + '</tbody></table>'
-    + '<div class="tracking">'
-    +   '<div><strong>Requested by:</strong> ' + (requester.name || '') + '</div>'
-    +   '<div><strong>Time of request:</strong> ' + fmtTime(requester.request_time) + '</div>'
-    +   '<div><strong>Worker clocked in:</strong> ' + fmtTime(shift.clock_in_at) + '</div>'
-    +   '<div><strong>Worker clocked out:</strong> ' + fmtTime(shift.clock_out_at) + '</div>'
+    + '<div class="meta">Requested by: ' + (d.requested_by || '') + '</div>'
+    + '<div class="bank">'
+    +   '<div class="label">Bank transfer</div>'
+    +   '<div>' + (glasi.bank_account_name || '') + '</div>'
+    +   '<div>Sort code: ' + (glasi.bank_sort_code || '') + '</div>'
+    +   '<div>Account number: ' + (glasi.bank_account_number || '') + '</div>'
     + '</div>'
-    + '<div class="foot">Payment within 30 days. Bank details on Glasi covering email. Reference ' + d.invoice_number + ' on payment.</div>'
+    + '<div class="foot">Payment terms: ' + termsDays + ' days. Payment reference: ' + ref + '.</div>'
     + '</body></html>';
 }
+
+// ----- Per-ASG unified money trail view -----
+
+// Entry point from search results and from invoice/timesheet links.
+function openMoneyAsgTrail(asgReference) {
+  if(!asgReference) return;
+  moneyState.asgReference = asgReference;
+  moneyState.asgTrail = null;
+  moneyState.asgMargin = null;
+  showWorkspace('money');
+  showMoneySubtab('asg-trail');
+  loadMoneyAsgTrail(asgReference);
+}
+
+async function loadMoneyAsgTrail(asgReference) {
+  const pane = document.getElementById('money-asg-trail-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading money trail for ' + _opsEscape(asgReference) + '...</div>';
+  try {
+    const [trailRes, marginRes] = await Promise.all([
+      sbAuth.rpc('assignment_money_trail', { p_asg_reference: asgReference }),
+      sbAuth.rpc('glasi_margin_per_asg',   { p_asg_reference: asgReference })
+    ]);
+    if(trailRes.error) throw trailRes.error;
+    if(marginRes.error) throw marginRes.error;
+    moneyState.asgTrail = trailRes.data || {};
+    moneyState.asgMargin = marginRes.data || {};
+    _renderMoneyAsgTrailPane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load money trail: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadMoneyAsgTrail(&quot;' + _opsEscape(asgReference) + '&quot;)">Retry</button></div>';
+  }
+}
+
+// Generate the bar invoice for a completed assignment, then reload the trail.
+async function generateBarInvoiceForAsg(dispatchDecisionId) {
+  if(dispatchDecisionId == null) return;
+  if(!confirm('Generate the bar invoice for this assignment?')) return;
+  const res = await sbAuth.rpc('generate_bar_invoice', { p_dispatch_decision_id: dispatchDecisionId });
+  if(res.error) { alert('Generate failed: ' + res.error.message); return; }
+  // Bust the Bar Invoices list cache so the new invoice surfaces there too.
+  moneyState.barInvList = null;
+  moneyState.barInvDetailCache = {};
+  if(moneyState.asgReference) await loadMoneyAsgTrail(moneyState.asgReference);
+}
+
+function _renderMoneyAsgTrailPane() {
+  const pane = document.getElementById('money-asg-trail-pane');
+  if(!pane) return;
+  const t = moneyState.asgTrail;
+  const m = moneyState.asgMargin || {};
+  if(!t) { pane.innerHTML = '<div class="health-loading">Search a worker reference or ASG to view the money trail.</div>'; return; }
+  if(!t.asg_reference) {
+    pane.innerHTML = '<div class="health-error">No assignment found for reference ' + _opsEscape(moneyState.asgReference || '') + '.</div>';
+    return;
+  }
+
+  // Stage 1: assignment
+  const stage1 = '<div class="money-bar-expand"><div class="section"><h4>1. Assignment</h4><div class="kv">'
+    + '<div><span class="k">ASG reference</span><strong style="color:var(--ice);">' + _opsEscape(t.asg_reference) + '</strong></div>'
+    + '<div><span class="k">Worker</span>' + _opsEscape(t.worker_name || '') + ' (' + _opsEscape(t.glasi_worker_ref || '') + ')</div>'
+    + '<div><span class="k">NumberMill ref</span>' + _opsEscape(t.numbermill_worker_ref, '<span class="muted">,</span>') + '</div>'
+    + '<div><span class="k">Bar</span>' + _opsEscape(t.bar_name || '') + '</div>'
+    + '<div><span class="k">Dispatched</span>' + _moneyFmtTimeLong(t.dispatched_at) + '</div>'
+    + '<div><span class="k">Requested hours</span>' + (t.requested_hours || 0) + '</div>'
+    + '<div><span class="k">Shift status</span>' + _opsEscape((t.shift_status || '').toUpperCase()) + '</div>'
+    + '<div><span class="k">Clocked in</span>' + _moneyFmtTimeLong(t.clock_in_confirmed_at) + '</div>'
+    + '<div><span class="k">Clocked out</span>' + _moneyFmtTimeLong(t.clock_out_confirmed_at) + '</div>'
+    + '</div></div></div>';
+
+  // Stage 2: timesheet
+  const stage2 = '<div class="money-bar-expand"><div class="section"><h4>2. Timesheet</h4><div class="kv">'
+    + '<div><span class="k">Timesheet</span>' + _opsEscape(t.timesheet_reference, '<span class="muted">not yet generated</span>') + '</div>'
+    + '<div><span class="k">Sent to NumberMill</span>' + (t.timesheet_sent_at ? _moneyFmtTimeLong(t.timesheet_sent_at) : '<span class="muted">not sent</span>') + '</div>'
+    + '<div><span class="k">Worker pay</span><strong>' + _moneyFmtCurrency(t.worker_pay) + '</strong></div>'
+    + '</div></div></div>';
+
+  // Stage 3: NumberMill invoice + settlement
+  const stage3 = '<div class="money-bar-expand"><div class="section"><h4>3. NumberMill invoice</h4><div class="kv">'
+    + '<div><span class="k">NumberMill margin</span>' + _moneyFmtCurrency(t.numbermill_margin) + '</div>'
+    + '<div><span class="k">Settled</span>' + (t.numbermill_settled_at ? _moneyFmtTimeLong(t.numbermill_settled_at) : '<span class="muted">unsettled</span>') + '</div>'
+    + '</div></div></div>';
+
+  // Stage 4: bar invoice
+  const barStatusPill = t.bar_invoice_id ? _barInvStatusPill(t.bar_invoice_status) : '<span class="muted">not generated</span>';
+  const stage4 = '<div class="money-bar-expand"><div class="section"><h4>4. Bar invoice</h4><div class="kv">'
+    + '<div><span class="k">Invoice</span>' + (t.bar_invoice_id ? _opsEscape(t.asg_reference) : '<span class="muted">not generated</span>') + '</div>'
+    + '<div><span class="k">Status</span>' + barStatusPill + '</div>'
+    + '<div><span class="k">Total</span>' + (t.bar_invoice_total != null ? ('<strong>' + _moneyFmtCurrency(t.bar_invoice_total) + '</strong>') : '<span class="muted">,</span>') + '</div>'
+    + '<div><span class="k">Paid</span>' + (t.bar_paid_at ? _moneyFmtTimeLong(t.bar_paid_at) : '<span class="muted">unpaid</span>') + '</div>'
+    + '</div>'
+    + (t.bar_invoice_id
+        ? ('<div style="margin-top:10px;"><button class="ops-sched-btn primary" onclick="printBarInvoice(' + t.bar_invoice_id + ')">Print / PDF invoice</button></div>')
+        : ((t.shift_status === 'completed' && t.dispatch_decision_id != null)
+            ? ('<div style="margin-top:10px;"><button class="ops-sched-btn primary" onclick="generateBarInvoiceForAsg(' + t.dispatch_decision_id + ')">Generate bar invoice</button></div>')
+            : '<div style="margin-top:10px;font-size:11px;color:var(--grey);">Bar invoice can be generated once the assignment is completed.</div>'))
+    + '</div></div>';
+
+  // Margin tile
+  const marginPending = m.margin_pending === true;
+  const marginTile = '<div class="health-tile-row" style="margin-bottom:14px;">'
+    + '<div class="health-tile"><span class="label">Bar revenue</span><span class="value">' + _moneyFmtCurrency(m.bar_revenue) + '</span></div>'
+    + '<div class="health-tile"><span class="label">Worker pay</span><span class="value">' + _moneyFmtCurrency(m.worker_pay) + '</span></div>'
+    + '<div class="health-tile"><span class="label">NumberMill cost</span><span class="value">' + _moneyFmtCurrency(m.numbermill_cost) + '</span></div>'
+    + '<div class="health-tile"><span class="label">Glasi net margin</span><span class="value">' + (marginPending ? '<span class="money-status-pill amber">margin pending</span>' : ('<strong>' + _moneyFmtCurrency(m.glasi_net) + '</strong>')) + '</span></div>'
+    + '</div>';
+
+  pane.innerHTML = '<section class="health-section">'
+    + '<h3 class="health-section-h3">Money trail <span style="color:var(--ice);font-size:11px;margin-left:8px;font-variant-numeric:tabular-nums;">' + _opsEscape(t.asg_reference) + '</span></h3>'
+    + '<div class="health-section-note">Full chain from dispatch to bar payment, threaded by the Assignment Schedule reference.</div>'
+    + marginTile + stage1 + stage2 + stage3 + stage4
+    + '</section>';
+}
+
+// ----- Billing config (system config admin) -----
+
+async function loadMoneyBillingConfig() {
+  const pane = document.getElementById('money-billing-config-pane');
+  if(pane) pane.innerHTML = '<div class="health-loading">Loading Billing Config...</div>';
+  try {
+    const res = await sbAuth.rpc('get_billing_config');
+    if(res.error) throw res.error;
+    moneyState.billingConfig = res.data || {};
+    _renderMoneyBillingConfigPane();
+  } catch(err) {
+    if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadMoneyBillingConfig()">Retry</button></div>';
+  }
+}
+
+function _renderMoneyBillingConfigPane() {
+  const pane = document.getElementById('money-billing-config-pane');
+  if(!pane) return;
+  const c = moneyState.billingConfig || {};
+  const v = (x) => _opsEscape(x == null ? '' : x);
+  const vatStatus = (c.vat_status || 'pending');
+  pane.innerHTML = '<section class="health-section">'
+    + '<h3 class="health-section-h3">Glasi billing identity</h3>'
+    + '<div class="health-section-note">These fields drive every bar invoice. This is where you enter the bank details.</div>'
+    + '<div style="max-width:560px;margin-top:12px;">'
+    +   '<label class="prospect-form-label">Legal name<input id="bc-legal-name" type="text" value="' + v(c.glasi_legal_name) + '"></label>'
+    +   '<label class="prospect-form-label">Company number<input id="bc-company-number" type="text" value="' + v(c.glasi_company_number) + '"></label>'
+    +   '<label class="prospect-form-label">Registered address<textarea id="bc-registered-address" rows="2">' + v(c.glasi_registered_address) + '</textarea></label>'
+    +   '<label class="prospect-form-label">VAT status'
+    +     '<select id="bc-vat-status">'
+    +       '<option value="pending"' + (vatStatus === 'pending' ? ' selected' : '') + '>Pending</option>'
+    +       '<option value="registered"' + (vatStatus === 'registered' ? ' selected' : '') + '>Registered</option>'
+    +     '</select>'
+    +   '</label>'
+    +   '<label class="prospect-form-label">VAT number<input id="bc-vat-number" type="text" value="' + v(c.vat_number) + '" placeholder="Only when registered"></label>'
+    +   '<label class="prospect-form-label">Bank account name<input id="bc-bank-name" type="text" value="' + v(c.bank_account_name) + '"></label>'
+    +   '<label class="prospect-form-label">Bank sort code<input id="bc-bank-sort" type="text" value="' + v(c.bank_sort_code) + '" placeholder="e.g. 04-06-05"></label>'
+    +   '<label class="prospect-form-label">Bank account number<input id="bc-bank-account" type="text" value="' + v(c.bank_account_number) + '" placeholder="e.g. 31291275"></label>'
+    +   '<label class="prospect-form-label">Payment terms (days)<input id="bc-payment-terms" type="number" min="0" step="1" value="' + v(c.payment_terms_days != null ? c.payment_terms_days : 30) + '"></label>'
+    +   '<div class="prospect-form-err" id="bc-err"></div>'
+    +   '<div style="margin-top:10px;"><button class="ops-sched-btn primary" id="bc-save" onclick="saveMoneyBillingConfig()">Save billing config</button> <span id="bc-status" style="font-size:11px;color:var(--grey);margin-left:8px;"></span></div>'
+    + '</div>'
+    + '</section>';
+}
+
+async function saveMoneyBillingConfig() {
+  const get = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const errEl = document.getElementById('bc-err');
+  const statusEl = document.getElementById('bc-status');
+  if(errEl) errEl.textContent = '';
+  const termsRaw = get('bc-payment-terms');
+  const terms = parseInt(termsRaw, 10);
+  if(!isFinite(terms) || terms < 0) { if(errEl) errEl.textContent = 'Payment terms must be a non-negative whole number of days.'; return; }
+  const btn = document.getElementById('bc-save');
+  if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  try {
+    const res = await sbAuth.rpc('update_billing_config', {
+      p_glasi_legal_name:        get('bc-legal-name').trim() || null,
+      p_glasi_company_number:    get('bc-company-number').trim() || null,
+      p_glasi_registered_address: get('bc-registered-address').trim() || null,
+      p_vat_status:              get('bc-vat-status') || 'pending',
+      p_vat_number:              get('bc-vat-number').trim() || null,
+      p_bank_account_name:       get('bc-bank-name').trim() || null,
+      p_bank_sort_code:          get('bc-bank-sort').trim() || null,
+      p_bank_account_number:     get('bc-bank-account').trim() || null,
+      p_payment_terms_days:      terms
+    });
+    if(res.error) throw res.error;
+    if(statusEl) statusEl.textContent = 'Saved';
+    moneyState.billingConfig = null;
+    await loadMoneyBillingConfig();
+    const s2 = document.getElementById('bc-status');
+    if(s2) s2.textContent = 'Saved';
+  } catch(e) {
+    if(errEl) errEl.textContent = 'Save failed: ' + (e.message || 'unknown');
+  } finally {
+    const b2 = document.getElementById('bc-save');
+    if(b2) { b2.disabled = false; b2.textContent = 'Save billing config'; }
+  }
+}
+
+// The legacy f39 Shift Invoices tab (the old shift-number derived flow) was
+// retired with the Shift Money Trail batch. Bar invoices are now keyed on the
+// Assignment Schedule reference (ASG) and rendered by the Bar Invoices tab
+// above. The dead render chain, the f39_shift_invoice_* callers, and the two
+// old shift-invoice print helpers were removed here.
+
+function _removed_legacy_shift_invoices() { /* removed: see comment above */ }
 
 // ----- Phase 4b.3b: Subscription Invoices -----
 
@@ -9411,14 +9816,12 @@ function _renderHistoryDecisionsTab(rows) {
 // ----- Phase 4.6: cross-workspace navigation helpers (called from Network) -----
 
 function _netGoToMoneyForBar(barId) {
-  // Batch 4b (19 May 2026): the legacy combined Bar Billing tab is gone.
-  // Bar profile cross-link now lands on Shift Invoices with the bar filter
-  // pre-applied (subscription invoices for this bar are reachable via the
-  // adjacent sub-tab; the hash router clears either filter via the bar_id
-  // query param). Defaults to shift-invoices because that's the higher-
-  // volume billing surface.
+  // Shift Money Trail batch: the bar profile cross-link lands on Bar Invoices
+  // with the bar filter pre-applied (the hash router applies the bar_id query
+  // param). Subscription invoices for this bar stay reachable via the adjacent
+  // sub-tab.
   if(!barId) return;
-  try { history.pushState(null, '', '#money/shift-invoices?bar_id=' + barId); } catch(e) {}
+  try { history.pushState(null, '', '#money/bar-invoices?bar_id=' + barId); } catch(e) {}
   if(typeof dv2ApplyHash === 'function') dv2ApplyHash();
 }
 function _netGoToHistoryForBar(barId) {
@@ -12712,8 +13115,7 @@ async function loadSessionDetail(sessionId) {
             + '<div style="font-size:15px;font-weight:700;color:var(--white);">'+workerName+' &nbsp;Â·&nbsp; '+barName+'</div>'
             + '<div style="display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;">'
             + '<div style="font-size:11px;color:var(--grey);font-family:\'JetBrains Mono\',monospace;">'+s.glasi_ref+'</div>'
-            + '<button onclick="downloadTimesheet('+s.id+')" style="background:none;border:1px solid var(--border);color:var(--ice);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;">â†“ Timesheet</button>'
-            + '<button onclick="downloadBI('+s.id+')" style="background:none;border:1px solid var(--border);color:var(--ice);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;">â†“ BI Report</button>'
+            + '<button onclick="downloadTimesheet('+s.id+')" style="background:none;border:1px solid var(--border);color:var(--ice);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;">&#8595; Timesheet</button>'
             + '</div>'
             + '</div>'
             + '<div style="text-align:right;">'
@@ -12786,175 +13188,11 @@ async function downloadTimesheet(shiftId) {
   URL.revokeObjectURL(url);
 }
 
-async function downloadBI(shiftId) {
-  // F-34a: bars.manager_name dropped; resolve manager via shift_requests FK
-  // chain to bar_managers. Falls back to "Bar Manager" if the chain fails.
-  const shiftArr = await sbGet('shifts', '?id=eq.'+shiftId+'&select=*,session_workers(worker_name,dispatched_at,departed_at,clock_in_at),bars(name,address,bartenders,drinks_per_hour,avg_drink_value,avg_customer_spend,typical_rush_minutes,lost_minutes_per_bartender),shift_requests(bar_managers(name))');
-  const s = shiftArr[0];
-  if(!s) return;
-
-  const workerName = s.session_workers?.worker_name || 'Unknown';
-  const bar = s.bars || {};
-  const barName = bar.name || 'Unknown';
-  const barAddress = bar.address || '';
-  const managerName = s.shift_requests?.bar_managers?.name || 'Bar Manager';
-
-  const fmtT = t => t ? new Date(t).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}) : '--';
-  const fmtD = t => t ? new Date(t).toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '--';
-
-  const reqArr = await sbGet('shift_requests', '?id=eq.'+s.shift_request_id+'&select=created_at');
-  const reqTime = reqArr?.[0]?.created_at;
-
-  const shiftDate = fmtD(s.clock_in_confirmed_at);
-  const hours = parseFloat(s.shift_length_hours || 0);
-  const rate = 30;
-  const subtotal = hours * rate;
-  const vat = Math.round(subtotal * 0.20 * 100) / 100;
-  const total = subtotal + vat;
-
-  // Impact calculation
-  const bartenders = parseFloat(bar.bartenders || 3);
-  const lostMinsPerBartender = parseFloat(bar.lost_minutes_per_bartender || 10);
-  const drinksPerMin = 2;
-  const drinkValue = parseFloat(bar.avg_drink_value || 6.50);
-
-  const recoveredMinsPerHour = bartenders * lostMinsPerBartender;
-  const extraDrinksPerHour = recoveredMinsPerHour * drinksPerMin;
-  const totalExtraDrinks = Math.round(extraDrinksPerHour * hours);
-  const revenueProtected = Math.round(totalExtraDrinks * drinkValue);
-
-  // Invoice number -- GS ref or date based
-  const invoiceNum = s.glasi_ref || ('GS-'+new Date().toLocaleDateString('en-GB').replace(/\//g,''));
-
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', Arial, sans-serif; max-width: 680px; margin: 40px auto; color: #1a1a2e; font-size: 13px; line-height: 1.6; padding: 0 20px; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #0F1F3D; }
-    .wordmark { font-size: 20px; letter-spacing: 8px; font-weight: 400; border: 1.5px solid #0F1F3D; border-radius: 4px; padding: 8px 16px; display: inline-block; margin-bottom: 4px; }
-    .invoice-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: #9ca3af; }
-    .invoice-meta { text-align: right; font-size: 12px; color: #6b7280; }
-    .invoice-meta strong { color: #1a1a2e; font-size: 14px; display: block; margin-bottom: 4px; }
-    .to-from { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 36px; }
-    .to-from-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #9ca3af; margin-bottom: 6px; }
-    .to-from-name { font-size: 14px; font-weight: 600; color: #1a1a2e; margin-bottom: 2px; }
-    .to-from-detail { font-size: 12px; color: #6b7280; }
-    .section { margin-bottom: 32px; }
-    .section-title { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #9ca3af; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
-    .narrative { font-size: 13px; color: #374151; line-height: 1.8; margin-bottom: 16px; }
-    .impact-box { background: #f0f7ff; border-left: 3px solid #0F1F3D; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 16px 0; }
-    .impact-box strong { font-size: 15px; color: #0F1F3D; }
-    .impact-note { font-size: 11px; color: #9ca3af; margin-top: 8px; }
-    .tagline { font-size: 12px; font-style: italic; color: #6b7280; margin-top: 12px; }
-    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f4f8; font-size: 13px; }
-    .detail-row:last-child { border-bottom: none; }
-    .total-section { margin-top: 24px; }
-    .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; }
-    .total-final { display: flex; justify-content: space-between; padding: 14px 0; font-size: 16px; font-weight: 700; border-top: 2px solid #0F1F3D; margin-top: 4px; }
-    .vat-note { font-size: 11px; color: #9ca3af; margin-top: 8px; font-style: italic; }
-    .payment-box { background: #f8fafc; border-radius: 8px; padding: 16px 20px; margin-top: 8px; }
-    .payment-box .label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: #9ca3af; margin-bottom: 4px; }
-    .payment-box .value { font-size: 13px; color: #1a1a2e; font-weight: 500; }
-    .footer { margin-top: 48px; font-size: 11px; color: #9ca3af; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 16px; }
-    @media print { body { margin: 20px; } }
-  </style></head><body>
-
-  <div class="header">
-    <div>
-      <div class="wordmark">GLASI</div>
-      <div class="invoice-label">Bar Invoice</div>
-    </div>
-    <div class="invoice-meta">
-      <strong>${invoiceNum}</strong>
-      ${shiftDate}
-    </div>
-  </div>
-
-  <div class="to-from">
-    <div>
-      <div class="to-from-label">Invoice To</div>
-      <div class="to-from-name">${barName}</div>
-      <div class="to-from-detail">${barAddress}</div>
-      <div class="to-from-detail">${managerName}</div>
-    </div>
-    <div>
-      <div class="to-from-label">Invoice From</div>
-      <div class="to-from-name">Glasi Ltd</div>
-      <div class="to-from-detail">hello@glasi.co.uk</div>
-      <div class="to-from-detail">glasi.co.uk</div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">What happened</div>
-    <p class="narrative">
-      ${barName} requested a Glasi at <strong>${fmtT(reqTime)}</strong>. 
-      We dispatched <strong>${workerName}</strong> at <strong>${fmtT(s.session_workers?.dispatched_at)}</strong>, 
-      who was on site and working by <strong>${fmtT(s.clock_in_confirmed_at)}</strong>.
-    </p>
-    <p class="narrative">
-      By having Glasi support on the floor, your trained bar staff stayed behind the bar where they belong -- serving customers, not collecting glasses.
-    </p>
-    <div class="impact-box">
-      <p>During ${workerName}'s <strong>${hours}hr shift</strong>, your team reclaimed approximately <strong>${Math.round(recoveredMinsPerHour * hours)} minutes</strong> of bartending time that would otherwise have been spent on glass collection.</p>
-      <p style="margin-top:8px;">At your venue's pace, we estimate your team served an additional <strong>${totalExtraDrinks} drinks</strong> -- protecting an estimated <strong>£${revenueProtected.toLocaleString()}</strong> in revenue.</p>
-      <p style="margin-top:8px;">More importantly, <strong>${totalExtraDrinks} customers</strong> got a faster, better experience.</p>
-      <div class="impact-note">Calculated using your venue data: ${bartenders} bartenders, ${lostMinsPerBartender} mins/hr recovered per bartender, ${drinksPerMin} drinks/min, £${drinkValue.toFixed(2)} average drink value.</div>
-    </div>
-    <p class="tagline">"Keeping trained staff where they are most valuable."</p>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Shift Details</div>
-    <div class="detail-row"><span>Worker</span><span>${workerName}</span></div>
-    <div class="detail-row"><span>Venue</span><span>${barName}</span></div>
-    <div class="detail-row"><span>Date</span><span>${shiftDate}</span></div>
-    <div class="detail-row"><span>Clock in</span><span>${fmtT(s.clock_in_confirmed_at)}</span></div>
-    <div class="detail-row"><span>Clock out</span><span>${fmtT(s.clock_out_confirmed_at)}</span></div>
-    <div class="detail-row"><span>Hours worked</span><span>${hours}hr</span></div>
-    <div class="detail-row"><span>Reference</span><span>${invoiceNum}</span></div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Invoice</div>
-    <div class="total-section">
-      <div class="total-row"><span>Glasi rate</span><span>£${rate.toFixed(2)}/hr</span></div>
-      <div class="total-row"><span>Shift length</span><span>${hours}hr</span></div>
-      <div class="total-row"><span>Subtotal</span><span>£${subtotal.toFixed(2)}</span></div>
-      <div class="total-row"><span>VAT (20%)</span><span>£${vat.toFixed(2)}</span></div>
-      <div class="total-final"><span>Total</span><span>£${total.toFixed(2)}</span></div>
-      <div class="vat-note">VAT will be applied once Glasi Ltd VAT registration is confirmed. A revised invoice will be issued at that time.</div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Payment</div>
-    <div class="payment-box">
-      <div class="label">Bank Transfer</div>
-      <div class="value">Glasi Ltd</div>
-      <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">
-        <div class="label" style="margin:0;">Account Number</div>
-        <div class="value">31291275</div>
-        <div class="label" style="margin:0;">Sort Code</div>
-        <div class="value">04-06-05</div>
-      </div>
-      <div style="font-size:11px;color:#9ca3af;margin-top:8px;">Please use invoice reference ${invoiceNum} as payment reference.</div>
-    </div>
-  </div>
-
-  <div class="footer">
-    Glasi Ltd &nbsp;Â·&nbsp; hello@glasi.co.uk &nbsp;Â·&nbsp; glasi.co.uk<br>
-    ${invoiceNum} &nbsp;Â·&nbsp; ${workerName} at ${barName}
-  </div>
-
-  </body></html>`;
-
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  setTimeout(() => win.print(), 500);
-}
+// The legacy bar-impact "BI Report" print template (impact narrative + a date
+// derived reference) was removed with the Shift Money Trail batch. The single
+// bar invoice template is now _renderBarInvoicePrintHtml in the Money
+// workspace, keyed on the Assignment Schedule reference (ASG) via
+// bar_invoice_detail.
 
 async function loadShiftDetail(shiftId) {
   console.log('Shift detail:', shiftId);

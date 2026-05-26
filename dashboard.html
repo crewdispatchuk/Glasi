@@ -1480,9 +1480,10 @@
     .net-search {
       background: var(--navy); border: 1px solid var(--border);
       color: var(--white); border-radius: 8px; padding: 6px 10px;
-      font-family: 'Inter', sans-serif; font-size: 12px; min-width: 180px;
+      font-family: 'Inter', sans-serif; font-size: 12px; min-width: 260px;
     }
     .net-search:focus { outline: none; border-color: var(--ice); }
+    .net-search.net-search-noresolve { border-color: var(--amber); }
 
     /* Bar status pills inside the table. */
     .net-bar-status, .net-bar-sub {
@@ -1549,6 +1550,73 @@
       color: var(--grey); cursor: not-allowed;
     }
     .net-cross-link.disabled:hover { color: var(--grey); text-decoration: none; }
+
+    /* Direction C: unified worker reference profile (Network workspace). */
+    .wprof-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: none; border: none; color: var(--ice); cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 13px; padding: 0; margin-bottom: 14px;
+    }
+    .wprof-back:hover { color: var(--white); text-decoration: underline; }
+    .wprof-header-card {
+      background: var(--navy-mid); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px 22px; margin-bottom: 18px;
+    }
+    .wprof-ref {
+      display: inline-block; font-family: 'Inter', sans-serif; font-weight: 700;
+      font-size: 22px; letter-spacing: 1px; color: var(--ice);
+      background: rgba(168,216,234,0.10); border: 1px solid var(--border);
+      border-radius: 8px; padding: 6px 14px;
+    }
+    .wprof-name { font-size: 20px; font-weight: 700; color: var(--white); margin: 12px 0 4px; }
+    .wprof-counts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .wprof-count {
+      background: var(--navy); border: 1px solid var(--border); border-radius: 10px;
+      padding: 8px 14px; min-width: 84px; text-align: center;
+    }
+    .wprof-count .value { display: block; font-size: 18px; font-weight: 700; color: var(--white); font-variant-numeric: tabular-nums; }
+    .wprof-count .label { display: block; font-size: 10px; letter-spacing: 0.6px; text-transform: uppercase; color: var(--grey); margin-top: 2px; }
+    .wprof-badge {
+      display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+      padding: 2px 9px; border-radius: 10px; text-transform: uppercase;
+    }
+    .wprof-badge.verified   { background: rgba(34,197,94,0.18);  color: var(--green); }
+    .wprof-badge.unverified { background: rgba(245,158,11,0.18); color: var(--amber); }
+    .wprof-admin {
+      margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border);
+    }
+    .wprof-admin-h4 {
+      font-size: 12px; letter-spacing: 0.8px; text-transform: uppercase;
+      color: var(--ice); margin: 0 0 4px; font-weight: 700;
+    }
+    .wprof-admin-note { font-size: 11px; color: var(--grey); margin: 0 0 12px; }
+    .wprof-admin-block { margin-bottom: 18px; }
+    .wprof-admin-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px;
+    }
+    .wprof-admin-row input[type="text"] {
+      flex: 1 1 220px; min-height: 34px;
+      background: var(--navy); border: 1px solid var(--border);
+      color: var(--white); border-radius: 6px; padding: 6px 10px;
+      font-family: 'Inter', sans-serif; font-size: 13px;
+    }
+    .wprof-admin-status { font-size: 11px; color: var(--grey); min-width: 60px; }
+    .wprof-admin-status.saved { color: var(--green); }
+    .wprof-admin-status.err   { color: var(--red); }
+    .wprof-section {
+      background: var(--navy-mid); border: 1px solid var(--border);
+      border-radius: 12px; margin-bottom: 12px; overflow: hidden;
+    }
+    .wprof-section-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 18px; cursor: pointer; user-select: none;
+    }
+    .wprof-section-head:hover { background: rgba(168,216,234,0.04); }
+    .wprof-section-title { font-size: 14px; font-weight: 600; color: var(--white); }
+    .wprof-section-chevron { color: var(--grey); font-size: 14px; transition: transform 0.15s; }
+    .wprof-section.open .wprof-section-chevron { transform: rotate(90deg); }
+    .wprof-section-body { padding: 0 18px 16px; display: none; }
+    .wprof-section.open .wprof-section-body { display: block; }
 
     .net-pin-row {
       display: flex; align-items: center; justify-content: space-between;
@@ -1743,6 +1811,13 @@
       font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
       color: var(--grey); font-weight: 600; margin: 14px 0 8px;
     }
+    /* H&S readiness dot (Panel 1: amber = pending approval, red = missing or rejected). */
+    .hs-status-dot {
+      display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+      margin-right: 7px; vertical-align: middle;
+    }
+    .hs-status-dot.amber { background: var(--amber); }
+    .hs-status-dot.red { background: var(--red); }
 
     /* Stat tiles (Coverage trio, Fulfilment trio, Engine quad). */
     .health-tile-row {
@@ -2566,7 +2641,7 @@
           <button class="net-pill" data-filter="suspended"           onclick="setNetworkWorkersFilter('suspended')">Suspended</button>
           <button class="net-pill" data-filter="offboarded"          onclick="setNetworkWorkersFilter('offboarded')">Offboarded</button>
         </div>
-        <input type="search" class="net-search" id="net-workers-search" placeholder="Search by name..." oninput="onNetworkWorkersSearch()">
+        <input type="search" class="net-search" id="net-workers-search" placeholder="Search a name, GW ref, NumberMill ref, id, GS shift ref, or ASG/BRD ref..." oninput="onNetworkWorkersSearch()" onkeydown="onNetworkWorkersSearchKey(event)">
       </div>
     </div>
     <div class="ops-sched-table-wrap">
@@ -2583,6 +2658,9 @@
         <tbody id="net-workers-tbody"><tr class="ops-sched-loading"><td colspan="5">Loading workers...</td></tr></tbody>
       </table>
     </div>
+  </div>
+  <div class="ws-subtab-content" data-subtab="worker-profile">
+    <div id="net-worker-profile-pane"><div class="health-loading">Loading worker profile...</div></div>
   </div>
   <div class="ws-subtab-content" data-subtab="pipeline">
     <div class="net-pipeline-toolbar">
@@ -3824,6 +3902,9 @@ function showNetworkSubtab(name) {
   if(name !== 'bars' && name !== 'workers' && name !== 'pipeline') return;
   const root = document.getElementById('workspace-network');
   if(!root) return;
+  // Direction C: leaving any real sub-tab clears the worker-profile panel
+  // state so a later route snapshot does not re-emit #network/worker/<id>.
+  if(typeof workerProfileState !== 'undefined') workerProfileState.appId = null;
   root.querySelectorAll('.ws-subtab').forEach(b => {
     b.classList.toggle('active', b.dataset.subtab === name);
   });
@@ -4440,7 +4521,7 @@ async function loadNetworkWorkersData() {
     // Only Vetted + Onboarded land in Workers; Pipeline owns Registered + Applied.
     const rows = await sbGet('applications',
       '?worker_status=in.(vetted,onboarded)'
-      + '&select=id,name,email,phone,age_group,full_address,postcode_full,tier,hourly_rate,reliability_score,reliability_updated_at,total_points,worker_status,active,offboarded_at,created_at,vetting_notes,admin_notes,reliability_notes,uk_work_right,instagram_handle,parasol_worker_ref'
+      + '&select=id,name,email,phone,age_group,full_address,postcode_full,tier,hourly_rate,reliability_score,reliability_updated_at,total_points,worker_status,active,offboarded_at,created_at,vetting_notes,admin_notes,reliability_notes,uk_work_right,instagram_handle,glasi_worker_ref,numbermill_worker_ref'
       + '&order=name.asc');
     networkWorkersState.workers = Array.isArray(rows) ? rows : [];
     // Decision C: fetch active-flag set in one shot so the FLAGGED pill +
@@ -4489,8 +4570,62 @@ function setNetworkWorkersFilter(name) {
 }
 function onNetworkWorkersSearch() {
   const el = document.getElementById('net-workers-search');
-  networkWorkersState.search = ((el && el.value) || '').trim().toLowerCase();
+  const raw = ((el && el.value) || '').trim();
+  networkWorkersState.search = raw.toLowerCase();
   renderNetworkWorkersTable();
+  // Live resolution: if the typed string looks like a reference (not a plain
+  // name), try to resolve it to one worker and open the profile directly.
+  // Plain-name typing keeps the existing list-substring filtering above.
+  if(_netLooksLikeReference(raw)) _netResolveAndOpen(raw, false);
+}
+
+// Enter on the search box is an explicit submit: resolve any input (even a
+// plain name, which may match exactly) and open the profile if a single
+// worker is found.
+function onNetworkWorkersSearchKey(ev) {
+  if(!ev || ev.key !== 'Enter') return;
+  const el = document.getElementById('net-workers-search');
+  const raw = ((el && el.value) || '').trim();
+  if(!raw) return;
+  _netResolveAndOpen(raw, true);
+}
+
+// Heuristic: does the string look like a reference rather than a name?
+// GW-NNNNN, ASG-/BRD- compliance refs, GS... shift refs, a bare numeric id,
+// or a NumberMill-style token (contains a digit and no spaces). Names are
+// alphabetic with spaces, so they fall through to substring filtering.
+function _netLooksLikeReference(s) {
+  if(!s) return false;
+  const t = s.trim();
+  if(/^GW-?\d+$/i.test(t)) return true;
+  if(/^(ASG|BRD)-/i.test(t)) return true;
+  if(/^GS/i.test(t)) return true;
+  if(/^\d+$/.test(t)) return true;
+  // NumberMill refs: no spaces and contain at least one digit.
+  if(!/\s/.test(t) && /\d/.test(t) && t.length >= 4) return true;
+  return false;
+}
+
+let _netResolveSeq = 0;
+async function _netResolveAndOpen(input, explicit) {
+  const seq = ++_netResolveSeq;
+  try {
+    const res = await sbAuth.rpc('resolve_worker_reference', { p_input: input });
+    if(seq !== _netResolveSeq) return; // a newer keystroke superseded this one
+    if(res.error) throw res.error;
+    const r = res.data || {};
+    const appId = r.application_id != null ? Number(r.application_id) : null;
+    if(appId) {
+      openWorkerProfile(appId);
+    } else if(explicit) {
+      // Explicit submit with no resolver hit: leave the list filtered and tell
+      // the user nothing resolved to a single worker.
+      const el = document.getElementById('net-workers-search');
+      if(el) { el.classList.add('net-search-noresolve'); setTimeout(() => el.classList.remove('net-search-noresolve'), 1200); }
+    }
+  } catch(e) {
+    if(explicit) console.warn('[net-workers] reference resolve failed', e);
+  }
 }
 
 function _filteredWorkers() {
@@ -4561,7 +4696,8 @@ function _renderNetworkWorkersExpansion(w) {
     +   '<span class="k">Age group</span><span class="v">' + _opsEscape(w.age_group, '<span class="muted">&mdash;</span>') + '</span>'
     +   '<span class="k">Postcode</span><span class="v">' + _opsEscape(postcode, '<span class="muted">&mdash;</span>') + '</span>'
     +   '<span class="k">Onboarded</span><span class="v">' + (w.created_at ? new Date(w.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '<span class="muted">&mdash;</span>') + '</span>'
-    +   '<span class="k">Numbermill ref</span><span class="v">' + _opsEscape(w.parasol_worker_ref, '<span class="muted">&mdash;</span>') + '</span>'
+    +   '<span class="k">Glasi worker ref</span><span class="v">' + _opsEscape(w.glasi_worker_ref, '<span class="muted">&mdash;</span>') + '</span>'
+    +   '<span class="k">Numbermill ref</span><span class="v">' + _opsEscape(w.numbermill_worker_ref, '<span class="muted">&mdash;</span>') + '</span>'
     + '</div>'
     + '<div class="net-prof-edit-row" style="margin-top:12px;">'
     +   '<span class="field-label">Address</span>'
@@ -4606,7 +4742,7 @@ function _renderNetworkWorkersExpansion(w) {
 
   // Recent shifts + upcoming sessions placeholders, populated async.
   const shiftsHtml    = '<div class="ops-sched-exp-body" id="net-worker-shifts-' + wid + '">Loading recent shifts&hellip;</div>'
-    + '<button class="net-cross-link" onclick="_netGoToHistoryForWorker(' + wid + ')">View full shift history &rsaquo;</button>';
+    + '<button class="net-cross-link" onclick="event.stopPropagation();_netGoToHistoryForWorker(' + wid + ')">Open full worker profile &rsaquo;</button>';
   const upcomingHtml  = '<div class="ops-sched-exp-body" id="net-worker-upcoming-' + wid + '">Loading upcoming sessions&hellip;</div>';
 
   // Actions.
@@ -4850,8 +4986,450 @@ async function _populateWorkerCompliance(w) {
 }
 
 function toggleNetworkWorkersRow(workerId) {
-  networkWorkersState.expandedId = (networkWorkersState.expandedId === workerId) ? null : workerId;
-  renderNetworkWorkersTable();
+  // Direction C: clicking a worker row opens the whole-worker profile rather
+  // than the inline expansion. The inline expansion render functions are kept
+  // (the profile reuses none of them, but other callers may still expand).
+  openWorkerProfile(workerId);
+}
+
+// ====================================================================
+// Direction C: Unified Worker Reference profile.
+// Route: #network/worker/<application_id>. The profile is a dedicated
+// ws-subtab-content panel inside the Network workspace (data-subtab=
+// "worker-profile"), shown over the Bars / Workers / Pipeline sub-tabs.
+// Header card from worker_profile_header; seven collapsible sections each
+// lazy-fetch their RPC on first open (mirrors the History session-detail
+// cache pattern). Admin block (NumberMill ref + RTW) lives in the header.
+// ====================================================================
+
+const workerProfileState = {
+  appId: null,
+  header: null,
+  loadingHeader: false,
+  sectionCache: {},   // appId -> { shifts: [...]/{_error}, disclosures: [...], ... }
+  openSections: {}    // appId -> Set of opened section keys
+};
+
+const WPROF_SECTIONS = [
+  { key: 'shifts',        title: 'Shifts',        rpc: 'worker_profile_shifts' },
+  { key: 'disclosures',   title: 'Disclosures',   rpc: 'worker_profile_disclosures' },
+  { key: 'signatures',    title: 'H&amp;S signatures', rpc: 'worker_profile_signatures' },
+  { key: 'points',        title: 'Points ledger', rpc: 'worker_profile_points' },
+  { key: 'cancellations', title: 'Cancellations', rpc: 'worker_profile_cancellations' },
+  { key: 'payroll',       title: 'Payroll',       rpc: 'worker_profile_payroll' },
+  { key: 'invoices',      title: 'Invoices',      rpc: 'worker_profile_invoices' }
+];
+
+function _wprofFmtDate(v) {
+  if(!v) return '';
+  try { return new Date(v).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }); }
+  catch(e) { return ''; }
+}
+function _wprofFmtDateTime(v) {
+  if(!v) return '';
+  try { return new Date(v).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+  catch(e) { return ''; }
+}
+function _wprofMoney(v) {
+  if(v == null) return '<span class="muted">&mdash;</span>';
+  return '£' + Number(v).toFixed(2);
+}
+function _wprofDash() { return '<span class="muted">&mdash;</span>'; }
+
+// Entry point. Switches the Network workspace to the worker-profile panel and
+// loads the header. Called from a row click, the search resolver, and the
+// hash router.
+function openWorkerProfile(appId) {
+  appId = Number(appId);
+  if(!appId) return;
+  // showWorkspace('network') runs the network onEnter, which restores the last
+  // sub-tab (and clears workerProfileState.appId via showNetworkSubtab). So
+  // switch workspace first, THEN claim the profile panel; otherwise onEnter
+  // would clobber the appId we just set.
+  if(dv2CurrentWorkspace !== 'network') showWorkspace('network');
+  workerProfileState.appId = appId;
+  _wprofShowPanel();
+  try { history.pushState(null, '', '#network/worker/' + appId); } catch(e) {}
+  loadWorkerProfileHeader(appId);
+}
+
+// Toggle the worker-profile ws-subtab-content active without lighting any of
+// the three real sub-tab buttons.
+function _wprofShowPanel() {
+  const root = document.getElementById('workspace-network');
+  if(!root) return;
+  root.querySelectorAll('.ws-subtab').forEach(b => b.classList.remove('active'));
+  root.querySelectorAll('.ws-subtab-content').forEach(c => {
+    c.classList.toggle('active', c.dataset.subtab === 'worker-profile');
+  });
+}
+
+// Leave the profile and return to the Workers list sub-tab.
+function closeWorkerProfile() {
+  workerProfileState.appId = null;
+  try { history.pushState(null, '', '#network/workers'); } catch(e) {}
+  if(typeof showNetworkSubtab === 'function') showNetworkSubtab('workers');
+}
+
+async function loadWorkerProfileHeader(appId) {
+  const pane = document.getElementById('net-worker-profile-pane');
+  if(!pane) return;
+  if(workerProfileState.loadingHeader) return;
+  workerProfileState.loadingHeader = true;
+  pane.innerHTML = '<div class="health-loading">Loading worker profile...</div>';
+  try {
+    const res = await sbAuth.rpc('worker_profile_header', { p_application_id: appId });
+    if(res.error) throw res.error;
+    // Guard against a late response for a worker the user has navigated away
+    // from.
+    if(workerProfileState.appId !== appId) return;
+    workerProfileState.header = res.data || null;
+    if(!workerProfileState.header) {
+      pane.innerHTML = '<button class="wprof-back" onclick="closeWorkerProfile()">&lsaquo; Back to Workers</button>'
+        + '<div class="health-error">No worker found for id ' + appId + '.</div>';
+      return;
+    }
+    _renderWorkerProfile();
+  } catch(e) {
+    pane.innerHTML = '<button class="wprof-back" onclick="closeWorkerProfile()">&lsaquo; Back to Workers</button>'
+      + '<div class="health-error">Failed to load profile: ' + _opsEscape((e && e.message) || 'unknown')
+      + '. <button class="health-link" onclick="loadWorkerProfileHeader(' + appId + ')">Retry</button></div>';
+  } finally {
+    workerProfileState.loadingHeader = false;
+  }
+}
+
+function _renderWorkerProfile() {
+  const pane = document.getElementById('net-worker-profile-pane');
+  if(!pane) return;
+  const h = workerProfileState.header;
+  if(!h) return;
+  const appId = workerProfileState.appId;
+
+  const back = '<button class="wprof-back" onclick="closeWorkerProfile()">&lsaquo; Back to Workers</button>';
+
+  // Contact line: prefer full postcode, fall back to area.
+  const contactBits = [];
+  if(h.email) contactBits.push(_opsEscape(h.email));
+  if(h.phone) contactBits.push(_opsEscape(h.phone));
+  const loc = h.postcode_full || h.area;
+  if(loc) contactBits.push(_opsEscape(loc));
+  const contact = contactBits.length ? contactBits.join(' &middot; ') : _wprofDash();
+
+  const relClass = (typeof _netRelClass === 'function') ? _netRelClass(h.reliability_score) : 'na';
+  const relText = (h.reliability_score == null) ? _wprofDash() : (Math.round(Number(h.reliability_score)) + '%');
+  const tier = (h.tier == null) ? _wprofDash() : ('<span class="net-worker-tier">T' + h.tier + '</span>');
+  const statusTxt = _opsEscape((h.worker_status || '').toUpperCase(), _wprofDash());
+  const kidTxt = h.kid_acknowledged_at
+    ? (_wprofFmtDate(h.kid_acknowledged_at) + (h.kid_acknowledged_version ? (' (v' + _opsEscape(h.kid_acknowledged_version) + ')') : ''))
+    : '<span class="muted">not acknowledged</span>';
+  const activeTxt = (h.active === false) ? '<span style="color:var(--red);">Suspended</span>' : '<span style="color:var(--green);">Active</span>';
+
+  const c = h.counts || {};
+  const countTile = (val, label) => '<div class="wprof-count"><span class="value">' + (val != null ? val : 0) + '</span><span class="label">' + label + '</span></div>';
+  const countsHtml = '<div class="wprof-counts">'
+    + countTile(c.shifts,        'Shifts')
+    + countTile(c.sessions,      'Sessions')
+    + countTile(c.dispatches,    'Dispatches')
+    + countTile(c.disclosures,   'Disclosures')
+    + countTile(c.signatures,    'Signatures')
+    + countTile(c.cancellations, 'Cancels')
+    + countTile(c.lifetime_points, 'Lifetime pts')
+    + '</div>';
+
+  const headerCard = '<div class="wprof-header-card">'
+    + '<span class="wprof-ref">' + _opsEscape(h.glasi_worker_ref, 'GW (pending)') + '</span>'
+    + '<div class="wprof-name">' + _opsEscape(h.name, '(no name)') + ' &nbsp;<span style="font-size:12px;font-weight:400;color:var(--grey);">id ' + appId + '</span></div>'
+    + '<div class="net-prof-grid" style="margin-top:14px;">'
+    +   '<span class="k">Status</span><span class="v">' + statusTxt + ' &nbsp; ' + activeTxt + '</span>'
+    +   '<span class="k">Tier</span><span class="v">' + tier + '</span>'
+    +   '<span class="k">Reliability</span><span class="v"><span class="net-worker-rel ' + relClass + '">' + relText + '</span></span>'
+    +   '<span class="k">Hourly rate</span><span class="v">' + (h.hourly_rate != null ? ('£' + Number(h.hourly_rate).toFixed(2) + '/hr') : _wprofDash()) + '</span>'
+    +   '<span class="k">Total points</span><span class="v">' + (h.total_points != null ? h.total_points : _wprofDash()) + '</span>'
+    +   '<span class="k">Contact</span><span class="v">' + contact + '</span>'
+    +   '<span class="k">Onboarded</span><span class="v">' + (h.onboarded_at ? _wprofFmtDate(h.onboarded_at) : _wprofDash()) + '</span>'
+    +   '<span class="k">Vetted</span><span class="v">' + (h.vetted_at ? _wprofFmtDate(h.vetted_at) : _wprofDash()) + '</span>'
+    +   (h.offboarded_at ? ('<span class="k">Offboarded</span><span class="v">' + _wprofFmtDate(h.offboarded_at) + '</span>') : '')
+    +   '<span class="k">KID acknowledged</span><span class="v">' + kidTxt + '</span>'
+    +   '<span class="k">Admin notes</span><span class="v">' + _opsEscape(h.admin_notes, _wprofDash()) + '</span>'
+    + '</div>'
+    + countsHtml
+    + _renderWorkerProfileAdmin(h)
+    + '</div>';
+
+  const sectionsHtml = WPROF_SECTIONS.map(s => _renderWorkerProfileSection(appId, s)).join('');
+
+  pane.innerHTML = back + headerCard + sectionsHtml;
+}
+
+// Admin block: NumberMill ref input + RTW share code + RTW documents location.
+function _renderWorkerProfileAdmin(h) {
+  const appId = workerProfileState.appId;
+
+  // NumberMill ref.
+  const nmCurrent = h.numbermill_worker_ref || '';
+  const nmBlock = '<div class="wprof-admin-block">'
+    + '<h4 class="wprof-admin-h4">NumberMill reference</h4>'
+    + '<p class="wprof-admin-note">Umbrella payroll worker reference. Changes are audited.</p>'
+    + '<div class="wprof-admin-row">'
+    +   '<input type="text" id="wprof-nm-input" value="' + _opsEscape(nmCurrent) + '" placeholder="NumberMill worker reference">'
+    +   '<button class="ops-sched-btn primary" onclick="saveWorkerNumbermillRef()">Save</button>'
+    +   '<span class="wprof-admin-status" id="wprof-nm-status"></span>'
+    + '</div>'
+    + '</div>';
+
+  // RTW share code (Reg 22 independent check).
+  const codeCurrent = h.rtw_share_code || '';
+  const verified = !!h.rtw_share_code_verified_at;
+  const verifiedBadge = verified
+    ? '<span class="wprof-badge verified">Verified ' + _wprofFmtDate(h.rtw_share_code_verified_at) + '</span>'
+    : '<span class="wprof-badge unverified">Unverified</span>';
+  const rtwBlock = '<div class="wprof-admin-block">'
+    + '<h4 class="wprof-admin-h4">Right to work share code &nbsp;' + verifiedBadge + '</h4>'
+    + '<p class="wprof-admin-note">Glasi\'s independent Reg 22 right-to-work check. Saving with Verified ticked stamps the verification date. Audited.</p>'
+    + '<div class="wprof-admin-row">'
+    +   '<input type="text" id="wprof-rtw-code-input" value="' + _opsEscape(codeCurrent) + '" placeholder="Home Office share code">'
+    +   '<label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--white);">'
+    +     '<input type="checkbox" id="wprof-rtw-verified-input"' + (verified ? ' checked' : '') + '> Verified'
+    +   '</label>'
+    +   '<button class="ops-sched-btn primary" onclick="saveWorkerRtwShareCode()">Save</button>'
+    +   '<span class="wprof-admin-status" id="wprof-rtw-status"></span>'
+    + '</div>'
+    + '</div>';
+
+  // RTW documents location.
+  const docCurrent = h.rtw_documents_location || '';
+  const docUpdated = h.rtw_documents_location_updated_at
+    ? ('<span class="wprof-admin-note" style="margin-top:6px;">Last updated ' + _wprofFmtDateTime(h.rtw_documents_location_updated_at) + '.</span>')
+    : '';
+  const docBlock = '<div class="wprof-admin-block">'
+    + '<h4 class="wprof-admin-h4">Right to work documents location</h4>'
+    + '<p class="wprof-admin-note">Where the original right-to-work documents are stored. Audited.</p>'
+    + '<div class="wprof-admin-row">'
+    +   '<input type="text" id="wprof-rtwdoc-input" value="' + _opsEscape(docCurrent) + '" placeholder="e.g. Drive folder, physical file ref">'
+    +   '<button class="ops-sched-btn primary" onclick="saveWorkerRtwDocsLocation()">Save</button>'
+    +   '<span class="wprof-admin-status" id="wprof-rtwdoc-status"></span>'
+    + '</div>'
+    + docUpdated
+    + '</div>';
+
+  return '<div class="wprof-admin">'
+    + '<h4 class="wprof-admin-h4" style="font-size:11px;color:var(--grey);margin-bottom:12px;">Admin: references &amp; right to work</h4>'
+    + nmBlock + rtwBlock + docBlock
+    + '</div>';
+}
+
+function _renderWorkerProfileSection(appId, def) {
+  const open = workerProfileState.openSections[appId] && workerProfileState.openSections[appId].has(def.key);
+  let body = '<div class="health-loading" style="margin:8px 0;">Loading ' + def.title + '...</div>';
+  if(open) {
+    const cache = (workerProfileState.sectionCache[appId] || {})[def.key];
+    if(cache !== undefined) body = _renderWorkerProfileSectionBody(def.key, cache);
+  }
+  return '<div class="wprof-section' + (open ? ' open' : '') + '" id="wprof-section-' + def.key + '">'
+    + '<div class="wprof-section-head" onclick="toggleWorkerProfileSection(&quot;' + def.key + '&quot;)">'
+    +   '<span class="wprof-section-title">' + def.title + '</span>'
+    +   '<span class="wprof-section-chevron">&rsaquo;</span>'
+    + '</div>'
+    + '<div class="wprof-section-body">' + body + '</div>'
+    + '</div>';
+}
+
+function toggleWorkerProfileSection(key) {
+  const appId = workerProfileState.appId;
+  if(!appId) return;
+  if(!workerProfileState.openSections[appId]) workerProfileState.openSections[appId] = new Set();
+  const set = workerProfileState.openSections[appId];
+  if(set.has(key)) {
+    set.delete(key);
+    _renderWorkerProfile();
+    return;
+  }
+  set.add(key);
+  _renderWorkerProfile();
+  // Lazy-fetch on first open.
+  const cache = workerProfileState.sectionCache[appId] || {};
+  if(cache[key] === undefined) _loadWorkerProfileSection(appId, key);
+}
+
+async function _loadWorkerProfileSection(appId, key) {
+  const def = WPROF_SECTIONS.find(s => s.key === key);
+  if(!def) return;
+  if(!workerProfileState.sectionCache[appId]) workerProfileState.sectionCache[appId] = {};
+  try {
+    const res = await sbAuth.rpc(def.rpc, { p_application_id: appId });
+    if(res.error) throw res.error;
+    workerProfileState.sectionCache[appId][key] = Array.isArray(res.data) ? res.data : [];
+  } catch(e) {
+    workerProfileState.sectionCache[appId][key] = { _error: (e && e.message) || 'unknown' };
+  }
+  // Only re-render if the user is still on this worker and the section is open.
+  if(workerProfileState.appId === appId
+     && workerProfileState.openSections[appId]
+     && workerProfileState.openSections[appId].has(key)) {
+    _renderWorkerProfile();
+  }
+}
+
+function _renderWorkerProfileSectionBody(key, data) {
+  if(data && data._error) return '<div class="health-error">Failed to load: ' + _opsEscape(data._error) + '</div>';
+  const rows = Array.isArray(data) ? data : [];
+  if(!rows.length) return '<div class="health-empty">No ' + key + ' for this worker.</div>';
+
+  if(key === 'shifts') {
+    return _wprofTable(['Date','Bar','Status','Hours','Rate','Earned','Clock-out'], rows.map(r => [
+      _wprofFmtDate(r.clock_in_confirmed_at) || _wprofDash(),
+      _opsEscape(r.bar_name, _wprofDash()),
+      _opsEscape((r.status || '').toUpperCase(), _wprofDash()),
+      r.shift_length_hours != null ? (Number(r.shift_length_hours).toFixed(1) + 'h') : _wprofDash(),
+      r.hourly_rate != null ? ('£' + Number(r.hourly_rate).toFixed(2)) : _wprofDash(),
+      _wprofMoney(r.total_earned),
+      _opsEscape(r.clock_out_source, _wprofDash())
+    ]));
+  }
+  if(key === 'disclosures') {
+    return _wprofTable(['Delivered','Bar','Round','BRD ref','Response','Responded'], rows.map(r => [
+      _wprofFmtDateTime(r.delivered_at) || _wprofDash(),
+      _opsEscape(r.bar_name, _wprofDash()),
+      r.round_number != null ? r.round_number : _wprofDash(),
+      _opsEscape(r.brd_reference, _wprofDash()),
+      _opsEscape((r.response || '').toUpperCase(), _wprofDash()),
+      _wprofFmtDateTime(r.responded_at) || _wprofDash()
+    ]));
+  }
+  if(key === 'signatures') {
+    return _wprofTable(['Signed','Bar','Document','Version','Typed name'], rows.map(r => [
+      _wprofFmtDateTime(r.signed_at) || _wprofDash(),
+      _opsEscape(r.bar_name, _wprofDash()),
+      _opsEscape(r.document_type, _wprofDash()),
+      _opsEscape(r.document_version, _wprofDash()),
+      _opsEscape(r.typed_name, _wprofDash())
+    ]));
+  }
+  if(key === 'points') {
+    return _wprofTable(['Awarded','Amount','Reason','Source','By','Notes'], rows.map(r => [
+      _wprofFmtDateTime(r.awarded_at) || _wprofDash(),
+      r.amount != null ? ((Number(r.amount) > 0 ? '+' : '') + r.amount) : _wprofDash(),
+      _opsEscape(r.reason, _wprofDash()),
+      _opsEscape(r.source_type, _wprofDash()),
+      _opsEscape(r.awarded_by, _wprofDash()),
+      _opsEscape(r.notes, _wprofDash())
+    ]));
+  }
+  if(key === 'cancellations') {
+    return _wprofTable(['Cancelled','By','State','Reason','Points action','Comp.'], rows.map(r => [
+      _wprofFmtDateTime(r.cancelled_at) || _wprofDash(),
+      _opsEscape(r.cancelled_by, _wprofDash()),
+      _opsEscape(r.cancellation_state, _wprofDash()),
+      _opsEscape(r.reason, _wprofDash()),
+      _opsEscape(r.points_action, _wprofDash()),
+      (r.compensation_awarded != null ? _opsEscape(String(r.compensation_awarded)) : _wprofDash())
+    ]));
+  }
+  if(key === 'payroll') {
+    return _wprofTable(['Glasi ref','Bar','Clock-in','Clock-out','Hours','Rate','Total','Paid'], rows.map(r => [
+      _opsEscape(r.glasi_ref, _wprofDash()),
+      _opsEscape(r.bar_name, _wprofDash()),
+      _wprofFmtDateTime(r.clock_in_confirmed_at) || _wprofDash(),
+      _wprofFmtDateTime(r.clock_out_confirmed_at) || _wprofDash(),
+      r.shift_length_hours != null ? (Number(r.shift_length_hours).toFixed(1) + 'h') : _wprofDash(),
+      r.hourly_rate != null ? ('£' + Number(r.hourly_rate).toFixed(2)) : _wprofDash(),
+      _wprofMoney(r.shift_total),
+      r.payment_sent_at ? _wprofFmtDate(r.payment_sent_at) : '<span class="muted">pending</span>'
+    ]));
+  }
+  if(key === 'invoices') {
+    return _wprofTable(['Generated','Glasi ref','Kind','Total','Status'], rows.map(r => [
+      _wprofFmtDate(r.generated_at) || _wprofDash(),
+      _opsEscape(r.glasi_ref, _wprofDash()),
+      _opsEscape(r.invoice_kind, _wprofDash()),
+      _wprofMoney(r.total_amount),
+      _opsEscape((r.status || '').toUpperCase(), _wprofDash())
+    ]));
+  }
+  return '<div class="health-empty">Nothing to show.</div>';
+}
+
+function _wprofTable(headers, bodyRows) {
+  const thead = '<thead><tr>' + headers.map(h => '<th>' + h + '</th>').join('') + '</tr></thead>';
+  const tbody = '<tbody>' + bodyRows.map(cells => '<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>').join('') + '</tbody>';
+  return '<table class="net-mini-table">' + thead + tbody + '</table>';
+}
+
+// --- Admin setters (audited server-side). ---
+
+async function saveWorkerNumbermillRef() {
+  const appId = workerProfileState.appId;
+  const input = document.getElementById('wprof-nm-input');
+  const statusEl = document.getElementById('wprof-nm-status');
+  if(!appId || !input) return;
+  const newRef = input.value.trim();
+  if(!newRef) { if(statusEl) { statusEl.textContent = 'Enter a reference'; statusEl.className = 'wprof-admin-status err'; } return; }
+  const h = workerProfileState.header || {};
+  const current = (h.numbermill_worker_ref || '').trim();
+  let reason = null;
+  if(current && current !== newRef) {
+    // Correction of an existing value: require a short reason + confirm.
+    reason = prompt('This worker already has a NumberMill ref (' + current + '). Enter a short reason for the correction:', '');
+    if(reason === null) return; // cancelled
+    reason = reason.trim();
+    if(!reason) { if(statusEl) { statusEl.textContent = 'Reason required'; statusEl.className = 'wprof-admin-status err'; } return; }
+    if(!confirm('Change NumberMill ref from "' + current + '" to "' + newRef + '"? This is audited.')) return;
+  } else if(current === newRef) {
+    if(statusEl) { statusEl.textContent = 'No change'; statusEl.className = 'wprof-admin-status'; }
+    return;
+  }
+  if(statusEl) { statusEl.textContent = 'Saving...'; statusEl.className = 'wprof-admin-status'; }
+  try {
+    const res = await sbAuth.rpc('set_worker_numbermill_ref', { p_application_id: appId, p_new_ref: newRef, p_reason: reason });
+    if(res.error) throw res.error;
+    if(statusEl) { statusEl.textContent = 'Saved'; statusEl.className = 'wprof-admin-status saved'; }
+    loadWorkerProfileHeader(appId);
+  } catch(e) {
+    if(statusEl) { statusEl.textContent = 'Save failed: ' + ((e && e.message) || 'unknown'); statusEl.className = 'wprof-admin-status err'; }
+  }
+}
+
+async function saveWorkerRtwShareCode() {
+  const appId = workerProfileState.appId;
+  const input = document.getElementById('wprof-rtw-code-input');
+  const verifiedInput = document.getElementById('wprof-rtw-verified-input');
+  const statusEl = document.getElementById('wprof-rtw-status');
+  if(!appId || !input) return;
+  const code = input.value.trim();
+  if(!code) { if(statusEl) { statusEl.textContent = 'Enter a code'; statusEl.className = 'wprof-admin-status err'; } return; }
+  const verified = !!(verifiedInput && verifiedInput.checked);
+  const reason = prompt('Optional note for this right-to-work check (audited):', '');
+  if(reason === null) return; // cancelled
+  if(statusEl) { statusEl.textContent = 'Saving...'; statusEl.className = 'wprof-admin-status'; }
+  try {
+    const res = await sbAuth.rpc('set_worker_rtw_share_code', { p_application_id: appId, p_code: code, p_verified: verified, p_reason: (reason.trim() || null) });
+    if(res.error) throw res.error;
+    if(statusEl) { statusEl.textContent = 'Saved'; statusEl.className = 'wprof-admin-status saved'; }
+    loadWorkerProfileHeader(appId);
+  } catch(e) {
+    if(statusEl) { statusEl.textContent = 'Save failed: ' + ((e && e.message) || 'unknown'); statusEl.className = 'wprof-admin-status err'; }
+  }
+}
+
+async function saveWorkerRtwDocsLocation() {
+  const appId = workerProfileState.appId;
+  const input = document.getElementById('wprof-rtwdoc-input');
+  const statusEl = document.getElementById('wprof-rtwdoc-status');
+  if(!appId || !input) return;
+  const location = input.value.trim();
+  if(!location) { if(statusEl) { statusEl.textContent = 'Enter a location'; statusEl.className = 'wprof-admin-status err'; } return; }
+  const reason = prompt('Optional note for this change (audited):', '');
+  if(reason === null) return; // cancelled
+  if(statusEl) { statusEl.textContent = 'Saving...'; statusEl.className = 'wprof-admin-status'; }
+  try {
+    const res = await sbAuth.rpc('set_worker_rtw_documents_location', { p_application_id: appId, p_location: location, p_reason: (reason.trim() || null) });
+    if(res.error) throw res.error;
+    if(statusEl) { statusEl.textContent = 'Saved'; statusEl.className = 'wprof-admin-status saved'; }
+    loadWorkerProfileHeader(appId);
+  } catch(e) {
+    if(statusEl) { statusEl.textContent = 'Save failed: ' + ((e && e.message) || 'unknown'); statusEl.className = 'wprof-admin-status err'; }
+  }
 }
 
 function netWorkerInlineSave(workerId, field, value) {
@@ -5010,7 +5588,7 @@ function stopNetworkWorkersRealtime() {
 //
 // Hard Rule #1 in effect: applicant-submitted fields (name, email,
 // phone, age_group, postcode_*, hospitality_experience, uk_work_right,
-// available_hours, instagram_handle, parasol_worker_ref) stay read-only
+// available_hours, instagram_handle, numbermill_worker_ref) stay read-only
 // in the APPLIED expansion. Only the vet form fields (Sam-side
 // experience checkbox, parasol consent, address verification, notes)
 // + worker_status / vetted_at / vetted_by / vetting_notes write on Save
@@ -5484,7 +6062,7 @@ async function saveVetV2(workerId) {
     vetted_at: now,
     vetted_by: samEmail,
     experience_confirmed_at: exp ? now : null,
-    parasol_contact_consent_at: con ? now : null
+    numbermill_contact_consent_at: con ? now : null
   };
   if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
   try {
@@ -5588,6 +6166,13 @@ function _dv2CurrentRouteState() {
   // Snapshot the current workspace + sub-tab + expansion as a hash state.
   const ws = dv2CurrentWorkspace;
   if(!ws) return null;
+  // Direction C: when the worker-profile panel is the active Network content,
+  // the route is #network/worker/<id> (none of the three sub-tab buttons are
+  // lit). Snapshot that so dv2WriteHash does not clobber it back to a sub-tab.
+  if(ws === 'network' && workerProfileState && workerProfileState.appId) {
+    const wpActive = document.querySelector('#workspace-network .ws-subtab-content[data-subtab="worker-profile"].active');
+    if(wpActive) return { workspace: 'network', subtab: 'worker', pipeline2: String(workerProfileState.appId) };
+  }
   const state = { workspace: ws };
   if(ws === 'operations') {
     const liveActive = document.querySelector('#workspace-operations .ws-subtab[data-subtab="live"].active');
@@ -5637,6 +6222,17 @@ function dv2ApplyHash() {
   if(!DV2_WORKSPACES.includes(state.workspace)) return;
   _dv2SuppressHashWrites(() => {
     showWorkspace(state.workspace);
+    // Direction C: #network/worker/<id> opens the whole-worker profile panel.
+    // pipeline2 carries the third segment, which is the application id here.
+    if(state.workspace === 'network' && state.subtab === 'worker') {
+      const appId = Number(state.pipeline2);
+      if(appId) {
+        workerProfileState.appId = appId;
+        _wprofShowPanel();
+        loadWorkerProfileHeader(appId);
+      }
+      return;
+    }
     if(state.workspace === 'operations' && state.subtab) showOperationsSubtab(state.subtab);
     if(state.workspace === 'network'    && state.subtab) showNetworkSubtab(state.subtab);
     if(state.workspace === 'network' && state.subtab === 'pipeline' && state.pipeline2) {
@@ -5790,6 +6386,14 @@ const healthState = {
   complianceMatrixExpandedId: null, complianceMatrixDetailCache: {},
   complianceBarExpandedId: null, complianceBarDetailCache: {},
   complianceResolvedHistoryOpen: false,
+  // H&S readiness panels (22 May 2026): bars without an H&S document +
+  // worker H&S signature status. Read-only via hs_bars_without_document()
+  // and hs_worker_signature_status(). Filter state for the signature panel
+  // is kept here so re-renders of just its table body preserve input focus,
+  // mirroring the Network workers search pattern.
+  hsBarsRows: null, hsSigRows: null,
+  hsSigWorkerSearch: '', hsSigBarSearch: '', hsSigUnsignedOnly: false,
+  hsSigSort: 'worker',
   // Modal context
   kidUploadContext: null,   // { application_ids: [...] }
   numbermillNotifyFlagId: null,
@@ -6665,7 +7269,7 @@ async function loadHealthComplianceData() {
   const pane = document.getElementById('health-compliance-pane');
   if(pane) pane.innerHTML = '<div class="health-loading">Loading Compliance...</div>';
   try {
-    const [kids, walk, hs, bars, matrix, fAct, fAw, fRes] = await Promise.all([
+    const [kids, walk, hs, bars, matrix, fAct, fAw, fRes, hsBars, hsSig] = await Promise.all([
       sbAuth.rpc('f40_glasi_compliance_kids_status'),
       sbAuth.rpc('f40_glasi_compliance_bar_walkthroughs'),
       sbAuth.rpc('f40_glasi_compliance_bar_hs_docs'),
@@ -6673,10 +7277,12 @@ async function loadHealthComplianceData() {
       sbAuth.rpc('f40_worker_compliance_matrix'),
       sbAuth.rpc('f40_numbermill_flags_action_needed'),
       sbAuth.rpc('f40_numbermill_flags_awaiting_decision'),
-      sbAuth.rpc('f40_numbermill_flags_resolved', { p_limit: 50 })
+      sbAuth.rpc('f40_numbermill_flags_resolved', { p_limit: 50 }),
+      sbAuth.rpc('hs_bars_without_document'),
+      sbAuth.rpc('hs_worker_signature_status')
     ]);
-    if(kids.error || walk.error || hs.error || bars.error || matrix.error || fAct.error || fAw.error || fRes.error) {
-      throw (kids.error || walk.error || hs.error || bars.error || matrix.error || fAct.error || fAw.error || fRes.error);
+    if(kids.error || walk.error || hs.error || bars.error || matrix.error || fAct.error || fAw.error || fRes.error || hsBars.error || hsSig.error) {
+      throw (kids.error || walk.error || hs.error || bars.error || matrix.error || fAct.error || fAw.error || fRes.error || hsBars.error || hsSig.error);
     }
     healthState.complianceKids          = kids.data   || [];
     healthState.complianceWalkthroughs  = walk.data   || [];
@@ -6686,6 +7292,8 @@ async function loadHealthComplianceData() {
     healthState.complianceFlagsAction   = fAct.data   || [];
     healthState.complianceFlagsAwaiting = fAw.data    || [];
     healthState.complianceFlagsResolved = fRes.data   || [];
+    healthState.hsBarsRows              = hsBars.data || [];
+    healthState.hsSigRows               = hsSig.data  || [];
     _renderHealthCompliancePane();
   } catch(err) {
     if(pane) pane.innerHTML = '<div class="health-error">Failed to load: ' + _opsEscape(err.message || err) + '. <button class="health-link" onclick="loadHealthComplianceData()">Retry</button></div>';
@@ -6699,7 +7307,9 @@ function _renderHealthCompliancePane() {
     + _renderGlasiComplianceSection()
     + _renderBarComplianceSection()
     + _renderWorkerComplianceSection()
-    + _renderNumbermillFlagsSection();
+    + _renderNumbermillFlagsSection()
+    + _renderHsBarsReadinessSection()
+    + _renderHsWorkerSignatureSection();
 }
 
 // ----- Section 1: Glasi Compliance -----
@@ -7080,6 +7690,177 @@ function _renderNumbermillFlagsSection() {
 function toggleHealthComplianceResolvedHistory() {
   healthState.complianceResolvedHistoryOpen = !healthState.complianceResolvedHistoryOpen;
   _renderHealthCompliancePane();
+}
+
+// ====================================================================
+// H&S readiness panels (22 May 2026). Two read-only admin panels living
+// in Health -> Compliance, rendered after the four f40_* sections.
+//   Panel 1: bars without an active approved H&S document (a bar cannot
+//            fire requests until one exists). Data: hs_bars_without_document().
+//   Panel 2: per worker / per bar H&S signature status (a worker cannot
+//            join a session for a bar until they sign its current version).
+//            Data: hs_worker_signature_status(). Filter + sort state lives
+//            in healthState so the table body can re-render without the
+//            filter inputs losing focus (Network workers search pattern).
+// ====================================================================
+
+// ----- Section 5: Bars without an H&S document -----
+
+function _renderHsBarsReadinessSection() {
+  const rows = healthState.hsBarsRows || [];
+  const blockedCount = rows.length;
+  const overallPill = blockedCount === 0
+    ? '<span class="money-status-pill green">ALL BARS COVERED</span>'
+    : '<span class="money-status-pill red">' + blockedCount + ' bar' + (blockedCount === 1 ? '' : 's') + ' cannot fire requests</span>';
+
+  const body = rows.length
+    ? rows.map(r => {
+        const st = r.latest_hs_status; // 'pending' | 'rejected' | null
+        const isPending = st === 'pending';
+        const dotClass = isPending ? 'amber' : 'red';
+        let statusLine;
+        if(st === 'pending') {
+          statusLine = 'H&amp;S uploaded, awaiting your approval'
+            + (r.latest_hs_uploaded_at ? (' (uploaded ' + _healthFmtDate(r.latest_hs_uploaded_at) + ')') : '');
+        } else if(st === 'rejected') {
+          statusLine = 'Last H&amp;S was rejected, awaiting re-upload';
+        } else {
+          statusLine = 'No H&amp;S document uploaded';
+        }
+        const barStatusCell = r.bar_status
+          ? '<span class="money-status-pill grey">' + _opsEscape(String(r.bar_status).toUpperCase()) + '</span>'
+          : '<span class="muted">,</span>';
+        return '<tr>'
+          + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '#' + r.bar_id) + '</button></td>'
+          + '<td>' + barStatusCell + '</td>'
+          + '<td><span class="hs-status-dot ' + dotClass + '"></span>' + statusLine + '</td>'
+          + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">'
+              + (isPending ? 'Review H&amp;S document' : 'Upload H&amp;S document') + ' &rsaquo;</button></td>'
+          + '</tr>';
+      }).join('')
+    : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">All bars have an active H&amp;S document.</td></tr>';
+
+  return ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Bars without an H&amp;S document ' + overallPill + '</h3>'
+    +   '<div class="health-section-note">A bar must have an active approved H&amp;S document before it can fire requests. Amber: uploaded and awaiting your approval. Red: nothing on file or last upload rejected.</div>'
+    +   '<table class="health-table"><thead><tr><th>Bar</th><th>Bar status</th><th>H&amp;S readiness</th><th>Action</th></tr></thead><tbody>' + body + '</tbody></table>'
+    + '</section>';
+}
+
+// ----- Section 6: Worker H&S signature status -----
+
+function _renderHsWorkerSignatureSection() {
+  const all = healthState.hsSigRows || [];
+  const unsignedCount = all.filter(r => r.signed_current === false).length;
+  const overallPill = all.length === 0
+    ? '<span class="money-status-pill grey">NO WORKER / BAR PAIRS YET</span>'
+    : (unsignedCount === 0
+        ? '<span class="money-status-pill green">ALL SIGNED</span>'
+        : '<span class="money-status-pill amber">' + unsignedCount + ' unsigned (blocked)</span>');
+
+  const sort = healthState.hsSigSort || 'worker';
+  const workerActive = sort === 'worker' ? ' active' : '';
+  const barActive    = sort === 'bar' ? ' active' : '';
+  const unsignedActive = healthState.hsSigUnsignedOnly ? ' active' : '';
+
+  const controls = ''
+    + '<div class="hs-sig-controls" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">'
+    +   '<input type="search" class="net-search" id="hs-sig-worker-search" placeholder="Filter by worker..." value="' + _opsEscape(healthState.hsSigWorkerSearch || '') + '" oninput="onHsSigWorkerSearch()">'
+    +   '<input type="search" class="net-search" id="hs-sig-bar-search" placeholder="Filter by bar..." value="' + _opsEscape(healthState.hsSigBarSearch || '') + '" oninput="onHsSigBarSearch()">'
+    +   '<button class="net-pill' + unsignedActive + '" id="hs-sig-unsigned-toggle" onclick="toggleHsSigUnsignedOnly()">Unsigned only</button>'
+    +   '<span style="color:var(--grey);font-size:11px;margin-left:4px;">Sort:</span>'
+    +   '<button class="net-pill' + workerActive + '" data-hssort="worker" onclick="setHsSigSort(&quot;worker&quot;)">Worker</button>'
+    +   '<button class="net-pill' + barActive + '" data-hssort="bar" onclick="setHsSigSort(&quot;bar&quot;)">Bar</button>'
+    + '</div>';
+
+  return ''
+    + '<section class="health-section">'
+    +   '<h3 class="health-section-h3">Worker H&amp;S signature status ' + overallPill + '</h3>'
+    +   '<div class="health-section-note">A worker cannot join a session for a bar until they sign that bar\'s current H&amp;S version. Unsigned rows (amber / red) are blocked.</div>'
+    +   controls
+    +   '<table class="health-table"><thead><tr><th>Worker</th><th>Bar</th><th>Current version</th><th>Signed version</th><th>Signature</th><th>Signed at</th></tr></thead><tbody id="hs-sig-tbody">' + _hsSigTableRows() + '</tbody></table>'
+    + '</section>';
+}
+
+function _hsSigFilteredSortedRows() {
+  const ws = (healthState.hsSigWorkerSearch || '').toLowerCase();
+  const bs = (healthState.hsSigBarSearch || '').toLowerCase();
+  const unsignedOnly = !!healthState.hsSigUnsignedOnly;
+  const sort = healthState.hsSigSort || 'worker';
+  const filtered = (healthState.hsSigRows || []).filter(r => {
+    if(unsignedOnly && r.signed_current !== false) return false;
+    if(ws && !((r.worker_name || '').toLowerCase().includes(ws))) return false;
+    if(bs && !((r.bar_name || '').toLowerCase().includes(bs))) return false;
+    return true;
+  });
+  filtered.sort((a, b) => {
+    const pa = sort === 'bar' ? (a.bar_name || '') : (a.worker_name || '');
+    const pb = sort === 'bar' ? (b.bar_name || '') : (b.worker_name || '');
+    const primary = pa.localeCompare(pb, 'en-GB', { sensitivity: 'base' });
+    if(primary !== 0) return primary;
+    const sa = sort === 'bar' ? (a.worker_name || '') : (a.bar_name || '');
+    const sb = sort === 'bar' ? (b.worker_name || '') : (b.bar_name || '');
+    return sa.localeCompare(sb, 'en-GB', { sensitivity: 'base' });
+  });
+  return filtered;
+}
+
+function _hsSigTableRows() {
+  const rows = _hsSigFilteredSortedRows();
+  if(!rows.length) {
+    return '<tr><td colspan="6" style="padding:24px 10px;text-align:center;color:var(--grey);">No onboarded workers are in catchment of a bar with an H&amp;S document yet.</td></tr>';
+  }
+  return rows.map(r => {
+    const unsigned = r.signed_current === false;
+    const rowStyle = unsigned ? ' style="background:rgba(239,68,68,0.06);"' : '';
+    const signedVersionCell = (r.signed_version == null)
+      ? '<span style="color:var(--red);">not signed</span>'
+      : ('v' + r.signed_version);
+    const badge = r.signed_current
+      ? '<span class="money-status-pill green">SIGNED</span>'
+      : (r.signed_version == null
+          ? '<span class="money-status-pill red">UNSIGNED</span>'
+          : '<span class="money-status-pill amber">OUTDATED</span>');
+    return '<tr' + rowStyle + '>'
+      + '<td><button class="health-link" onclick="_healthGoToWorker(' + r.application_id + ')">' + _opsEscape(r.worker_name || '#' + r.application_id) + '</button></td>'
+      + '<td><button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">' + _opsEscape(r.bar_name || '#' + r.bar_id) + '</button></td>'
+      + '<td>' + (r.current_version != null ? ('v' + r.current_version) : '<span class="muted">,</span>') + '</td>'
+      + '<td>' + signedVersionCell + '</td>'
+      + '<td>' + badge + '</td>'
+      + '<td>' + (r.signed_at ? _healthFmtDateTime(r.signed_at) : '<span class="muted">,</span>') + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+function _hsSigRerenderBody() {
+  const tbody = document.getElementById('hs-sig-tbody');
+  if(tbody) tbody.innerHTML = _hsSigTableRows();
+}
+
+function onHsSigWorkerSearch() {
+  const el = document.getElementById('hs-sig-worker-search');
+  healthState.hsSigWorkerSearch = ((el && el.value) || '').trim();
+  _hsSigRerenderBody();
+}
+function onHsSigBarSearch() {
+  const el = document.getElementById('hs-sig-bar-search');
+  healthState.hsSigBarSearch = ((el && el.value) || '').trim();
+  _hsSigRerenderBody();
+}
+function toggleHsSigUnsignedOnly() {
+  healthState.hsSigUnsignedOnly = !healthState.hsSigUnsignedOnly;
+  const btn = document.getElementById('hs-sig-unsigned-toggle');
+  if(btn) btn.classList.toggle('active', healthState.hsSigUnsignedOnly);
+  _hsSigRerenderBody();
+}
+function setHsSigSort(key) {
+  if(key !== 'worker' && key !== 'bar') return;
+  healthState.hsSigSort = key;
+  document.querySelectorAll('.hs-sig-controls .net-pill[data-hssort]').forEach(b => {
+    b.classList.toggle('active', b.dataset.hssort === key);
+  });
+  _hsSigRerenderBody();
 }
 
 // ----- Modal handlers -----
@@ -8644,14 +9425,22 @@ function _netGoToHistoryForBar(barId) {
   if(typeof dv2ApplyHash === 'function') dv2ApplyHash();
 }
 function _netGoToHistoryForWorker(workerId) {
-  // History at v1 has no worker filter; navigate to the Sessions list with
-  // an alert hint. A worker-scoped filter is a v1.1 follow-up.
-  if(typeof historyState !== 'undefined') {
-    historyState.barIds = [];     // clear any prior bar filter
-    historyState.sessions = null;
-  }
-  try { history.pushState(null, '', '#history/sessions'); } catch(e) {}
-  if(typeof dv2ApplyHash === 'function') dv2ApplyHash();
+  // Direction C: this used to dead-end on the unfiltered History sessions
+  // list (no worker filter existed). Repointed to the whole-worker profile,
+  // with the Shifts section auto-opened so it lands where the old label
+  // ("View full shift history") implied.
+  const appId = Number(workerId);
+  if(!appId) return;
+  if(typeof openWorkerProfile !== 'function') return;
+  if(!workerProfileState.openSections[appId]) workerProfileState.openSections[appId] = new Set();
+  workerProfileState.openSections[appId].add('shifts');
+  openWorkerProfile(appId);
+  // openWorkerProfile loads the header then renders; the shifts section will
+  // render open and lazy-fetch on the next render tick.
+  setTimeout(() => {
+    const cache = workerProfileState.sectionCache[appId] || {};
+    if(cache['shifts'] === undefined) _loadWorkerProfileSection(appId, 'shifts');
+  }, 50);
 }
 function _netGoToHealthCoverage() {
   try { history.pushState(null, '', '#health/coverage'); } catch(e) {}
@@ -8948,7 +9737,7 @@ async function loadWorkers() {
   // F-35: fetch workers + shift counts + active distances + active bars in parallel.
   const [workersResult, shiftCounts, distancesResult, barsResult] = await Promise.all([
     sbGet('applications',
-      '?order=name.asc&select=id,name,phone,email,postcode_full,full_address,tier,hourly_rate,active,age_group,reliability_notes,available_hours,reliability_score,reliability_updated_at,worker_status,total_points,last_login_claim_at,vetted_at,vetted_by,vetting_notes,experience_confirmed_at,parasol_contact_consent_at,onboarded_at,hospitality_experience,uk_work_right,has_black_clothing,has_transport,physically_able,speaks_english,agrees_work_standard,created_at'),
+      '?order=name.asc&select=id,name,phone,email,postcode_full,full_address,tier,hourly_rate,active,age_group,reliability_notes,available_hours,reliability_score,reliability_updated_at,worker_status,total_points,last_login_claim_at,vetted_at,vetted_by,vetting_notes,experience_confirmed_at,numbermill_contact_consent_at,onboarded_at,hospitality_experience,uk_work_right,has_black_clothing,has_transport,physically_able,speaks_english,agrees_work_standard,created_at'),
     sbGet('shifts', '?status=eq.completed&select=session_worker_id,session_workers(application_id)'),
     sbGet('worker_bar_distances', '?active=eq.true&select=application_id,walking_minutes'),
     sbGet('bars', '?status=in.(trial,active,prospect)&select=id')
@@ -9084,7 +9873,7 @@ function buildReadonlyHeader(w) {
     rows += ewRow('Vetted',           fmtDate(w.vetted_at));
     rows += ewRow('Vetted by',        w.vetted_by || '-');
     rows += ewRow('Experience confirmed', fmtDate(w.experience_confirmed_at));
-    rows += ewRow('Consent captured',     fmtDate(w.parasol_contact_consent_at));
+    rows += ewRow('Consent captured',     fmtDate(w.numbermill_contact_consent_at));
   }
   if(status === 'onboarded') {
     rows += ewRow('Onboarded',     w.onboarded_at ? fmtDate(w.onboarded_at) : 'not tracked');
@@ -9197,7 +9986,7 @@ async function saveVet() {
     vetted_at: now,
     vetted_by: samEmail,
     experience_confirmed_at: exp ? now : null,
-    parasol_contact_consent_at: con ? now : null
+    numbermill_contact_consent_at: con ? now : null
   };
 
   try {
@@ -11133,7 +11922,12 @@ async function confirmCloseSession() {
   if(!confirm('Close this session? Make sure all shifts are completed first.')) return;
 
   const sessionId = liveSessionOps.sessionId;
-  if(!sessionId) return;
+  if(!sessionId) {
+    // No live session is actually open (the view is stale). Surface it rather
+    // than returning silently, which reads as "Close does nothing".
+    alert('No live session is open. This view is out of date, refresh the page (Ctrl+Shift+R).');
+    return;
+  }
 
   // F-38: close via close_session RPC. Server-side hard-block if any
   // session_workers row is dispatched/onshift; bulk-flips remaining

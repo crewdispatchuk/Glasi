@@ -12600,13 +12600,13 @@ function handleEngagementTimelineEvent(ops, table, type, record) {
       kind = 'confirmed';
       reason = record.reason;
       amount = record.amount;
-      displayTime = record.resolved_at || record.updated_at || now;
+      displayTime = record.status_updated_at || now;
     } else if(type === 'UPDATE' && status === 'forfeit') {
       kind = 'forfeit';
       reason = record.reason;
       amount = record.amount;
       forfeitReason = record.forfeit_reason || '';
-      displayTime = record.resolved_at || record.updated_at || now;
+      displayTime = record.status_updated_at || now;
     } else {
       return;
     }
@@ -13802,7 +13802,7 @@ async function loadSessionDetail(sessionId) {
     sbGet('session_invites', '?session_id=eq.'+sessionId+'&select=application_id,attendance_confirmed,joined_at'),
     sbGet('points_ledger', '?session_id=eq.'+sessionId+'&order=awarded_at.asc&select=id,application_id,amount,reason,shift_id,source_type,source_id,awarded_at,awarded_by,metadata,notes,correction_for_event_id'),
     sbGet('session_workers', '?session_id=eq.'+sessionId+'&select=id,application_id,worker_name,status,points_earned,applications(id,name,tier)'),
-    sbGet('session_basket', '?session_id=eq.'+sessionId+'&order=created_at.asc&select=id,application_id,reason,amount,status,source_type,source_id,created_at,resolved_at,forfeit_reason')
+    sbGet('session_basket', '?session_id=eq.'+sessionId+'&order=created_at.asc&select=id,application_id,reason,amount,status,source_type,source_id,created_at,status_updated_at,forfeit_reason')
   ]);
 
   const session = sessionArr[0];
@@ -16716,7 +16716,7 @@ async function loadShiftPoints(p) {
     '?application_id=eq.' + appId
     + '&or=(' + basketOrParts.join(',') + ')'
     + '&order=created_at.asc'
-    + '&select=id,reason,amount,status,source_type,source_id,created_at,resolved_at,forfeit_reason');
+    + '&select=id,reason,amount,status,source_type,source_id,created_at,status_updated_at,forfeit_reason');
 
   const [beforeRows, afterRows] = await Promise.all([
     postedAt

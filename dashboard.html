@@ -2399,40 +2399,70 @@
 <div class="overlay" id="ov-add-bar">
   <div class="modal" style="max-width:560px;max-height:90vh;overflow-y:auto;">
     <div class="modal-title">Add Bar</div>
-    <label>Bar Name</label>
+
+    <!-- Batch B Q3: full bar-onboarding form. Bar identity, primary manager,
+         shared bar login, contract, compliance docs, PIN, notes. Bar profile
+         (opening hours, vibe, photos) is filled later in the manager app. -->
+
+    <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;margin-bottom:8px;">Bar identity</div>
+    <label>Bar name</label>
     <input class="field" type="text" id="bar-name" placeholder="e.g. Dancing Man Brewery" />
-    <label>Full Address</label>
+    <label>Full address</label>
     <input class="field" type="text" id="bar-address" placeholder="e.g. 7 King Street, Southampton, SO14 1JS" />
-    <label>Google Maps Link</label>
+    <label>Google Maps link (optional)</label>
     <input class="field" type="text" id="bar-maps" placeholder="Paste Google Maps link here" />
+    <label>Registered name (optional)</label>
+    <input class="field" type="text" id="bar-registered-name" placeholder="Legal billing name, if different from the bar name" />
+    <label>Invoice email (optional now; needed before the bar can fire requests)</label>
+    <input class="field" type="email" id="bar-invoice-email" placeholder="Where invoices are sent" />
     <label>Status</label>
     <select class="field" id="bar-status">
       <option value="prospect">Prospect</option>
-      <option value="trial">Trial</option>
+      <option value="trial" selected>Trial</option>
       <option value="active">Active</option>
       <option value="paused">Paused</option>
     </select>
-    <label>Notes</label>
+
+    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;">Primary manager (contract signer)</div>
+    <label>Manager name</label>
+    <input class="field" type="text" id="bar-mgr-name" placeholder="e.g. Aidan" />
+    <label>Manager phone (on-duty contact number)</label>
+    <input class="field" type="tel" id="bar-mgr-phone" placeholder="e.g. 07700 900000" />
+
+    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;">Bar login (shared bar account)</div>
+    <div style="font-size:12px;color:var(--grey);margin:6px 0 12px;line-height:1.5;">One login per bar. Every PIN holder signs in with this email and password on the manager app. You give the credentials to the manager directly.</div>
+    <label>Bar login email</label>
+    <input class="field" type="email" id="bar-login-email" placeholder="bar@venue.com" />
+    <label>Bar login password</label>
+    <input class="field" type="text" id="bar-login-password" placeholder="A memorable password to give the manager" />
+
+    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;">Contract (optional now)</div>
+    <label>Signed bar agreement PDF</label>
+    <input class="field" type="file" id="bar-contract-file" accept=".pdf,application/pdf" />
+    <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-weight:400;">
+      <input type="checkbox" id="bar-contract-signed" /> Mark the agreement as signed in person (dated today)
+    </label>
+
+    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;">Compliance documents (optional now)</div>
+    <label>Health and safety document (PDF or video)</label>
+    <input class="field" type="file" id="bar-hs-file" accept=".pdf,.mp4,.mov,application/pdf,video/mp4,video/quicktime" />
+    <label>Glasi walkthrough (PDF or video)</label>
+    <input class="field" type="file" id="bar-walkthrough-file" accept=".pdf,.mp4,.mov,application/pdf,video/mp4,video/quicktime" />
+
+    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;">Initial PIN holder</div>
+    <label>4-digit PIN for the primary manager</label>
+    <input class="field" type="text" id="bar-mgr-pin" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+
+    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;">Internal notes</div>
+    <label>Notes (optional)</label>
     <textarea class="field" id="bar-notes" rows="3" placeholder="Entrance details, parking, anything useful..."></textarea>
 
-    <!-- F-26: initial manager fields. The bar's first manager (paperwork
-         signer) is created at the same time as the bar. Additional managers
-         are added later via the bar admin overlay. -->
-    <div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--border);">
-      <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;margin-bottom:6px;">Initial Manager</div>
-      <div style="font-size:12px;color:var(--grey);margin-bottom:14px;line-height:1.5;">The bar's first manager, typically the paperwork signer. They will receive an invite email to set their password. More managers can be added later.</div>
-    </div>
-    <label>Manager Name</label>
-    <input class="field" type="text" id="bar-mgr-name" placeholder="e.g. Aidan" />
-    <label>Manager Email</label>
-    <input class="field" type="email" id="bar-mgr-email" placeholder="manager@bar.com" />
-    <label>Initial PIN (4 digits)</label>
-    <input class="field" type="text" id="bar-mgr-pin" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
     <div id="add-bar-error" style="font-size:12px;color:var(--red);margin-top:8px;min-height:16px;"></div>
+    <div id="add-bar-progress" style="font-size:12px;color:var(--grey);margin-top:4px;min-height:16px;"></div>
 
     <div class="modal-actions">
       <button class="cancel-btn" onclick="closeOv('add-bar')">Cancel</button>
-      <button class="confirm-btn" id="add-bar-btn" onclick="saveBar()">Add Bar + Manager</button>
+      <button class="confirm-btn" id="add-bar-btn" onclick="saveBar()">Create bar</button>
     </div>
   </div>
 </div>
@@ -4051,7 +4081,7 @@ async function loadNetworkBarsData() {
   }
   try {
     const rows = await sbGet('bars',
-      '?order=name.asc&select=id,name,address,contact_name,contact_phone,google_maps_link,status,notes,nature_of_business,created_at,opening_time,closing_time,registered_name,invoice_email'
+      '?order=name.asc&select=id,name,address,contact_name,contact_phone,google_maps_link,status,notes,nature_of_business,created_at,opening_time,closing_time,registered_name,invoice_email,session_schedule,contract_signed_at'
       + ',bartenders,drinks_per_hour,avg_drink_value,avg_customer_spend,typical_rush_minutes,lost_minutes_per_bartender'
       + ',bar_managers(id,name,revoked_at,created_at)'
       + ',bar_subscriptions(id,status,monthly_fee,discount_amount,trial_ends_at,paused_at,cancelled_at,billing_cycle_day)'
@@ -4233,6 +4263,18 @@ function _renderNetworkBarsExpansion(b) {
     + '</div>'
     + '<div style="margin-top:8px;"><button class="ops-sched-btn" onclick="netBarBillingSave(' + bid + ')">Save billing</button></div>';
 
+  // Usual sessions inline-edit (Batch B item 7). Saved via set_bar_session_schedule.
+  const scheduleHtml = ''
+    + '<div class="net-prof-edit-row">'
+    +   '<span class="field-label">Usual sessions</span>'
+    +   '<input type="text" id="net-bar-session_schedule-' + bid + '" placeholder="e.g. Friday 3pm to 8pm, Saturday 3pm to 8pm" value="' + _opsEscape(b.session_schedule || '') + '">'
+    +   '<span class="field-status" id="net-bar-status-schedule-' + bid + '"></span>'
+    + '</div>'
+    + '<div style="margin-top:8px;"><button class="ops-sched-btn" onclick="netBarScheduleSave(' + bid + ')">Save usual sessions</button></div>';
+
+  // Onboarding completion checklist (Batch B Q3). Populated by _populateBarChecklist.
+  const checklistHtml = '<div id="net-bar-checklist-' + bid + '"><span class="muted">Loading checklist...</span></div>';
+
   // Pin Holders block.
   const pinPendingPlaceholder = '<div id="net-bar-pending-pin-' + bid + '" style="display:none;"></div>';
   const pinHtml = managers.length
@@ -4317,13 +4359,16 @@ function _renderNetworkBarsExpansion(b) {
     _populateBarDocs(bid);
     _populateBarPerformance(bid);
     _populateBarPendingPin(bid);
+    _populateBarChecklist(bid);
   }, 0);
 
   return ''
     + '<tr class="ops-sched-expanded-row"><td colspan="5"><div class="ops-sched-exp-inner">'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Identity</h3>' + identityHtml + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Onboarding checklist</h3>' + checklistHtml + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Contract &amp; Subscription</h3>' + subBody + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Billing</h3>' + billingHtml + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Usual sessions</h3>' + scheduleHtml + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">PIN Holders</h3>' + pinPendingPlaceholder + pinHtml + '<div style="margin-top:8px;">' + pinAction + '</div></div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Documents</h3>' + docsHtml + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Baseline Data</h3>' + baselineHtml + '</div>'
@@ -4334,26 +4379,151 @@ function _renderNetworkBarsExpansion(b) {
     + '</div></td></tr>';
 }
 
+// Batch B (items 1, 2, 3): per-bar document manager. Shows the active version,
+// any pending versions with approve/reject, and an upload control per type
+// (H&S, bar agreement, walkthrough). Approvals go through approve_bar_document;
+// uploads through upload_bar_document (bar_contract and walkthrough auto-approve
+// for admins; admin H&S auto-approves per item 8).
 async function _populateBarDocs(barId) {
   const el = document.getElementById('net-bar-docs-' + barId);
   if(!el) return;
+  el.innerHTML = '<span class="muted">Loading documents...</span>';
   try {
     const docs = await sbGet('bar_documents',
-      '?bar_id=eq.' + barId + '&is_active=eq.true&select=id,document_type,document_url,version,uploaded_at,approval_status&order=document_type.asc');
+      '?bar_id=eq.' + barId + '&select=id,document_type,document_url,document_format,version,uploaded_at,uploaded_by,approval_status,is_active,rejection_reason&order=version.desc');
+    el.innerHTML = _renderBarDocManager(barId, docs || []);
+  } catch(e) {
+    el.innerHTML = '<span class="muted">Could not load documents.</span>';
+  }
+}
+
+function _renderBarDocManager(barId, docs) {
+  const groupLabel = 'font-size:11px;font-weight:700;letter-spacing:1px;color:var(--ice);text-transform:uppercase;margin-bottom:4px;';
+  const line = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0;';
+  const types = [
+    { key: 'bar_hs',            label: 'Health and safety' },
+    { key: 'bar_contract',      label: 'Bar agreement' },
+    { key: 'glasi_walkthrough', label: 'Glasi walkthrough' }
+  ];
+  return types.map(t => {
+    const rows = docs.filter(d => d.document_type === t.key);
+    const active   = rows.find(d => d.is_active && d.approval_status === 'approved');
+    const pending  = rows.filter(d => d.approval_status === 'pending');
+    const rejected = rows.filter(d => d.approval_status === 'rejected');
+    let body = '';
+    if(active) {
+      body += '<div style="' + line + '">'
+        + '<span class="money-status-pill green">ACTIVE v' + active.version + '</span> '
+        + '<button class="health-link" onclick="viewDocument(' + active.id + ', \'' + _opsEscape((active.document_url || '').replace(/'/g, "\\'")) + '\')">View</button>'
+        + '</div>';
+    }
+    pending.forEach(d => {
+      body += '<div style="' + line + '">'
+        + '<span class="money-status-pill amber">PENDING v' + d.version + '</span> '
+        + '<button class="health-link" onclick="viewDocument(' + d.id + ', \'' + _opsEscape((d.document_url || '').replace(/'/g, "\\'")) + '\')">View</button> '
+        + '<button class="small-ice-btn" onclick="approveBarDoc(' + d.id + ', true, ' + barId + ')">Approve</button> '
+        + '<button class="ghost-btn" style="border-color:rgba(239,68,68,0.4);color:var(--red);" onclick="approveBarDoc(' + d.id + ', false, ' + barId + ')">Reject</button>'
+        + '</div>';
+    });
+    if(!active && !pending.length) {
+      body += '<div style="' + line + 'color:var(--grey);">' + (rejected.length ? 'Last upload rejected. ' : '') + 'Not uploaded.</div>';
+    }
+    const uploadLabel = active ? ('Replace ' + t.label.toLowerCase()) : ('Upload ' + t.label.toLowerCase());
+    body += '<div style="margin-top:6px;"><button class="ops-sched-btn" onclick="uploadBarDocument(' + barId + ', \'' + t.key + '\')">' + uploadLabel + '</button></div>';
+    return '<div style="margin-bottom:14px;"><div style="' + groupLabel + '">' + t.label + '</div>' + body + '</div>';
+  }).join('');
+}
+
+// Generalised from the retired uploadWalkthroughForBar: uploads any bar document
+// type. Bar agreement is PDF only; H&S and walkthrough accept PDF or video.
+async function uploadBarDocument(barId, docType) {
+  const accept = docType === 'bar_contract'
+    ? '.pdf,application/pdf'
+    : '.pdf,.mp4,.mov,application/pdf,video/mp4,video/quicktime';
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = accept;
+  input.onchange = async () => {
+    const file = input.files && input.files[0];
+    if(!file) return;
+    const extMatch = file.name.match(/\.([^.]+)$/);
+    const ext = (extMatch ? extMatch[1] : 'pdf').toLowerCase();
+    const format = (ext === 'mp4' || ext === 'mov') ? 'video' : 'pdf';
+    if(docType === 'bar_contract' && format !== 'pdf') { alert('The bar agreement must be a PDF.'); return; }
+    const ts = Date.now();
+    const path = barId + '/' + docType + '-' + ts + '.' + ext;
+    try {
+      const { error: upErr } = await sbAuth.storage.from('bar-documents').upload(path, file, {
+        contentType: file.type || (format === 'video' ? ('video/' + ext) : 'application/pdf'),
+        upsert: false
+      });
+      if(upErr) throw upErr;
+      const { error: rpcErr } = await sbAuth.rpc('upload_bar_document', {
+        p_bar_id: barId, p_document_type: docType, p_document_url: path, p_document_format: format
+      });
+      if(rpcErr) throw rpcErr;
+      _populateBarDocs(barId);
+    } catch(e) {
+      alert('Upload failed: ' + (e?.message || e));
+    }
+  };
+  input.click();
+}
+
+// Approve or reject a pending bar document, then refresh whichever surfaces are
+// on screen (the per-bar manager and the Health pending-approvals glance).
+async function approveBarDoc(docId, approve, barId) {
+  let reason = null;
+  if(approve) {
+    if(!confirm('Approve this document and activate it for workers?')) return;
+  } else {
+    reason = prompt('Reason for rejection? Visible to the bar manager.');
+    if(reason === null) return;
+    if(!reason.trim()) { alert('Please provide a reason.'); return; }
+    reason = reason.trim();
+  }
+  try {
+    const { error } = await sbAuth.rpc('approve_bar_document', { p_document_id: docId, p_approve: approve, p_rejection_reason: reason });
+    if(error) throw error;
+    if(barId) _populateBarDocs(barId);
+    if(document.getElementById('health-pending-docs')) _populateHealthPendingDocs();
+    if(typeof _populateBarChecklist === 'function' && barId) _populateBarChecklist(barId);
+  } catch(e) {
+    alert((approve ? 'Approval' : 'Rejection') + ' failed: ' + (e?.message || e));
+  }
+}
+
+// Batch B (Q1): cross-bar glance of every document awaiting Sam's approval,
+// rendered in the Health to Compliance pane.
+async function _populateHealthPendingDocs() {
+  const el = document.getElementById('health-pending-docs');
+  if(!el) return;
+  el.innerHTML = '<span class="muted">Loading...</span>';
+  try {
+    const [docs, bars] = await Promise.all([
+      sbGet('bar_documents', '?approval_status=eq.pending&select=id,bar_id,document_type,document_url,version,uploaded_at&order=uploaded_at.asc'),
+      sbGet('bars', '?select=id,name')
+    ]);
     if(!docs || !docs.length) {
-      el.innerHTML = '<span class="muted">No active documents on file.</span>';
+      el.innerHTML = '<span style="color:var(--grey);font-size:12px;">No documents pending approval.</span>';
       return;
     }
-    el.innerHTML = '<table class="net-mini-table"><thead><tr><th>Type</th><th>Version</th><th>Status</th><th>Link</th></tr></thead><tbody>'
+    const barName = id => { const b = (bars || []).find(x => x.id === id); return b ? b.name : ('Bar ' + id); };
+    const typeLabel = t => t === 'bar_hs' ? 'Health and safety' : t === 'bar_contract' ? 'Bar agreement' : t === 'glasi_walkthrough' ? 'Walkthrough' : t;
+    el.innerHTML = '<table class="health-table"><thead><tr><th>Bar</th><th>Document</th><th>Uploaded</th><th>Action</th></tr></thead><tbody>'
       + docs.map(d => '<tr>'
-        + '<td>' + _opsEscape((d.document_type || '').replace(/_/g, ' ')) + '</td>'
-        + '<td>v' + (d.version || 1) + '</td>'
-        + '<td>' + _opsEscape((d.approval_status || 'pending').toUpperCase()) + '</td>'
-        + '<td>' + (d.document_url ? '<a href="' + _opsEscape(d.document_url) + '" target="_blank" rel="noopener" style="color:var(--ice);">View</a>' : '<span class="muted">,</span>') + '</td>'
+        + '<td><button class="health-link" onclick="_healthGoToBar(' + d.bar_id + ')">' + _opsEscape(barName(d.bar_id)) + '</button></td>'
+        + '<td>' + _opsEscape(typeLabel(d.document_type)) + ' v' + d.version + '</td>'
+        + '<td>' + (d.uploaded_at ? _healthFmtDate(d.uploaded_at) : '<span class="muted">,</span>') + '</td>'
+        + '<td>'
+        +   '<button class="health-link" onclick="viewDocument(' + d.id + ', \'' + _opsEscape((d.document_url || '').replace(/'/g, "\\'")) + '\')">View</button> '
+        +   '<button class="small-ice-btn" onclick="approveBarDoc(' + d.id + ', true, ' + d.bar_id + ')">Approve</button> '
+        +   '<button class="ghost-btn" style="border-color:rgba(239,68,68,0.4);color:var(--red);" onclick="approveBarDoc(' + d.id + ', false, ' + d.bar_id + ')">Reject</button>'
+        + '</td>'
         + '</tr>').join('')
       + '</tbody></table>';
   } catch(e) {
-    el.innerHTML = '<span class="muted">Could not load documents.</span>';
+    el.innerHTML = '<span class="muted">Could not load pending documents.</span>';
   }
 }
 
@@ -4459,6 +4629,84 @@ async function netBarBillingSave(barId) {
   } catch(e) {
     if(statusEl) { statusEl.textContent = 'Save failed'; statusEl.classList.add('err'); }
     else alert('Billing save failed: ' + (e.message || 'unknown'));
+  }
+}
+
+// Batch B item 7: save a bar usual-sessions schedule via the admin RPC.
+async function netBarScheduleSave(barId) {
+  const el = document.getElementById('net-bar-session_schedule-' + barId);
+  const statusEl = document.getElementById('net-bar-status-schedule-' + barId);
+  const schedule = el ? el.value.trim() : '';
+  if(statusEl) { statusEl.textContent = 'Saving...'; statusEl.classList.remove('saved', 'err'); }
+  try {
+    const res = await sbAuth.rpc('set_bar_session_schedule', { p_bar_id: barId, p_schedule: schedule || null });
+    if(res.error) throw res.error;
+    const b = networkBarsState.bars.find(x => x.id === barId);
+    if(b) b.session_schedule = schedule || null;
+    if(statusEl) { statusEl.textContent = 'Saved'; statusEl.classList.add('saved'); }
+    _populateBarChecklist(barId);
+  } catch(e) {
+    if(statusEl) { statusEl.textContent = 'Save failed'; statusEl.classList.add('err'); }
+    else alert('Schedule save failed: ' + (e.message || 'unknown'));
+  }
+}
+
+// Batch B Q3: mark the bar agreement signed in person (Reg-style record).
+async function netBarMarkContractSigned(barId) {
+  if(!confirm('Mark the bar agreement as signed in person, dated today?')) return;
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    const res = await sbAuth.rpc('f40_bar_compliance_mark_contract_signed', { p_bar_id: barId, p_signed_date: today });
+    if(res.error) throw res.error;
+    const b = networkBarsState.bars.find(x => x.id === barId);
+    if(b) b.contract_signed_at = new Date().toISOString();
+    _populateBarChecklist(barId);
+  } catch(e) {
+    alert('Could not mark signed: ' + (e.message || 'unknown'));
+  }
+}
+
+// Batch B Q3: onboarding completion checklist for a bar. Each row is done (green)
+// or carries a direct action where one exists.
+async function _populateBarChecklist(barId) {
+  const el = document.getElementById('net-bar-checklist-' + barId);
+  if(!el) return;
+  el.innerHTML = '<span class="muted">Loading checklist...</span>';
+  try {
+    const b = (networkBarsState.bars || []).find(x => x.id === barId) || {};
+    const [docs, mgrs] = await Promise.all([
+      sbGet('bar_documents', '?bar_id=eq.' + barId + '&is_active=eq.true&approval_status=eq.approved&select=document_type'),
+      sbGet('bar_managers', '?bar_id=eq.' + barId + '&revoked_at=is.null&select=id,auth_user_id')
+    ]);
+    const hasDoc = t => (docs || []).some(d => d.document_type === t);
+    const hasMgr = (mgrs || []).length > 0;
+    const hasAuth = (mgrs || []).some(m => m.auth_user_id);
+    const items = [
+      { label: 'Bar name',                done: !!(b.name && String(b.name).trim()) },
+      { label: 'Bar address',             done: !!(b.address && String(b.address).trim()) },
+      { label: 'Bar manager',             done: hasMgr },
+      { label: 'Bar login',               done: hasAuth },
+      { label: 'Contract uploaded',       done: hasDoc('bar_contract'),      action: ['Upload',      "uploadBarDocument(" + barId + ", 'bar_contract')"] },
+      { label: 'Contract signed',         done: !!b.contract_signed_at,      action: ['Mark signed', "netBarMarkContractSigned(" + barId + ")"] },
+      { label: 'H&S document uploaded',   done: hasDoc('bar_hs'),            action: ['Upload',      "uploadBarDocument(" + barId + ", 'bar_hs')"] },
+      { label: 'Glasi walkthrough uploaded', done: hasDoc('glasi_walkthrough'), action: ['Upload',   "uploadBarDocument(" + barId + ", 'glasi_walkthrough')"] },
+      { label: 'Invoice email',           done: !!(b.invoice_email && String(b.invoice_email).trim()) },
+      { label: 'Session schedule',        done: !!(b.session_schedule && String(b.session_schedule).trim()) },
+      { label: 'PIN holders configured',  done: hasMgr }
+    ];
+    el.innerHTML = items.map(it => {
+      const mark = it.done
+        ? '<span style="color:var(--green);font-weight:700;">done</span>'
+        : (it.action
+            ? '<button class="ops-sched-btn" onclick="' + it.action[1] + '">' + it.action[0] + '</button>'
+            : '<span style="color:var(--amber);">outstanding</span>');
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);">'
+        + '<span style="font-size:13px;color:var(--white);">' + (it.done ? '&check; ' : '') + _opsEscape(it.label) + '</span>'
+        + '<span>' + mark + '</span>'
+        + '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<span class="muted">Could not load checklist.</span>';
   }
 }
 
@@ -5240,6 +5488,7 @@ function _renderWorkerProfile() {
     + '</div>'
     + countsHtml
     + _renderWorkerProfileAdmin(h)
+    + _renderWorkerProfileOnboard(h)
     + '</div>';
 
   const sectionsHtml = WPROF_SECTIONS.map(s => _renderWorkerProfileSection(appId, s)).join('');
@@ -5302,6 +5551,43 @@ function _renderWorkerProfileAdmin(h) {
     + '<h4 class="wprof-admin-h4" style="font-size:11px;color:var(--grey);margin-bottom:12px;">Admin: references &amp; right to work</h4>'
     + nmBlock + rtwBlock + docBlock
     + '</div>';
+}
+
+// Batch B (item 4, Q2): vetted to onboarded action. Shown only for vetted
+// workers, disabled until both the NumberMill reference and the RTW share code
+// are on file (the two inputs sit in the admin block directly above). The save
+// handlers refresh the header, so the button re-evaluates after each save.
+function _renderWorkerProfileOnboard(h) {
+  if((h.worker_status || '') !== 'vetted') return '';
+  const hasNm  = !!(h.numbermill_worker_ref && String(h.numbermill_worker_ref).trim());
+  const hasRtw = !!(h.rtw_share_code && String(h.rtw_share_code).trim());
+  const ready = hasNm && hasRtw;
+  const btn = '<button style="background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.4);'
+    + 'padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;'
+    + 'cursor:' + (ready ? 'pointer' : 'not-allowed') + ';opacity:' + (ready ? '1' : '0.5') + ';" '
+    + (ready ? '' : 'disabled ') + 'onclick="wprofMarkOnboarded()">Mark onboarded</button>';
+  const hint = ready ? '' : '<span style="font-size:12px;color:var(--grey);margin-left:10px;">Add NumberMill reference and RTW share code first.</span>';
+  return '<div class="wprof-admin-block" style="display:flex;align-items:center;flex-wrap:wrap;">' + btn + hint + '</div>';
+}
+
+async function wprofMarkOnboarded() {
+  const appId = workerProfileState.appId;
+  if(!appId) return;
+  const h = workerProfileState.header || {};
+  if(!(h.numbermill_worker_ref && String(h.numbermill_worker_ref).trim()
+       && h.rtw_share_code && String(h.rtw_share_code).trim())) {
+    alert('Add the NumberMill reference and the RTW share code before onboarding.');
+    return;
+  }
+  if(!confirm('Mark this worker as onboarded? They become eligible for session invites.')) return;
+  const now = new Date().toISOString();
+  try {
+    await sbPatch('applications', '?id=eq.' + appId, { worker_status: 'onboarded', onboarded_at: now });
+  } catch(e) {
+    alert('Failed: ' + ((e && e.message) || 'unknown'));
+    return;
+  }
+  loadWorkerProfileHeader(appId);
 }
 
 function _renderWorkerProfileSection(appId, def) {
@@ -7457,7 +7743,7 @@ function _renderGlasiComplianceSection() {
         + '<td>' + (r.uploaded_at ? _healthFmtDate(r.uploaded_at) : '<span class="muted">,</span>') + '</td>'
         + '<td>' + (r.uploaded && r.document_url
             ? ('<a class="health-link" href="' + _opsEscape(r.document_url) + '" target="_blank" rel="noopener">View walkthrough</a>')
-            : '<button class="health-link" onclick="alert(&quot;Walkthrough upload UI lands in a follow-up batch; use Network &rarr; Bars &rarr; Documents for now.&quot;)">Upload walkthrough</button>') + '</td>'
+            : '<button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">Upload walkthrough</button>') + '</td>'
         + '</tr>').join('')
     : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">No active bars in scope.</td></tr>';
   const walkBlock = ''
@@ -7474,7 +7760,7 @@ function _renderGlasiComplianceSection() {
         + '<td>' + (r.uploaded_at ? _healthFmtDate(r.uploaded_at) : (r.uploaded ? '<span class="muted" style="font-size:11px;">(legacy URL)</span>' : '<span class="muted">,</span>')) + '</td>'
         + '<td>' + (r.uploaded && r.document_url
             ? ('<a class="health-link" href="' + _opsEscape(r.document_url) + '" target="_blank" rel="noopener">View H&amp;S doc</a>')
-            : '<button class="health-link" onclick="alert(&quot;H&amp;S document upload UI lands in a follow-up batch; use Network &rarr; Bars &rarr; Documents for now.&quot;)">Upload H&amp;S document</button>') + '</td>'
+            : '<button class="health-link" onclick="_healthGoToBar(' + r.bar_id + ')">Upload H&amp;S document</button>') + '</td>'
         + '</tr>').join('')
     : '<tr><td colspan="4" style="padding:24px 10px;text-align:center;color:var(--grey);">No active bars in scope.</td></tr>';
   const hsBlock = ''
@@ -7489,11 +7775,16 @@ function _renderGlasiComplianceSection() {
     +   ' <strong style="color:var(--ice);">Status: Coming in dispatch redesign (Batch 5+).</strong>'
     + '</div>';
 
+  const pendingBlock = ''
+    + '<div class="health-section-sub" style="margin-top:8px;">Documents pending approval</div>'
+    + '<div id="health-pending-docs" style="margin-bottom:18px;"><span class="muted">Loading...</span></div>';
+  setTimeout(_populateHealthPendingDocs, 0);
+
   return ''
     + '<section class="health-section">'
     +   '<h3 class="health-section-h3">Glasi compliance ' + overallPill + '</h3>'
     +   '<div class="health-section-note">Documents and acknowledgements Glasi is responsible for providing.</div>'
-    +   kidsBlock + walkBlock + hsBlock + assignmentBlock
+    +   pendingBlock + kidsBlock + walkBlock + hsBlock + assignmentBlock
     + '</section>';
 }
 
@@ -10719,82 +11010,143 @@ function copyText(text, btn) {
   });
 }
 
+// Upload a given File object as a bar document (used by the Add Bar form's
+// inline uploads). The interactive picker version is uploadBarDocument.
+async function _uploadBarFile(barId, docType, file) {
+  const extMatch = file.name.match(/\.([^.]+)$/);
+  const ext = (extMatch ? extMatch[1] : 'pdf').toLowerCase();
+  const format = (ext === 'mp4' || ext === 'mov') ? 'video' : 'pdf';
+  if(docType === 'bar_contract' && format !== 'pdf') throw new Error('the bar agreement must be a PDF');
+  const ts = Date.now();
+  const path = barId + '/' + docType + '-' + ts + '.' + ext;
+  const { error: upErr } = await sbAuth.storage.from('bar-documents').upload(path, file, {
+    contentType: file.type || (format === 'video' ? ('video/' + ext) : 'application/pdf'),
+    upsert: false
+  });
+  if(upErr) throw upErr;
+  const { error: rpcErr } = await sbAuth.rpc('upload_bar_document', {
+    p_bar_id: barId, p_document_type: docType, p_document_url: path, p_document_format: format
+  });
+  if(rpcErr) throw rpcErr;
+}
+
 async function saveBar() {
-  // F-26: bar + initial manager created atomically. Bar row is INSERTed
-  // first (returns the new id). Then the admin-create-bar-manager Edge
-  // Function creates the auth user via inviteUserByEmail, INSERTs the
-  // bar_managers row, and sets the initial PIN via the RPC.
+  // Batch B Q3: full bar onboarding. The bar row is INSERTed first, then the
+  // admin-create-bar-manager Edge Function creates the shared bar auth user
+  // with the Sam-supplied password (createUser, no invite), the bar_managers
+  // row, and the PIN. Optional document uploads then run sequentially against
+  // the new bar id; partial creation is fine (the checklist shows what is left).
   const errEl = document.getElementById('add-bar-error');
+  const progEl = document.getElementById('add-bar-progress');
   if(errEl) errEl.textContent = '';
+  if(progEl) progEl.textContent = '';
   const btn = document.getElementById('add-bar-btn');
 
-  const name = document.getElementById('bar-name').value.trim();
-  if(!name) { if(errEl) errEl.textContent = 'Bar name required.'; return; }
+  const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  const emailOk = e => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
 
-  const mgrName = document.getElementById('bar-mgr-name').value.trim();
-  const mgrEmail = document.getElementById('bar-mgr-email').value.trim().toLowerCase();
-  const mgrPin = document.getElementById('bar-mgr-pin').value.trim();
-  if(!mgrName) { if(errEl) errEl.textContent = 'Initial manager name required.'; return; }
-  if(!mgrEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mgrEmail)) {
-    if(errEl) errEl.textContent = 'Valid manager email required.'; return;
-  }
-  if(!/^\d{4}$/.test(mgrPin)) {
-    if(errEl) errEl.textContent = 'PIN must be exactly 4 digits.'; return;
-  }
+  const name = val('bar-name');
+  const address = val('bar-address');
+  const mgrName = val('bar-mgr-name');
+  const mgrPhone = val('bar-mgr-phone');
+  const loginEmail = val('bar-login-email').toLowerCase();
+  const loginPassword = (document.getElementById('bar-login-password') || {}).value || '';
+  const pin = val('bar-mgr-pin');
+  const invoiceEmail = val('bar-invoice-email').toLowerCase();
+
+  if(!name) { if(errEl) errEl.textContent = 'Bar name required.'; return; }
+  if(!address) { if(errEl) errEl.textContent = 'Bar address required.'; return; }
+  if(!mgrName) { if(errEl) errEl.textContent = 'Manager name required.'; return; }
+  if(!mgrPhone) { if(errEl) errEl.textContent = 'Manager phone required.'; return; }
+  if(!loginEmail || !emailOk(loginEmail)) { if(errEl) errEl.textContent = 'Valid bar login email required.'; return; }
+  if(loginPassword.length < 6) { if(errEl) errEl.textContent = 'Bar login password must be at least 6 characters.'; return; }
+  if(!/^\d{4}$/.test(pin)) { if(errEl) errEl.textContent = 'PIN must be exactly 4 digits.'; return; }
+  if(invoiceEmail && !emailOk(invoiceEmail)) { if(errEl) errEl.textContent = 'Invoice email is not valid.'; return; }
 
   if(btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
 
-  // Step 1: INSERT bar row
+  // Step 1: INSERT bar row.
   let barRow;
   try {
     const inserted = await sbPost('bars', {
       name,
-      address: document.getElementById('bar-address').value.trim()||null,
-      google_maps_link: document.getElementById('bar-maps').value.trim()||null,
-      status: document.getElementById('bar-status').value,
-      notes: document.getElementById('bar-notes').value.trim()||null
+      address,
+      google_maps_link: val('bar-maps') || null,
+      status: (document.getElementById('bar-status') || {}).value || 'trial',
+      notes: val('bar-notes') || null,
+      registered_name: val('bar-registered-name') || null,
+      invoice_email: invoiceEmail || null,
+      contact_name: mgrName,
+      contact_phone: mgrPhone
     });
     barRow = Array.isArray(inserted) ? inserted[0] : inserted;
     if(!barRow?.id) throw new Error('Bar insert returned no id');
   } catch(e) {
     if(errEl) errEl.textContent = 'Could not create bar: ' + (e.message || 'unknown');
-    if(btn) { btn.disabled = false; btn.textContent = 'Add Bar + Manager'; }
+    if(btn) { btn.disabled = false; btn.textContent = 'Create bar'; }
     return;
   }
 
-  // Step 2: create initial manager via Edge Function (auth user + bar_managers row + PIN)
+  // Step 2: create the shared bar auth user + bar_managers row + PIN via the EF.
   try {
     const { data: { session } } = await sbAuth.auth.getSession();
     const token = session?.access_token || KEY;
     const resp = await fetch(SB + '/functions/v1/admin-create-bar-manager', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': KEY,
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify({
-        bar_id: barRow.id,
-        name: mgrName,
-        email: mgrEmail,
-        initial_pin: mgrPin
-      })
+      headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ bar_id: barRow.id, name: mgrName, email: loginEmail, password: loginPassword, initial_pin: pin })
     });
     const result = await resp.json().catch(() => ({}));
-    if(!resp.ok || !result.ok) {
-      throw new Error(result.error || ('Edge Function HTTP ' + resp.status));
-    }
+    if(!resp.ok || !result.ok) throw new Error(result.error || ('Edge Function HTTP ' + resp.status));
   } catch(e) {
-    if(errEl) errEl.textContent = 'Bar created (id=' + barRow.id + ') but manager creation failed: ' + (e.message || 'unknown') + '. Add manager manually via Edit Bar.';
-    if(btn) { btn.disabled = false; btn.textContent = 'Add Bar + Manager'; }
-    loadBars();
+    if(errEl) errEl.textContent = 'Bar created (id=' + barRow.id + ') but login creation failed: ' + (e.message || 'unknown') + '. Add the login via Edit Bar.';
+    if(btn) { btn.disabled = false; btn.textContent = 'Create bar'; }
+    networkBarsState.loaded = false;
+    if(typeof loadNetworkBarsData === 'function') loadNetworkBarsData();
     return;
   }
 
-  ['bar-name','bar-address','bar-maps','bar-notes','bar-mgr-name','bar-mgr-email','bar-mgr-pin'].forEach(id=>document.getElementById(id).value='');
-  if(btn) { btn.disabled = false; btn.textContent = 'Add Bar + Manager'; }
+  // Step 3: optional document uploads, sequential against the new bar id.
+  const uploadJobs = [
+    ['bar-contract-file',    'bar_contract',      'bar agreement'],
+    ['bar-hs-file',          'bar_hs',            'H&S document'],
+    ['bar-walkthrough-file', 'glasi_walkthrough', 'walkthrough']
+  ];
+  const stepErrors = [];
+  for(const job of uploadJobs) {
+    const fileEl = document.getElementById(job[0]);
+    const file = fileEl && fileEl.files && fileEl.files[0];
+    if(!file) continue;
+    if(progEl) progEl.textContent = 'Uploading ' + job[2] + '...';
+    try { await _uploadBarFile(barRow.id, job[1], file); }
+    catch(e) { stepErrors.push(job[2] + ': ' + (e.message || 'failed')); }
+  }
+
+  // Step 4: mark the contract signed in person if requested.
+  if((document.getElementById('bar-contract-signed') || {}).checked) {
+    if(progEl) progEl.textContent = 'Marking contract signed...';
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const res = await sbAuth.rpc('f40_bar_compliance_mark_contract_signed', { p_bar_id: barRow.id, p_signed_date: today });
+      if(res.error) throw res.error;
+    } catch(e) { stepErrors.push('mark contract signed: ' + (e.message || 'failed')); }
+  }
+
+  networkBarsState.loaded = false;
+  if(typeof loadNetworkBarsData === 'function') loadNetworkBarsData();
+
+  if(stepErrors.length) {
+    if(progEl) progEl.textContent = '';
+    if(errEl) errEl.textContent = 'Bar created (id=' + barRow.id + '). Some steps need finishing: ' + stepErrors.join('; ') + '. Open the bar to finish via its checklist.';
+    if(btn) { btn.disabled = false; btn.textContent = 'Create bar'; }
+    return;
+  }
+
+  ['bar-name','bar-address','bar-maps','bar-registered-name','bar-invoice-email','bar-notes','bar-mgr-name','bar-mgr-phone','bar-login-email','bar-login-password','bar-mgr-pin','bar-contract-file','bar-hs-file','bar-walkthrough-file'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  const cs = document.getElementById('bar-contract-signed'); if(cs) cs.checked = false;
+  if(progEl) progEl.textContent = '';
+  if(btn) { btn.disabled = false; btn.textContent = 'Create bar'; }
   closeOv('add-bar');
-  loadBars();
 }
 
 // F-26: edit-bar overlay support + manager management within it.

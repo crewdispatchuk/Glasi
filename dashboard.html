@@ -11638,6 +11638,8 @@ function makeSessionOps(sessionId) {
   bars: [],                   // the session bar set
   label: '',                  // "First bar + N more" label
   engagementSub: null,        // engagement-timeline ws handle for this session
+  engagementEvents: [],       // Stage 2: per-instance engagement-timeline event buffer
+  bvExpansion: null,          // Stage 2: per-card single-row expansion { type:'bar'|'worker', id } | null
 
   // realtime + pub/sub
   _subs: [],
@@ -11866,11 +11868,13 @@ function makeSessionOps(sessionId) {
       console.error('[liveSessionOps.start] workers bootstrap failed', e);
     }
 
-    // Phase 3 Batch 6: engagement timeline realtime. Batch C: the timeline
-    // pane is a single shared DOM surface (one #engagement-timeline-list, one
-    // engagementTimelineWs global). It runs for the FOCUSED session only and
-    // is started / stopped by focusSession, NOT here. Starting it per instance
-    // would clobber the shared ws (last-started-wins). See focusSession.
+    // Phase 3 Batch 6 / Batch C Stage 2: engagement timeline realtime is now
+    // per-instance. Each SessionOps opens its OWN ws (ops.engagementSub) into
+    // its OWN event buffer (ops.engagementEvents) and renders into its OWN pane
+    // (#engagement-timeline-list-<sessionId>). N cards run their timelines at
+    // once. Started here in start(); torn down in stop(). focusSession no longer
+    // touches the timeline.
+    if(typeof startEngagementTimelineRealtime === 'function') startEngagementTimelineRealtime(this);
 
     // Live Dashboard Redesign (18 May 2026): bootstrap dispatch_movement_state
     // for any session_workers currently in flight (post-reload, post-resync).
@@ -11888,10 +11892,10 @@ function makeSessionOps(sessionId) {
 
   async stop() {
     const wasSessionId = this.sessionId;
-    // Phase 3 Batch 6 / Batch C: the engagement timeline is a single shared
-    // surface owned by the focused session. Tear it down only if THIS instance
-    // is the focused one; otherwise leave the focused session's timeline alone.
-    if(_focusedSessionId === wasSessionId) stopEngagementTimelineRealtime();
+    // Phase 3 Batch 6 / Batch C Stage 2: the engagement timeline is per-instance.
+    // Tear down THIS instance's own timeline ws + event buffer unconditionally;
+    // other live sessions keep their own timelines running.
+    stopEngagementTimelineRealtime(this);
     for(const sub of this._subs) {
       if(sub.retryTimer) { clearTimeout(sub.retryTimer); sub.retryTimer = null; }
       try { sub.ws?.close(); } catch(e) {}
@@ -12037,11 +12041,10 @@ function makeSessionOps(sessionId) {
 // unchanged. Moves the shared engagement-timeline pane to this session.
 function focusSession(sessionId) {
   const ops = liveSessions.get(sessionId) || null;
-  // Tear down the previously-focused session's engagement timeline (single
-  // shared surface) before switching, then re-point and re-start it.
-  if(_focusedSessionId !== sessionId && typeof stopEngagementTimelineRealtime === 'function') {
-    stopEngagementTimelineRealtime();
-  }
+  // Batch C Stage 2: the engagement timeline is per-instance now (each SessionOps
+  // owns its own ws, started in ops.start() and stopped in ops.stop()). focusSession
+  // no longer touches the timeline; it only repoints the singleton focus-pointer
+  // globals so the invite modal and the no-arg confirmCloseSession still resolve.
   _focusedSessionId = sessionId;
   liveSessionOps = ops;
   if(ops) {
@@ -12051,12 +12054,9 @@ function focusSession(sessionId) {
     liveSessionStart           = ops.startedAt;
     liveSessionBars            = ops.bars;
     liveSessionLabel           = ops.label;
-    // The focused session is the EXPANDED one: ensure its card renders expanded
-    // (the per-card default is COLLAPSED in Stage 1). Single-session regression
-    // safety: with one live session this keeps the full view showing as today.
+    // The focused session is the EXPANDED one: ensure its card renders expanded.
+    // (Stage 2 default is already EXPANDED; this stays as a regression-safe nudge.)
     try { localStorage.setItem(_opsLiveCardStorageKey(sessionId), 'expanded'); } catch(e) {}
-    // Start the engagement timeline for the newly focused session.
-    if(typeof startEngagementTimelineRealtime === 'function') startEngagementTimelineRealtime(sessionId);
   } else {
     liveSessionResponses       = new Map();
     liveSessionRecommendations = new Map();
@@ -12080,13 +12080,11 @@ function isLiveViewActive() {
 // view renders inside the Operations / Live sub-tab; #sessions-live-room
 // + #sessions-live-empty were the v1 targets and were retired with
 // #screen-sessions.
-// Batch C: the FULL bipartite card renders into the focused-session slot
-// (#ops-live-focused) that renderLiveRoom places inside the stacked list, not
-// directly into #ops-live-room. This lets the existing single-session render
-// (renderBipartiteView + all bv* helpers, which call getBipartiteRoomEl) be
-// reused unchanged for the focused card while collapsed summary cards for the
-// other sessions stack around it. Falls back to #ops-live-room if the focused
-// slot is absent (defensive; the single-session path still works).
+// Batch C Stage 2: every live session renders its OWN full bipartite card into
+// its own root #ops-live-card-<sessionId> (see renderSessionCard). There is no
+// single focused-full slot any more. getBipartiteRoomEl is retained for any
+// legacy caller and now falls back straight to #ops-live-room (the #ops-live-focused
+// slot no longer exists). The render layer no longer calls it.
 function getBipartiteRoomEl() {
   return document.getElementById('ops-live-focused') || document.getElementById('ops-live-room');
 }
@@ -12101,25 +12099,24 @@ function getBipartiteEmptyEl() {
 // card). The F-33 recompute reads the FOCUSED globals, so it runs only when the
 // emitting instance is the focused one; non-focused events just refresh summaries.
 function wireSessionOpsListeners(ops) {
-  const isFocused = () => _focusedSessionId === ops.sessionId;
-  // Route every re-render through renderLiveRoom() (which paints the stacked
-  // cards + the focused bipartite view). markDirty when the live screen isn't
-  // visible so the next entry triggers a fresh render.
-  const renderOrDirty = () => {
-    if(isLiveViewActive()) { renderLiveRoom(); }
+  // Batch C Stage 2: every live session renders its OWN full card simultaneously.
+  // The focus gate is gone: each instance's events recompute F-33 for ITS pending
+  // requests, re-render ITS card, and refresh ITS header stats. When the live
+  // screen isn't visible, mark dirty so the next entry repaints.
+  const renderCardOrDirty = () => {
+    if(isLiveViewActive()) { renderSessionCard(ops); }
     else ops.markDirty('live');
   };
-  // F-33: recompute recommendations before re-rendering. The recompute reads
-  // the focused globals (liveSessionOps.requests / liveSessionRecommendations),
-  // so only run it when THIS instance is the focused one. Non-focused events
-  // just refresh the stacked summaries.
+  // F-33: recompute recommendations (scoped to THIS instance's pending requests)
+  // before re-rendering THIS card.
   const recomputeAndRender = (record) => {
-    if(isFocused() && typeof f33RecomputeAllPending === 'function') {
-      f33RecomputeAllPending().then(() => {
-        if(isLiveViewActive()) { renderLiveRoom(); }
+    if(typeof f33RecomputeAllPending === 'function') {
+      f33RecomputeAllPending(ops).then(() => {
+        if(isLiveViewActive()) { renderSessionCard(ops); }
+        else ops.markDirty('live');
       });
     } else {
-      renderOrDirty(record);
+      renderCardOrDirty(record);
     }
   };
   // F-33: per-worker deficit cache invalidation. Targeted fetch keeps the
@@ -12137,7 +12134,7 @@ function wireSessionOpsListeners(ops) {
     recomputeAndRender(record);
   };
   // F-33: cleanup recommendations Map when a request transitions out of pending.
-  // Operate on THIS instance's recommendations Map (was the focused global).
+  // Operate on THIS instance's recommendations Map.
   const onRequestUpdated = (record) => {
     if(record?.status && record.status !== 'pending') {
       ops.recommendations.delete(record.id);
@@ -12154,27 +12151,27 @@ function wireSessionOpsListeners(ops) {
   ops.on('session:started', recomputeAndRender);
   ops.on('session:resumed', recomputeAndRender);
 
-  // Round 4: invites cache events update the stacked-card counts and the modal
-  // when open. Cache mutations already happened in the realtime handler before
-  // emit, so the render reads from a fresh cache. A re-render of the stack
-  // refreshes every card's summary line; the focused card also refreshes its
-  // header counts via renderSessionStats.
+  // Round 4: invites cache events refresh THIS card's header counts + summary,
+  // and the invite-list modal when open (the modal is a single global surface).
   const onInviteChange = () => {
-    renderOrDirty();
-    if(isFocused() && typeof renderSessionStats === 'function') renderSessionStats();
+    renderCardOrDirty();
+    if(typeof renderSessionStats === 'function') renderSessionStats(ops);
     if(typeof isInviteModalOpen === 'function' && isInviteModalOpen()
        && typeof renderInviteList === 'function') renderInviteList();
   };
   ops.on('invite:added', onInviteChange);
   ops.on('invite:updated', onInviteChange);
   ops.on('invite:removed', onInviteChange);
-  ops.on('state:resynced', () => { if(isFocused() && typeof renderSessionStats === 'function') renderSessionStats(); });
-  ops.on('session:started', () => { if(isFocused() && typeof renderSessionStats === 'function') renderSessionStats(); });
-  ops.on('session:resumed', () => { if(isFocused() && typeof renderSessionStats === 'function') renderSessionStats(); });
+  ops.on('state:resynced', () => { if(typeof renderSessionStats === 'function') renderSessionStats(ops); });
+  ops.on('session:started', () => { if(typeof renderSessionStats === 'function') renderSessionStats(ops); });
+  ops.on('session:resumed', () => { if(typeof renderSessionStats === 'function') renderSessionStats(ops); });
 
-  // Live Dashboard Redesign (18 May 2026): movement:updated re-renders the
-  // bipartite view (worker card border highlight + line state).
-  ops.on('movement:updated', renderOrDirty);
+  // Live Dashboard Redesign (18 May 2026): movement:updated re-renders THIS
+  // card's lines (worker card border highlight + line state).
+  ops.on('movement:updated', () => {
+    if(isLiveViewActive() && typeof bvRenderLines === 'function') bvRenderLines(ops);
+    else ops.markDirty('live');
+  });
 
   // session:stopped intentionally has no auto-render. Close-session and logout
   // flows do their own UI transitions.
@@ -12290,19 +12287,20 @@ function formatInviteTime(iso) {
   });
 }
 
-function renderSessionStats() {
+function renderSessionStats(ops = liveSessionOps) {
   // OPS LIVE REDESIGN (2026-05-19): card-header counts are the canonical
-  // surface. The legacy session-stat-* IDs were removed with the prior
-  // session-header strip; ops-live-count-* are the new ones inside the
-  // .ops-live-card header.
-  const invitedEl   = document.getElementById('ops-live-count-invited');
-  const confirmedEl = document.getElementById('ops-live-count-confirmed');
-  const inSessionEl = document.getElementById('ops-live-count-in-session');
-  if(!invitedEl && !confirmedEl && !inSessionEl) return; // card not in DOM (silent no-op)
+  // surface. Batch C Stage 2: per-card. ids are suffixed -<sessionId> so N
+  // cards each maintain their own header counts. Guard on the elements
+  // existing (a collapsed card has no count elements).
+  if(!ops || ops.sessionId == null) return;
+  const sid = ops.sessionId;
+  const invitedEl   = document.getElementById('ops-live-count-invited-' + sid);
+  const confirmedEl = document.getElementById('ops-live-count-confirmed-' + sid);
+  const inSessionEl = document.getElementById('ops-live-count-in-session-' + sid);
+  if(!invitedEl && !confirmedEl && !inSessionEl) return; // card not expanded (silent no-op)
 
-  // Batch C: reads the FOCUSED session's instance (liveSessionOps focus-pointer).
-  const all = (liveSessionOps && liveSessionOps.invites) || [];
-  const inSessionCount = ((liveSessionOps && liveSessionOps.workers) || [])
+  const all = ops.invites || [];
+  const inSessionCount = (ops.workers || [])
     .filter(w => w && w.status === 'in_session').length;
   if(invitedEl)   invitedEl.textContent   = String(all.length);
   if(confirmedEl) confirmedEl.textContent = String(all.filter(i => i.attendance_confirmed === 'confirmed').length);
@@ -12330,29 +12328,36 @@ function _opsLiveCardStorageKey(sessionId) {
   return 'glasi_live_session_expanded_' + sessionId;
 }
 function _opsLiveCardInitialState(sessionId) {
-  // Batch C: default COLLAPSED. A session is shown expanded only when it is the
-  // focused one (focusSession) or when Sam has explicitly expanded it (the
-  // localStorage flag flips to 'expanded' via opsLiveCardToggle).
+  // Batch C Stage 2: default EXPANDED. Every live session renders its full
+  // bipartite card at once. A session is only collapsed when Sam has explicitly
+  // collapsed it (the localStorage flag flips to 'collapsed' via opsLiveCardToggle).
   try {
     const v = localStorage.getItem(_opsLiveCardStorageKey(sessionId));
-    return v === 'expanded' ? 'expanded' : 'collapsed'; // default collapsed
-  } catch(e) { return 'collapsed'; }
+    return v === 'collapsed' ? 'collapsed' : 'expanded'; // default expanded
+  } catch(e) { return 'expanded'; }
 }
 function opsLiveCardToggle(sessionId) {
-  const card = document.getElementById('ops-live-card-' + sessionId);
-  if(!card) return;
-  const isCollapsed = card.classList.toggle('collapsed');
+  // Batch C Stage 2: persist the new collapsed/expanded state, then re-render
+  // ONLY this card so the full body materialises (expand) or is replaced by the
+  // summary line (collapse). The card root #ops-live-card-<sessionId> is rebuilt
+  // by renderSessionCard.
+  let stored = _opsLiveCardInitialState(sessionId);
+  const nowCollapsed = stored !== 'collapsed'; // toggling: if it was expanded, now collapse
   try {
     localStorage.setItem(
       _opsLiveCardStorageKey(sessionId),
-      isCollapsed ? 'collapsed' : 'expanded'
+      nowCollapsed ? 'collapsed' : 'expanded'
     );
   } catch(e) {}
-  // Expanding may have made the bipartite view visible for the first
-  // time since the last layout; re-draw the SVG line layer so connectors
-  // pick up the new viewport coordinates.
-  if(!isCollapsed && typeof bvRenderLines === 'function') {
-    setTimeout(() => { try { bvRenderLines(); } catch(e) {} }, 0);
+  const ops = liveSessions.get(Number(sessionId)) || liveSessions.get(sessionId);
+  if(ops && typeof renderSessionCard === 'function') {
+    renderSessionCard(ops);
+    // Expanding may have made the bipartite view visible for the first time
+    // since the last layout; re-draw the SVG line layer so connectors pick up
+    // the new viewport coordinates.
+    if(!nowCollapsed && typeof bvRenderLines === 'function') {
+      setTimeout(() => { try { bvRenderLines(ops); } catch(e) {} }, 0);
+    }
   }
 }
 
@@ -12548,38 +12553,39 @@ function makeRealtimeWs(topic, pgChanges, onRecord, onClose) {
 // Phase 3 Batch 6: live engagement timeline. Subscribes to session_basket
 // (INSERT + UPDATE) and points_ledger (INSERT) filtered to the live session.
 // Slide-in pane in the live console, toggled by the Timeline button.
-let engagementTimelineWs = null;
-const engagementTimelineEvents = [];
-
-function startEngagementTimelineRealtime(sessionId) {
-  if(engagementTimelineWs) { try { engagementTimelineWs.close(); } catch(e) {} }
-  if(!sessionId) return;
-  engagementTimelineEvents.length = 0;
-  engagementTimelineWs = makeRealtimeWs(
+// Batch C Stage 2: per-instance. Each SessionOps owns its own ws (ops.engagementSub)
+// and its own event buffer (ops.engagementEvents), so N cards each run their own
+// timeline pane simultaneously. start/stop are driven from ops.start()/ops.stop().
+function startEngagementTimelineRealtime(ops) {
+  if(!ops || !ops.sessionId) return;
+  const sessionId = ops.sessionId;
+  if(ops.engagementSub) { try { ops.engagementSub.close(); } catch(e) {} ops.engagementSub = null; }
+  ops.engagementEvents = [];
+  ops.engagementSub = makeRealtimeWs(
     'realtime:public:engagement_timeline_' + sessionId,
     [
       { event: 'INSERT', schema: 'public', table: 'session_basket', filter: 'session_id=eq.' + sessionId },
       { event: 'UPDATE', schema: 'public', table: 'session_basket', filter: 'session_id=eq.' + sessionId },
       { event: 'INSERT', schema: 'public', table: 'points_ledger',  filter: 'session_id=eq.' + sessionId }
     ],
-    async (record, type, table) => { handleEngagementTimelineEvent(table, type, record); }
+    async (record, type, table) => { handleEngagementTimelineEvent(ops, table, type, record); }
   );
 }
 
-function stopEngagementTimelineRealtime() {
-  if(engagementTimelineWs) { try { engagementTimelineWs.close(); } catch(e) {} }
-  engagementTimelineWs = null;
-  engagementTimelineEvents.length = 0;
+function stopEngagementTimelineRealtime(ops) {
+  if(!ops) return;
+  if(ops.engagementSub) { try { ops.engagementSub.close(); } catch(e) {} ops.engagementSub = null; }
+  ops.engagementEvents = [];
 }
 
-function toggleEngagementTimelinePane() {
-  const pane = document.getElementById('engagement-timeline-pane');
+function toggleEngagementTimelinePane(sessionId) {
+  const pane = document.getElementById('engagement-timeline-pane-' + sessionId);
   if(!pane) return;
   pane.style.display = (pane.style.display === 'none') ? 'flex' : 'none';
 }
 
-function handleEngagementTimelineEvent(table, type, record) {
-  if(!record) return;
+function handleEngagementTimelineEvent(ops, table, type, record) {
+  if(!ops || !record) return;
   const now = Date.now();
   let kind, reason, amount, forfeitReason, displayTime;
 
@@ -12614,10 +12620,11 @@ function handleEngagementTimelineEvent(table, type, record) {
   }
 
   const appId = Number(record.application_id);
-  const worker = liveSessionOps.workers?.find(w => Number(w.applicationId) === appId);
+  const worker = ops.workers?.find(w => Number(w.applicationId) === appId);
   const workerName = worker?.name || ('Worker #' + appId);
 
-  engagementTimelineEvents.push({
+  if(!Array.isArray(ops.engagementEvents)) ops.engagementEvents = [];
+  ops.engagementEvents.push({
     ts: new Date(displayTime).getTime(),
     kind, table, type, reason, amount, forfeitReason,
     workerName, appId,
@@ -12625,21 +12632,23 @@ function handleEngagementTimelineEvent(table, type, record) {
     ledgerId: table === 'points_ledger' ? record.id : null
   });
 
-  if(engagementTimelineEvents.length > 200) {
-    engagementTimelineEvents.splice(0, engagementTimelineEvents.length - 200);
+  if(ops.engagementEvents.length > 200) {
+    ops.engagementEvents.splice(0, ops.engagementEvents.length - 200);
   }
-  renderEngagementTimelineList();
+  renderEngagementTimelineList(ops);
 }
 
-function renderEngagementTimelineList() {
-  const list = document.getElementById('engagement-timeline-list');
+function renderEngagementTimelineList(ops) {
+  if(!ops) return;
+  const list = document.getElementById('engagement-timeline-list-' + ops.sessionId);
   if(!list) return;
-  if(!engagementTimelineEvents.length) {
+  const events = Array.isArray(ops.engagementEvents) ? ops.engagementEvents : [];
+  if(!events.length) {
     list.innerHTML = '<div class="empty">Waiting for engagement events...</div>';
     return;
   }
 
-  const sorted = engagementTimelineEvents.slice().sort((a, b) => a.ts - b.ts);
+  const sorted = events.slice().sort((a, b) => a.ts - b.ts);
   list.innerHTML = sorted.map(ev => {
     const t = new Date(ev.ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const reasonLabel = f31ReasonLabel(ev.reason);
@@ -13051,12 +13060,17 @@ function f38ShowInflightModal(workers, retryFn) {
   document.body.appendChild(overlay);
 }
 
-async function confirmCloseSession() {
+async function confirmCloseSession(sessionId) {
   if(!confirm('Close this session? Make sure all shifts are completed first.')) return;
 
-  // Batch C: closes the FOCUSED session (the expanded card).
-  const sessionId = liveSessionOps && liveSessionOps.sessionId;
-  if(!sessionId) {
+  // Batch C Stage 2: the per-card Close button passes its own sessionId so it
+  // closes the right session. If omitted, behave as before and close the
+  // FOCUSED session (liveSessionOps).
+  const ops = (sessionId != null)
+    ? (liveSessions.get(Number(sessionId)) || null)
+    : liveSessionOps;
+  sessionId = ops && ops.sessionId;
+  if(!ops || !sessionId) {
     // No live session is actually open (the view is stale). Surface it rather
     // than returning silently, which reads as "Close does nothing".
     alert('No live session is open. This view is out of date, refresh the page (Ctrl+Shift+R).');
@@ -13085,7 +13099,7 @@ async function confirmCloseSession() {
     const inflight = f38ParseInflightError(text);
     if(Array.isArray(inflight) && inflight.length) {
       const enriched = await f38EnrichInflight(inflight);
-      f38ShowInflightModal(enriched, () => confirmCloseSession());
+      f38ShowInflightModal(enriched, () => confirmCloseSession(sessionId));
       return;
     }
     alert('Close failed: ' + text);
@@ -13093,7 +13107,7 @@ async function confirmCloseSession() {
   }
 
   // RPC succeeded; session is now closed.
-  const sessionRequests = [...liveSessionOps.requests];
+  const sessionRequests = [...ops.requests];
 
   await updateWorkerReliabilityScores();
   // Phase 3 Batch 6: generateSessionReports + updateWorkerPoints + the dormant
@@ -13103,9 +13117,9 @@ async function confirmCloseSession() {
   // surface, not a dashboard-side text dump.
 
   // Batch C: stop() removes this session from liveSessions and clears the focus
-  // pointers. If other sessions are still live, re-focus the lowest-id one and
-  // stay on the live stack; otherwise route to History as before.
-  await liveSessionOps.stop();
+  // pointers if it was focused. If other sessions are still live, re-focus the
+  // lowest-id one and stay on the live stack; otherwise route to History.
+  await ops.stop();
 
   if(liveSessions.size > 0) {
     const nextId = Math.min(...[...liveSessions.keys()].map(Number));
@@ -13669,20 +13683,27 @@ async function confirmClockOut(requestId) {
   if(request) request.status = 'completed';
 }
 
-async function removeRequest(requestId) {
+async function removeRequest(sessionId, requestId) {
+  // Batch C Stage 2: resolve the owning session so the in-memory requests array
+  // mutated is the one that actually holds this request (the actioned card may
+  // not be the focused one). Fall back to the focus-pointer.
+  const ops = liveSessions.get(Number(sessionId)) || liveSessionOps;
+  if(!ops) return;
   if(!confirm('Remove this request? This cannot be undone.')) return;
   // Capture context before mutating state for the no-response sweep.
-  const reqCtx = liveSessionOps.requests.find(x => x.id === requestId);
+  const reqCtx = ops.requests.find(x => x.id === requestId);
   const barId = reqCtx?.bar_id;
   const postedAt = reqCtx?.posted_at || reqCtx?.request_time;
   // Update status to cancelled in DB. Bipartite view re-renders via the
   // shift_requests realtime UPDATE.
   sbPatch('shift_requests', '?id=eq.'+requestId, { status: 'cancelled' });
-  liveSessionOps.requests = liveSessionOps.requests.filter(r => r.id !== requestId);
+  ops.requests = ops.requests.filter(r => r.id !== requestId);
 }
 
-function openAddNotes(requestId) {
-  const r = liveSessionOps.requests.find(x => x.id === requestId);
+function openAddNotes(sessionId, requestId) {
+  const ops = liveSessions.get(Number(sessionId)) || liveSessionOps;
+  if(!ops) return;
+  const r = ops.requests.find(x => x.id === requestId);
   if(!r) return;
   const notes = prompt('Add notes for this request (bar manager message, context etc):', r.raw_message || '');
   if(notes === null) return; // cancelled
@@ -14361,21 +14382,20 @@ function showDashboardToast(msg) {
   setTimeout(() => { try { document.body.removeChild(t); } catch(e) {} }, 4200);
 }
 
-let liveSessionTimer = null;
-let liveSessionStart = null;
+let liveSessionTimer = null; // Batch C Stage 2: retired (per-card elapsed is read from ops.startedAt in the shared 1s driver). Kept declared for any stray legacy reference.
+let liveSessionStart = null; // Batch C Stage 2: focus-pointer only (repointed by focusSession); per-card elapsed reads ops.startedAt.
 
-// Batch C (concurrent sessions, Stage 1): renderLiveRoom paints a STACK of
-// cards into #ops-live-room, one per live session sorted by id. Non-focused
-// sessions render as a COLLAPSED summary card (the Q2 one-line summary);
-// the focused session renders the FULL existing bipartite view inside a
-// #ops-live-focused slot (getBipartiteRoomEl returns that slot, so the
-// existing single-session renderBipartiteView + bv* helpers are reused
-// unchanged). Only one card is expanded at a time.
+// Batch C (concurrent sessions, Stage 2): renderLiveRoom paints a STACK of
+// cards into #ops-live-room, one card root #ops-live-card-<sessionId> per live
+// session sorted by id ascending. EVERY card renders its OWN full bipartite
+// view simultaneously when expanded (default), or a one-line summary when
+// Sam has collapsed it. There is no single "focused full + others summary"
+// split any more; the focus-pointer globals still exist only for the singleton
+// surfaces (invite modal, no-arg confirmCloseSession).
 //
-// _liveStackSig tracks the rendered skeleton (session-id set + focused id) so
-// the stack is only rebuilt when it changes; otherwise summaries are refreshed
-// in place and the focused card is left to renderBipartiteView's own
-// incremental refresh (no flicker, preserves bvExpansion row state).
+// _liveStackSig tracks the rendered skeleton (the ordered session-id set) so
+// the set of card roots is only rebuilt when it changes; otherwise each card's
+// body is repainted in place by renderSessionCard (preserves ops.bvExpansion).
 let _liveStackSig = null;
 
 function _liveSummaryLine(ops) {
@@ -14391,14 +14411,13 @@ function _liveSummaryLine(ops) {
 }
 
 function _renderLiveSummaryCard(ops) {
-  // A collapsed summary card. Clicking the header focuses + expands it. Reuses
-  // the .ops-live-card chrome (collapsed) so the visual language matches the
-  // expanded card; the body is intentionally empty (the full view only renders
-  // for the focused card in Stage 1).
+  // A collapsed summary card. Clicking the header expands it in place (no focus
+  // switch needed in Stage 2). Reuses the .ops-live-card chrome (collapsed) so
+  // the visual language matches the expanded card; the body is omitted.
   const sid = ops.sessionId;
   return ''
-    + '<div id="ops-live-summary-' + sid + '" class="ops-live-card collapsed" data-summary-session-id="' + sid + '">'
-    +   '<div class="ops-live-card-header" onclick="opsLiveExpandSession(' + sid + ')" role="button" tabindex="0">'
+    + '<div id="ops-live-card-' + sid + '" class="ops-live-card collapsed" data-session-id="' + sid + '">'
+    +   '<div class="ops-live-card-header" onclick="opsLiveCardToggle(' + sid + ')" role="button" tabindex="0">'
     +     '<span class="ops-live-pulse-dot" aria-hidden="true"></span>'
     +     '<span class="ops-live-card-meta" id="ops-live-summary-line-' + sid + '">' + _liveSummaryLine(ops) + '</span>'
     +     '<span class="ops-live-card-spacer"></span>'
@@ -14407,14 +14426,18 @@ function _renderLiveSummaryCard(ops) {
     + '</div>';
 }
 
-// Batch C: focus + expand a session from a collapsed summary card.
+// Batch C Stage 2: expand a session from a collapsed summary card. No focus
+// switch is needed (every card renders full on its own); just flip the stored
+// state and re-render that card.
 function opsLiveExpandSession(sessionId) {
-  focusSession(sessionId);
-  // Make sure the now-focused card renders expanded (clear any persisted
-  // 'collapsed' preference for it so the full view shows).
   try { localStorage.setItem(_opsLiveCardStorageKey(sessionId), 'expanded'); } catch(e) {}
-  _liveStackSig = null; // force a skeleton rebuild (focused id changed)
-  renderLiveRoom();
+  const ops = liveSessions.get(Number(sessionId)) || liveSessions.get(sessionId);
+  if(ops && typeof renderSessionCard === 'function') {
+    renderSessionCard(ops);
+    if(typeof bvRenderLines === 'function') {
+      setTimeout(() => { try { bvRenderLines(ops); } catch(e) {} }, 0);
+    }
+  }
 }
 
 function renderLiveRoom() {
@@ -14427,49 +14450,43 @@ function renderLiveRoom() {
     .sort((a, b) => Number(a.sessionId) - Number(b.sessionId));
 
   if(!sessions.length) {
-    // No live sessions: show empty state, clear the stack.
+    // No live sessions: show empty state, clear the stack, stop shared drivers.
     if(emptyEl) emptyEl.style.display = 'block';
     room.style.display = 'none';
     room.innerHTML = '';
     _liveStackSig = null;
+    _bvStopSharedIntervals();
     return;
   }
 
   if(emptyEl) emptyEl.style.display = 'none';
   room.style.display = 'block';
 
-  // Ensure a focused session exists (default to the lowest id).
+  // Ensure a focused session exists for the singleton-acting surfaces (invite
+  // modal, no-arg confirmCloseSession). Default to the lowest id.
   if(_focusedSessionId == null || !liveSessions.has(_focusedSessionId)) {
     focusSession(Number(sessions[0].sessionId));
   }
 
-  const sig = sessions.map(o => o.sessionId).join(',') + '|focus=' + _focusedSessionId;
-
-  if(_liveStackSig !== sig || !room.querySelector('#ops-live-focused')) {
-    // Rebuild the skeleton: ordered slots, collapsed summaries for non-focused
-    // sessions and an empty #ops-live-focused slot for the focused one.
+  // Skeleton: one card root #ops-live-card-<sessionId> per live session in order.
+  // Rebuild the set of roots only when the ordered id list changes.
+  const sig = sessions.map(o => o.sessionId).join(',');
+  if(_liveStackSig !== sig || !room.querySelector('.ops-live-card')) {
     let html = '';
     for(const ops of sessions) {
-      if(Number(ops.sessionId) === Number(_focusedSessionId)) {
-        html += '<div id="ops-live-focused"></div>';
-      } else {
-        html += _renderLiveSummaryCard(ops);
-      }
+      html += '<div id="ops-live-card-' + ops.sessionId + '"></div>';
     }
     room.innerHTML = html;
     _liveStackSig = sig;
-    // Fill the focused slot with the full bipartite card (existing render).
-    if(liveSessionOps) renderBipartiteView();
-  } else {
-    // Skeleton unchanged: refresh non-focused summary lines in place, and let
-    // renderBipartiteView do its own incremental refresh of the focused card.
-    for(const ops of sessions) {
-      if(Number(ops.sessionId) === Number(_focusedSessionId)) continue;
-      const lineEl = document.getElementById('ops-live-summary-line-' + ops.sessionId);
-      if(lineEl) lineEl.textContent = _liveSummaryLine(ops);
-    }
-    if(liveSessionOps) renderBipartiteView();
   }
+
+  // Render every card full (expanded) or as a summary (collapsed) into its root.
+  for(const ops of sessions) {
+    renderSessionCard(ops);
+  }
+
+  // Start the shared ticking drivers now that at least one session is live.
+  _bvStartSharedIntervals();
 }
 
 
@@ -14478,85 +14495,117 @@ function renderLiveRoom() {
 //
 // Bars on the left, workers on the right, SVG paths between them representing
 // live request, response, recommendation, dispatch, and on-shift relationships.
-// Consumes the same liveSessionOps realtime state as the classic console.
-// Reads liveSessionResponses, liveSessionRecommendations, liveSessionMovementState.
-// Writes via the same dispatchWorker / submitCancellation paths as the classic
-// console: only the visual presentation is new.
+// Consumes each SessionOps' own realtime state (ops.responses, ops.recommendations,
+// ops.movementState, ops.bars, ops.startedAt). Writes via the same dispatchWorker
+// / submitCancellation paths as the classic console: only the presentation is new.
+// Batch C Stage 2: every bv* helper takes the owning SessionOps instance as its
+// first parameter and reads its ids suffixed -<sessionId> so N cards coexist.
 // ============================================================================
 
-// Two distinct intervals (Phase 1-3 follow-up 4, 18 May 2026):
-//   _bvElapsedInterval: every 1s. Cheap in-memory pass â€” updates request
-//   elapsed-counter text on bar rows. No RPC, no full re-render. Sam
-//   expects a stopwatch tick, not a 5s jump.
-//   _bvDetailInterval: every 5s. Re-renders dispatched/onshift worker
-//   detail blocks so ETA / "Nm ago" / stale labels refresh. The expensive
-//   F-33 RPC recompute stays event-driven (response/worker/request events
-//   trigger it via setupLiveViewListeners), not on a fixed tick.
+// Batch C Stage 2: shared ticking drivers. ONE 1s interval, ONE 5s interval and
+// ONE resize handler iterate every EXPANDED live card (was a per-card setInterval
+// recreated inside renderBipartiteView). Started by renderLiveRoom when there is
+// at least one live session; stopped when there are none. Guarded on the card's
+// elements existing (a collapsed card has no #bv-grid / #live-session-elapsed).
 let _bvElapsedInterval = null;
 let _bvDetailInterval = null;
 let _bvResizeHandler = null;
 let _bvLineDispatchTarget = null; // { applicationId, requestId } for ov-bv-dispatch modal
 
-function renderBipartiteView() {
-  const room = getBipartiteRoomEl();
-  if(!room) return;
-  // Batch C: renders the FOCUSED session (liveSessionOps is the focus-pointer).
-  // No focused session: nothing to paint into the focused slot.
-  if(!liveSessionOps) { room.innerHTML = ''; return; }
+function _bvExpandedLiveOps() {
+  // Live sessions whose card is currently expanded in the DOM (the bipartite
+  // grid root exists). Collapsed cards are skipped by the shared drivers.
+  const out = [];
+  for(const ops of liveSessions.values()) {
+    if(!ops || ops.sessionId == null) continue;
+    if(document.getElementById('bv-grid-' + ops.sessionId)) out.push(ops);
+  }
+  return out;
+}
 
-  const sessionId = liveSessionOps.sessionId;
-  const barsCount = (typeof liveSessionBars !== 'undefined' && Array.isArray(liveSessionBars))
-    ? liveSessionBars.length : 0;
+function _bvStartSharedIntervals() {
+  if(!_bvElapsedInterval) {
+    _bvElapsedInterval = setInterval(() => {
+      for(const ops of _bvExpandedLiveOps()) {
+        // Per-card elapsed read from ops.startedAt.
+        const el = document.getElementById('live-session-elapsed-' + ops.sessionId);
+        if(el && ops.startedAt) {
+          const secs = Math.max(0, Math.floor((Date.now() - ops.startedAt) / 1000));
+          const m = Math.floor(secs / 60).toString().padStart(2, '0');
+          const s = (secs % 60).toString().padStart(2, '0');
+          el.textContent = m + ':' + s;
+        }
+        bvUpdateBarElapsedCounters(ops);
+      }
+    }, 1000);
+  }
+  if(!_bvDetailInterval) {
+    _bvDetailInterval = setInterval(() => {
+      for(const ops of _bvExpandedLiveOps()) bvUpdateWorkerEtaCounters(ops);
+    }, 5000);
+  }
+  if(!_bvResizeHandler) {
+    _bvResizeHandler = () => { for(const ops of _bvExpandedLiveOps()) bvRenderLines(ops); };
+    window.addEventListener('resize', _bvResizeHandler);
+  }
+}
 
-  // If room already has bipartite scaffold, do an incremental refresh,
-  // but only when the current scaffold belongs to the same session. A
-  // session-id mismatch (e.g. previous session closed and a new one went
-  // live) forces a full re-render so the card chrome rebinds to the new
-  // session_id and the expansion-state localStorage key flips with it.
-  if(room.querySelector('#bv-grid')) {
-    const existingCard = room.querySelector('.ops-live-card');
-    const existingSessionId = existingCard ? Number(existingCard.dataset.sessionId) : null;
-    if(existingSessionId === sessionId) {
-      bvRenderBars();
-      bvRenderWorkers();
-      bvRenderLines();
-      renderSessionStats();
-      const barsCountEl = document.getElementById('ops-live-count-bars');
-      if(barsCountEl) barsCountEl.textContent = String(barsCount);
-      return;
-    }
-    // Session changed; clear so the full-render branch below rebuilds.
-    room.innerHTML = '';
+function _bvStopSharedIntervals() {
+  if(_bvElapsedInterval) { clearInterval(_bvElapsedInterval); _bvElapsedInterval = null; }
+  if(_bvDetailInterval)  { clearInterval(_bvDetailInterval);  _bvDetailInterval = null; }
+  if(_bvResizeHandler)   { window.removeEventListener('resize', _bvResizeHandler); _bvResizeHandler = null; }
+}
+
+// Batch C Stage 2: render ONE session's card into its root #ops-live-card-<id>.
+// Collapsed -> a one-line summary card. Expanded -> the full bipartite card
+// (header with per-card counts + per-card elapsed + per-card Close / Timeline,
+// the bipartite scaffold with all ids suffixed -<sessionId>, and the engagement
+// pane), then paint bars / workers / lines / stats for THIS instance.
+function renderSessionCard(ops) {
+  if(!ops || ops.sessionId == null) return;
+  const sessionId = ops.sessionId;
+  const root = document.getElementById('ops-live-card-' + sessionId);
+  if(!root) return;
+
+  const state = _opsLiveCardInitialState(sessionId);
+  if(state === 'collapsed') {
+    // Replace the root with a collapsed summary (header clickable to expand).
+    root.outerHTML = _renderLiveSummaryCard(ops);
+    return;
   }
 
-  // OPS LIVE REDESIGN (2026-05-19): the previous session-header strip
-  // (pulse dot + zone-name + date + invited/confirmed pills, all always
-  // visible) is replaced by an expandable card. The bipartite view +
-  // engagement-timeline pane live inside .ops-live-card-body; clicking
-  // the header toggles .collapsed (persisted per session in localStorage).
-  // Card markup is multi-session capable (stacked cards push each other
-  // down); single-session today because liveSessionOps is still a
-  // single-session global.
-  const initialState = _opsLiveCardInitialState(sessionId);
-  const collapsedClass = initialState === 'collapsed' ? ' collapsed' : '';
+  const barsCount = Array.isArray(ops.bars) ? ops.bars.length : 0;
 
-  room.innerHTML = `
-    <div id="ops-live-card-${sessionId}" class="ops-live-card${collapsedClass}" data-session-id="${sessionId}">
+  // Incremental refresh: if THIS card already has its bipartite scaffold,
+  // just repaint bars / workers / lines / stats (preserves ops.bvExpansion).
+  if(document.getElementById('bv-grid-' + sessionId)) {
+    bvRenderBars(ops);
+    bvRenderWorkers(ops);
+    bvRenderLines(ops);
+    renderSessionStats(ops);
+    const barsCountEl = document.getElementById('ops-live-count-bars-' + sessionId);
+    if(barsCountEl) barsCountEl.textContent = String(barsCount);
+    return;
+  }
+
+  // Full render of the expanded card. Every singleton id is suffixed -<sessionId>.
+  root.outerHTML = `
+    <div id="ops-live-card-${sessionId}" class="ops-live-card" data-session-id="${sessionId}">
       <div class="ops-live-card-header" onclick="opsLiveCardToggle(${sessionId})" role="button" tabindex="0">
         <span class="ops-live-pulse-dot" aria-hidden="true"></span>
         <span class="ops-live-card-id">Session #${sessionId}</span>
         <span class="ops-live-card-sep">&middot;</span>
-        <span class="ops-live-card-meta"><strong id="ops-live-count-bars">${barsCount}</strong> bars</span>
+        <span class="ops-live-card-meta"><strong id="ops-live-count-bars-${sessionId}">${barsCount}</strong> bars</span>
         <span class="ops-live-card-sep">&middot;</span>
         <span class="ops-live-card-meta">
-          <strong id="ops-live-count-invited">0</strong> invited &middot;
-          <strong id="ops-live-count-confirmed">0</strong> confirmed &middot;
-          <strong id="ops-live-count-in-session">0</strong> in session
+          <strong id="ops-live-count-invited-${sessionId}">0</strong> invited &middot;
+          <strong id="ops-live-count-confirmed-${sessionId}">0</strong> confirmed &middot;
+          <strong id="ops-live-count-in-session-${sessionId}">0</strong> in session
         </span>
         <span class="ops-live-card-spacer"></span>
-        <span class="ops-live-card-elapsed" id="live-session-elapsed">00:00</span>
-        <button class="ghost-btn" id="engagement-timeline-toggle" onclick="event.stopPropagation();toggleEngagementTimelinePane()" title="Toggle engagement timeline (basket events + ledger writes, real-time)">Timeline</button>
-        <button class="ghost-btn" style="color:var(--red);border-color:rgba(248,113,113,0.3);" onclick="event.stopPropagation();confirmCloseSession()">Close</button>
+        <span class="ops-live-card-elapsed" id="live-session-elapsed-${sessionId}">00:00</span>
+        <button class="ghost-btn" id="engagement-timeline-toggle-${sessionId}" onclick="event.stopPropagation();toggleEngagementTimelinePane(${sessionId})" title="Toggle engagement timeline (basket events + ledger writes, real-time)">Timeline</button>
+        <button class="ghost-btn" style="color:var(--red);border-color:rgba(248,113,113,0.3);" onclick="event.stopPropagation();confirmCloseSession(${sessionId})">Close</button>
         <span class="ops-live-card-chevron" aria-hidden="true">&#9662;</span>
       </div>
       <div class="ops-live-card-body">
@@ -14567,19 +14616,18 @@ function renderBipartiteView() {
         <span class="bv-toolbar-spacer"></span>
         <span style="font-size:10px;color:var(--grey);letter-spacing:1px;">Click a line to dispatch &middot; Click a bar to manage its request</span>
       </div>
-      <div class="bv-grid" id="bv-grid">
+      <div class="bv-grid" id="bv-grid-${sessionId}">
         <!-- SVG line layer overlays the whole grid (absolute, inset:0).
-             Lifted out of the centre column so coordinates computed
-             relative to the grid origin land inside the SVG viewport
-             (hotfix 18 May 2026). -->
-        <svg id="bv-line-svg" class="bv-line-layer" xmlns="http://www.w3.org/2000/svg"></svg>
+             Coordinates computed relative to the grid origin land inside the
+             SVG viewport (hotfix 18 May 2026). -->
+        <svg id="bv-line-svg-${sessionId}" class="bv-line-layer" xmlns="http://www.w3.org/2000/svg"></svg>
         <div class="bv-bar-col">
           <div class="bv-table bv-bars-table">
             <div class="bv-table-header" role="row">
               <div class="bv-th bv-th-name">Bar name</div>
               <div class="bv-th bv-th-status">Request</div>
             </div>
-            <div id="bv-bar-list" class="bv-tbody"></div>
+            <div id="bv-bar-list-${sessionId}" class="bv-tbody"></div>
           </div>
         </div>
         <div class="bv-worker-col">
@@ -14588,20 +14636,20 @@ function renderBipartiteView() {
               <div class="bv-th bv-th-name">Worker name</div>
               <div class="bv-th bv-th-status">Status</div>
             </div>
-            <div id="bv-worker-list" class="bv-tbody"></div>
+            <div id="bv-worker-list-${sessionId}" class="bv-tbody"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Phase 3 Batch 6: engagement timeline slide-in pane. Unchanged. -->
-    <div id="engagement-timeline-pane" class="engagement-timeline-pane" style="display:none;">
+    <!-- Phase 3 Batch 6: engagement timeline slide-in pane (per-card). -->
+    <div id="engagement-timeline-pane-${sessionId}" class="engagement-timeline-pane" style="display:none;">
       <div class="etp-header">
         <div class="etp-title">Engagement Timeline</div>
         <div class="etp-sub">Live basket events and ledger writes for this session.</div>
-        <button class="ghost-btn etp-close" onclick="toggleEngagementTimelinePane()">Close</button>
+        <button class="ghost-btn etp-close" onclick="toggleEngagementTimelinePane(${sessionId})">Close</button>
       </div>
-      <div id="engagement-timeline-list" class="etp-list">
+      <div id="engagement-timeline-list-${sessionId}" class="etp-list">
         <div class="empty">Waiting for engagement events...</div>
       </div>
     </div>
@@ -14610,54 +14658,41 @@ function renderBipartiteView() {
     </div><!-- /.ops-live-card -->
   `;
 
-  // Elapsed timer.
-  if(liveSessionTimer) clearInterval(liveSessionTimer);
-  liveSessionStart = liveSessionStart || Date.now();
-  liveSessionTimer = setInterval(() => {
-    const secs = Math.floor((Date.now() - liveSessionStart) / 1000);
-    const m = Math.floor(secs / 60).toString().padStart(2,'0');
-    const s = (secs % 60).toString().padStart(2,'0');
-    const el = document.getElementById('live-session-elapsed');
-    if(el) el.textContent = m + ':' + s;
-  }, 1000);
-
-  // Event-driven recompute: render initial content, then run a lightweight
-  // 5-second tick to refresh bar elapsed counters + recompute lines (cheap,
-  // no RPC). Recommendation RPC fires only on real state events, not on tick.
-  bvRenderBars();
-  bvRenderWorkers();
-  bvRenderLines();
-  renderSessionStats();
-
-  if(_bvElapsedInterval) clearInterval(_bvElapsedInterval);
-  _bvElapsedInterval = setInterval(() => bvUpdateBarElapsedCounters(), 1000);
-
-  if(_bvDetailInterval) clearInterval(_bvDetailInterval);
-  _bvDetailInterval = setInterval(() => bvUpdateWorkerEtaCounters(), 5000);
-
-  if(_bvResizeHandler) window.removeEventListener('resize', _bvResizeHandler);
-  _bvResizeHandler = () => bvRenderLines();
-  window.addEventListener('resize', _bvResizeHandler);
+  if(!ops.startedAt) ops.startedAt = Date.now();
+  bvRenderBars(ops);
+  bvRenderWorkers(ops);
+  bvRenderLines(ops);
+  renderSessionStats(ops);
+  // Re-paint any buffered engagement events into this card's freshly-built pane.
+  if(typeof renderEngagementTimelineList === 'function') renderEngagementTimelineList(ops);
+  // The shared 1s/5s/resize drivers (started in renderLiveRoom) pick this card up
+  // automatically via _bvExpandedLiveOps now that #bv-grid-<sessionId> exists.
 }
 
-function bvUpdateHeader(zoneName) {
-  const room = getBipartiteRoomEl();
-  if(!room) return;
-  const zoneEl = room.querySelector('[data-zone-name]');
+// Batch C Stage 2: thin delegate so existing single-session callers still work.
+// Renders ONE card (the given ops, default the focus-pointer).
+function renderBipartiteView(ops = liveSessionOps) {
+  if(!ops) return;
+  renderSessionCard(ops);
+}
+
+function bvUpdateHeader(ops = liveSessionOps, zoneName) {
+  if(!ops) return;
+  const root = document.getElementById('ops-live-card-' + ops.sessionId);
+  if(!root) return;
+  const zoneEl = root.querySelector('[data-zone-name]');
   if(zoneEl) zoneEl.textContent = zoneName || '';
 }
 
 // Build the bar column. Static alphabetical, one row per bar in the session.
-// liveSessionBars is set at go-live / restore (already used by classic flow).
-function bvBarsForSession() {
-  const fromSessionBars = (typeof liveSessionBars !== 'undefined' && Array.isArray(liveSessionBars))
-    ? liveSessionBars
-    : [];
+// ops.bars is set at go-live / restore (per-instance).
+function bvBarsForSession(ops = liveSessionOps) {
+  const fromSessionBars = (ops && Array.isArray(ops.bars)) ? ops.bars : [];
   // Fall back to bars referenced by any shift_request in the session if
-  // liveSessionBars is empty for some reason (defensive).
+  // ops.bars is empty for some reason (defensive).
   if(fromSessionBars.length) return fromSessionBars.slice().sort((a,b) => (a.name||'').localeCompare(b.name||''));
   const ids = new Set();
-  for(const r of liveSessionOps.requests) ids.add(Number(r.bar_id));
+  for(const r of ops.requests) ids.add(Number(r.bar_id));
   const merged = [];
   for(const id of ids) {
     const b = bars.find(x => Number(x.id) === Number(id));
@@ -14671,8 +14706,8 @@ function bvBarsForSession() {
 // back to the most-recent completed or cancelled so the bar continues to
 // show ON SHIFT / COMPLETED / CANCELLED pills after the request moves to
 // terminal state. Expired requests are NOT surfaced (silent backstop).
-function bvActiveRequestForBar(barId) {
-  const reqs = liveSessionOps.requests.filter(r => Number(r.bar_id) === Number(barId));
+function bvActiveRequestForBar(ops = liveSessionOps, barId) {
+  const reqs = ops.requests.filter(r => Number(r.bar_id) === Number(barId));
   const live = reqs.find(r => r.status === 'pending' || r.status === 'dispatched');
   if(live) return live;
   const terminals = reqs.filter(r => r.status === 'completed' || r.status === 'cancelled');
@@ -14682,67 +14717,72 @@ function bvActiveRequestForBar(barId) {
 
 // Phase 1-3 follow-up 5 (18 May 2026): unified single-expansion model.
 // Only one row is expanded at a time across BOTH the bars table and the
-// workers table. Clicking any row collapses any currently-expanded row
-// in either table and expands the clicked one. Clicking the already-
-// expanded row collapses it. State: `null` | { type:'bar'|'worker', id }.
-let bvExpansion = null;
-
-function bvIsBarExpanded(barId) {
-  return !!(bvExpansion && bvExpansion.type === 'bar' && Number(bvExpansion.id) === Number(barId));
+// workers table. Batch C Stage 2: the expansion lives PER INSTANCE on
+// ops.bvExpansion (was a module global) so each card holds its own expanded
+// row. State: `null` | { type:'bar'|'worker', id }.
+function bvIsBarExpanded(ops = liveSessionOps, barId) {
+  const ex = ops && ops.bvExpansion;
+  return !!(ex && ex.type === 'bar' && Number(ex.id) === Number(barId));
 }
-function bvIsWorkerExpanded(appId) {
-  return !!(bvExpansion && bvExpansion.type === 'worker' && Number(bvExpansion.id) === Number(appId));
+function bvIsWorkerExpanded(ops = liveSessionOps, appId) {
+  const ex = ops && ops.bvExpansion;
+  return !!(ex && ex.type === 'worker' && Number(ex.id) === Number(appId));
 }
 
-function bvOnBarRowClick(barId) {
-  const req = bvActiveRequestForBar(barId);
+function bvOnBarRowClick(sessionId, barId) {
+  const ops = liveSessions.get(Number(sessionId));
+  if(!ops) return;
+  const req = bvActiveRequestForBar(ops, barId);
   if(!req) return; // idle bars have no actions; click is a no-op
-  bvExpansion = bvIsBarExpanded(barId) ? null : { type: 'bar', id: Number(barId) };
-  bvRenderBars();
-  bvRenderWorkers(); // collapse any expanded worker row
-  bvRenderLines();   // row heights changed, recompute endpoints
+  ops.bvExpansion = bvIsBarExpanded(ops, barId) ? null : { type: 'bar', id: Number(barId) };
+  bvRenderBars(ops);
+  bvRenderWorkers(ops); // collapse any expanded worker row
+  bvRenderLines(ops);   // row heights changed, recompute endpoints
 }
 
-function bvOnWorkerRowClick(appId) {
-  const opening = !bvIsWorkerExpanded(appId);
-  bvExpansion = opening ? { type: 'worker', id: Number(appId) } : null;
-  bvRenderBars();    // collapse any expanded bar row
-  bvRenderWorkers();
-  bvRenderLines();   // worker column heights changed, recompute endpoints
+function bvOnWorkerRowClick(sessionId, appId) {
+  const ops = liveSessions.get(Number(sessionId));
+  if(!ops) return;
+  const opening = !bvIsWorkerExpanded(ops, appId);
+  ops.bvExpansion = opening ? { type: 'worker', id: Number(appId) } : null;
+  bvRenderBars(ops);    // collapse any expanded bar row
+  bvRenderWorkers(ops);
+  bvRenderLines(ops);   // worker column heights changed, recompute endpoints
   // Phase 1-3 follow-up 6 (18 May 2026): if opening, fire a fresh
-  // f33_compute_ranking pass so the engine breakdown is current â€” quiet
-  // sessions (no realtime events for a while) would otherwise show stale
-  // rankedAll. The promise resolution re-renders workers when the panel
-  // is still open. Cheap; one RPC per pending request, fire and forget.
+  // f33_compute_ranking pass so the engine breakdown is current. Scoped to
+  // THIS instance's pending requests. The promise re-renders workers when the
+  // panel is still open. Cheap; one RPC per pending request, fire and forget.
   if(opening && typeof f33RecomputeAllPending === 'function') {
-    f33RecomputeAllPending().then(() => {
-      if(bvIsWorkerExpanded(appId)) bvRenderWorkers();
+    f33RecomputeAllPending(ops).then(() => {
+      if(bvIsWorkerExpanded(ops, appId)) bvRenderWorkers(ops);
     }).catch(() => {});
   }
 }
 
-function bvRenderBars() {
-  const listEl = document.getElementById('bv-bar-list');
+function bvRenderBars(ops = liveSessionOps) {
+  if(!ops) return;
+  const sessionId = ops.sessionId;
+  const listEl = document.getElementById('bv-bar-list-' + sessionId);
   if(!listEl) return;
-  const barsList = bvBarsForSession();
+  const barsList = bvBarsForSession(ops);
   if(!barsList.length) {
     listEl.innerHTML = '<div class="bv-empty">No bars in this session yet.</div>';
     return;
   }
   // Phase 1-3 follow-up 5: drop expansion if the expanded bar is no
   // longer in the session.
-  if(bvExpansion && bvExpansion.type === 'bar') {
+  if(ops.bvExpansion && ops.bvExpansion.type === 'bar') {
     const seenIds = new Set(barsList.map(b => Number(b.id)));
-    if(!seenIds.has(Number(bvExpansion.id))) bvExpansion = null;
+    if(!seenIds.has(Number(ops.bvExpansion.id))) ops.bvExpansion = null;
   }
 
   listEl.innerHTML = barsList.map(b => {
-    const req = bvActiveRequestForBar(b.id);
+    const req = bvActiveRequestForBar(ops, b.id);
     const isActive = !!req;
     const isDispatched = isActive && req.status === 'dispatched';
     const isCompleted  = isActive && req.status === 'completed';
     const isCancelled  = isActive && req.status === 'cancelled';
-    const isExpanded = bvIsBarExpanded(b.id);
+    const isExpanded = bvIsBarExpanded(ops, b.id);
 
     // Phase 1-3 follow-up 12 (18 May 2026): bar row column 2 + row class
     // now mirror the dispatched worker's state through onshift / completed
@@ -14751,7 +14791,7 @@ function bvRenderBars() {
     // only shows for PENDING / pre-clock-in DISPATCHED. The bar + worker +
     // line three-way colour cue stays consistent at every state.
     const dispW = isActive
-      ? liveSessionOps.workers.find(w => Number(w.shiftRequestId) === Number(req.id))
+      ? ops.workers.find(w => Number(w.shiftRequestId) === Number(req.id))
       : null;
     const isOnShift = !!(dispW && (dispW.status === 'onshift' || dispW.clockInAt));
 
@@ -14797,7 +14837,7 @@ function bvRenderBars() {
 
     if(isExpanded) rowCls += ' is-actions-expanded';
 
-    const rowHtml = '<div class="bv-bar-row' + rowCls + '" id="bv-bar-' + b.id + '" data-bar-id="' + b.id + '" data-req-id="' + (req ? req.id : '') + '" onclick="bvOnBarRowClick(' + b.id + ')">'
+    const rowHtml = '<div class="bv-bar-row' + rowCls + '" id="bv-bar-' + b.id + '-' + sessionId + '" data-bar-id="' + b.id + '" data-req-id="' + (req ? req.id : '') + '" onclick="bvOnBarRowClick(' + sessionId + ',' + b.id + ')">'
       + '<div class="bv-cell bv-cell-name"><span class="bv-name-text">' + escapeBvHtml(b.name || 'Bar #' + b.id) + '</span></div>'
       + '<div class="bv-cell bv-cell-status">' + statusCellHtml + '</div>'
       + '</div>';
@@ -14808,13 +14848,13 @@ function bvRenderBars() {
     // requester (PIN-holder), notes, dispatch state, clock-in / clock-out
     // codes when dispatched. Action buttons retained at the bottom.
     if(isActive && isExpanded) {
-      return rowHtml + bvRenderBarDetailRow(b, req);
+      return rowHtml + bvRenderBarDetailRow(ops, b, req);
     }
     return rowHtml;
   }).join('');
 }
 
-function bvRenderBarDetailRow(b, req) {
+function bvRenderBarDetailRow(ops = liveSessionOps, b, req) {
   const stat = (label, value) => '<div class="bv-bar-detail-stat">'
     + '<div class="bv-bar-detail-stat-label">' + escapeBvHtml(label) + '</div>'
     + '<div class="bv-bar-detail-stat-value">' + value + '</div>'
@@ -14828,7 +14868,7 @@ function bvRenderBarDetailRow(b, req) {
 
   // Resolve the dispatched session_worker for this request (if any) to
   // pull clock-in / clock-out codes and worker name.
-  const dispW = liveSessionOps.workers.find(w =>
+  const dispW = ops.workers.find(w =>
     Number(w.shiftRequestId) === Number(req.id) &&
     (w.status === 'dispatched' || w.status === 'onshift' || w.status === 'completed'));
   const dispWorkerName = dispW ? escapeBvHtml(dispW.name) : null;
@@ -14895,7 +14935,7 @@ function bvRenderBarDetailRow(b, req) {
               + '</div>';
   }
 
-  return '<div class="bv-bar-actions-row" id="bv-bar-actions-' + b.id + '">'
+  return '<div class="bv-bar-actions-row" id="bv-bar-actions-' + b.id + '-' + ops.sessionId + '">'
     + '<div class="bv-bar-detail-stats">'
     +   stat('Bar ID',       barIdLabel)
     +   stat('Posted at',    postedAt)
@@ -14920,11 +14960,11 @@ function bvRenderBarDetailRow(b, req) {
         : '')
     + '<div class="bv-bar-detail-actions">'
     +   (req.status === 'cancelled' && req.cancellation_reason === 'no_replacement_found'
-          ? '<button class="bv-bar-action-btn primary" onclick="event.stopPropagation();bvRetryRequest(' + req.id + ')">Retry request (fresh 30 min)</button>'
+          ? '<button class="bv-bar-action-btn primary" onclick="event.stopPropagation();bvRetryRequest(' + ops.sessionId + ',' + req.id + ')">Retry request (fresh 30 min)</button>'
           : '')
     +   (req.status !== 'cancelled' && req.status !== 'completed'
-          ? '<button class="bv-bar-action-btn" onclick="event.stopPropagation();openAddNotes(' + req.id + ')">' + notesLabel + '</button>'
-            + '<button class="bv-bar-action-btn danger" onclick="event.stopPropagation();removeRequest(' + req.id + ')">Remove request</button>'
+          ? '<button class="bv-bar-action-btn" onclick="event.stopPropagation();openAddNotes(' + ops.sessionId + ',' + req.id + ')">' + notesLabel + '</button>'
+            + '<button class="bv-bar-action-btn danger" onclick="event.stopPropagation();removeRequest(' + ops.sessionId + ',' + req.id + ')">Remove request</button>'
           : '')
     + '</div>'
     + '</div>';
@@ -14935,8 +14975,10 @@ function bvRenderBarDetailRow(b, req) {
 // status to pending with a fresh posted_at and fans out push notifications
 // to in-catchment workers. Realtime UPDATE on shift_requests will then
 // propagate the new state into the bipartite view automatically.
-async function bvRetryRequest(requestId) {
-  const req = liveSessionOps.requests.find(r => Number(r.id) === Number(requestId));
+async function bvRetryRequest(sessionId, requestId) {
+  const ops = liveSessions.get(Number(sessionId)) || liveSessionOps;
+  if(!ops) return;
+  const req = ops.requests.find(r => Number(r.id) === Number(requestId));
   if(!req) { alert('Request not found.'); return; }
   if(!confirm('Retry this request? It will be reposted to all eligible workers in catchment with a fresh 30-minute timer.')) return;
   try {
@@ -14949,7 +14991,7 @@ async function bvRetryRequest(requestId) {
     // Local-state nudge so the bipartite view repaints immediately without
     // waiting on the realtime UPDATE round-trip; realtime will reconcile
     // any remaining drift moments later.
-    const localReq = liveSessionOps.requests.find(r => Number(r.id) === Number(requestId));
+    const localReq = ops.requests.find(r => Number(r.id) === Number(requestId));
     if(localReq) {
       localReq.status = 'pending';
       localReq.cancellation_reason = null;
@@ -14960,18 +15002,20 @@ async function bvRetryRequest(requestId) {
       localReq.request_time = localReq.posted_at;
       localReq.original_posted_at = null;
     }
-    // Collapse the bar expansion now that the retry has fired.
-    if(typeof bvExpansion !== 'undefined' && bvExpansion && bvExpansion.type === 'bar') bvExpansion = null;
-    renderLiveRoom();
+    // Collapse THIS card's bar expansion now that the retry has fired.
+    if(ops.bvExpansion && ops.bvExpansion.type === 'bar') ops.bvExpansion = null;
+    renderSessionCard(ops);
   } catch(e) {
     alert('Retry failed: ' + (e && e.message ? e.message : 'unknown'));
   }
 }
 
-function bvUpdateBarElapsedCounters() {
-  for(const r of liveSessionOps.requests) {
+function bvUpdateBarElapsedCounters(ops = liveSessionOps) {
+  if(!ops) return;
+  const sessionId = ops.sessionId;
+  for(const r of ops.requests) {
     if(r.status !== 'pending' && r.status !== 'dispatched') continue;
-    const el = document.querySelector('[data-elapsed-tag="' + r.id + '"]');
+    const el = document.querySelector('#bv-grid-' + sessionId + ' [data-elapsed-tag="' + r.id + '"]');
     if(!el) continue;
     const postedAt = r.posted_at ? new Date(r.posted_at) : (r.request_time ? new Date(r.request_time) : new Date(r.created_at));
     const secs = Math.max(0, Math.floor((Date.now() - postedAt.getTime()) / 1000));
@@ -14984,7 +15028,7 @@ function bvUpdateBarElapsedCounters() {
     const critical = r.status === 'pending' && secs >= 1500;
     el.classList.toggle('urgent',   urgent);
     el.classList.toggle('critical', critical);
-    const rowEl = document.getElementById('bv-bar-' + r.bar_id);
+    const rowEl = document.getElementById('bv-bar-' + r.bar_id + '-' + sessionId);
     if(rowEl) {
       rowEl.classList.toggle('urgent',   urgent);
       rowEl.classList.toggle('critical', critical);
@@ -14999,10 +15043,10 @@ function bvUpdateBarElapsedCounters() {
 
 // Worker column ordering: invites sorted by joined_at presence then alphabetical.
 // All invited workers visible regardless of join status per spec lock.
-function bvInvitedWorkers() {
+function bvInvitedWorkers(ops = liveSessionOps) {
   // Build a unified list keyed by application_id from invites + workers.
   const byAppId = new Map();
-  for(const inv of (liveSessionOps.invites || [])) {
+  for(const inv of (ops.invites || [])) {
     const appId = Number(inv.application_id);
     if(!appId) continue;
     if(inv.attendance_confirmed === 'declined') continue;
@@ -15019,7 +15063,7 @@ function bvInvitedWorkers() {
       worker: null
     });
   }
-  for(const w of liveSessionOps.workers) {
+  for(const w of ops.workers) {
     const appId = Number(w.applicationId);
     if(!appId) continue;
     let row = byAppId.get(appId);
@@ -15051,12 +15095,12 @@ function bvInvitedWorkers() {
 // shift_responses against any active pending request. session_workers.status
 // stays 'in_session' through the response phase, so this derived state is
 // what unlocks the AVAILABLE pill + the available line styling.
-function bvIsWorkerAvailable(applicationId) {
-  if(typeof liveSessionResponses === 'undefined') return false;
+function bvIsWorkerAvailable(ops = liveSessionOps, applicationId) {
+  if(!ops || !ops.responses) return false;
   const appId = Number(applicationId);
-  for(const r of liveSessionOps.requests) {
+  for(const r of ops.requests) {
     if(r.status !== 'pending') continue;
-    const rows = liveSessionResponses.get(r.id) || [];
+    const rows = ops.responses.get(r.id) || [];
     if(rows.some(x => Number(x.application_id) === appId && x.response === 'available')) {
       return true;
     }
@@ -15064,7 +15108,7 @@ function bvIsWorkerAvailable(applicationId) {
   return false;
 }
 
-function bvWorkerStatusInfo(row) {
+function bvWorkerStatusInfo(ops = liveSessionOps, row) {
   const w = row.worker;
   const status = w ? w.status : null;
   if(!w) {
@@ -15075,7 +15119,7 @@ function bvWorkerStatusInfo(row) {
       // Derived AVAILABLE state: worker has at least one Available response
       // against an active pending request. Drives the pill + the row left-edge
       // accent + (separately) the "available" line styling in bvRenderLines.
-      if(bvIsWorkerAvailable(row.applicationId)) {
+      if(bvIsWorkerAvailable(ops, row.applicationId)) {
         return { pill: 'AVAILABLE', pillCls: 'is-available', rowCls: 'is-available' };
       }
       return { pill: 'IN SESSION', pillCls: 'is-in-session', rowCls: '' };
@@ -15096,9 +15140,9 @@ function bvWorkerStatusInfo(row) {
   }
 }
 
-function bvMovementStateFor(row) {
-  if(!row.worker || !row.worker.sessionWorkerId) return null;
-  return liveSessionMovementState.get(Number(row.worker.sessionWorkerId)) || null;
+function bvMovementStateFor(ops = liveSessionOps, row) {
+  if(!ops || !row.worker || !row.worker.sessionWorkerId) return null;
+  return ops.movementState.get(Number(row.worker.sessionWorkerId)) || null;
 }
 
 // Live Dashboard Redesign Phase 1-3 follow-up (18 May 2026): worker row is
@@ -15108,24 +15152,26 @@ function bvMovementStateFor(row) {
 // emit additional cell <div>s). Dispatched / onshift workers render a
 // sibling detail sub-row below the thin row, holding ETA, movement state
 // text, clock-in form, cancel-dispatch button, etc.
-function bvRenderWorkers() {
-  const listEl = document.getElementById('bv-worker-list');
+function bvRenderWorkers(ops = liveSessionOps) {
+  if(!ops) return;
+  const sessionId = ops.sessionId;
+  const listEl = document.getElementById('bv-worker-list-' + sessionId);
   if(!listEl) return;
-  const rows = bvInvitedWorkers();
+  const rows = bvInvitedWorkers(ops);
   if(!rows.length) {
     listEl.innerHTML = '<div class="bv-empty">No workers invited yet.</div>';
     return;
   }
   // Phase 1-3 follow-up 5: drop worker expansion if the expanded worker
   // is no longer present (e.g. they left the session).
-  if(bvExpansion && bvExpansion.type === 'worker') {
+  if(ops.bvExpansion && ops.bvExpansion.type === 'worker') {
     const seenIds = new Set(rows.map(r => Number(r.applicationId)));
-    if(!seenIds.has(Number(bvExpansion.id))) bvExpansion = null;
+    if(!seenIds.has(Number(ops.bvExpansion.id))) ops.bvExpansion = null;
   }
 
   listEl.innerHTML = rows.map(row => {
-    const info = bvWorkerStatusInfo(row);
-    const move = bvMovementStateFor(row);
+    const info = bvWorkerStatusInfo(ops, row);
+    const move = bvMovementStateFor(ops, row);
     let moveCls = '';
     if(move && !move.cancelled_at) {
       if(move.nudge_2_fired_at) moveCls = ' movement-nudge2';
@@ -15133,20 +15179,20 @@ function bvRenderWorkers() {
     }
 
     const w = row.worker;
-    const isExpanded = bvIsWorkerExpanded(row.applicationId);
+    const isExpanded = bvIsWorkerExpanded(ops, row.applicationId);
     // Phase 1-3 follow-up 12 (18 May 2026): no more always-on detail sub-
     // row. ALL worker state (pre-dispatch profile + active-requests + engine
     // reasoning + dispatched/onshift/completed/cancelled detail) lives in
     // the click-expand panel only. Thin row stays a thin row at every
     // state. Single expand surface for the worker's full picture.
-    const rowHtml = '<div class="bv-worker-row ' + info.rowCls + moveCls + (isExpanded ? ' is-expanded' : '') + '" id="bv-worker-' + row.applicationId + '" data-app-id="' + row.applicationId + '" data-sw-id="' + (w ? (w.sessionWorkerId || '') : '') + '" onclick="bvOnWorkerRowClick(' + row.applicationId + ')">'
+    const rowHtml = '<div class="bv-worker-row ' + info.rowCls + moveCls + (isExpanded ? ' is-expanded' : '') + '" id="bv-worker-' + row.applicationId + '-' + sessionId + '" data-app-id="' + row.applicationId + '" data-sw-id="' + (w ? (w.sessionWorkerId || '') : '') + '" onclick="bvOnWorkerRowClick(' + sessionId + ',' + row.applicationId + ')">'
       + '<div class="bv-cell bv-cell-name"><span class="bv-name-text">' + escapeBvHtml(row.name) + '</span></div>'
       + '<div class="bv-cell bv-cell-status"><span class="bv-worker-pill ' + info.pillCls + '">' + info.pill + '</span></div>'
       + '</div>';
     if(isExpanded) {
       return rowHtml
-        + '<div class="bv-worker-expand-row' + moveCls + '" id="bv-worker-expand-' + row.applicationId + '" data-app-id="' + row.applicationId + '">'
-        + bvRenderWorkerExpandDetail(row, move)
+        + '<div class="bv-worker-expand-row' + moveCls + '" id="bv-worker-expand-' + row.applicationId + '-' + sessionId + '" data-app-id="' + row.applicationId + '">'
+        + bvRenderWorkerExpandDetail(ops, row, move)
         + '</div>';
     }
     return rowHtml;
@@ -15158,7 +15204,8 @@ function bvRenderWorkers() {
 // Shows tier + postcode + reliability snapshot + per-active-request
 // eligibility, response state (with response_seconds), or remaining
 // window. Reads workerBarDistances for catchment + walking minutes.
-function bvRenderWorkerExpandDetail(row, move) {
+function bvRenderWorkerExpandDetail(ops = liveSessionOps, row, move) {
+  const sessionId = ops.sessionId;
   const tierLabel = row.tier ? 'Tier ' + row.tier : 'â€“';
   const postcode  = row.postcode_full || 'â€“';
   const rel       = row.reliability_score != null ? Math.round(parseFloat(row.reliability_score)) + '%' : 'â€“';
@@ -15185,7 +15232,7 @@ function bvRenderWorkerExpandDetail(row, move) {
   const isCommitted = wForFilter && (wStatus === 'dispatched' || wStatus === 'onshift' || wStatus === 'completed');
   const myShiftReqId = isCommitted ? Number(wForFilter.shiftRequestId) : null;
 
-  for(const r of liveSessionOps.requests) {
+  for(const r of ops.requests) {
     if(isCommitted) {
       // Show only the worker's own committed request, regardless of status.
       if(Number(r.id) !== myShiftReqId) continue;
@@ -15206,7 +15253,7 @@ function bvRenderWorkerExpandDetail(row, move) {
     // Non-committed workers also need eligibility â€” drop out-of-catchment.
     if(!isCommitted && !inCatchment) continue;
 
-    const responses = (typeof liveSessionResponses !== 'undefined') ? (liveSessionResponses.get(r.id) || []) : [];
+    const responses = ops.responses ? (ops.responses.get(r.id) || []) : [];
     const myResp = responses.find(x => Number(x.application_id) === appId) || null;
 
     let respLabel;
@@ -15244,13 +15291,11 @@ function bvRenderWorkerExpandDetail(row, move) {
     // pending requests â€” once dispatched their rank is moot.
     let rankBlock = '';
     if(!isCommitted && r.status === 'pending') {
-      const rec = (typeof liveSessionRecommendations !== 'undefined')
-        ? liveSessionRecommendations.get(r.id)
-        : null;
+      const rec = ops.recommendations ? ops.recommendations.get(r.id) : null;
       if(rec && Array.isArray(rec.rankedAll) && rec.rankedAll.length) {
         const myRank = rec.rankedAll.find(x => Number(x.application_id) === appId);
         if(myRank) {
-          rankBlock = bvRenderRankingInset(myRank, rec.rankedAll.length);
+          rankBlock = bvRenderRankingInset(ops, myRank, rec.rankedAll.length);
         }
       }
     }
@@ -15280,13 +15325,13 @@ function bvRenderWorkerExpandDetail(row, move) {
                  : w.departedAt ? 'En route'
                  : 'Dispatched';
     stateSection = '<div class="bv-expand-section-label">' + label + '</div>'
-                 + '<div id="bv-worker-detail-content-' + row.applicationId + '" class="bv-worker-detail-block">'
-                 + bvRenderDispatchedDetail(w, move || null)
+                 + '<div id="bv-worker-detail-content-' + row.applicationId + '-' + sessionId + '" class="bv-worker-detail-block">'
+                 + bvRenderDispatchedDetail(ops, w, move || null)
                  + '</div>';
   } else if(w && w.status === 'completed') {
     stateSection = '<div class="bv-expand-section-label">Shift summary</div>'
-                 + '<div id="bv-worker-detail-content-' + row.applicationId + '" class="bv-worker-detail-block">'
-                 + bvRenderCompletedDetail(w)
+                 + '<div id="bv-worker-detail-content-' + row.applicationId + '-' + sessionId + '" class="bv-worker-detail-block">'
+                 + bvRenderCompletedDetail(ops, w)
                  + '</div>';
   } else if(move && move.cancelled_at) {
     stateSection = '<div class="bv-expand-section-label" style="color:var(--red);">Auto-cancelled</div>'
@@ -15314,7 +15359,7 @@ function bvRenderWorkerExpandDetail(row, move) {
 // per-worker-per-request breakdown: rank, reliability (+ effective if
 // time-decayed), deficit Q/D, walking, tier, narrative. Reads the row
 // returned by f33_compute_ranking via liveSessionRecommendations.rankedAll.
-function bvRenderRankingInset(rankRow, totalRanked) {
+function bvRenderRankingInset(ops = liveSessionOps, rankRow, totalRanked) {
   const rank      = rankRow.rank != null ? rankRow.rank : '?';
   const total     = totalRanked != null ? totalRanked : '?';
   const rel       = rankRow.reliability_score != null ? Math.round(parseFloat(rankRow.reliability_score)) + '%' : null;
@@ -15346,7 +15391,8 @@ function bvRenderRankingInset(rankRow, totalRanked) {
     + '</div>';
 }
 
-function bvRenderDispatchedDetail(w, move) {
+function bvRenderDispatchedDetail(ops = liveSessionOps, w, move) {
+  const sessionId = ops.sessionId;
   const barName = w.bar || (w.barRecord && w.barRecord.name) || '';
   const isOnShift = (w.status === 'onshift' || w.clockInAt);
   let etaLine = '';
@@ -15376,14 +15422,14 @@ function bvRenderDispatchedDetail(w, move) {
   const clockInRow = !isOnShift && w.shiftRequestId
     ? '<div class="bv-clock-in-row">'
       + '<input type="text" maxlength="6" placeholder="Clock-in code" id="bv-clockin-' + w.shiftRequestId + '">'
-      + '<button onclick="event.stopPropagation();bvSubmitClockIn(' + w.shiftRequestId + ',' + w.applicationId + ')">Confirm</button>'
+      + '<button onclick="event.stopPropagation();bvSubmitClockIn(' + sessionId + ',' + w.shiftRequestId + ',' + w.applicationId + ')">Confirm</button>'
       + '</div>'
     : '';
   const clockOutRow = isOnShift && w.shiftRequestId
-    ? '<div class="bv-clock-out-row"><button class="bv-reveal-clockout" onclick="event.stopPropagation();bvRevealClockOut(' + w.shiftRequestId + ',' + (w.clockOutCode ? '\'' + w.clockOutCode + '\'' : 'null') + ')">Reveal clock-out code</button></div>'
+    ? '<div class="bv-clock-out-row"><button class="bv-reveal-clockout" onclick="event.stopPropagation();bvRevealClockOut(' + sessionId + ',' + w.shiftRequestId + ',' + (w.clockOutCode ? '\'' + w.clockOutCode + '\'' : 'null') + ')">Reveal clock-out code</button></div>'
     : '';
   const cancelBtn = w.shiftRequestId
-    ? '<button class="bv-cancel-dispatch" onclick="event.stopPropagation();bvOpenCancelDispatch(' + w.applicationId + ',' + w.shiftRequestId + ')">Cancel dispatch</button>'
+    ? '<button class="bv-cancel-dispatch" onclick="event.stopPropagation();bvOpenCancelDispatch(' + sessionId + ',' + w.applicationId + ',' + w.shiftRequestId + ')">Cancel dispatch</button>'
     : '';
   return '<div class="bv-worker-detail">'
     + (barName ? '<div class="bv-worker-detail-line">Dispatched to <strong style="color:var(--white);">' + escapeBvHtml(barName) + '</strong></div>' : '')
@@ -15396,7 +15442,7 @@ function bvRenderDispatchedDetail(w, move) {
     + '</div>';
 }
 
-function bvRenderCompletedDetail(w) {
+function bvRenderCompletedDetail(ops = liveSessionOps, w) {
   const barName = w.bar || (w.barRecord && w.barRecord.name) || '';
   const clockInFmt  = w.clockInAt  ? fmtHm(w.clockInAt)  : '';
   const clockOutFmt = w.clockOutAt ? fmtHm(w.clockOutAt) : '';
@@ -15413,22 +15459,24 @@ function bvRenderCompletedDetail(w) {
     + '</div>';
 }
 
-function bvUpdateWorkerEtaCounters() {
+function bvUpdateWorkerEtaCounters(ops = liveSessionOps) {
   // Phase 1-3 follow-up 12 (18 May 2026): detail content now lives INSIDE
-  // the click-expand panel at #bv-worker-detail-content-<appId>. The
-  // panel only exists when the worker is expanded, so this tick is a
+  // the click-expand panel at #bv-worker-detail-content-<appId>-<sessionId>.
+  // The panel only exists when the worker is expanded, so this tick is a
   // cheap no-op the rest of the time. Focus-restore preserves any
   // half-typed clock-in code.
-  for(const w of liveSessionOps.workers) {
+  if(!ops) return;
+  const sessionId = ops.sessionId;
+  for(const w of ops.workers) {
     if(!w || !w.applicationId) continue;
     if(w.status !== 'dispatched' && w.status !== 'onshift') continue;
-    const detailEl = document.getElementById('bv-worker-detail-content-' + w.applicationId);
+    const detailEl = document.getElementById('bv-worker-detail-content-' + w.applicationId + '-' + sessionId);
     if(!detailEl) continue;
     const focused = (document.activeElement && detailEl.contains(document.activeElement)) ? document.activeElement : null;
     const focusedId = focused ? focused.id : null;
     const focusedVal = focused ? focused.value : null;
-    const move = bvMovementStateFor({ worker: w });
-    detailEl.innerHTML = bvRenderDispatchedDetail(w, move);
+    const move = bvMovementStateFor(ops, { worker: w });
+    detailEl.innerHTML = bvRenderDispatchedDetail(ops, w, move);
     if(focusedId) {
       const restored = document.getElementById(focusedId);
       if(restored) {
@@ -15442,9 +15490,11 @@ function bvUpdateWorkerEtaCounters() {
 // SVG line rendering: for each pending/dispatched request, draw one path
 // per eligible worker. Recommendation engine sets the highlight; available
 // responses solidify; pending fanout dashed; pass/no_response is no line.
-function bvRenderLines() {
-  const svg = document.getElementById('bv-line-svg');
-  const grid = document.getElementById('bv-grid');
+function bvRenderLines(ops = liveSessionOps) {
+  if(!ops) return;
+  const sessionId = ops.sessionId;
+  const svg = document.getElementById('bv-line-svg-' + sessionId);
+  const grid = document.getElementById('bv-grid-' + sessionId);
   if(!svg || !grid) return;
   const gridRect = grid.getBoundingClientRect();
   // Resize SVG to cover the grid.
@@ -15467,14 +15517,14 @@ function bvRenderLines() {
   // edge gives the bar's outgoing x; first cell's left edge gives the
   // worker's incoming x.
   const barRowRect = (barId) => {
-    const el = document.getElementById('bv-bar-' + barId);
+    const el = document.getElementById('bv-bar-' + barId + '-' + sessionId);
     if(!el || !el.firstElementChild || !el.lastElementChild) return null;
     const first = el.firstElementChild.getBoundingClientRect();
     const last  = el.lastElementChild.getBoundingClientRect();
     return { x: last.right - gridRect.left, y: first.top + first.height / 2 - gridRect.top };
   };
   const workerRowRect = (appId) => {
-    const el = document.getElementById('bv-worker-' + appId);
+    const el = document.getElementById('bv-worker-' + appId + '-' + sessionId);
     if(!el || !el.firstElementChild) return null;
     const first = el.firstElementChild.getBoundingClientRect();
     return { x: first.left - gridRect.left, y: first.top + first.height / 2 - gridRect.top };
@@ -15483,7 +15533,7 @@ function bvRenderLines() {
   // For each pending request: draw lines to in_session workers in catchment,
   // styled by response state and recommendation match. Pass/no_response: skip.
   const pendingByBar = new Map();
-  for(const r of liveSessionOps.requests) {
+  for(const r of ops.requests) {
     if(r.status !== 'pending' && r.status !== 'dispatched') continue;
     pendingByBar.set(Number(r.bar_id), r);
   }
@@ -15491,7 +15541,7 @@ function bvRenderLines() {
   // Build a map of dispatched session_workers by shift_request_id for the
   // dispatched-line case.
   const dispatchedBySwReq = new Map();
-  for(const w of liveSessionOps.workers) {
+  for(const w of ops.workers) {
     if(!w || !w.shiftRequestId) continue;
     if(w.status === 'dispatched' || w.status === 'onshift') {
       dispatchedBySwReq.set(Number(w.shiftRequestId), w);
@@ -15501,7 +15551,7 @@ function bvRenderLines() {
   for(const [barId, req] of pendingByBar.entries()) {
     const barPt = barRowRect(barId);
     if(!barPt) continue;
-    const rec = liveSessionRecommendations.get(req.id);
+    const rec = ops.recommendations.get(req.id);
     const recAppId = rec && rec.recommendedAppId ? Number(rec.recommendedAppId) : null;
 
     if(req.status === 'dispatched') {
@@ -15511,8 +15561,8 @@ function bvRenderLines() {
       if(!w) continue;
       const wpt = workerRowRect(w.applicationId);
       if(!wpt) continue;
-      const move = (typeof liveSessionMovementState !== 'undefined' && w.sessionWorkerId)
-        ? liveSessionMovementState.get(Number(w.sessionWorkerId))
+      const move = (ops.movementState && w.sessionWorkerId)
+        ? ops.movementState.get(Number(w.sessionWorkerId))
         : null;
       let cls = 'bv-line-dispatched';
       if(w.status === 'onshift' || w.clockInAt) {
@@ -15539,7 +15589,7 @@ function bvRenderLines() {
     }
 
     // Pending: fanout to eligible workers.
-    const responses = liveSessionResponses.get(req.id) || [];
+    const responses = ops.responses.get(req.id) || [];
     // Phase 1-3 follow-up 5 (18 May 2026): recommendation line is meaningful
     // only when there's a CHOICE to be made â€” i.e. >= 2 Available responses.
     // With 0 or 1 available responses, the engine's pick is either nothing or
@@ -15548,7 +15598,7 @@ function bvRenderLines() {
     const availableCount = responses.filter(x => x && x.response === 'available').length;
     const recAllowed = availableCount >= 2;
     if(typeof workerBarDistances === 'undefined') continue;
-    for(const w of liveSessionOps.workers) {
+    for(const w of ops.workers) {
       if(!w || w.status !== 'in_session') continue;
       const appId = Number(w.applicationId);
       const dist = workerBarDistances.find(d => Number(d.application_id) === appId && Number(d.bar_id) === Number(barId));
@@ -15610,7 +15660,7 @@ function bvRenderLines() {
       hit.setAttribute('data-app-id', p.appId);
       hit.addEventListener('click', (ev) => {
         ev.stopPropagation();
-        bvOpenDispatchModal(p.appId, p.reqId);
+        bvOpenDispatchModal(sessionId, p.appId, p.reqId);
       });
       svg.appendChild(hit);
     }
@@ -15640,7 +15690,7 @@ function bvRenderLines() {
         if(ageSec > 90) staleCls = ' stale';
       } else if(typeof workerBarDistances !== 'undefined') {
         const dist = workerBarDistances.find(d =>
-          Number(d.application_id) === Number(p.appId) && Number(d.bar_id) === Number(liveSessionOps.requests.find(r => Number(r.id) === Number(p.reqId))?.bar_id));
+          Number(d.application_id) === Number(p.appId) && Number(d.bar_id) === Number(ops.requests.find(r => Number(r.id) === Number(p.reqId))?.bar_id));
         if(dist && dist.walking_minutes != null) etaText = dist.walking_minutes + ' min';
       }
       if(etaText) {
@@ -15685,12 +15735,17 @@ function bvRenderLines() {
 // Shows worker info + score breakdown + DISPATCH/Cancel buttons. Routes
 // confirms to the existing dispatchWorker function so the audit write and
 // state mutation paths are unchanged.
-function bvOpenDispatchModal(applicationId, requestId) {
-  const w = liveSessionOps.workers.find(x => Number(x.applicationId) === Number(applicationId));
-  const r = liveSessionOps.requests.find(x => Number(x.id) === Number(requestId));
+function bvOpenDispatchModal(sessionId, applicationId, requestId) {
+  // The dispatch modal is a single global surface (one dispatch actioned at a
+  // time). Resolve the owning ops by sessionId to populate it from the right
+  // session's state; fall back to the focus-pointer.
+  const ops = liveSessions.get(Number(sessionId)) || liveSessionOps;
+  if(!ops) { alert('Session not found.'); return; }
+  const w = ops.workers.find(x => Number(x.applicationId) === Number(applicationId));
+  const r = ops.requests.find(x => Number(x.id) === Number(requestId));
   if(!w || !r) { alert('Worker or request not found.'); return; }
-  _bvLineDispatchTarget = { applicationId: Number(applicationId), requestId: Number(requestId) };
-  const rec = liveSessionRecommendations.get(requestId);
+  _bvLineDispatchTarget = { sessionId: Number(ops.sessionId), applicationId: Number(applicationId), requestId: Number(requestId) };
+  const rec = ops.recommendations.get(requestId);
   const isRecommended = !!(rec && Number(rec.recommendedAppId) === Number(applicationId));
   const b = rec && rec.breakdown ? rec.breakdown : null;
   const barName = r._barName || (bars.find(x => Number(x.id) === Number(r.bar_id)) || {}).name || 'Unknown bar';
@@ -15728,6 +15783,12 @@ async function bvConfirmDispatchFromModal() {
   const t = _bvLineDispatchTarget;
   if(!t) { closeOv('bv-dispatch'); return; }
   closeOv('bv-dispatch');
+  // dispatchWorker reads the focus-pointer globals (liveSessionOps). Focus the
+  // owning session first so the dispatch resolves against the right session's
+  // workers/requests even when the actioned card was not the focused one.
+  if(t.sessionId != null && liveSessions.has(Number(t.sessionId)) && typeof focusSession === 'function') {
+    focusSession(Number(t.sessionId));
+  }
   await dispatchWorker(t.applicationId, t.requestId);
   _bvLineDispatchTarget = null;
 }
@@ -15741,8 +15802,15 @@ function bvCancelDispatchModal() {
 // openCancelDispatch helper expects the local UI worker id (w.id, not
 // applicationId); we resolve the worker by applicationId and pass the
 // correct token through.
-function bvOpenCancelDispatch(applicationId, _requestId) {
-  const w = liveSessionOps.workers.find(x => Number(x.applicationId) === Number(applicationId));
+function bvOpenCancelDispatch(sessionId, applicationId, _requestId) {
+  // openCancelDispatch reads the focus-pointer globals; resolve + focus the
+  // owning session first so it acts on the right session's worker.
+  const ops = liveSessions.get(Number(sessionId)) || liveSessionOps;
+  if(!ops) { alert('Session not found.'); return; }
+  if(ops.sessionId != null && _focusedSessionId !== ops.sessionId && typeof focusSession === 'function') {
+    focusSession(Number(ops.sessionId));
+  }
+  const w = ops.workers.find(x => Number(x.applicationId) === Number(applicationId));
   if(!w) { alert('Worker not found.'); return; }
   if(typeof openCancelDispatch === 'function') {
     openCancelDispatch(w.id);
@@ -15753,7 +15821,13 @@ function bvOpenCancelDispatch(applicationId, _requestId) {
 
 // Clock-in entry point from the bipartite worker card. Mirrors the classic
 // confirmClockIn behaviour but reads the input id keyed bv-clockin-<reqId>.
-async function bvSubmitClockIn(requestId, applicationId) {
+async function bvSubmitClockIn(sessionId, requestId, applicationId) {
+  // confirmClockIn reads the focus-pointer globals; focus the owning session
+  // first so the clock-in resolves against the right session's worker.
+  const ops = liveSessions.get(Number(sessionId)) || liveSessionOps;
+  if(ops && ops.sessionId != null && _focusedSessionId !== ops.sessionId && typeof focusSession === 'function') {
+    focusSession(Number(ops.sessionId));
+  }
   const code = (document.getElementById('bv-clockin-' + requestId) || {}).value;
   if(!code || !code.trim()) { alert('Please enter the clock-in code.'); return; }
   // Reuse confirmClockIn so the DB-write path stays identical: temporarily
@@ -15770,7 +15844,7 @@ async function bvSubmitClockIn(requestId, applicationId) {
   }
 }
 
-function bvRevealClockOut(requestId, code) {
+function bvRevealClockOut(sessionId, requestId, code) {
   if(!code) { alert('No clock-out code available.'); return; }
   // Phase 1-3 follow-up (18 May 2026): detail block now lives in a SIBLING
   // sub-row (#bv-worker-detail-<appId>). Find the clock-out row inside any
@@ -16941,14 +17015,16 @@ function f33GenerateReason(top) {
 // Per-request recompute. Calls public.f33_compute_ranking(p_shift_request_id)
 // server-side and caches the rank=1 entry in liveSessionRecommendations.
 // Returns true if the top pick changed (caller may trigger swap animation).
-async function f33RecomputeRecommendation(requestId) {
-  const request = liveSessionOps.requests.find(r => r.id === requestId);
+async function f33RecomputeRecommendation(ops, requestId) {
+  if(!ops) ops = liveSessionOps;
+  if(!ops) return false;
+  const request = ops.requests.find(r => r.id === requestId);
   if(!request || request.status !== 'pending') {
-    const had = liveSessionRecommendations.has(requestId);
-    liveSessionRecommendations.delete(requestId);
+    const had = ops.recommendations.has(requestId);
+    ops.recommendations.delete(requestId);
     return had;
   }
-  const prev = liveSessionRecommendations.get(requestId);
+  const prev = ops.recommendations.get(requestId);
   let rows = [];
   try {
     const res = await sbAuth.rpc('f33_compute_ranking', { p_shift_request_id: requestId });
@@ -16960,7 +17036,7 @@ async function f33RecomputeRecommendation(requestId) {
   }
 
   if(!rows.length) {
-    if(prev?.recommendedAppId != null) liveSessionRecommendations.set(requestId, null);
+    if(prev?.recommendedAppId != null) ops.recommendations.set(requestId, null);
     return prev?.recommendedAppId != null;
   }
 
@@ -16987,7 +17063,7 @@ async function f33RecomputeRecommendation(requestId) {
   const newAppId = Number(top.application_id);
   const swapped = prev?.recommendedAppId && Number(prev.recommendedAppId) !== newAppId;
 
-  liveSessionRecommendations.set(requestId, {
+  ops.recommendations.set(requestId, {
     recommendedAppId: newAppId,
     breakdown:        enriched,
     rankedAll:        rows,
@@ -16997,11 +17073,12 @@ async function f33RecomputeRecommendation(requestId) {
   return !!swapped || !prev || prev?.recommendedAppId == null;
 }
 
-async function f33RecomputeAllPending() {
-  const pendings = liveSessionOps.requests.filter(r => r.status === 'pending');
+async function f33RecomputeAllPending(ops = liveSessionOps) {
+  if(!ops) return false;
+  const pendings = ops.requests.filter(r => r.status === 'pending');
   let anyChanged = false;
   for(const r of pendings) {
-    const changed = await f33RecomputeRecommendation(r.id);
+    const changed = await f33RecomputeRecommendation(ops, r.id);
     if(changed) anyChanged = true;
   }
   return anyChanged;
@@ -17009,9 +17086,13 @@ async function f33RecomputeAllPending() {
 
 
 // Click handler on the ghost DISPATCH button. Routes to the existing
-// dispatchWorker(applicationId, requestId) flow.
-async function dispatchRecommended(requestId) {
-  const rec = liveSessionRecommendations.get(requestId);
+// dispatchWorker(applicationId, requestId) flow. Batch C Stage 2: carries the
+// owning card's sessionId so the recommendation is read from the right session
+// and dispatchWorker resolves against it (focus the owning session first).
+async function dispatchRecommended(sessionId, requestId) {
+  const ops = liveSessions.get(Number(sessionId)) || liveSessionOps;
+  if(!ops) { alert('Session not found.'); return; }
+  const rec = ops.recommendations.get(requestId);
   if(!rec || !rec.recommendedAppId) {
     alert('No recommendation available.');
     return;
@@ -17019,6 +17100,9 @@ async function dispatchRecommended(requestId) {
   if(rec.breakdown?.response !== 'available') {
     alert("Worker hasn't confirmed availability yet.");
     return;
+  }
+  if(ops.sessionId != null && _focusedSessionId !== ops.sessionId && typeof focusSession === 'function') {
+    focusSession(Number(ops.sessionId));
   }
   await dispatchWorker(rec.recommendedAppId, requestId);
 }
@@ -17032,7 +17116,15 @@ async function dispatchRecommended(requestId) {
 // so this write is blocking and throws on failure; the caller aborts the
 // dispatch if it throws. sbPost already throws on a non-ok response.
 async function f33WriteAuditAtDispatch(requestId, dispatchedAppId) {
-  const rec = liveSessionRecommendations.get(requestId) || null;
+  // Batch C Stage 2: read the recommendation from the SESSION THAT OWNS this
+  // request (its requests array contains it), not a shared global. Fall back to
+  // the focus-pointer's recommendations if no owner is found.
+  let ownerOps = null;
+  for(const s of liveSessions.values()) {
+    if(s && s.requests && s.requests.some(r => Number(r.id) === Number(requestId))) { ownerOps = s; break; }
+  }
+  if(!ownerOps) ownerOps = liveSessionOps;
+  const rec = (ownerOps && ownerOps.recommendations) ? (ownerOps.recommendations.get(requestId) || null) : null;
   const recAppId = rec?.recommendedAppId || null;
   const res = await sbPost('dispatch_decisions', {
     request_id: requestId,

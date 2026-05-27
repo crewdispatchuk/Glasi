@@ -2314,6 +2314,47 @@
   </div>
 </div>
 
+<!-- OVERLAY: SET UP BAR LOGIN (Batch B amend, prospect graduation) -->
+<div class="overlay" id="ov-setup-bar-login">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-title">Set up bar login</div>
+    <div class="modal-sub" id="setup-login-bar-name"></div>
+    <div style="font-size:12px;color:var(--grey);margin:6px 0 12px;line-height:1.5;">Creates the shared bar login (one account per bar) and the first PIN holder. Give the email and password to the manager directly.</div>
+    <label>Manager name</label>
+    <input class="field" type="text" id="setup-login-name" placeholder="e.g. Aidan" />
+    <label>Bar login email</label>
+    <input class="field" type="email" id="setup-login-email" placeholder="bar@venue.com" />
+    <label>Bar login password</label>
+    <input class="field" type="text" id="setup-login-password" placeholder="A memorable password to give the manager" />
+    <label>4-digit PIN</label>
+    <input class="field" type="text" id="setup-login-pin" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+    <div id="setup-login-err" style="font-size:12px;color:var(--red);margin-top:8px;min-height:16px;"></div>
+    <div class="modal-actions">
+      <button class="cancel-btn" onclick="closeOv('setup-bar-login')">Cancel</button>
+      <button class="confirm-btn" id="setup-login-btn" onclick="submitSetupBarLogin()">Create login</button>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY: MARK VETTED (Batch B amend) -->
+<div class="overlay" id="ov-mark-vetted">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-title">Mark as vetted?</div>
+    <div style="font-size:13px;color:var(--white);line-height:1.5;margin:10px 0 12px;">Have you confirmed this worker is happy for NumberMill to contact them?</div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;">
+      <button type="button" class="net-pill" id="mark-vetted-yes" onclick="setMarkVettedConsent(true)">Yes</button>
+      <button type="button" class="net-pill" id="mark-vetted-no" onclick="setMarkVettedConsent(false)">No</button>
+    </div>
+    <label>Vetting notes (optional)</label>
+    <textarea class="field" id="mark-vetted-notes" rows="3" placeholder="Anything to record about this vet"></textarea>
+    <div id="mark-vetted-err" style="font-size:12px;color:var(--red);margin-top:8px;min-height:16px;"></div>
+    <div class="modal-actions">
+      <button class="cancel-btn" onclick="closeOv('mark-vetted')">Cancel</button>
+      <button class="confirm-btn" id="mark-vetted-btn" disabled onclick="submitMarkVetted()">Mark vetted</button>
+    </div>
+  </div>
+</div>
+
 <!-- OVERLAY: EDIT WORKER (F-35 Phase 3 sub-tab-aware) -->
 <div class="overlay" id="ov-edit-worker">
   <div class="modal" style="max-width:560px;">
@@ -2417,20 +2458,20 @@
     <input class="field" type="email" id="bar-invoice-email" placeholder="Where invoices are sent" />
     <label>Status</label>
     <select class="field" id="bar-status">
-      <option value="prospect">Prospect</option>
-      <option value="trial" selected>Trial</option>
+      <option value="prospect" selected>Prospect</option>
+      <option value="trial">Trial</option>
       <option value="active">Active</option>
       <option value="paused">Paused</option>
     </select>
 
-    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;">Primary manager (contract signer)</div>
+    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;">Primary manager (optional)</div>
     <label>Manager name</label>
     <input class="field" type="text" id="bar-mgr-name" placeholder="e.g. Aidan" />
     <label>Manager phone (on-duty contact number)</label>
     <input class="field" type="tel" id="bar-mgr-phone" placeholder="e.g. 07700 900000" />
 
-    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;">Bar login (shared bar account)</div>
-    <div style="font-size:12px;color:var(--grey);margin:6px 0 12px;line-height:1.5;">One login per bar. Every PIN holder signs in with this email and password on the manager app. You give the credentials to the manager directly.</div>
+    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;">Bar login (optional)</div>
+    <div style="font-size:12px;color:var(--grey);margin:6px 0 12px;line-height:1.5;">One login per bar. Every PIN holder signs in with this email and password on the manager app. You give the credentials to the manager directly. Leave the login blank to create the bar as a prospect and add the login later from its checklist.</div>
     <label>Bar login email</label>
     <input class="field" type="email" id="bar-login-email" placeholder="bar@venue.com" />
     <label>Bar login password</label>
@@ -2449,7 +2490,7 @@
     <label>Glasi walkthrough (PDF or video)</label>
     <input class="field" type="file" id="bar-walkthrough-file" accept=".pdf,.mp4,.mov,application/pdf,video/mp4,video/quicktime" />
 
-    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;">Initial PIN holder</div>
+    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--ice);text-transform:uppercase;">Initial PIN holder (optional)</div>
     <label>4-digit PIN for the primary manager</label>
     <input class="field" type="text" id="bar-mgr-pin" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="0000" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
 
@@ -2617,10 +2658,6 @@
       <button class="ws-subtab" data-subtab="workers" onclick="showNetworkSubtab('workers')">
         <span class="ws-subtab-label">Workers</span>
       </button>
-      <button class="ws-subtab" data-subtab="pipeline" onclick="showNetworkSubtab('pipeline')">
-        <span class="ws-subtab-label">Pipeline</span>
-        <span class="ws-subtab-badge" id="net-pipeline-badge" style="display:none;">0</span>
-      </button>
     </nav>
   </header>
   <div class="ws-subtab-content" data-subtab="bars">
@@ -2666,10 +2703,10 @@
       <div class="ops-sched-toolbar-right">
         <div class="net-pill-row" id="net-workers-filters">
           <button class="net-pill active" data-filter="all"          onclick="setNetworkWorkersFilter('all')">All</button>
-          <button class="net-pill" data-filter="active"              onclick="setNetworkWorkersFilter('active')">Active</button>
-          <button class="net-pill" data-filter="flagged"             onclick="setNetworkWorkersFilter('flagged')">Flagged</button>
-          <button class="net-pill" data-filter="suspended"           onclick="setNetworkWorkersFilter('suspended')">Suspended</button>
-          <button class="net-pill" data-filter="offboarded"          onclick="setNetworkWorkersFilter('offboarded')">Offboarded</button>
+          <button class="net-pill" data-filter="registered"          onclick="setNetworkWorkersFilter('registered')">Registered</button>
+          <button class="net-pill" data-filter="applied"             onclick="setNetworkWorkersFilter('applied')">Applied</button>
+          <button class="net-pill" data-filter="vetted"              onclick="setNetworkWorkersFilter('vetted')">Vetted</button>
+          <button class="net-pill" data-filter="onboarded"           onclick="setNetworkWorkersFilter('onboarded')">Onboarded</button>
         </div>
         <input type="search" class="net-search" id="net-workers-search" placeholder="Filter by name, or enter a GW ref, NumberMill ref, id, GS shift ref, or ASG/BRD ref then press Enter or Search..." oninput="onNetworkWorkersSearch()" onkeydown="onNetworkWorkersSearchKey(event)">
         <button class="net-pill" onclick="onNetworkWorkersSearchSubmit()" title="Resolve a reference and open the worker">Search</button>
@@ -2694,77 +2731,11 @@
     <div id="net-worker-profile-pane"><div class="health-loading">Loading worker profile...</div></div>
   </div>
   <div class="ws-subtab-content" data-subtab="pipeline">
-    <div class="net-pipeline-toolbar">
-      <div class="ops-sched-toolbar-left">
-        <h2 class="ops-sched-h2">Pipeline</h2>
-        <div class="net-pipeline-funnel" id="net-pipeline-funnel">
-          <span class="muted">Loading funnel...</span>
-        </div>
-      </div>
-      <nav class="net-pipeline-subtabs">
-        <button class="net-pill active" data-pipeline-tab="bars"    onclick="showPipelineSubtab('bars')">Bars prospects</button>
-        <button class="net-pill"        data-pipeline-tab="workers" onclick="showPipelineSubtab('workers')">Worker applicants</button>
-      </nav>
-    </div>
+    <!-- Pipeline panes removed (Batch B amend): worker applicants merged into Workers,
+         bar prospects into Bars. The pipeline JS loaders are now inert (no nav, no
+         callers); the flag-worker modal below is retained (used by the Workers Flag action). -->
+    <div style="display:none;"></div>
 
-    <!-- Pipeline / Bars -->
-    <div class="net-pipeline-pane" data-pipeline-tab="bars">
-      <div class="ops-sched-toolbar" style="margin-bottom:14px;">
-        <div class="ops-sched-toolbar-left">
-          <span class="ops-sched-count" id="net-pipebars-count">&mdash;</span>
-        </div>
-        <div class="ops-sched-toolbar-right">
-          <input type="search" class="net-search" id="net-pipebars-search" placeholder="Search by name..." oninput="onPipelineBarsSearch()">
-          <button class="ops-sched-action" onclick="openProspectForm()">+ Add Prospect</button>
-        </div>
-      </div>
-      <div class="ops-sched-table-wrap">
-        <table class="ops-sched-table">
-          <thead>
-            <tr>
-              <th>Bar Name</th>
-              <th>Postcode</th>
-              <th>Status</th>
-              <th>Last Contact</th>
-              <th>Days in Pipeline</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="net-pipebars-tbody"><tr class="ops-sched-loading"><td colspan="6">Loading prospects...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Pipeline / Workers -->
-    <div class="net-pipeline-pane" data-pipeline-tab="workers" style="display:none;">
-      <div class="ops-sched-toolbar" style="margin-bottom:14px;">
-        <div class="ops-sched-toolbar-left">
-          <span class="ops-sched-count" id="net-pipeworkers-count">&mdash;</span>
-        </div>
-        <div class="ops-sched-toolbar-right">
-          <div class="net-pill-row" id="net-pipeworkers-filters">
-            <button class="net-pill active" data-filter="all"        onclick="setPipelineWorkersFilter('all')">All</button>
-            <button class="net-pill" data-filter="registered"        onclick="setPipelineWorkersFilter('registered')">Registered</button>
-            <button class="net-pill" data-filter="applied"           onclick="setPipelineWorkersFilter('applied')">Applied</button>
-          </div>
-          <input type="search" class="net-search" id="net-pipeworkers-search" placeholder="Search by name..." oninput="onPipelineWorkersSearch()">
-        </div>
-      </div>
-      <div class="ops-sched-table-wrap">
-        <table class="ops-sched-table">
-          <thead>
-            <tr>
-              <th>Worker Name</th>
-              <th>Postcode</th>
-              <th>Stage</th>
-              <th>Date</th>
-              <th>Notes summary</th>
-            </tr>
-          </thead>
-          <tbody id="net-pipeworkers-tbody"><tr class="ops-sched-loading"><td colspan="5">Loading applicants...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
 
     <!-- Flag Worker modal (Decision C) -->
     <div id="flag-worker-modal" class="prospect-form-modal" style="display:none;">
@@ -2781,32 +2752,6 @@
       </div>
     </div>
 
-    <!-- New-prospect inline modal -->
-    <div id="prospect-form-modal" class="prospect-form-modal" style="display:none;">
-      <div class="prospect-form-card">
-        <h3 class="prospect-form-h3">Add Prospect</h3>
-        <label class="prospect-form-label">Bar name
-          <input type="text" id="prospect-form-name" placeholder="e.g. The Crown" />
-        </label>
-        <label class="prospect-form-label">Postcode
-          <input type="text" id="prospect-form-postcode" placeholder="e.g. SO14 7DU" />
-        </label>
-        <label class="prospect-form-label">Contact name
-          <input type="text" id="prospect-form-contact-name" placeholder="Manager name" />
-        </label>
-        <label class="prospect-form-label">Contact phone
-          <input type="text" id="prospect-form-contact-phone" placeholder="Optional" />
-        </label>
-        <label class="prospect-form-label">Notes
-          <textarea id="prospect-form-notes" rows="3" placeholder="Optional Sam-side notes"></textarea>
-        </label>
-        <div class="prospect-form-err" id="prospect-form-err"></div>
-        <div class="prospect-form-actions">
-          <button class="ops-sched-btn" onclick="closeProspectForm()">Cancel</button>
-          <button class="ops-sched-action" id="prospect-form-save" onclick="saveProspectForm()">Save Prospect</button>
-        </div>
-      </div>
-    </div>
   </div>
 </section>
 <section class="workspace" id="workspace-money">
@@ -3135,9 +3080,11 @@ async function postLoginSetup() {
   // pill poll so the AUTO/MANUAL state stays current in the v2 header.
   if(typeof startAutoDispatchPillPoll === 'function') startAutoDispatchPillPoll();
 
-  // Resume any in-flight live session. Sets _dv2BootLiveSession so
+  // Resume any in-flight live session(s). Sets _dv2BootLiveSession so
   // getInitialWorkspace routes to Operations when a session is restoring.
-  const restored = await liveSessionOps.resumeIfLive();
+  // Batch C: tryRestoreSession now restores ALL live sessions and focuses the
+  // lowest id; it replaces the retired liveSessionOps.resumeIfLive() method.
+  const restored = await tryRestoreSession();
   window._dv2BootLiveSession = !!restored;
   applyDashboardMode();
 }
@@ -3173,7 +3120,10 @@ async function doLogout() {
   document.getElementById('l-email').value='';
   document.getElementById('l-pass').value='';
   document.getElementById('l-err').textContent='';
-  liveSessionOps.stop();
+  // Batch C: stop every live SessionOps on logout (was a single-instance stop).
+  // stop() removes each instance from liveSessions; snapshot first so the
+  // delete-during-iteration is safe.
+  for(const ops of [...liveSessions.values()]) { try { ops.stop(); } catch(e) {} }
   if(typeof dv2TeardownAll === 'function') dv2TeardownAll();
   document.body.classList.remove('dashboard-v2');
   currentUser=null;
@@ -3324,8 +3274,9 @@ function getOperationsSubtab() {
 }
 
 // Spec §3: default 'live' if a session is currently live; else last-used; else 'schedule'.
+// Batch C: keyed on "any live session" (liveSessions), not the focus-pointer.
 function pickInitialOperationsSubtab() {
-  if(typeof liveSessionOps !== 'undefined' && liveSessionOps && liveSessionOps.sessionId) return 'live';
+  if(typeof liveSessions !== 'undefined' && liveSessions.size > 0) return 'live';
   const persisted = getOperationsSubtab();
   if(persisted) return persisted;
   return 'schedule';
@@ -3347,10 +3298,11 @@ function showOperationsSubtab(name) {
     // If a session is live (or one was restored on boot), paint the bipartite
     // view into #ops-live-room. The room/empty-state dispatch happens inside
     // renderLiveRoom via getBipartiteRoomEl / getBipartiteEmptyEl.
-    if(typeof liveSessionOps !== 'undefined' && liveSessionOps && liveSessionOps.sessionId) {
+    // Batch C: keyed on "any live session" (liveSessions), not the focus-pointer.
+    if(typeof liveSessions !== 'undefined' && liveSessions.size > 0) {
       renderLiveRoom();
       // Consume any dirty markers accumulated while the sub-tab was off-screen.
-      if(typeof liveSessionOps.consumeDirty === 'function') {
+      if(liveSessionOps && typeof liveSessionOps.consumeDirty === 'function') {
         liveSessionOps.consumeDirty('live');
       }
     } else {
@@ -3938,7 +3890,7 @@ let _netBadgesRealtimeWs = null;
 function getNetworkSubtab() {
   try {
     const v = localStorage.getItem(DV2_NETWORK_SUBTAB_KEY);
-    if(v === 'bars' || v === 'workers' || v === 'pipeline') return v;
+    if(v === 'bars' || v === 'workers') return v;
   } catch(e) {}
   return null;
 }
@@ -3948,7 +3900,7 @@ function pickInitialNetworkSubtab() {
 }
 
 function showNetworkSubtab(name) {
-  if(name !== 'bars' && name !== 'workers' && name !== 'pipeline') return;
+  if(name !== 'bars' && name !== 'workers') return;
   const root = document.getElementById('workspace-network');
   if(!root) return;
   // Direction C: leaving any real sub-tab clears the worker-profile panel
@@ -4685,7 +4637,7 @@ async function _populateBarChecklist(barId) {
       { label: 'Bar name',                done: !!(b.name && String(b.name).trim()) },
       { label: 'Bar address',             done: !!(b.address && String(b.address).trim()) },
       { label: 'Bar manager',             done: hasMgr },
-      { label: 'Bar login',               done: hasAuth },
+      { label: 'Bar login',               done: hasAuth,                     action: ['Set up login', "openSetupBarLogin(" + barId + ")"] },
       { label: 'Contract uploaded',       done: hasDoc('bar_contract'),      action: ['Upload',      "uploadBarDocument(" + barId + ", 'bar_contract')"] },
       { label: 'Contract signed',         done: !!b.contract_signed_at,      action: ['Mark signed', "netBarMarkContractSigned(" + barId + ")"] },
       { label: 'H&S document uploaded',   done: hasDoc('bar_hs'),            action: ['Upload',      "uploadBarDocument(" + barId + ", 'bar_hs')"] },
@@ -4826,10 +4778,11 @@ async function loadNetworkWorkersData() {
     tbody.innerHTML = '<tr class="ops-sched-loading"><td colspan="5">Loading workers...</td></tr>';
   }
   try {
-    // Only Vetted + Onboarded land in Workers; Pipeline owns Registered + Applied.
+    // Batch B amend: one flat list of every lifecycle state. Flagged / suspended /
+    // offboarded are hidden client-side (see _isWorkerHidden), not by the query.
     const rows = await sbGet('applications',
-      '?worker_status=in.(vetted,onboarded)'
-      + '&select=id,name,email,phone,age_group,full_address,postcode_full,tier,hourly_rate,reliability_score,reliability_updated_at,total_points,worker_status,active,offboarded_at,created_at,vetting_notes,admin_notes,reliability_notes,uk_work_right,instagram_handle,glasi_worker_ref,numbermill_worker_ref'
+      '?worker_status=in.(registered,applied,vetted,onboarded)'
+      + '&select=id,name,email,phone,age_group,full_address,postcode_full,tier,hourly_rate,reliability_score,reliability_updated_at,total_points,worker_status,active,offboarded_at,created_at,referred_by,vetting_notes,admin_notes,reliability_notes,uk_work_right,hospitality_experience,available_hours,speaks_english,has_black_clothing,instagram_handle,glasi_worker_ref,numbermill_worker_ref,rtw_share_code,rtw_share_code_verified_at,rtw_documents_location,kid_acknowledged_at,kid_acknowledged_version,kid_acknowledged_typed_name'
       + '&order=name.asc');
     networkWorkersState.workers = Array.isArray(rows) ? rows : [];
     // Decision C: fetch active-flag set in one shot so the FLAGGED pill +
@@ -4853,12 +4806,16 @@ async function loadNetworkWorkersData() {
 }
 
 function _netWorkerStatus(w) {
-  // Decision C: FLAGGED takes precedence over ACTIVE when the worker has
-  // any unresolved flag. SUSPENDED + OFFBOARDED still rank above FLAGGED.
-  if(w.offboarded_at) return 'offboarded';
-  if(w.active === false) return 'suspended';
-  if(networkWorkersState.activeFlagIds && networkWorkersState.activeFlagIds.has(Number(w.id))) return 'flagged';
-  return 'active';
+  // Batch B amend: the list is keyed on the lifecycle status word.
+  return (w.worker_status || 'registered');
+}
+function _isWorkerHidden(w) {
+  // Batch B amend: flagged, suspended, and offboarded workers are hidden from the
+  // V1 list. The underlying states and their functions are retained; only the UI
+  // surfacing is removed (re-surface in V2 when operationally needed).
+  return (w.active === false)
+      || (!!w.offboarded_at)
+      || (networkWorkersState.activeFlagIds && networkWorkersState.activeFlagIds.has(Number(w.id)));
 }
 function _netRelClass(score) {
   if(score == null) return 'na';
@@ -4964,9 +4921,8 @@ function _filteredWorkers() {
   const f = networkWorkersState.filter;
   const s = networkWorkersState.search;
   return networkWorkersState.workers.filter(w => {
-    const status = _netWorkerStatus(w);
-    if(f === 'all' && status === 'offboarded') return false; // hide offboarded from default
-    if(f !== 'all' && status !== f) return false;
+    if(_isWorkerHidden(w)) return false; // flagged / suspended / offboarded hidden
+    if(f !== 'all' && (w.worker_status || '') !== f) return false;
     if(s && !((w.name || '').toLowerCase().includes(s))) return false;
     return true;
   });
@@ -4978,9 +4934,7 @@ function renderNetworkWorkersTable() {
   if(!tbody) return;
   const rows = _filteredWorkers();
   if(countEl) {
-    const activeCount = networkWorkersState.workers.filter(w => _netWorkerStatus(w) === 'active').length;
-    countEl.textContent = rows.length + (rows.length === 1 ? ' worker' : ' workers')
-      + ' (' + activeCount + ' active total)';
+    countEl.textContent = rows.length + (rows.length === 1 ? ' worker' : ' workers');
   }
   if(!rows.length) {
     tbody.innerHTML = '<tr><td colspan="5"><div class="ops-sched-empty">No workers match the current filter / search.</div></td></tr>';
@@ -5012,7 +4966,237 @@ function _renderNetworkWorkersRow(w, isExpanded) {
     + '</tr>';
 }
 
+// Batch B amend: the worker expansion is status-aware. Registered is minimal,
+// applied shows KID plus answers plus Mark vetted, vetted does the onboarding
+// inline, onboarded keeps the full rich expansion (below).
 function _renderNetworkWorkersExpansion(w) {
+  const st = (w.worker_status || 'registered');
+  if(st === 'registered') return _renderWorkerExpansionRegistered(w);
+  if(st === 'applied')    return _renderWorkerExpansionApplied(w);
+  if(st === 'vetted')     return _renderWorkerExpansionVetted(w);
+  return _renderWorkerExpansionOnboarded(w);
+}
+
+function _renderWorkerExpansionRegistered(w) {
+  const postcode = w.postcode_full || _netExtractPostcode(w.full_address) || '';
+  return ''
+    + '<tr class="ops-sched-expanded-row"><td colspan="5"><div class="ops-sched-exp-inner">'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Registered details</h3>'
+    +     '<div class="net-prof-grid">'
+    +       '<span class="k">Name</span><span class="v">' + _opsEscape(w.name, '<span class="muted">,</span>') + ' <span class="muted" style="font-size:10px;">read-only (PII)</span></span>'
+    +       '<span class="k">Email</span><span class="v">' + _opsEscape(w.email, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Phone</span><span class="v">' + _opsEscape(w.phone, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Postcode</span><span class="v">' + _opsEscape(postcode, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Referred by</span><span class="v">' + _opsEscape(w.referred_by, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Registered</span><span class="v">' + (w.created_at ? new Date(w.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '<span class="muted">,</span>') + '</span>'
+    +     '</div>'
+    +   '</div>'
+    + '</div></td></tr>';
+}
+
+function _renderWorkerExpansionApplied(w) {
+  const wid = w.id;
+  const yesno = v => v === true ? 'Yes' : (v === false ? 'No' : '<span class="muted">unknown</span>');
+  return ''
+    + '<tr class="ops-sched-expanded-row"><td colspan="5"><div class="ops-sched-exp-inner">'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">KID acknowledgement</h3>'
+    +     '<div class="net-prof-grid">'
+    +       '<span class="k">Acknowledged</span><span class="v">' + (w.kid_acknowledged_at ? new Date(w.kid_acknowledged_at).toLocaleString('en-GB') : '<span class="muted">not acknowledged</span>') + '</span>'
+    +       '<span class="k">Version</span><span class="v">' + _opsEscape(w.kid_acknowledged_version, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Typed name</span><span class="v">' + _opsEscape(w.kid_acknowledged_typed_name, '<span class="muted">,</span>') + '</span>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Application answers (read-only)</h3>'
+    +     '<div class="net-prof-grid">'
+    +       '<span class="k">UK right to work</span><span class="v">' + (w.uk_work_right === true ? '<span style="color:var(--green);">Yes</span>' : (w.uk_work_right === false ? '<span style="color:var(--red);">No</span>' : '<span class="muted">unknown</span>')) + '</span>'
+    +       '<span class="k">Hospitality experience</span><span class="v">' + yesno(w.hospitality_experience) + '</span>'
+    +       '<span class="k">Age group</span><span class="v">' + _opsEscape(w.age_group, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Postcode</span><span class="v">' + _opsEscape(w.postcode_full, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Available hours</span><span class="v">' + _opsEscape(w.available_hours, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Instagram</span><span class="v">' + _opsEscape(w.instagram_handle, '<span class="muted">,</span>') + '</span>'
+    +       '<span class="k">Speaks English</span><span class="v">' + yesno(w.speaks_english) + '</span>'
+    +       '<span class="k">Has black clothing</span><span class="v">' + yesno(w.has_black_clothing) + '</span>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="ops-sched-actions-row">'
+    +     '<button class="ops-sched-btn primary" onclick="openMarkVettedModal(' + wid + ')">Mark vetted</button>'
+    +   '</div>'
+    + '</div></td></tr>';
+}
+
+function _renderWorkerExpansionVetted(w) {
+  const wid = w.id;
+  const nm = w.numbermill_worker_ref || '';
+  const code = w.rtw_share_code || '';
+  const verified = !!w.rtw_share_code_verified_at;
+  const docs = w.rtw_documents_location || '';
+  const ready = !!(String(nm).trim()) && !!(String(code).trim());
+  const onboardBtn = '<button style="background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.4);'
+    + 'padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;'
+    + 'cursor:' + (ready ? 'pointer' : 'not-allowed') + ';opacity:' + (ready ? '1' : '0.5') + ';" '
+    + (ready ? '' : 'disabled ') + 'onclick="netWorkerInlineOnboard(' + wid + ')">Mark onboarded</button>'
+    + (ready ? '' : '<span style="font-size:12px;color:var(--grey);margin-left:10px;">Add NumberMill reference and RTW share code first.</span>');
+  return ''
+    + '<tr class="ops-sched-expanded-row"><td colspan="5"><div class="ops-sched-exp-inner">'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Onboarding (NumberMill and right to work)</h3>'
+    +     '<div class="net-prof-edit-row">'
+    +       '<span class="field-label">NumberMill reference</span>'
+    +       '<input type="text" id="net-vet-nm-' + wid + '" value="' + _opsEscape(nm) + '" placeholder="NumberMill worker reference">'
+    +       '<button class="ops-sched-btn" onclick="netWorkerInlineNmRef(' + wid + ')">Save</button>'
+    +       '<span class="field-status" id="net-vet-nm-status-' + wid + '"></span>'
+    +     '</div>'
+    +     '<div class="net-prof-edit-row" style="margin-top:8px;">'
+    +       '<span class="field-label">RTW share code</span>'
+    +       '<input type="text" id="net-vet-rtw-' + wid + '" value="' + _opsEscape(code) + '" placeholder="Home Office share code">'
+    +       '<label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--white);"><input type="checkbox" id="net-vet-rtwver-' + wid + '"' + (verified ? ' checked' : '') + '> Verified</label>'
+    +       '<button class="ops-sched-btn" onclick="netWorkerInlineRtwCode(' + wid + ')">Save</button>'
+    +       '<span class="field-status" id="net-vet-rtw-status-' + wid + '"></span>'
+    +     '</div>'
+    +     '<div class="net-prof-edit-row" style="margin-top:8px;">'
+    +       '<span class="field-label">RTW documents location</span>'
+    +       '<input type="text" id="net-vet-rtwdoc-' + wid + '" value="' + _opsEscape(docs) + '" placeholder="Where the original RTW documents are stored">'
+    +       '<button class="ops-sched-btn" onclick="netWorkerInlineRtwDocs(' + wid + ')">Save</button>'
+    +       '<span class="field-status" id="net-vet-rtwdoc-status-' + wid + '"></span>'
+    +     '</div>'
+    +     '<div style="margin-top:12px;">' + onboardBtn + '</div>'
+    +   '</div>'
+    + '</div></td></tr>';
+}
+
+function _findNetWorker(wid) { return (networkWorkersState.workers || []).find(x => x.id === wid); }
+
+async function netWorkerInlineNmRef(wid) {
+  const input = document.getElementById('net-vet-nm-' + wid);
+  const statusEl = document.getElementById('net-vet-nm-status-' + wid);
+  const w = _findNetWorker(wid);
+  if(!input || !w) return;
+  const newRef = input.value.trim();
+  if(!newRef) { if(statusEl) { statusEl.textContent = 'Enter a reference'; statusEl.className = 'field-status err'; } return; }
+  const current = (w.numbermill_worker_ref || '').trim();
+  let reason = null;
+  if(current && current !== newRef) {
+    reason = prompt('This worker already has a NumberMill ref (' + current + '). Reason for the correction:', '');
+    if(reason === null) return;
+    reason = reason.trim();
+    if(!reason) { if(statusEl) { statusEl.textContent = 'Reason required'; statusEl.className = 'field-status err'; } return; }
+  } else if(current === newRef) { if(statusEl) { statusEl.textContent = 'No change'; statusEl.className = 'field-status'; } return; }
+  if(statusEl) { statusEl.textContent = 'Saving...'; statusEl.className = 'field-status'; }
+  try {
+    const res = await sbAuth.rpc('set_worker_numbermill_ref', { p_application_id: wid, p_new_ref: newRef, p_reason: reason });
+    if(res.error) throw res.error;
+    w.numbermill_worker_ref = newRef;
+    renderNetworkWorkersTable();
+  } catch(e) { if(statusEl) { statusEl.textContent = 'Save failed: ' + ((e && e.message) || 'unknown'); statusEl.className = 'field-status err'; } }
+}
+
+async function netWorkerInlineRtwCode(wid) {
+  const input = document.getElementById('net-vet-rtw-' + wid);
+  const verEl = document.getElementById('net-vet-rtwver-' + wid);
+  const statusEl = document.getElementById('net-vet-rtw-status-' + wid);
+  const w = _findNetWorker(wid);
+  if(!input || !w) return;
+  const code = input.value.trim();
+  if(!code) { if(statusEl) { statusEl.textContent = 'Enter a code'; statusEl.className = 'field-status err'; } return; }
+  const verified = !!(verEl && verEl.checked);
+  const reason = prompt('Optional note for this right-to-work check (audited):', '');
+  if(reason === null) return;
+  if(statusEl) { statusEl.textContent = 'Saving...'; statusEl.className = 'field-status'; }
+  try {
+    const res = await sbAuth.rpc('set_worker_rtw_share_code', { p_application_id: wid, p_code: code, p_verified: verified, p_reason: (reason.trim() || null) });
+    if(res.error) throw res.error;
+    w.rtw_share_code = code;
+    w.rtw_share_code_verified_at = verified ? new Date().toISOString() : w.rtw_share_code_verified_at;
+    renderNetworkWorkersTable();
+  } catch(e) { if(statusEl) { statusEl.textContent = 'Save failed: ' + ((e && e.message) || 'unknown'); statusEl.className = 'field-status err'; } }
+}
+
+async function netWorkerInlineRtwDocs(wid) {
+  const input = document.getElementById('net-vet-rtwdoc-' + wid);
+  const statusEl = document.getElementById('net-vet-rtwdoc-status-' + wid);
+  const w = _findNetWorker(wid);
+  if(!input || !w) return;
+  const location = input.value.trim();
+  if(!location) { if(statusEl) { statusEl.textContent = 'Enter a location'; statusEl.className = 'field-status err'; } return; }
+  const reason = prompt('Optional note for this change (audited):', '');
+  if(reason === null) return;
+  if(statusEl) { statusEl.textContent = 'Saving...'; statusEl.className = 'field-status'; }
+  try {
+    const res = await sbAuth.rpc('set_worker_rtw_documents_location', { p_application_id: wid, p_location: location, p_reason: (reason.trim() || null) });
+    if(res.error) throw res.error;
+    w.rtw_documents_location = location;
+    if(statusEl) { statusEl.textContent = 'Saved'; statusEl.className = 'field-status saved'; }
+  } catch(e) { if(statusEl) { statusEl.textContent = 'Save failed: ' + ((e && e.message) || 'unknown'); statusEl.className = 'field-status err'; } }
+}
+
+async function netWorkerInlineOnboard(wid) {
+  const w = _findNetWorker(wid);
+  if(!w) return;
+  if(!(w.numbermill_worker_ref && String(w.numbermill_worker_ref).trim()
+       && w.rtw_share_code && String(w.rtw_share_code).trim())) {
+    alert('Add the NumberMill reference and the RTW share code before onboarding.');
+    return;
+  }
+  if(!confirm('Mark this worker as onboarded? They become eligible for session invites.')) return;
+  const now = new Date().toISOString();
+  try {
+    await sbPatch('applications', '?id=eq.' + wid, { worker_status: 'onboarded', onboarded_at: now });
+  } catch(e) { alert('Failed: ' + ((e && e.message) || 'unknown')); return; }
+  w.worker_status = 'onboarded';
+  w.onboarded_at = now;
+  renderNetworkWorkersTable();
+  if(typeof showDashboardToast === 'function') showDashboardToast('Worker onboarded');
+}
+
+// Batch B amend: Mark Vetted modal. One consent question, optional notes.
+let _markVettedAppId = null;
+let _markVettedConsent = null;
+function openMarkVettedModal(wid) {
+  _markVettedAppId = wid;
+  _markVettedConsent = null;
+  const notes = document.getElementById('mark-vetted-notes'); if(notes) notes.value = '';
+  const err = document.getElementById('mark-vetted-err'); if(err) err.textContent = '';
+  ['mark-vetted-yes','mark-vetted-no'].forEach(id => { const b = document.getElementById(id); if(b) b.classList.remove('active'); });
+  const btn = document.getElementById('mark-vetted-btn'); if(btn) { btn.disabled = true; btn.textContent = 'Mark vetted'; }
+  openOv('mark-vetted');
+}
+function setMarkVettedConsent(yes) {
+  _markVettedConsent = yes;
+  const y = document.getElementById('mark-vetted-yes'); const n = document.getElementById('mark-vetted-no');
+  if(y) y.classList.toggle('active', yes);
+  if(n) n.classList.toggle('active', !yes);
+  const btn = document.getElementById('mark-vetted-btn');
+  const err = document.getElementById('mark-vetted-err');
+  if(btn) btn.disabled = !yes;
+  if(err) err.textContent = yes ? '' : 'A worker can only be vetted once you confirm they are happy for NumberMill to contact them.';
+}
+async function submitMarkVetted() {
+  if(!_markVettedAppId || _markVettedConsent !== true) return;
+  const appId = _markVettedAppId;
+  const err = document.getElementById('mark-vetted-err');
+  const btn = document.getElementById('mark-vetted-btn');
+  const notes = ((document.getElementById('mark-vetted-notes') || {}).value || '').trim() || null;
+  const now = new Date().toISOString();
+  if(btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  try {
+    await sbPatch('applications', '?id=eq.' + appId, {
+      worker_status: 'vetted',
+      vetted_at: now,
+      vetting_notes: notes,
+      numbermill_contact_consent_at: now
+    });
+  } catch(e) {
+    if(err) err.textContent = 'Vet failed: ' + ((e && e.message) || 'unknown');
+    if(btn) { btn.disabled = false; btn.textContent = 'Mark vetted'; }
+    return;
+  }
+  closeOv('mark-vetted');
+  const w = _findNetWorker(appId);
+  if(w) { w.worker_status = 'vetted'; w.vetted_at = now; w.vetting_notes = notes; w.numbermill_contact_consent_at = now; }
+  renderNetworkWorkersTable();
+  if(typeof showDashboardToast === 'function') showDashboardToast('Worker vetted');
+}
+
+function _renderWorkerExpansionOnboarded(w) {
   const wid = w.id;
   const status = _netWorkerStatus(w);
   const postcode = w.postcode_full || '';
@@ -5078,19 +5262,14 @@ function _renderNetworkWorkersExpansion(w) {
   const upcomingHtml  = '<div class="ops-sched-exp-body" id="net-worker-upcoming-' + wid + '">Loading upcoming sessions&hellip;</div>';
 
   // Actions.
-  let actionButtons = '';
-  if(status === 'active' || status === 'flagged') {
-    actionButtons = ''
-      + '<button class="ops-sched-btn"        onclick="openFlagWorkerModal(' + wid + ')">Flag Worker</button>'
-      + '<button class="ops-sched-btn danger" onclick="netWorkerSetActive(' + wid + ', false)">Suspend</button>'
-      + '<button class="ops-sched-btn"        onclick="netWorkerStub(&quot;offboard&quot;)">Offboard</button>';
-  } else if(status === 'suspended') {
-    actionButtons = ''
-      + '<button class="ops-sched-btn primary" onclick="netWorkerSetActive(' + wid + ', true)">Reactivate</button>'
-      + '<button class="ops-sched-btn"         onclick="netWorkerStub(&quot;offboard&quot;)">Offboard</button>';
-  } else {
-    actionButtons = '<span class="muted" style="font-size:12px;color:var(--grey);">Worker is offboarded; no further actions available.</span>';
-  }
+  // Batch B amend: only active, unflagged onboarded workers are visible here
+  // (the hidden predicate excludes the rest), so the onboarded expansion always
+  // offers the active-worker actions. Flag / Suspend then move the worker out of
+  // the list. Reactivation of a hidden worker is a V2 surface.
+  const actionButtons = ''
+    + '<button class="ops-sched-btn"        onclick="openFlagWorkerModal(' + wid + ')">Flag Worker</button>'
+    + '<button class="ops-sched-btn danger" onclick="netWorkerSetActive(' + wid + ', false)">Suspend</button>'
+    + '<button class="ops-sched-btn"        onclick="netWorkerStub(&quot;offboard&quot;)">Offboard</button>';
 
   setTimeout(() => {
     _populateF32Breakdown(w);
@@ -10777,29 +10956,62 @@ async function loadWorkerFunnel() {
 }
 
 async function tryRestoreSession() {
-  // check for open session today
-  const openSessions = await sbGet('sessions', '?status=eq.live&order=id.desc&limit=1&select=*,session_bars(bars(id,name,address,google_maps_link,status))');
+  // Batch C (concurrent sessions): restore ALL live sessions, not just the most
+  // recent. Each gets its own SessionOps instance; the lowest-id session is
+  // focused. Returns true if any live session was restored.
+  const openSessions = await sbGet('sessions', '?status=eq.live&order=id.asc&select=*,session_bars(bars(id,name,address,google_maps_link,status))');
   if(!openSessions.length) return false;
 
-  const session = openSessions[0];
-  liveSessionOps.sessionId = session.id;
-
-  // F-37: liveSessionLabel feeds the live console header in place of
-  // activeZone.name; liveSessionBars feeds the dispatch UI. Both are also
-  // set in goLiveSession at the go-live moment; this restore-path mirror
-  // closes the hard-refresh gap surfaced 14 May 2026.
-  liveSessionBars = (session.session_bars || []).map(sb => sb && sb.bars).filter(Boolean);
-  liveSessionLabel = describeBarSet(session) || 'Live session';
-
-  // Pre-v2 cleanup (zones-deprecation Stage B, 18 May 2026): zone-based
-  // scheduling retired in CORE v7. Live-room reads from session_bars / bars[];
-  // activeZone stays null permanently.
-
-  // load bars if needed
+  // load bars once if needed (shared across all sessions)
   if(!bars.length) {
     const result = await sbGet('bars','?order=name.asc&select=id,name,address,google_maps_link,status,notes');
     bars = Array.isArray(result) ? result : [];
   }
+
+  // restore UI. home-date was a v1 header element retired in the v2 layout;
+  // guard the null so the live-session restore does not abort and blank the dashboard.
+  const homeDateEl = document.getElementById('home-date');
+  if (homeDateEl) homeDateEl.textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+
+  let focusId = null;
+  for(const session of openSessions) {
+    let ops = liveSessions.get(session.id);
+    if(!ops) { ops = makeSessionOps(session.id); liveSessions.set(session.id, ops); }
+    await restoreSessionInto(session, ops);
+    ops.start(session.id);
+    if(focusId === null) focusId = session.id; // lowest id (order=id.asc)
+  }
+
+  // Focus the lowest-id session (repoints the focus-pointer globals).
+  if(focusId !== null) focusSession(focusId);
+
+  // Navigate to Sessions Live tab
+  showScreen('sessions');
+  setActiveNav('sessions');
+  switchSessionsTab('live');
+
+  // Render after all data loaded.
+  setTimeout(() => {
+    renderLiveRoom();
+    bootstrapPendingRequestTimers();
+  }, 100);
+
+  const total = openSessions.reduce((n, s) => {
+    const o = liveSessions.get(s.id);
+    return n + (o ? o.workers.length : 0);
+  }, 0);
+  console.log('Sessions restored:', openSessions.map(s => s.id).join(','), 'with', total, 'workers total');
+  return true;
+}
+
+// Batch C: populate ONE SessionOps instance from a live session row. Carries
+// the per-session loading that tryRestoreSession used to do inline against the
+// globals (workers, requests, completed shifts, distances, GS refs, label,
+// bars, start timestamp). Writes onto the instance, never the focus-pointers.
+async function restoreSessionInto(session, ops) {
+  // F-37: label + bar set live on the instance (focus-pointers repoint here).
+  ops.bars = (session.session_bars || []).map(sb => sb && sb.bars).filter(Boolean);
+  ops.label = describeBarSet(session) || 'Live session';
 
   // load session workers and requests in parallel
   const [swData, reqData] = await Promise.all([
@@ -10810,19 +11022,21 @@ async function tryRestoreSession() {
       '?session_id=eq.'+session.id+'&order=request_time.asc&select=*,bars(name),bar_managers(name)'
     )
   ]);
-  liveSessionOps.requests = reqData.map(r => ({
+  ops.requests = reqData.map(r => ({
     ...r,
     _barName: r.bars?.name || '',
     _requesterName: r.bar_managers?.name || 'Unknown'
   }));
 
-  // load completed shifts for this session
+  // load completed shifts for this session. `shifts` is a shared global
+  // consumed by the History/report surfaces; append this session's completed
+  // shifts (do not clobber another session's) keyed on the shift id.
   const swIds = swData.map(s=>s.id).join(',');
   if(swIds) {
     const shiftData = await sbGet('shifts',
       '?session_worker_id=in.('+swIds+')&status=eq.completed&select=*,session_workers(worker_name,worker_phone,application_id)'
     );
-    shifts = shiftData.map(s => ({
+    const mapped = shiftData.map(s => ({
       id: s.id,
       sessionId: session.id,
       workerName: s.session_workers?.worker_name||'',
@@ -10842,17 +11056,22 @@ async function tryRestoreSession() {
       rating: s.bar_rating,
       notes: s.notes||''
     }));
+    if(!Array.isArray(shifts)) shifts = [];
+    for(const m of mapped) {
+      const idx = shifts.findIndex(x => x.id === m.id);
+      if(idx >= 0) shifts[idx] = m; else shifts.push(m);
+    }
   }
 
-  // rebuild liveSessionOps.workers from session_workers table
-  liveSessionOps.workers = await Promise.all(swData.map(async sw => {
+  // rebuild this instance's workers from session_workers table
+  ops.workers = await Promise.all(swData.map(async sw => {
     const appWorker = allWorkers.find(w => w.id === sw.application_id) || {};
     const barRecord = bars.find(b => b.id === sw.bar_id) || null;
 
     // F-34c: get shift request info if linked, plus the firing manager via the
     // F-26 chain (linkedRequest carries _requesterName from the bar_managers
-    // FK embed in liveSessionOps fetches).
-    const linkedRequest = liveSessionOps.requests.find(r => r.id === sw.shift_request_id);
+    // FK embed in the fetches above).
+    const linkedRequest = ops.requests.find(r => r.id === sw.shift_request_id);
     const barContact = linkedRequest?._requesterName || 'the manager';
 
     return {
@@ -10890,38 +11109,38 @@ async function tryRestoreSession() {
     };
   }));
 
-  // restore UI. home-date was a v1 header element retired in the v2 layout;
-  // guard the null so the live-session restore does not abort and blank the dashboard.
-  const homeDateEl = document.getElementById('home-date');
-  if (homeDateEl) homeDateEl.textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
-
-  // Restore live session timer from actual start time
+  // Restore this session's start timestamp onto the instance.
   if(session.start_time) {
     const today = new Date().toISOString().slice(0, 10);
-    liveSessionStart = new Date(today + 'T' + session.start_time).getTime();
+    ops.startedAt = new Date(today + 'T' + session.start_time).getTime();
   } else {
-    liveSessionStart = Date.now();
+    ops.startedAt = Date.now();
   }
 
-  // Load worker bar distances
-  const appIds = liveSessionOps.workers.map(w => w.applicationId).join(',');
+  // Load worker bar distances. Merge into the shared global (keyed on
+  // application_id + bar_id, globally unique) so concurrent sessions coexist.
+  const appIds = ops.workers.map(w => w.applicationId).join(',');
   if(appIds) {
     try {
       const dists = await sbGet('worker_bar_distances', '?application_id=in.('+appIds+')&active=eq.true&select=application_id,bar_id,walking_minutes');
-      workerBarDistances = Array.isArray(dists) ? dists : [];
-    } catch(e) { workerBarDistances = []; }
+      const rows = Array.isArray(dists) ? dists : [];
+      if(!Array.isArray(workerBarDistances)) workerBarDistances = [];
+      for(const d of rows) {
+        const idx = workerBarDistances.findIndex(x =>
+          Number(x.application_id) === Number(d.application_id) && Number(x.bar_id) === Number(d.bar_id));
+        if(idx >= 0) workerBarDistances[idx] = d; else workerBarDistances.push(d);
+      }
+    } catch(e) { /* leave existing distances intact on error */ }
   }
 
   // Restore GS refs from shifts table. SEC-N10 (14 May 2026): also pull
   // clock_out_confirmed_at + total_earned + status into the worker cache so
   // computeRequestPill and the Completed-panel render path have the full
-  // picture on hard-refresh. Previously these fields were populated only via
-  // the realtime UPDATE handler on status='completed', leaving the boot
-  // path blind to completed shifts.
+  // picture on hard-refresh.
   try {
     const activeShifts = await sbGet('shifts', '?session_id=eq.'+session.id+'&select=session_worker_id,glasi_ref,clock_in_confirmed_at,shift_length_hours,clock_out_confirmed_at,total_earned,status&order=id.desc');
     activeShifts.forEach(s => {
-      const worker = liveSessionOps.workers.find(w => w.sessionWorkerId === s.session_worker_id);
+      const worker = ops.workers.find(w => w.sessionWorkerId === s.session_worker_id);
       if(worker) {
         worker.gsRef = s.glasi_ref;
         worker.clockInAt = s.clock_in_confirmed_at;
@@ -10931,21 +11150,6 @@ async function tryRestoreSession() {
       }
     });
   } catch(e) {}
-
-  // Navigate to Sessions Live tab
-  liveSessionOps.start(session.id);
-  showScreen('sessions');
-  setActiveNav('sessions');
-  switchSessionsTab('live');
-
-  // Render after all data loaded.
-  setTimeout(() => {
-    renderLiveRoom();
-    bootstrapPendingRequestTimers();
-  }, 100);
-
-  console.log('Session restored:', session.id, 'with', liveSessionOps.workers.length, 'workers', liveSessionOps.requests.length, 'requests');
-  return true;
 }
 
 async function loadAllWorkers() {
@@ -11030,6 +11234,55 @@ async function _uploadBarFile(barId, docType, file) {
   if(rpcErr) throw rpcErr;
 }
 
+// Batch B amend: set up the shared bar login for an existing bar (prospect
+// graduation). Reuses the admin-create-bar-manager EF, which creates the shared
+// auth user, the first bar_managers row, and the PIN.
+let _setupLoginBarId = null;
+function openSetupBarLogin(barId) {
+  _setupLoginBarId = barId;
+  const b = (networkBarsState.bars || []).find(x => x.id === barId) || {};
+  const sub = document.getElementById('setup-login-bar-name'); if(sub) sub.textContent = 'For: ' + (b.name || ('Bar ' + barId));
+  const nameEl = document.getElementById('setup-login-name'); if(nameEl) nameEl.value = b.contact_name || '';
+  ['setup-login-email','setup-login-password','setup-login-pin'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  const err = document.getElementById('setup-login-err'); if(err) err.textContent = '';
+  const btn = document.getElementById('setup-login-btn'); if(btn) { btn.disabled = false; btn.textContent = 'Create login'; }
+  openOv('setup-bar-login');
+}
+async function submitSetupBarLogin() {
+  const barId = _setupLoginBarId;
+  if(!barId) return;
+  const err = document.getElementById('setup-login-err');
+  const btn = document.getElementById('setup-login-btn');
+  const name = (document.getElementById('setup-login-name').value || '').trim();
+  const email = (document.getElementById('setup-login-email').value || '').trim().toLowerCase();
+  const password = document.getElementById('setup-login-password').value || '';
+  const pin = (document.getElementById('setup-login-pin').value || '').trim();
+  const emailOk = e => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
+  if(!name) { if(err) err.textContent = 'Manager name required.'; return; }
+  if(!email || !emailOk(email)) { if(err) err.textContent = 'Valid login email required.'; return; }
+  if(password.length < 6) { if(err) err.textContent = 'Password must be at least 6 characters.'; return; }
+  if(!/^\d{4}$/.test(pin)) { if(err) err.textContent = 'PIN must be exactly 4 digits.'; return; }
+  if(btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
+  try {
+    const { data: { session } } = await sbAuth.auth.getSession();
+    const token = session?.access_token || KEY;
+    const resp = await fetch(SB + '/functions/v1/admin-create-bar-manager', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ bar_id: barId, name: name, email: email, password: password, initial_pin: pin })
+    });
+    const result = await resp.json().catch(() => ({}));
+    if(!resp.ok || !result.ok) throw new Error(result.error || ('Edge Function HTTP ' + resp.status));
+  } catch(e) {
+    if(err) err.textContent = 'Login creation failed: ' + ((e && e.message) || 'unknown');
+    if(btn) { btn.disabled = false; btn.textContent = 'Create login'; }
+    return;
+  }
+  closeOv('setup-bar-login');
+  if(typeof _populateBarChecklist === 'function') _populateBarChecklist(barId);
+  if(typeof _populateBarPendingPin === 'function') _populateBarPendingPin(barId);
+}
+
 async function saveBar() {
   // Batch B Q3: full bar onboarding. The bar row is INSERTed first, then the
   // admin-create-bar-manager Edge Function creates the shared bar auth user
@@ -11056,12 +11309,17 @@ async function saveBar() {
 
   if(!name) { if(errEl) errEl.textContent = 'Bar name required.'; return; }
   if(!address) { if(errEl) errEl.textContent = 'Bar address required.'; return; }
-  if(!mgrName) { if(errEl) errEl.textContent = 'Manager name required.'; return; }
-  if(!mgrPhone) { if(errEl) errEl.textContent = 'Manager phone required.'; return; }
-  if(!loginEmail || !emailOk(loginEmail)) { if(errEl) errEl.textContent = 'Valid bar login email required.'; return; }
-  if(loginPassword.length < 6) { if(errEl) errEl.textContent = 'Bar login password must be at least 6 characters.'; return; }
-  if(!/^\d{4}$/.test(pin)) { if(errEl) errEl.textContent = 'PIN must be exactly 4 digits.'; return; }
   if(invoiceEmail && !emailOk(invoiceEmail)) { if(errEl) errEl.textContent = 'Invoice email is not valid.'; return; }
+  // Batch B amend: the bar login is optional at creation. A prospect can be created
+  // with just a name and address, then graduated later via the bar checklist. If any
+  // login field is filled, the whole login group plus a manager name is required.
+  const wantsLogin = !!(loginEmail || loginPassword || pin);
+  if(wantsLogin) {
+    if(!mgrName) { if(errEl) errEl.textContent = 'Manager name is required to create the bar login.'; return; }
+    if(!loginEmail || !emailOk(loginEmail)) { if(errEl) errEl.textContent = 'Valid bar login email required (or clear the login fields to add it later).'; return; }
+    if(loginPassword.length < 6) { if(errEl) errEl.textContent = 'Bar login password must be at least 6 characters.'; return; }
+    if(!/^\d{4}$/.test(pin)) { if(errEl) errEl.textContent = 'PIN must be exactly 4 digits.'; return; }
+  }
 
   if(btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
 
@@ -11087,23 +11345,27 @@ async function saveBar() {
     return;
   }
 
-  // Step 2: create the shared bar auth user + bar_managers row + PIN via the EF.
-  try {
-    const { data: { session } } = await sbAuth.auth.getSession();
-    const token = session?.access_token || KEY;
-    const resp = await fetch(SB + '/functions/v1/admin-create-bar-manager', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ bar_id: barRow.id, name: mgrName, email: loginEmail, password: loginPassword, initial_pin: pin })
-    });
-    const result = await resp.json().catch(() => ({}));
-    if(!resp.ok || !result.ok) throw new Error(result.error || ('Edge Function HTTP ' + resp.status));
-  } catch(e) {
-    if(errEl) errEl.textContent = 'Bar created (id=' + barRow.id + ') but login creation failed: ' + (e.message || 'unknown') + '. Add the login via Edit Bar.';
-    if(btn) { btn.disabled = false; btn.textContent = 'Create bar'; }
-    networkBarsState.loaded = false;
-    if(typeof loadNetworkBarsData === 'function') loadNetworkBarsData();
-    return;
+  // Step 2: if a login was provided, create the shared bar auth user + bar_managers
+  // row + PIN via the EF. A prospect created without a login skips this and adds the
+  // login later from the bar checklist.
+  if(wantsLogin) {
+    try {
+      const { data: { session } } = await sbAuth.auth.getSession();
+      const token = session?.access_token || KEY;
+      const resp = await fetch(SB + '/functions/v1/admin-create-bar-manager', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ bar_id: barRow.id, name: mgrName, email: loginEmail, password: loginPassword, initial_pin: pin })
+      });
+      const result = await resp.json().catch(() => ({}));
+      if(!resp.ok || !result.ok) throw new Error(result.error || ('Edge Function HTTP ' + resp.status));
+    } catch(e) {
+      if(errEl) errEl.textContent = 'Bar created (id=' + barRow.id + ') but login creation failed: ' + (e.message || 'unknown') + '. Add the login from the bar checklist.';
+      if(btn) { btn.disabled = false; btn.textContent = 'Create bar'; }
+      networkBarsState.loaded = false;
+      if(typeof loadNetworkBarsData === 'function') loadNetworkBarsData();
+      return;
+    }
   }
 
   // Step 3: optional document uploads, sequential against the new bar id.
@@ -11335,18 +11597,47 @@ async function updateBarStatus(barId, status) {
 
 // REALTIME
 //
-// liveSessionOps is the single owner of session state and realtime
-// subscriptions for the duration of a live session. Survives view changes.
-// Owns four WS subscriptions, a per-subscription reconnect loop with
-// exponential backoff, debounced state resync on recovery, and a pub/sub API
-// that views subscribe to. State (sessionId, workers, requests) lives here,
-// not as module-level globals.
-const liveSessionOps = {
+// Batch C (concurrent sessions, Stage 1): liveSessionOps is no longer a
+// singleton. makeSessionOps(sessionId) is a factory that produces one
+// SessionOps instance per live session; the instances live in the
+// liveSessions Map (sessionId -> SessionOps). Each instance owns its OWN
+// state (workers, requests, invites) AND its companion state, now instance
+// fields rather than module globals: responses, recommendations,
+// movementState (Maps), startedAt (timestamp), bars (array), label (string),
+// and engagementSub (the engagement-timeline ws handle).
+//
+// The legacy global NAMES survive as FOCUS-POINTERS. liveSessionOps is a
+// `let` that points at the focused instance (or null); the companion globals
+// (liveSessionResponses / liveSessionRecommendations / liveSessionMovementState
+// / liveSessionStart / liveSessionBars / liveSessionLabel) are reassigned by
+// focusSession to the focused instance's fields. The existing single-session
+// bipartite / F-33 / engagement render reads those globals unchanged and so
+// always renders the focused session. f33DeficitCache stays a global no-op
+// shim. Only one card is expanded (focused) at a time in Stage 1.
+//
+// Each SessionOps owns four WS subscriptions, a per-subscription reconnect
+// loop with exponential backoff, debounced state resync on recovery, and a
+// pub/sub API that views subscribe to.
+const liveSessions = new Map(); // sessionId -> SessionOps instance
+let _focusedSessionId = null;   // the currently expanded/focused session id, or null
+let liveSessionOps = null;      // focus-pointer to the focused SessionOps instance (or null)
+
+function makeSessionOps(sessionId) {
+  const ops = {
   // identity and state owned here. No module-level globals mirror these.
-  sessionId: null,
+  sessionId: sessionId,
   workers: [],
   requests: [],
   invites: [], // round 4: cached session_invites with FK-joined applications
+
+  // Batch C: companion state, now instance-owned (was module globals).
+  responses: new Map(),       // requestId -> [shift_responses]
+  recommendations: new Map(), // requestId -> recommendation entry
+  movementState: new Map(),   // sessionWorkerId -> dispatch_movement_state row
+  startedAt: null,            // start timestamp (avoids clashing with start() method)
+  bars: [],                   // the session bar set
+  label: '',                  // "First bar + N more" label
+  engagementSub: null,        // engagement-timeline ws handle for this session
 
   // realtime + pub/sub
   _subs: [],
@@ -11411,8 +11702,9 @@ const liveSessionOps = {
             } catch(e) { /* skip; next bootstrap will reconcile */ }
           }
           // Existing worker portal join/leave handlers (unchanged behaviour).
-          if(record.joined_at && !record.left_at) { await handleWorkerPortalJoin(record); this.emit('worker:joined', record); }
-          else if(record.left_at) { await handleWorkerPortalLeave(record); this.emit('worker:left', record); }
+          // Batch C: pass this instance so the mutation lands on THIS session.
+          if(record.joined_at && !record.left_at) { await handleWorkerPortalJoin(record, this); this.emit('worker:joined', record); }
+          else if(record.left_at) { await handleWorkerPortalLeave(record, this); this.emit('worker:left', record); }
           this.emit('invite:updated', record);
         } else if(type === 'DELETE') {
           const idx = this.invites.findIndex(i => i.id === record.id);
@@ -11428,7 +11720,12 @@ const liveSessionOps = {
       [{ event: 'INSERT', schema: 'public', table: 'shift_responses' }],
       async (record, type) => {
         if(type !== 'INSERT') return;
-        await handleNewShiftResponse(record);
+        // Batch C: the shift_responses sub is unfiltered (no session_id column),
+        // so this fires on every live SessionOps. Only the session that owns
+        // the request should ingest + emit; gate on request membership so two
+        // concurrent sessions never cross-pollute their responses Maps.
+        if(!this.requests.some(r => Number(r.id) === Number(record.shift_request_id))) return;
+        await handleNewShiftResponse(record, this);
         this.emit('response:new', record);
       },
       () => this._onSubDrop('responses')
@@ -11439,7 +11736,7 @@ const liveSessionOps = {
       [{ event: 'UPDATE', schema: 'public', table: 'session_workers', filter: 'session_id=eq.' + sessionId }],
       async (record, type) => {
         if(type !== 'UPDATE') return;
-        const worker = liveSessionOps.workers.find(w => w.sessionWorkerId === record.id);
+        const worker = this.workers.find(w => w.sessionWorkerId === record.id);
         if(worker) {
           if(record.departed_at) worker.departedAt = record.departed_at;
           if(record.share_location_tapped_at) worker.shareLocationTappedAt = record.share_location_tapped_at;
@@ -11491,9 +11788,9 @@ const liveSessionOps = {
       async (record, type) => {
         if(!record || record.session_worker_id == null) return;
         const swId = Number(record.session_worker_id);
-        const member = liveSessionOps.workers.some(w => Number(w.sessionWorkerId) === swId);
+        const member = this.workers.some(w => Number(w.sessionWorkerId) === swId);
         if(!member) return;
-        liveSessionMovementState.set(swId, record);
+        this.movementState.set(swId, record);
         this.emit('movement:updated', record);
       },
       () => this._onSubDrop('movement')
@@ -11521,11 +11818,11 @@ const liveSessionOps = {
             } catch(e) { /* keep fallback */ }
           }
           record._requesterName = _requesterName;
-          liveSessionOps.requests.push(record);
+          this.requests.push(record);
           startResponseWindow(record.id);
           this.emit('request:new', record);
         } else if(type === 'UPDATE') {
-          const existing = liveSessionOps.requests.find(r => r.id === record.id);
+          const existing = this.requests.find(r => r.id === record.id);
           if(existing) {
             if(record.status) existing.status = record.status;
             if(record.posted_at) existing.posted_at = record.posted_at;
@@ -11564,19 +11861,22 @@ const liveSessionOps = {
     // liveSessionResponses correctly. SEC-N9 pattern: subs first, bootstrap
     // after (handlers are idempotent against the race window).
     try {
-      await loadLiveSessionWorkers(sessionId);
+      await loadLiveSessionWorkers(sessionId, this);
     } catch(e) {
       console.error('[liveSessionOps.start] workers bootstrap failed', e);
     }
 
-    // Phase 3 Batch 6: wire engagement timeline realtime for this session.
-    startEngagementTimelineRealtime(sessionId);
+    // Phase 3 Batch 6: engagement timeline realtime. Batch C: the timeline
+    // pane is a single shared DOM surface (one #engagement-timeline-list, one
+    // engagementTimelineWs global). It runs for the FOCUSED session only and
+    // is started / stopped by focusSession, NOT here. Starting it per instance
+    // would clobber the shared ws (last-started-wins). See focusSession.
 
     // Live Dashboard Redesign (18 May 2026): bootstrap dispatch_movement_state
     // for any session_workers currently in flight (post-reload, post-resync).
     // Subs are already wired above, so a race row will merge cleanly.
     try {
-      await bootstrapLiveSessionMovementState();
+      await bootstrapLiveSessionMovementState(this);
     } catch(e) {
       console.error('[liveSessionOps.start] movement bootstrap failed', e);
     }
@@ -11587,40 +11887,40 @@ const liveSessionOps = {
   },
 
   async stop() {
-    // Phase 3 Batch 6: tear down engagement timeline realtime first.
-    stopEngagementTimelineRealtime();
-    // Dashboard v2: clear the Operations tab live indicator.
-    if(typeof dv2SetLiveIndicator === 'function') dv2SetLiveIndicator(false);
+    const wasSessionId = this.sessionId;
+    // Phase 3 Batch 6 / Batch C: the engagement timeline is a single shared
+    // surface owned by the focused session. Tear it down only if THIS instance
+    // is the focused one; otherwise leave the focused session's timeline alone.
+    if(_focusedSessionId === wasSessionId) stopEngagementTimelineRealtime();
     for(const sub of this._subs) {
       if(sub.retryTimer) { clearTimeout(sub.retryTimer); sub.retryTimer = null; }
       try { sub.ws?.close(); } catch(e) {}
     }
     this._subs = [];
     if(this._resyncTimer) { clearTimeout(this._resyncTimer); this._resyncTimer = null; }
-    // Legacy responseWindow timers retired in CORE v6 F-03; the no-op shim's
-    // Map is harmless to skip clearing. Just clear the response cache.
-    if(typeof liveSessionResponses !== 'undefined') liveSessionResponses.clear();
-    // F-33: clear recommendation engine state on session stop (mirrors
-    // liveSessionResponses cleanup pattern).
-    if(typeof liveSessionRecommendations !== 'undefined') liveSessionRecommendations.clear();
-    if(typeof f33DeficitCache !== 'undefined') f33DeficitCache.clear();
-    // Live Dashboard Redesign (18 May 2026): clear movement state cache.
-    if(typeof liveSessionMovementState !== 'undefined') liveSessionMovementState.clear();
+    // Batch C: clear THIS instance's own companion Maps (were module globals).
+    this.responses.clear();
+    this.recommendations.clear();
+    this.movementState.clear();
     this.workers.length = 0;
     this.requests.length = 0;
     this.invites.length = 0; // round 4: clear invites cache on session end
     this._dirty.clear();
     // Round 4: close the invite-list modal if open â€” stale data when session ends.
     if(typeof isInviteModalOpen === 'function' && isInviteModalOpen()) closeOv('invite-list');
-    const wasSessionId = this.sessionId;
     this.sessionId = null;
+    // Batch C: remove this instance from the live map.
+    if(wasSessionId != null) liveSessions.delete(wasSessionId);
+    // If this was the focused session, clear the focus pointers.
+    if(_focusedSessionId === wasSessionId) {
+      _focusedSessionId = null;
+      liveSessionOps = null;
+      if(typeof f33DeficitCache !== 'undefined') f33DeficitCache.clear();
+    }
+    // Dashboard v2: clear the Operations tab live indicator ONLY if no live
+    // session remains. Other concurrent sessions keep the dot lit.
+    if(typeof dv2SetLiveIndicator === 'function' && liveSessions.size === 0) dv2SetLiveIndicator(false);
     if(wasSessionId) this.emit('session:stopped', { sessionId: wasSessionId });
-  },
-
-  async resumeIfLive() {
-    const restored = await tryRestoreSession();
-    if(restored) this.emit('session:resumed', { sessionId: this.sessionId });
-    return restored;
   },
 
   on(event, cb) { (this._listeners[event] = this._listeners[event] || []).push(cb); },
@@ -11637,10 +11937,10 @@ const liveSessionOps = {
   },
 
   getWorker(applicationId) {
-    return liveSessionOps.workers.find(w => Number(w.applicationId) === Number(applicationId));
+    return this.workers.find(w => Number(w.applicationId) === Number(applicationId));
   },
   getRequest(requestId) {
-    return liveSessionOps.requests.find(r => r.id === requestId);
+    return this.requests.find(r => r.id === requestId);
   },
 
   _addSub(name, factory) {
@@ -11685,7 +11985,7 @@ const liveSessionOps = {
       const swData = await sbGet('session_workers',
         '?session_id=eq.'+sessionId+'&select=id,application_id,status,clock_in_at,dispatched_at,departed_at,share_location_tapped_at,bar_id,shift_length_hours,shift_request_id');
       for(const sw of swData) {
-        const worker = liveSessionOps.workers.find(w => w.sessionWorkerId === sw.id);
+        const worker = this.workers.find(w => w.sessionWorkerId === sw.id);
         if(worker) {
           worker.status = sw.status;
           worker.departedAt = sw.departed_at || null;
@@ -11699,7 +11999,7 @@ const liveSessionOps = {
         '?session_id=eq.'+sessionId+'&order=request_time.asc&select=*,bars(name),bar_managers(name)');
       const ids = new Set(reqData.map(r => r.id));
       for(const r of reqData) {
-        const existing = liveSessionOps.requests.find(x => x.id === r.id);
+        const existing = this.requests.find(x => x.id === r.id);
         const _barName = r.bars?.name || '';
         const _requesterName = r.bar_managers?.name || 'Unknown';
         if(existing) {
@@ -11708,20 +12008,64 @@ const liveSessionOps = {
           existing._barName = _barName;
           existing._requesterName = _requesterName;
         } else {
-          liveSessionOps.requests.push({ ...r, _barName, _requesterName });
+          this.requests.push({ ...r, _barName, _requesterName });
         }
       }
-      for(let i = liveSessionOps.requests.length - 1; i >= 0; i--) {
-        if(!ids.has(liveSessionOps.requests[i].id)) liveSessionOps.requests.splice(i, 1);
+      for(let i = this.requests.length - 1; i >= 0; i--) {
+        if(!ids.has(this.requests[i].id)) this.requests.splice(i, 1);
       }
-      await syncResponsesForPendingRequests();
+      await syncResponsesForPendingRequests(this);
       this.emit('state:resynced', { workers: swData.length, requests: reqData.length });
       console.log('liveSessionOps: resync complete (' + swData.length + ' workers, ' + reqData.length + ' requests)');
     } catch(e) {
       console.error('liveSessionOps resync failed', e);
     }
   }
-};
+  };
+
+  // Batch C: per-instance listeners (the old setupLiveViewListeners wired the
+  // singleton; now each instance wires its own at creation). See
+  // wireSessionOpsListeners below the factory.
+  wireSessionOpsListeners(ops);
+  return ops;
+}
+
+// focusSession(sessionId): make the given session the focused / expanded one.
+// Repoints the legacy global NAMES (the focus-pointers the existing
+// single-session bipartite / F-33 / engagement render reads) at this
+// instance's fields, so that render always paints the focused session
+// unchanged. Moves the shared engagement-timeline pane to this session.
+function focusSession(sessionId) {
+  const ops = liveSessions.get(sessionId) || null;
+  // Tear down the previously-focused session's engagement timeline (single
+  // shared surface) before switching, then re-point and re-start it.
+  if(_focusedSessionId !== sessionId && typeof stopEngagementTimelineRealtime === 'function') {
+    stopEngagementTimelineRealtime();
+  }
+  _focusedSessionId = sessionId;
+  liveSessionOps = ops;
+  if(ops) {
+    liveSessionResponses       = ops.responses;
+    liveSessionRecommendations = ops.recommendations;
+    liveSessionMovementState   = ops.movementState;
+    liveSessionStart           = ops.startedAt;
+    liveSessionBars            = ops.bars;
+    liveSessionLabel           = ops.label;
+    // The focused session is the EXPANDED one: ensure its card renders expanded
+    // (the per-card default is COLLAPSED in Stage 1). Single-session regression
+    // safety: with one live session this keeps the full view showing as today.
+    try { localStorage.setItem(_opsLiveCardStorageKey(sessionId), 'expanded'); } catch(e) {}
+    // Start the engagement timeline for the newly focused session.
+    if(typeof startEngagementTimelineRealtime === 'function') startEngagementTimelineRealtime(sessionId);
+  } else {
+    liveSessionResponses       = new Map();
+    liveSessionRecommendations = new Map();
+    liveSessionMovementState   = new Map();
+    liveSessionStart           = null;
+    liveSessionBars            = [];
+    liveSessionLabel           = '';
+  }
+}
 
 // Is the live session view currently visible? Post-Batch 5: v2 is the
 // only path. True when the Operations workspace is active AND its Live
@@ -11736,30 +12080,41 @@ function isLiveViewActive() {
 // view renders inside the Operations / Live sub-tab; #sessions-live-room
 // + #sessions-live-empty were the v1 targets and were retired with
 // #screen-sessions.
+// Batch C: the FULL bipartite card renders into the focused-session slot
+// (#ops-live-focused) that renderLiveRoom places inside the stacked list, not
+// directly into #ops-live-room. This lets the existing single-session render
+// (renderBipartiteView + all bv* helpers, which call getBipartiteRoomEl) be
+// reused unchanged for the focused card while collapsed summary cards for the
+// other sessions stack around it. Falls back to #ops-live-room if the focused
+// slot is absent (defensive; the single-session path still works).
 function getBipartiteRoomEl() {
-  return document.getElementById('ops-live-room');
+  return document.getElementById('ops-live-focused') || document.getElementById('ops-live-room');
 }
 function getBipartiteEmptyEl() {
   return document.getElementById('ops-live-empty');
 }
 
-// Wire default listeners that re-render the live view, or mark it dirty if the
-// view is not active. Called once at module load. Listeners persist across
-// liveSessionOps.start/stop cycles (the object is reused).
-function setupLiveViewListeners() {
-  // Route every re-render through renderLiveRoom() (which dispatches to the
-  // bipartite view). markDirty when the live screen isn't visible so the
-  // next entry triggers a fresh render.
+// Batch C: wire listeners for ONE SessionOps instance. Was setupLiveViewListeners
+// (which wired the singleton at module load); now called once per instance from
+// the makeSessionOps factory. Each instance's events re-render the stacked list
+// (cheap: summary lines for all cards + the full bipartite view for the focused
+// card). The F-33 recompute reads the FOCUSED globals, so it runs only when the
+// emitting instance is the focused one; non-focused events just refresh summaries.
+function wireSessionOpsListeners(ops) {
+  const isFocused = () => _focusedSessionId === ops.sessionId;
+  // Route every re-render through renderLiveRoom() (which paints the stacked
+  // cards + the focused bipartite view). markDirty when the live screen isn't
+  // visible so the next entry triggers a fresh render.
   const renderOrDirty = () => {
     if(isLiveViewActive()) { renderLiveRoom(); }
-    else liveSessionOps.markDirty('live');
+    else ops.markDirty('live');
   };
-  // F-33: recompute recommendations before re-rendering. Async fire-and-forget;
-  // the render below picks up whatever is in liveSessionRecommendations at the
-  // moment it runs. On the next event tick (e.g. realtime delivery a moment
-  // later) the recompute will have settled and the next render will reflect.
+  // F-33: recompute recommendations before re-rendering. The recompute reads
+  // the focused globals (liveSessionOps.requests / liveSessionRecommendations),
+  // so only run it when THIS instance is the focused one. Non-focused events
+  // just refresh the stacked summaries.
   const recomputeAndRender = (record) => {
-    if(typeof f33RecomputeAllPending === 'function') {
+    if(isFocused() && typeof f33RecomputeAllPending === 'function') {
       f33RecomputeAllPending().then(() => {
         if(isLiveViewActive()) { renderLiveRoom(); }
       });
@@ -11782,46 +12137,48 @@ function setupLiveViewListeners() {
     recomputeAndRender(record);
   };
   // F-33: cleanup recommendations Map when a request transitions out of pending.
+  // Operate on THIS instance's recommendations Map (was the focused global).
   const onRequestUpdated = (record) => {
-    if(record?.status && record.status !== 'pending' && typeof liveSessionRecommendations !== 'undefined') {
-      liveSessionRecommendations.delete(record.id);
+    if(record?.status && record.status !== 'pending') {
+      ops.recommendations.delete(record.id);
     }
     recomputeAndRender(record);
   };
-  liveSessionOps.on('worker:joined', recomputeAndRender);
-  liveSessionOps.on('worker:left', recomputeAndRender);
-  liveSessionOps.on('worker:updated', onWorkerUpdated);
-  liveSessionOps.on('request:new', recomputeAndRender);
-  liveSessionOps.on('request:updated', onRequestUpdated);
-  liveSessionOps.on('response:new', onResponse);
-  liveSessionOps.on('state:resynced', recomputeAndRender);
-  liveSessionOps.on('session:started', recomputeAndRender);
-  liveSessionOps.on('session:resumed', recomputeAndRender);
+  ops.on('worker:joined', recomputeAndRender);
+  ops.on('worker:left', recomputeAndRender);
+  ops.on('worker:updated', onWorkerUpdated);
+  ops.on('request:new', recomputeAndRender);
+  ops.on('request:updated', onRequestUpdated);
+  ops.on('response:new', onResponse);
+  ops.on('state:resynced', recomputeAndRender);
+  ops.on('session:started', recomputeAndRender);
+  ops.on('session:resumed', recomputeAndRender);
 
-  // Round 4: invites cache events update session-card stats and the modal
-  // when open. Cache mutations already happened in the realtime handler
-  // before emit, so renderInviteList reads from a fresh cache.
+  // Round 4: invites cache events update the stacked-card counts and the modal
+  // when open. Cache mutations already happened in the realtime handler before
+  // emit, so the render reads from a fresh cache. A re-render of the stack
+  // refreshes every card's summary line; the focused card also refreshes its
+  // header counts via renderSessionStats.
   const onInviteChange = () => {
-    if(typeof renderSessionStats === 'function') renderSessionStats();
+    renderOrDirty();
+    if(isFocused() && typeof renderSessionStats === 'function') renderSessionStats();
     if(typeof isInviteModalOpen === 'function' && isInviteModalOpen()
        && typeof renderInviteList === 'function') renderInviteList();
   };
-  liveSessionOps.on('invite:added', onInviteChange);
-  liveSessionOps.on('invite:updated', onInviteChange);
-  liveSessionOps.on('invite:removed', onInviteChange);
-  liveSessionOps.on('state:resynced', () => { if(typeof renderSessionStats === 'function') renderSessionStats(); });
-  liveSessionOps.on('session:started', () => { if(typeof renderSessionStats === 'function') renderSessionStats(); });
-  liveSessionOps.on('session:resumed', () => { if(typeof renderSessionStats === 'function') renderSessionStats(); });
+  ops.on('invite:added', onInviteChange);
+  ops.on('invite:updated', onInviteChange);
+  ops.on('invite:removed', onInviteChange);
+  ops.on('state:resynced', () => { if(isFocused() && typeof renderSessionStats === 'function') renderSessionStats(); });
+  ops.on('session:started', () => { if(isFocused() && typeof renderSessionStats === 'function') renderSessionStats(); });
+  ops.on('session:resumed', () => { if(isFocused() && typeof renderSessionStats === 'function') renderSessionStats(); });
 
   // Live Dashboard Redesign (18 May 2026): movement:updated re-renders the
-  // bipartite view (worker card border highlight + line state). Classic view
-  // ignores; it has no surface for movement state today.
-  liveSessionOps.on('movement:updated', renderOrDirty);
+  // bipartite view (worker card border highlight + line state).
+  ops.on('movement:updated', renderOrDirty);
 
   // session:stopped intentionally has no auto-render. Close-session and logout
   // flows do their own UI transitions.
 }
-setupLiveViewListeners();
 
 // ============================================================================
 // Live Dashboard Redesign (18 May 2026): bipartite graph view state +
@@ -11830,11 +12187,12 @@ setupLiveViewListeners();
 // 'movement' realtime sub. Empty Map = no dispatched workers tracked yet.
 // ============================================================================
 
-const liveSessionMovementState = new Map(); // sessionWorkerId -> dispatch_movement_state row
+let liveSessionMovementState = new Map(); // Batch C: focus-pointer to the focused SessionOps.movementState. sessionWorkerId -> dispatch_movement_state row
 
-async function bootstrapLiveSessionMovementState() {
-  liveSessionMovementState.clear();
-  const swIds = liveSessionOps.workers
+async function bootstrapLiveSessionMovementState(ops = liveSessionOps) {
+  if(!ops) return;
+  ops.movementState.clear();
+  const swIds = ops.workers
     .map(w => Number(w.sessionWorkerId))
     .filter(Boolean);
   if(!swIds.length) return;
@@ -11843,7 +12201,7 @@ async function bootstrapLiveSessionMovementState() {
       '?session_worker_id=in.(' + swIds.join(',') + ')'
       + '&select=session_worker_id,dispatched_at,last_state,last_state_at,dispatch_lat,dispatch_lng,metres_from_dispatch,metres_toward_bar,nudge_1_fired_at,nudge_2_fired_at,cancelled_at,cancellation_reason_input,created_at,updated_at');
     for(const r of (rows || [])) {
-      liveSessionMovementState.set(Number(r.session_worker_id), r);
+      ops.movementState.set(Number(r.session_worker_id), r);
     }
   } catch(e) {
     console.error('[bootstrapLiveSessionMovementState] failed', e);
@@ -11942,8 +12300,9 @@ function renderSessionStats() {
   const inSessionEl = document.getElementById('ops-live-count-in-session');
   if(!invitedEl && !confirmedEl && !inSessionEl) return; // card not in DOM (silent no-op)
 
-  const all = liveSessionOps.invites || [];
-  const inSessionCount = (liveSessionOps.workers || [])
+  // Batch C: reads the FOCUSED session's instance (liveSessionOps focus-pointer).
+  const all = (liveSessionOps && liveSessionOps.invites) || [];
+  const inSessionCount = ((liveSessionOps && liveSessionOps.workers) || [])
     .filter(w => w && w.status === 'in_session').length;
   if(invitedEl)   invitedEl.textContent   = String(all.length);
   if(confirmedEl) confirmedEl.textContent = String(all.filter(i => i.attendance_confirmed === 'confirmed').length);
@@ -11971,10 +12330,13 @@ function _opsLiveCardStorageKey(sessionId) {
   return 'glasi_live_session_expanded_' + sessionId;
 }
 function _opsLiveCardInitialState(sessionId) {
+  // Batch C: default COLLAPSED. A session is shown expanded only when it is the
+  // focused one (focusSession) or when Sam has explicitly expanded it (the
+  // localStorage flag flips to 'expanded' via opsLiveCardToggle).
   try {
     const v = localStorage.getItem(_opsLiveCardStorageKey(sessionId));
-    return v === 'collapsed' ? 'collapsed' : 'expanded'; // default expanded
-  } catch(e) { return 'expanded'; }
+    return v === 'expanded' ? 'expanded' : 'collapsed'; // default collapsed
+  } catch(e) { return 'collapsed'; }
 }
 function opsLiveCardToggle(sessionId) {
   const card = document.getElementById('ops-live-card-' + sessionId);
@@ -12123,19 +12485,20 @@ async function reInviteWorker(sessionInviteId) {
 // Per-request response cache keyed by shift_request_id. Populated by
 // syncResponsesForPendingRequests, consumed by the bipartite view's worker
 // detail block. Cleared when a request stops being pending.
-const liveSessionResponses = new Map();
+let liveSessionResponses = new Map(); // Batch C: focus-pointer to the focused SessionOps.responses
 
-async function syncResponsesForPendingRequests() {
-  const pending = liveSessionOps.requests.filter(r => r.status === 'pending');
+async function syncResponsesForPendingRequests(ops = liveSessionOps) {
+  if(!ops) return;
+  const pending = ops.requests.filter(r => r.status === 'pending');
   for(const req of pending) {
-    if(liveSessionResponses.has(req.id)) continue;
+    if(ops.responses.has(req.id)) continue;
     const rows = await sbGet('shift_responses', '?shift_request_id=eq.'+req.id+'&select=application_id,response,response_seconds');
-    liveSessionResponses.set(req.id, rows || []);
+    ops.responses.set(req.id, rows || []);
   }
   // Drop cache entries for requests no longer pending or no longer in state.
   const live = new Set(pending.map(r => r.id));
-  for(const id of [...liveSessionResponses.keys()]) {
-    if(!live.has(id)) liveSessionResponses.delete(id);
+  for(const id of [...ops.responses.keys()]) {
+    if(!live.has(id)) ops.responses.delete(id);
   }
 }
 
@@ -12330,28 +12693,37 @@ function startScheduleRealtime() {
   );
 }
 
-async function handleNewShiftResponse(record) {
+async function handleNewShiftResponse(record, ops) {
   // State-only mutation. Render runs via the response:new listener wired in
-  // setupLiveViewListeners. Worker name is resolved at render time from
-  // liveSessionOps.workers, no per-response applications lookup.
+  // wireSessionOpsListeners. Worker name is resolved at render time.
+  // Batch C: route to the SessionOps whose requests contains this response's
+  // shift_request_id (fall back to the passed ops, then the focused one).
   if(!record || !record.shift_request_id) return;
   const reqId = record.shift_request_id;
-  const arr = liveSessionResponses.get(reqId) || [];
+  let target = ops;
+  if(!target || !target.requests.some(r => Number(r.id) === Number(reqId))) {
+    for(const s of liveSessions.values()) {
+      if(s.requests.some(r => Number(r.id) === Number(reqId))) { target = s; break; }
+    }
+  }
+  if(!target) target = liveSessionOps;
+  if(!target) return;
+  const arr = target.responses.get(reqId) || [];
   if(!arr.some(r => Number(r.application_id) === Number(record.application_id))) {
     arr.push({
       application_id: record.application_id,
       response: record.response,
       response_seconds: record.response_seconds
     });
-    liveSessionResponses.set(reqId, arr);
+    target.responses.set(reqId, arr);
   }
 }
 
-async function handleWorkerPortalLeave(record) {
-  // State mutator only. Render runs via liveSessionOps listener.
-  if(!liveSessionOps.sessionId) return;
+async function handleWorkerPortalLeave(record, ops = liveSessionOps) {
+  // State mutator only. Render runs via the SessionOps listener.
+  if(!ops || !ops.sessionId) return;
   const appId = Number(record.application_id);
-  const worker = liveSessionOps.workers.find(w => Number(w.applicationId) === appId);
+  const worker = ops.workers.find(w => Number(w.applicationId) === appId);
   if(worker) {
     if(worker.status === 'dispatched' || worker.status === 'onshift') return;
     worker.status = 'invited';
@@ -12359,13 +12731,13 @@ async function handleWorkerPortalLeave(record) {
   }
 }
 
-async function handleWorkerPortalJoin(record) {
+async function handleWorkerPortalJoin(record, ops = liveSessionOps) {
   // State mutator only. The DB-side trigger sync_session_worker_status_on_join
   // also flips session_workers.status; this local write is the fast path, the
-  // trigger is the safety net. Render runs via liveSessionOps listener.
-  if(!liveSessionOps.sessionId) return;
+  // trigger is the safety net. Render runs via the SessionOps listener.
+  if(!ops || !ops.sessionId) return;
   const appId = Number(record.application_id);
-  const worker = liveSessionOps.workers.find(w => Number(w.applicationId) === appId);
+  const worker = ops.workers.find(w => Number(w.applicationId) === appId);
   if(worker) {
     worker.status = 'in_session';
     worker.joinedAt = record.joined_at;
@@ -12375,7 +12747,7 @@ async function handleWorkerPortalJoin(record) {
         { status: 'in_session' });
     }
   } else {
-    await loadLiveSessionWorkers(liveSessionOps.sessionId);
+    await loadLiveSessionWorkers(ops.sessionId, ops);
   }
 }
 
@@ -12682,7 +13054,8 @@ function f38ShowInflightModal(workers, retryFn) {
 async function confirmCloseSession() {
   if(!confirm('Close this session? Make sure all shifts are completed first.')) return;
 
-  const sessionId = liveSessionOps.sessionId;
+  // Batch C: closes the FOCUSED session (the expanded card).
+  const sessionId = liveSessionOps && liveSessionOps.sessionId;
   if(!sessionId) {
     // No live session is actually open (the view is stale). Surface it rather
     // than returning silently, which reads as "Close does nothing".
@@ -12729,12 +13102,24 @@ async function confirmCloseSession() {
   // end-of-engagement). Worker-facing after-session report is the Phase 3 Â§ 6
   // surface, not a dashboard-side text dump.
 
+  // Batch C: stop() removes this session from liveSessions and clears the focus
+  // pointers. If other sessions are still live, re-focus the lowest-id one and
+  // stay on the live stack; otherwise route to History as before.
   await liveSessionOps.stop();
-  shifts=[];
 
-  showScreen('sessions');
-  setActiveNav('sessions');
-  switchSessionsTab('history', { sessionId });
+  if(liveSessions.size > 0) {
+    const nextId = Math.min(...[...liveSessions.keys()].map(Number));
+    focusSession(nextId);
+    showScreen('sessions');
+    setActiveNav('sessions');
+    switchSessionsTab('live');
+    renderLiveRoom();
+  } else {
+    shifts=[];
+    showScreen('sessions');
+    setActiveNav('sessions');
+    switchSessionsTab('history', { sessionId });
+  }
 }
 
 function dismissReport() {
@@ -13598,17 +13983,18 @@ function switchSessionsTab(tab, opts) {
       renderSessionsHistory();
     }
   }
-  if(isLive && liveSessionOps.sessionId) {
+  if(isLive && liveSessions.size > 0) {
     // sessions-live-empty / sessions-live-room are retired v1 sub-tab elements;
     // the v2 layout renders the live view via renderLiveRoom's own bipartite
     // container. Guard the nulls so the live-session restore does not throw and
     // blank the dashboard. Same v1-vestigial guard pattern as the home-date fix.
+    // Batch C: keyed on "any live session" (liveSessions), not the focus-pointer.
     const emptyEl = document.getElementById('sessions-live-empty');
     if(emptyEl) emptyEl.style.display = 'none';
     const roomEl = document.getElementById('sessions-live-room');
     if(roomEl) roomEl.style.display = 'block';
     renderLiveRoom();
-    liveSessionOps.consumeDirty('live');
+    if(liveSessionOps) liveSessionOps.consumeDirty('live');
   } else if(isLive) {
     const emptyEl = document.getElementById('sessions-live-empty');
     if(emptyEl) emptyEl.style.display = 'block';
@@ -13978,17 +14364,112 @@ function showDashboardToast(msg) {
 let liveSessionTimer = null;
 let liveSessionStart = null;
 
-// Live Dashboard Redesign (18 May 2026, Batch 1b 18 May 2026): renderLiveRoom
-// is the thin wrapper around the bipartite view. The classic 3-column console
-// and the glasi_live_view_mode feature flag were retired in Batch 1b after
-// the rollback window closed cleanly.
+// Batch C (concurrent sessions, Stage 1): renderLiveRoom paints a STACK of
+// cards into #ops-live-room, one per live session sorted by id. Non-focused
+// sessions render as a COLLAPSED summary card (the Q2 one-line summary);
+// the focused session renders the FULL existing bipartite view inside a
+// #ops-live-focused slot (getBipartiteRoomEl returns that slot, so the
+// existing single-session renderBipartiteView + bv* helpers are reused
+// unchanged). Only one card is expanded at a time.
+//
+// _liveStackSig tracks the rendered skeleton (session-id set + focused id) so
+// the stack is only rebuilt when it changes; otherwise summaries are refreshed
+// in place and the focused card is left to renderBipartiteView's own
+// incremental refresh (no flicker, preserves bvExpansion row state).
+let _liveStackSig = null;
+
+function _liveSummaryLine(ops) {
+  // Q2: SESSION <id> Â· <STATUS> Â· X/Y confirmed Â· Z in session. No bar list,
+  // no active-request count. Middle-dot separator.
+  const invited   = (ops.invites || []).length;
+  const confirmed = (ops.invites || []).filter(i => i && i.attendance_confirmed === 'confirmed').length;
+  const inSession = (ops.workers || []).filter(w => w && w.status === 'in_session').length;
+  const status = 'LIVE';
+  return 'SESSION ' + ops.sessionId + ' · ' + status
+    + ' · ' + confirmed + '/' + invited + ' confirmed'
+    + ' · ' + inSession + ' in session';
+}
+
+function _renderLiveSummaryCard(ops) {
+  // A collapsed summary card. Clicking the header focuses + expands it. Reuses
+  // the .ops-live-card chrome (collapsed) so the visual language matches the
+  // expanded card; the body is intentionally empty (the full view only renders
+  // for the focused card in Stage 1).
+  const sid = ops.sessionId;
+  return ''
+    + '<div id="ops-live-summary-' + sid + '" class="ops-live-card collapsed" data-summary-session-id="' + sid + '">'
+    +   '<div class="ops-live-card-header" onclick="opsLiveExpandSession(' + sid + ')" role="button" tabindex="0">'
+    +     '<span class="ops-live-pulse-dot" aria-hidden="true"></span>'
+    +     '<span class="ops-live-card-meta" id="ops-live-summary-line-' + sid + '">' + _liveSummaryLine(ops) + '</span>'
+    +     '<span class="ops-live-card-spacer"></span>'
+    +     '<span class="ops-live-card-chevron" aria-hidden="true">&#9662;</span>'
+    +   '</div>'
+    + '</div>';
+}
+
+// Batch C: focus + expand a session from a collapsed summary card.
+function opsLiveExpandSession(sessionId) {
+  focusSession(sessionId);
+  // Make sure the now-focused card renders expanded (clear any persisted
+  // 'collapsed' preference for it so the full view shows).
+  try { localStorage.setItem(_opsLiveCardStorageKey(sessionId), 'expanded'); } catch(e) {}
+  _liveStackSig = null; // force a skeleton rebuild (focused id changed)
+  renderLiveRoom();
+}
+
 function renderLiveRoom() {
-  const room = getBipartiteRoomEl();
+  const room = document.getElementById('ops-live-room');
   if(!room) return;
   const emptyEl = getBipartiteEmptyEl();
+
+  const sessions = [...liveSessions.values()]
+    .filter(o => o && o.sessionId != null)
+    .sort((a, b) => Number(a.sessionId) - Number(b.sessionId));
+
+  if(!sessions.length) {
+    // No live sessions: show empty state, clear the stack.
+    if(emptyEl) emptyEl.style.display = 'block';
+    room.style.display = 'none';
+    room.innerHTML = '';
+    _liveStackSig = null;
+    return;
+  }
+
   if(emptyEl) emptyEl.style.display = 'none';
   room.style.display = 'block';
-  renderBipartiteView();
+
+  // Ensure a focused session exists (default to the lowest id).
+  if(_focusedSessionId == null || !liveSessions.has(_focusedSessionId)) {
+    focusSession(Number(sessions[0].sessionId));
+  }
+
+  const sig = sessions.map(o => o.sessionId).join(',') + '|focus=' + _focusedSessionId;
+
+  if(_liveStackSig !== sig || !room.querySelector('#ops-live-focused')) {
+    // Rebuild the skeleton: ordered slots, collapsed summaries for non-focused
+    // sessions and an empty #ops-live-focused slot for the focused one.
+    let html = '';
+    for(const ops of sessions) {
+      if(Number(ops.sessionId) === Number(_focusedSessionId)) {
+        html += '<div id="ops-live-focused"></div>';
+      } else {
+        html += _renderLiveSummaryCard(ops);
+      }
+    }
+    room.innerHTML = html;
+    _liveStackSig = sig;
+    // Fill the focused slot with the full bipartite card (existing render).
+    if(liveSessionOps) renderBipartiteView();
+  } else {
+    // Skeleton unchanged: refresh non-focused summary lines in place, and let
+    // renderBipartiteView do its own incremental refresh of the focused card.
+    for(const ops of sessions) {
+      if(Number(ops.sessionId) === Number(_focusedSessionId)) continue;
+      const lineEl = document.getElementById('ops-live-summary-line-' + ops.sessionId);
+      if(lineEl) lineEl.textContent = _liveSummaryLine(ops);
+    }
+    if(liveSessionOps) renderBipartiteView();
+  }
 }
 
 
@@ -14019,6 +14500,9 @@ let _bvLineDispatchTarget = null; // { applicationId, requestId } for ov-bv-disp
 function renderBipartiteView() {
   const room = getBipartiteRoomEl();
   if(!room) return;
+  // Batch C: renders the FOCUSED session (liveSessionOps is the focus-pointer).
+  // No focused session: nothing to paint into the focused slot.
+  if(!liveSessionOps) { room.innerHTML = ''; return; }
 
   const sessionId = liveSessionOps.sessionId;
   const barsCount = (typeof liveSessionBars !== 'undefined' && Array.isArray(liveSessionBars))
@@ -15604,33 +16088,13 @@ async function goLiveSession(sessionId, opts) {
     }
   }
 
-  // F-38 L10: cascade close via RPC. Hard-blocks if any other live session
-  // has dispatched/onshift workers; surfaces the IN_FLIGHT modal.
-  try {
-    const { data: { session: authSession } } = await sbAuth.auth.getSession();
-    const token = authSession?.access_token || KEY;
-    const cascadeResp = await fetch(SB + '/rest/v1/rpc/force_close_other_live_sessions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ p_keep_session_id: sessionId })
-    });
-    if(!cascadeResp.ok) {
-      const text = await cascadeResp.text();
-      const inflight = f38ParseInflightError(text);
-      if(Array.isArray(inflight) && inflight.length) {
-        const enriched = await f38EnrichInflight(inflight);
-        f38ShowInflightModal(enriched, () => goLiveSession(sessionId));
-        return;
-      }
-      alert('Could not close prior live sessions: ' + text);
-      return;
-    }
-  } catch(e) {
-    alert('Could not close prior live sessions: ' + (e.message || 'network error'));
-    return;
-  }
+  // Batch C (concurrent sessions): the force_close_other_live_sessions cascade
+  // and the IN_FLIGHT check are removed. Multiple sessions may be live at once
+  // (different bars, different worker pools). The operational invariant that a
+  // bar belongs to one session at a time prevents the only genuine conflict.
+  // force_close_other_live_sessions remains in the database as dead code.
 
-  // Cascade succeeded; flip this session live.
+  // Flip this session live.
   const goLivePatch = {
     status: 'live',
     start_time: new Date().toLocaleTimeString('en-GB', {hour12:false})
@@ -15646,40 +16110,47 @@ async function goLiveSession(sessionId, opts) {
     return;
   }
 
-  liveSessionOps.sessionId = sessionId;
-  liveSessionStart = Date.now();
-  liveSessionOps.start(sessionId);
+  // Batch C: create/get a SessionOps for this session, seed its bar set /
+  // label / start, register it in liveSessions, start its subs, and focus it.
+  let ops = liveSessions.get(sessionId);
+  if(!ops) { ops = makeSessionOps(sessionId); liveSessions.set(sessionId, ops); }
+  ops.startedAt = Date.now();
 
   // 3. Load session details (F-37: session_bars FK embed replaces zones).
   const sessions = await sbGet('sessions', '?id=eq.'+sessionId+'&select=*,session_bars(bars(id,name,address,google_maps_link,status))');
   const session = sessions[0];
 
   if(session) {
-    // F-37: liveSessionLabel feeds the live console header in place of
-    // activeZone.name. The full bar list is also exposed as
-    // liveSessionBars for the dispatch UI.
-    liveSessionBars = (session.session_bars || []).map(sb => sb && sb.bars).filter(Boolean);
-    liveSessionLabel = describeBarSet(session) || 'Live session';
+    // F-37: the label feeds the live console header; the full bar list feeds
+    // the dispatch UI. Batch C: these live on the instance (focus-pointer
+    // globals are repointed at them by focusSession).
+    ops.bars = (session.session_bars || []).map(sb => sb && sb.bars).filter(Boolean);
+    ops.label = describeBarSet(session) || 'Live session';
     try {
       const barsResult = await sbGet('bars','?order=name.asc&select=id,name,address,google_maps_link,status,notes');
       bars = Array.isArray(barsResult) ? barsResult : [];
     } catch(e) {}
   }
 
+  ops.start(sessionId);
+  focusSession(sessionId);
+
   // 4. F-37: Navigate to the new top-level Sessions screen, Live sub-tab.
   showScreen('sessions');
   setActiveNav('sessions');
   switchSessionsTab('live');
 
-  // 5. Load workers in background
-  await loadLiveSessionWorkers(sessionId);
+  // 5. Load workers in background (into this instance), then render the stack.
+  await loadLiveSessionWorkers(sessionId, ops);
+  renderLiveRoom();
 }
 
-async function loadLiveSessionWorkers(sessionId) {
+async function loadLiveSessionWorkers(sessionId, ops = liveSessionOps) {
+  if(!ops) return;
   try {
     const invites = await sbGet('session_invites', '?session_id=eq.'+sessionId+'&attendance_confirmed=eq.confirmed&select=application_id,joined_at,applications(id,name,phone,postcode_full,tier,hourly_rate,reliability_score)');
 
-    liveSessionOps.workers = [];
+    ops.workers = [];
     // Phase 1-3 follow-up 9 (18 May 2026): pull the FULL session_workers row
     // (not just id/application_id/status). The previous 3-field select left
     // shiftRequestId / dispatchedAt / bar_id / clockInAt / etc out of the
@@ -15718,7 +16189,7 @@ async function loadLiveSessionWorkers(sessionId) {
         ? (bars && bars.find(b => Number(b.id) === Number(swRow.bar_id)) || null)
         : null;
 
-      liveSessionOps.workers.push({
+      ops.workers.push({
         id: uid(),
         sessionWorkerId: swRow?.id || null,
         applicationId: app.id,
@@ -15753,15 +16224,29 @@ async function loadLiveSessionWorkers(sessionId) {
       });
     }
 
-    // Fetch all worker-bar distances for this session's workers and bars
-    const appIds = liveSessionOps.workers.map(w => w.applicationId).join(',');
+    // Fetch all worker-bar distances for this session's workers and bars.
+    // Batch C: worker_bar_distances rows are keyed by (application_id, bar_id)
+    // (globally unique), and the render filters by those keys, so MERGE the
+    // fetched rows into the shared global rather than overwriting it. This keeps
+    // a concurrently-focused session's distances intact when a second session's
+    // workers load during restore; for a single session the result is identical
+    // to the old wholesale assignment.
+    const appIds = ops.workers.map(w => w.applicationId).join(',');
     if(appIds) {
       try {
         const dists = await sbGet('worker_bar_distances', '?application_id=in.('+appIds+')&active=eq.true&select=application_id,bar_id,walking_minutes');
-        workerBarDistances = Array.isArray(dists) ? dists : [];
-      } catch(e) { workerBarDistances = []; }
+        const rows = Array.isArray(dists) ? dists : [];
+        if(!Array.isArray(workerBarDistances)) workerBarDistances = [];
+        for(const d of rows) {
+          const idx = workerBarDistances.findIndex(x =>
+            Number(x.application_id) === Number(d.application_id) && Number(x.bar_id) === Number(d.bar_id));
+          if(idx >= 0) workerBarDistances[idx] = d;
+          else workerBarDistances.push(d);
+        }
+      } catch(e) { /* leave existing distances intact on error */ }
     }
 
+    // Re-render the stacked live room (refreshes summaries + the focused card).
     renderLiveRoom();
   } catch(e) {
     console.error('Failed to load live session workers:', e);
@@ -16428,7 +16913,7 @@ async function submitPointsCorrection() {
 const F33_REASON_DEFICIT_THRESHOLD = 8;          // narrative copy threshold only
 const F33_REASON_DISTANCE_DOMINANT = 3;          // narrative copy threshold only
 
-const liveSessionRecommendations = new Map(); // requestId -> { recommendedAppId, breakdown, computedAt, swappedFrom }
+let liveSessionRecommendations = new Map(); // Batch C: focus-pointer to the focused SessionOps.recommendations. requestId -> { recommendedAppId, breakdown, computedAt, swappedFrom }
 // f33DeficitCache retired: server-side ranking owns this state.
 const f33DeficitCache = { clear: () => {}, has: () => true, get: () => null, set: () => {} };
 

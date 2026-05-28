@@ -9283,7 +9283,10 @@ function _renderMoneyBarInvoicesPane() {
           + '<td>'
           +   (inv.status === 'draft' ? '<button class="health-link" onclick="event.stopPropagation();markBarInvoiceStatus(' + inv.invoice_id + ', &quot;sent&quot;)">Mark sent</button> &middot; ' : '')
           +   ((inv.status === 'sent' || inv.status === 'overdue') ? '<button class="health-link" onclick="event.stopPropagation();markBarInvoiceStatus(' + inv.invoice_id + ', &quot;paid&quot;)">Mark paid</button> &middot; ' : '')
-          +   '<button class="health-link" onclick="event.stopPropagation();printBarInvoice(' + inv.invoice_id + ')">Print / PDF</button>'
+          +   (inv.sent_to_app_at == null
+                ? '<button class="health-link" onclick="event.stopPropagation();sendBarInvoiceToApp(' + inv.invoice_id + ')">Send to app</button> &middot; '
+                : '<span class="muted" style="font-size:11px;letter-spacing:1px;" title="Sent ' + _moneyFmtTimeLong(inv.sent_to_app_at) + '">IN APP</span> &middot; ')
+          +   '<button class="health-link" onclick="event.stopPropagation();printBarInvoice(' + inv.invoice_id + ')">View PDF</button>'
           + '</td>'
           + '</tr>';
         const exp = isExpanded
@@ -9352,7 +9355,10 @@ function _renderMoneyBarInvoiceDetail(invoiceId) {
     +   '<div class="section"><h4>Actions</h4>'
     +     (d.status === 'draft' ? '<button class="ops-sched-btn" onclick="markBarInvoiceStatus(' + d.invoice_id + ', &quot;sent&quot;)">Mark sent</button> ' : '')
     +     ((d.status === 'sent' || d.status === 'overdue') ? '<button class="ops-sched-btn" onclick="markBarInvoiceStatus(' + d.invoice_id + ', &quot;paid&quot;)">Mark paid</button> ' : '')
-    +     '<button class="ops-sched-btn primary" onclick="printBarInvoice(' + d.invoice_id + ')">Print / PDF</button> '
+    +     (d.sent_to_app_at == null
+            ? '<button class="ops-sched-btn primary" onclick="sendBarInvoiceToApp(' + d.invoice_id + ')">Send to manager app</button> '
+            : '<span class="muted" title="Sent ' + _moneyFmtTimeLong(d.sent_to_app_at) + '">In app</span> ')
+    +     '<button class="ops-sched-btn" onclick="printBarInvoice(' + d.invoice_id + ')">View PDF</button> '
     +     '<button class="ops-sched-btn" onclick="openMoneyAsgTrail(&quot;' + _opsEscape(d.reference) + '&quot;)">View money trail</button>'
     +   '</div>'
     + '</div>';
@@ -9379,92 +9385,51 @@ async function markBarInvoiceStatus(invoiceId, status) {
   }
 }
 
-// Consolidated bar invoice template (browser print). The single invoice
-// template for the money trail. The header reference IS the ASG.
+// View invoice PDF in a new tab. Calls the generate-compliance-pdf Edge
+// Function bar_invoice branch; the EF returns the PDF inline. Replaces the
+// retired browser-print template, closing the deferred TODO money PDF type.
 async function printBarInvoice(invoiceId) {
-  let d = moneyState.barInvDetailCache[invoiceId];
-  if(!d || d._error) {
-    const res = await sbAuth.rpc('bar_invoice_detail', { p_invoice_id: invoiceId });
-    if(res.error) { alert('Print failed: ' + res.error.message); return; }
-    d = res.data || {};
-    moneyState.barInvDetailCache[invoiceId] = d;
+  try {
+    const res = await sbAuth.functions.invoke('generate-compliance-pdf', {
+      body: { type: 'bar_invoice', invoice_id: invoiceId },
+      // Ask the SDK to hand back the raw response so we can stream the PDF
+      // bytes into a blob URL instead of letting it JSON-parse the body.
+      headers: { Accept: 'application/pdf' }
+    });
+    if(res.error) { alert('View failed: ' + res.error.message); return; }
+    let blob = res.data;
+    if(!(blob instanceof Blob)) {
+      // Older SDKs may return ArrayBuffer; wrap.
+      blob = new Blob([blob], { type: 'application/pdf' });
+    }
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank');
+  } catch(err) {
+    alert('View failed: ' + (err.message || err));
   }
-  const html = _renderBarInvoicePrintHtml(d);
-  const w = window.open('', '_blank', 'width=820,height=1000');
-  if(!w) { alert('Popup blocked. Allow popups for the dashboard to view invoices.'); return; }
-  w.document.open(); w.document.write(html); w.document.close();
-  w.onload = () => { try { w.print(); } catch(e) {} };
 }
 
-function _renderBarInvoicePrintHtml(d) {
-  const bar = d.bar || {};
-  const worker = d.worker || {};
-  const glasi = d.glasi || {};
-  const ref = d.reference || '';
-  const lineAmount = parseFloat(d.line_amount || 0);
-  const vatAmount = parseFloat(d.vat_amount || 0);
-  const grand = parseFloat(d.grand_total || 0);
-  const rate = parseFloat(d.bar_rate || 0);
-  const hours = d.requested_hours || 0;
-  const fmtDate = (ts) => ts ? new Date(ts).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
-  const vatRegistered = glasi.vat_status === 'registered';
-  const vatIdentityLine = vatRegistered
-    ? ('VAT number: ' + (glasi.vat_number || ''))
-    : 'VAT registration pending';
-  const billedName = bar.billed_name || bar.trading_name || '';
-  const workerLabel = (worker.name || 'Worker') + ' (' + (worker.glasi_worker_ref || '') + ')';
-  const termsDays = glasi.payment_terms_days != null ? glasi.payment_terms_days : 30;
-  return '<!DOCTYPE html><html><head><meta charset="utf-8">'
-    + '<title>' + ref + '</title>'
-    + '<style>'
-    +   '@media print { @page { margin: 18mm } }'
-    +   'body{font-family:Inter,system-ui,sans-serif;color:#0F1F3D;max-width:760px;margin:24px auto;padding:24px}'
-    +   '.glasi-mark{font-family:Raleway,sans-serif;letter-spacing:8px;font-weight:700;font-size:24px;border:1.5px solid #0F1F3D;display:inline-block;padding:6px 14px;border-radius:6px}'
-    +   '.two-col{display:flex;justify-content:space-between;gap:32px;margin:24px 0}'
-    +   '.two-col .block{flex:1}'
-    +   'h1{font-size:18px;margin:18px 0 6px}'
-    +   '.label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#9ca3af;margin-bottom:4px}'
-    +   '.meta{font-size:13px;color:#475569;margin:3px 0}'
-    +   'table{width:100%;border-collapse:collapse;margin:18px 0}'
-    +   'th,td{text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;font-size:13px}'
-    +   '.amt{text-align:right;font-variant-numeric:tabular-nums}'
-    +   '.total-row td{font-weight:700;font-size:15px;border-bottom:none;border-top:2px solid #0F1F3D}'
-    +   '.foot{font-size:12px;color:#64748B;margin-top:24px;line-height:1.7}'
-    +   '.bank{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin:18px 0;font-size:12px;line-height:1.7}'
-    + '</style></head><body>'
-    + '<div class="glasi-mark">GLASI</div>'
-    + '<h1>Invoice: ' + ref + '</h1>'
-    + '<div class="meta">Invoice date: ' + fmtDate(d.generated_at) + '</div>'
-    + '<div class="two-col">'
-    +   '<div class="block">'
-    +     '<div class="label">From</div>'
-    +     '<div class="meta"><strong>' + (glasi.legal_name || 'Glasi Ltd') + '</strong></div>'
-    +     (glasi.company_number ? ('<div class="meta">Company number: ' + glasi.company_number + '</div>') : '')
-    +     (glasi.registered_address ? ('<div class="meta">' + glasi.registered_address + '</div>') : '')
-    +     '<div class="meta">' + vatIdentityLine + '</div>'
-    +   '</div>'
-    +   '<div class="block">'
-    +     '<div class="label">Billed to</div>'
-    +     '<div class="meta"><strong>' + billedName + '</strong></div>'
-    +     (bar.address ? ('<div class="meta">' + bar.address + '</div>') : '')
-    +     (bar.invoice_email ? ('<div class="meta">' + bar.invoice_email + '</div>') : '')
-    +   '</div>'
-    + '</div>'
-    + '<table><thead><tr><th>Description</th><th class="amt">Amount</th></tr></thead>'
-    + '<tbody>'
-    +   '<tr><td>' + workerLabel + ' &middot; ' + hours + 'h @ GBP ' + rate.toFixed(2) + '/hr</td><td class="amt">GBP ' + lineAmount.toFixed(2) + '</td></tr>'
-    +   '<tr><td>VAT (20%)</td><td class="amt">GBP ' + vatAmount.toFixed(2) + '</td></tr>'
-    +   '<tr class="total-row"><td>Total</td><td class="amt">GBP ' + grand.toFixed(2) + '</td></tr>'
-    + '</tbody></table>'
-    + '<div class="meta">Requested by: ' + (d.requested_by || '') + '</div>'
-    + '<div class="bank">'
-    +   '<div class="label">Bank transfer</div>'
-    +   '<div>' + (glasi.bank_account_name || '') + '</div>'
-    +   '<div>Sort code: ' + (glasi.bank_sort_code || '') + '</div>'
-    +   '<div>Account number: ' + (glasi.bank_account_number || '') + '</div>'
-    + '</div>'
-    + '<div class="foot">Payment terms: ' + termsDays + ' days. Payment reference: ' + ref + '.</div>'
-    + '</body></html>';
+// Q4: generate-and-store the PDF first, then call the RPC that flips the
+// sent_to_app_at flag + stores the path + writes the manager_notifications
+// row + fires the manager push.
+async function sendBarInvoiceToApp(invoiceId) {
+  try {
+    const efRes = await sbAuth.functions.invoke('generate-compliance-pdf', {
+      body: { type: 'bar_invoice', invoice_id: invoiceId, store: true }
+    });
+    if(efRes.error) { alert('PDF generation failed: ' + efRes.error.message); return; }
+    const path = (efRes.data || {}).storage_path;
+    if(!path) { alert('PDF generation returned no storage path.'); return; }
+    const res = await sbAuth.rpc('send_bar_invoice_to_app', {
+      p_invoice_id: invoiceId, p_pdf_storage_path: path
+    });
+    if(res.error) { alert('Send failed: ' + res.error.message); return; }
+    moneyState.barInvList = null;
+    moneyState.barInvDetailCache = {};
+    await loadMoneyBarInvoicesData();
+  } catch(err) {
+    alert('Send failed: ' + (err.message || err));
+  }
 }
 
 // ----- Per-ASG unified money trail view -----

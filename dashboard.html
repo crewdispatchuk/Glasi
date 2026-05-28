@@ -11138,7 +11138,7 @@ async function restoreSessionInto(session, ops) {
   // computeRequestPill and the Completed-panel render path have the full
   // picture on hard-refresh.
   try {
-    const activeShifts = await sbGet('shifts', '?session_id=eq.'+session.id+'&select=session_worker_id,glasi_ref,clock_in_confirmed_at,shift_length_hours,clock_out_confirmed_at,total_earned,status&order=id.desc');
+    const activeShifts = await sbGet('shifts', '?session_id=eq.'+session.id+'&select=session_worker_id,glasi_ref,clock_in_confirmed_at,shift_length_hours,clock_out_confirmed_at,total_earned,status,clock_in_source&order=id.desc');
     activeShifts.forEach(s => {
       const worker = ops.workers.find(w => w.sessionWorkerId === s.session_worker_id);
       if(worker) {
@@ -11147,9 +11147,61 @@ async function restoreSessionInto(session, ops) {
         if(s.shift_length_hours) worker.shiftLength = String(s.shift_length_hours);
         if(s.clock_out_confirmed_at) worker.clockOutAt = s.clock_out_confirmed_at;
         if(s.total_earned != null) worker.totalEarned = s.total_earned;
+        if(s.clock_in_source) worker.clockInSource = s.clock_in_source;
       }
     });
   } catch(e) {}
+
+  // Batch E (27 May 2026): pull bar_contacts for the session bars and the
+  // most-recent clock-in escalation event per session_worker. Both feed the
+  // live card render (bvRenderBarDetailRow + bvRenderDispatchedDetail). Errors
+  // leave the caches empty so the rest of the card still renders.
+  await bvLoadBarContacts(ops);
+  await bvLoadClockInEscalations(ops);
+}
+
+// Batch E (27 May 2026): load all bar_contacts rows for this session's bars
+// into ops.barContacts. Called from restoreSessionInto (hard refresh) and
+// from goLiveBatch after ops.bars is set. Pure read; safe on any failure.
+async function bvLoadBarContacts(ops) {
+  if(!ops || !Array.isArray(ops.bars) || !ops.bars.length) { ops.barContacts = []; return; }
+  const barIds = ops.bars.map(b => Number(b && b.id)).filter(n => Number.isFinite(n));
+  if(!barIds.length) { ops.barContacts = []; return; }
+  try {
+    const rows = await sbGet('bar_contacts',
+      '?bar_id=in.(' + barIds.join(',') + ')&select=id,bar_id,name,role,phone,nights_working,on_duty,created_at&order=on_duty.desc,name.asc');
+    ops.barContacts = Array.isArray(rows) ? rows : [];
+  } catch(e) { ops.barContacts = []; }
+}
+
+// Batch E (27 May 2026): load the most-recent clock-in escalation event per
+// session_worker_id (across all workers in this session). Keys the resulting
+// Map on Number(session_worker_id). Event types covered:
+// arrival_no_clock_in_5min / _15min / _25min, auto_clocked_in, manual_clocked_in.
+// Refreshed by the 30s shared interval while a card is expanded.
+async function bvLoadClockInEscalations(ops) {
+  if(!ops || !Array.isArray(ops.workers) || !ops.workers.length) {
+    if(ops) ops.clockInEscalations = new Map();
+    return;
+  }
+  const swIds = ops.workers
+    .map(w => Number(w && w.sessionWorkerId))
+    .filter(n => Number.isFinite(n) && n > 0);
+  if(!swIds.length) { ops.clockInEscalations = new Map(); return; }
+  try {
+    const rows = await sbGet('dispatch_events',
+      '?session_worker_id=in.(' + swIds.join(',') + ')'
+      + '&event_type=in.(arrival_no_clock_in_5min,arrival_no_clock_in_15min,arrival_no_clock_in_25min,auto_clocked_in,manual_clocked_in)'
+      + '&order=created_at.desc'
+      + '&select=session_worker_id,event_type,created_at,payload');
+    const map = new Map();
+    for(const r of (Array.isArray(rows) ? rows : [])) {
+      const k = Number(r.session_worker_id);
+      // Order is desc on created_at, so the first row per key wins.
+      if(!map.has(k)) map.set(k, r);
+    }
+    ops.clockInEscalations = map;
+  } catch(e) { ops.clockInEscalations = new Map(); }
 }
 
 async function loadAllWorkers() {
@@ -11640,6 +11692,15 @@ function makeSessionOps(sessionId) {
   engagementSub: null,        // engagement-timeline ws handle for this session
   engagementEvents: [],       // Stage 2: per-instance engagement-timeline event buffer
   bvExpansion: null,          // Stage 2: per-card single-row expansion { type:'bar'|'worker', id } | null
+  // Batch E (27 May 2026): per-session caches for the operational recovery surface.
+  // barContacts is the row set from bar_contacts for the session bars (loaded on
+  // session bootstrap, no refresh needed in normal operation). clockInEscalations
+  // is a Map keyed on session_worker_id holding the most-recent
+  // arrival_no_clock_in_* / auto_clocked_in / manual_clocked_in event row, used
+  // by bvRenderDispatchedDetail to render the stage chip. Refreshed via a 30s
+  // shared interval (_bvEscalationInterval) while any live card is expanded.
+  barContacts: [],
+  clockInEscalations: new Map(),
 
   // realtime + pub/sub
   _subs: [],
@@ -13873,7 +13934,6 @@ async function loadSessionDetail(sessionId) {
             + '<div style="font-size:15px;font-weight:700;color:var(--white);">'+workerName+' &nbsp;Â·&nbsp; '+barName+'</div>'
             + '<div style="display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;">'
             + '<div style="font-size:11px;color:var(--grey);font-family:\'JetBrains Mono\',monospace;">'+s.glasi_ref+'</div>'
-            + '<button onclick="downloadTimesheet('+s.id+')" style="background:none;border:1px solid var(--border);color:var(--ice);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;">&#8595; Timesheet</button>'
             + '</div>'
             + '</div>'
             + '<div style="text-align:right;">'
@@ -13902,49 +13962,11 @@ function timelineCell(label, value) {
     + '</div>';
 }
 
-async function downloadTimesheet(shiftId) {
-  const shiftArr = await sbGet('shifts', '?id=eq.'+shiftId+'&select=*,session_workers(worker_name,application_id,dispatched_at,departed_at),bars(name,address)');
-  const s = shiftArr[0];
-  if(!s) return;
-
-  const workerName = s.session_workers?.worker_name || 'Unknown';
-  const barName = s.bars?.name || 'Unknown';
-  const barAddress = s.bars?.address || '';
-  const fmtDT = t => t ? new Date(t).toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-  const fmtD = t => t ? new Date(t).toLocaleDateString('en-GB') : '';
-
-  const hours = parseFloat(s.shift_length_hours || 0);
-  const rate = parseFloat(s.hourly_rate || 12.71);
-  const earned = (hours * rate).toFixed(2);
-
-  const rows = [
-    ['Glasi Timesheet'],
-    ['Reference', s.glasi_ref || ''],
-    [''],
-    ['Worker', workerName],
-    ['Venue', barName],
-    ['Address', barAddress],
-    [''],
-    ['Date', fmtD(s.clock_in_confirmed_at)],
-    ['Clock In', fmtDT(s.clock_in_confirmed_at)],
-    ['Clock Out', fmtDT(s.clock_out_confirmed_at)],
-    ['Hours Worked', hours],
-    ['Hourly Rate', '£'+rate.toFixed(2)],
-    ['Total Earned', '£'+earned],
-    [''],
-    ['Status', s.status || ''],
-    ['Session ID', s.session_id || ''],
-  ];
-
-  const csv = rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = (s.glasi_ref || 'timesheet') + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-}
+// Batch E (27 May 2026): legacy downloadTimesheet function and its &#8595;
+// Timesheet button retired. The Money workspace's downloadTimesheetCsv /
+// downloadTimesheetPdf (RPC-backed, keyed on the Money timesheet reference)
+// are the canonical timesheet export path. No repoint here; the History
+// surface keeps the per-shift glasi_ref label without a download affordance.
 
 // The legacy bar-impact "BI Report" print template (impact narrative + a date
 // derived reference) was removed with the Shift Money Trail batch. The single
@@ -14509,6 +14531,7 @@ function renderLiveRoom() {
 // elements existing (a collapsed card has no #bv-grid / #live-session-elapsed).
 let _bvElapsedInterval = null;
 let _bvDetailInterval = null;
+let _bvEscalationInterval = null; // Batch E (27 May 2026): per-30s dispatch_events refresh
 let _bvResizeHandler = null;
 let _bvLineDispatchTarget = null; // { applicationId, requestId } for ov-bv-dispatch modal
 
@@ -14544,6 +14567,18 @@ function _bvStartSharedIntervals() {
       for(const ops of _bvExpandedLiveOps()) bvUpdateWorkerEtaCounters(ops);
     }, 5000);
   }
+  if(!_bvEscalationInterval) {
+    // Batch E (27 May 2026): refresh dispatch_events escalation rows every 30s
+    // while any live card is expanded. After the fetch, repaint the per-worker
+    // detail panels so the stage chip and auto/manual indicators update without
+    // a full session reload. The fetch is one PostgREST call per expanded card.
+    _bvEscalationInterval = setInterval(async () => {
+      for(const ops of _bvExpandedLiveOps()) {
+        await bvLoadClockInEscalations(ops);
+        bvUpdateWorkerEtaCounters(ops);
+      }
+    }, 30000);
+  }
   if(!_bvResizeHandler) {
     _bvResizeHandler = () => { for(const ops of _bvExpandedLiveOps()) bvRenderLines(ops); };
     window.addEventListener('resize', _bvResizeHandler);
@@ -14553,6 +14588,7 @@ function _bvStartSharedIntervals() {
 function _bvStopSharedIntervals() {
   if(_bvElapsedInterval) { clearInterval(_bvElapsedInterval); _bvElapsedInterval = null; }
   if(_bvDetailInterval)  { clearInterval(_bvDetailInterval);  _bvDetailInterval = null; }
+  if(_bvEscalationInterval) { clearInterval(_bvEscalationInterval); _bvEscalationInterval = null; }
   if(_bvResizeHandler)   { window.removeEventListener('resize', _bvResizeHandler); _bvResizeHandler = null; }
 }
 
@@ -14935,6 +14971,46 @@ function bvRenderBarDetailRow(ops = liveSessionOps, b, req) {
               + '</div>';
   }
 
+  // Batch E (27 May 2026): bar_contacts surface. Read from ops.barContacts
+  // (cached at session bootstrap; see bvLoadBarContacts). Renders nothing when
+  // the bar has no contacts. On-duty contacts get a green pill and a green
+  // left-border accent; off-duty stay subdued. Phone numbers get a tel: link.
+  let contactsBlock = '';
+  if(ops && Array.isArray(ops.barContacts) && ops.barContacts.length) {
+    const myContacts = ops.barContacts.filter(c => Number(c.bar_id) === Number(b.id));
+    if(myContacts.length) {
+      const items = myContacts.map(c => {
+        const onDuty = !!c.on_duty;
+        const accent = onDuty ? 'border-left:3px solid var(--green);' : 'border-left:3px solid transparent;';
+        const onDutyPill = onDuty
+          ? '<span style="display:inline-block;margin-left:6px;padding:1px 6px;border-radius:8px;background:rgba(34,197,94,0.18);color:var(--green);font-size:9px;letter-spacing:0.5px;text-transform:uppercase;">On duty</span>'
+          : '';
+        const roleHtml = c.role
+          ? '<span style="font-style:italic;color:var(--grey);margin-left:6px;font-size:11px;">' + escapeBvHtml(c.role) + '</span>'
+          : '';
+        const phoneHtml = c.phone
+          ? '<a href="tel:' + escapeBvHtml(c.phone) + '" style="color:var(--ice);text-decoration:none;font-family:\'JetBrains Mono\',monospace;font-size:11px;" onclick="event.stopPropagation();">' + escapeBvHtml(c.phone) + '</a>'
+          : '';
+        const nightsHtml = c.nights_working
+          ? '<div style="color:var(--grey);font-size:10px;margin-top:2px;">' + escapeBvHtml(c.nights_working) + '</div>'
+          : '';
+        return '<div style="padding:6px 10px;margin-bottom:4px;background:rgba(15,31,61,0.4);border-radius:6px;' + accent + '">'
+          +   '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">'
+          +     '<strong style="color:var(--white);font-size:12px;">' + escapeBvHtml(c.name || 'Unnamed') + '</strong>'
+          +     roleHtml
+          +     onDutyPill
+          +     (phoneHtml ? '<span style="color:var(--grey);font-size:11px;">&middot;</span>' + phoneHtml : '')
+          +   '</div>'
+          +   nightsHtml
+          + '</div>';
+      }).join('');
+      contactsBlock = '<div style="margin-top:10px;">'
+        + '<div class="bv-bar-detail-section-label">Bar contacts</div>'
+        + items
+        + '</div>';
+    }
+  }
+
   return '<div class="bv-bar-actions-row" id="bv-bar-actions-' + b.id + '-' + ops.sessionId + '">'
     + '<div class="bv-bar-detail-stats">'
     +   stat('Bar ID',       barIdLabel)
@@ -14944,6 +15020,7 @@ function bvRenderBarDetailRow(ops = liveSessionOps, b, req) {
     +   stat('Status',       statusLabel)
     + '</div>'
     + codeStats
+    + contactsBlock
     + notesBlock
     // Phase 1-3 follow-up 15 (18 May 2026): retry button shown only when
     // the request was auto-cancelled with no replacement found. Other
@@ -15419,6 +15496,52 @@ function bvRenderDispatchedDetail(ops = liveSessionOps, w, move) {
   const shareLine = (w.shareLocationTappedAt && !isOnShift)
     ? '<div class="bv-worker-detail-line"><span class="bv-share-location">Shared location</span></div>'
     : '';
+
+  // Batch E (27 May 2026): arrival-without-clock-in escalation chip. Reads
+  // the most-recent dispatch_event for this session_worker from the per-
+  // session cache (ops.clockInEscalations, refreshed every 30s). Stages:
+  // 5min / 15min nudges in amber, 25min final nudge in red. Once the worker
+  // is clocked in (auto, manual, or worker_tap), the chip flips to a
+  // subdued "Auto-clocked in" / "Manual override" indicator instead.
+  let escalationLine = '';
+  const escalation = (ops && ops.clockInEscalations && w.sessionWorkerId)
+    ? ops.clockInEscalations.get(Number(w.sessionWorkerId))
+    : null;
+  if(isOnShift && w.clockInAt) {
+    // Clocked-in: surface the source (auto / manual). Worker-tap is the
+    // default and gets no chip (avoids clutter on the happy path).
+    let source = w.clockInSource || null;
+    if(!source && escalation) {
+      if(escalation.event_type === 'auto_clocked_in') source = 'system_auto';
+      else if(escalation.event_type === 'manual_clocked_in') source = 'manual_admin';
+    }
+    if(source === 'system_auto') {
+      escalationLine = '<div class="bv-worker-detail-line"><span style="display:inline-block;padding:2px 8px;border-radius:10px;background:rgba(100,116,139,0.18);color:var(--grey);font-size:10px;letter-spacing:0.5px;text-transform:uppercase;">Auto-clocked in</span></div>';
+    } else if(source === 'manual_admin') {
+      escalationLine = '<div class="bv-worker-detail-line"><span style="display:inline-block;padding:2px 8px;border-radius:10px;background:rgba(100,116,139,0.18);color:var(--grey);font-size:10px;letter-spacing:0.5px;text-transform:uppercase;">Manual override</span></div>';
+    }
+  } else if(w.arrivedAt && !w.clockInAt && escalation) {
+    let chipLabel = null;
+    let chipColor = null;
+    let chipBg    = null;
+    if(escalation.event_type === 'arrival_no_clock_in_5min') {
+      chipLabel = 'Nudged 5m';
+      chipColor = 'var(--amber)';
+      chipBg = 'rgba(245,158,11,0.15)';
+    } else if(escalation.event_type === 'arrival_no_clock_in_15min') {
+      chipLabel = 'Nudged 15m';
+      chipColor = 'var(--amber)';
+      chipBg = 'rgba(245,158,11,0.15)';
+    } else if(escalation.event_type === 'arrival_no_clock_in_25min') {
+      chipLabel = 'Nudged 25m';
+      chipColor = 'var(--red)';
+      chipBg = 'rgba(239,68,68,0.18)';
+    }
+    if(chipLabel) {
+      escalationLine = '<div class="bv-worker-detail-line"><span style="display:inline-block;padding:2px 8px;border-radius:10px;background:' + chipBg + ';color:' + chipColor + ';font-size:10px;letter-spacing:0.5px;text-transform:uppercase;">' + chipLabel + '</span></div>';
+    }
+  }
+
   const clockInRow = !isOnShift && w.shiftRequestId
     ? '<div class="bv-clock-in-row">'
       + '<input type="text" maxlength="6" placeholder="Clock-in code" id="bv-clockin-' + w.shiftRequestId + '">'
@@ -15431,15 +15554,57 @@ function bvRenderDispatchedDetail(ops = liveSessionOps, w, move) {
   const cancelBtn = w.shiftRequestId
     ? '<button class="bv-cancel-dispatch" onclick="event.stopPropagation();bvOpenCancelDispatch(' + sessionId + ',' + w.applicationId + ',' + w.shiftRequestId + ')">Cancel dispatch</button>'
     : '';
+  // Batch E (27 May 2026): admin fallback when the geofence never fires
+  // (arrived_at NULL) or the worker cannot find the manager. Calls the
+  // SECURITY DEFINER manual_clock_in RPC which sets clock_in_source =
+  // 'manual_admin', awards +20 (not the worker-tap +30), cancels the four
+  // escalation scheduled rows, and records a manual_clocked_in dispatch_event.
+  // Only visible while the worker is dispatched but not yet clocked in.
+  const manualClockInBtn = (w.status === 'dispatched' && !w.clockInAt && w.sessionWorkerId)
+    ? '<button onclick="event.stopPropagation();bvManualClockIn(' + sessionId + ',' + w.sessionWorkerId + ',' + JSON.stringify(w.name || 'this worker') + ')"'
+      + ' style="background:none;border:1px solid var(--border);color:var(--grey);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;margin-left:6px;">Manual clock in (admin)</button>'
+    : '';
   return '<div class="bv-worker-detail">'
     + (barName ? '<div class="bv-worker-detail-line">Dispatched to <strong style="color:var(--white);">' + escapeBvHtml(barName) + '</strong></div>' : '')
     + etaLine
     + moveLine
     + shareLine
+    + escalationLine
     + clockInRow
     + clockOutRow
     + cancelBtn
+    + manualClockInBtn
     + '</div>';
+}
+
+// Batch E (27 May 2026): admin manual clock-in fallback. Calls the server-
+// side SECURITY DEFINER manual_clock_in RPC; on success, the session_workers
+// UPDATE realtime feed flips the card to onshift via the existing wiring,
+// no client-side refresh needed. The RPC awards clock_in +20 (not the worker-
+// tap +30), sets shifts.clock_in_source = 'manual_admin', cancels the four
+// arrival escalation scheduled rows, and records a manual_clocked_in
+// dispatch_event. Admin-gated server-side; the visible button is itself
+// scoped to Sam's dashboard so this is belt-and-braces.
+async function bvManualClockIn(sessionId, sessionWorkerId, workerName) {
+  const name = workerName || 'this worker';
+  if(!confirm('Manually clock in ' + name + '? This is the admin fallback; awards +20 (not +30).')) return;
+  try {
+    const res = await sbAuth.rpc('manual_clock_in', { p_session_worker_id: sessionWorkerId });
+    if(res.error) { alert('Manual clock-in failed: ' + (res.error.message || 'unknown')); return; }
+    if(!res.data || res.data.ok !== true) {
+      alert('Manual clock-in failed: ' + (res.data && res.data.error ? res.data.error : 'unknown'));
+      return;
+    }
+    // Realtime session_workers UPDATE will repaint the card. As a backstop
+    // (in case realtime is laggy), kick a fresh escalation fetch so the
+    // chip flips to the "Manual override" indicator quickly.
+    const ops = liveSessions.get(Number(sessionId));
+    if(ops) {
+      try { await bvLoadClockInEscalations(ops); bvUpdateWorkerEtaCounters(ops); } catch(e) {}
+    }
+  } catch(e) {
+    alert('Manual clock-in failed: ' + (e && e.message ? e.message : 'unknown'));
+  }
 }
 
 function bvRenderCompletedDetail(ops = liveSessionOps, w) {
@@ -16319,6 +16484,11 @@ async function loadLiveSessionWorkers(sessionId, ops = liveSessionOps) {
         }
       } catch(e) { /* leave existing distances intact on error */ }
     }
+
+    // Batch E (27 May 2026): bar_contacts + clock-in escalation events.
+    // Both pure reads; errors leave the caches empty (the helpers swallow).
+    await bvLoadBarContacts(ops);
+    await bvLoadClockInEscalations(ops);
 
     // Re-render the stacked live room (refreshes summaries + the focused card).
     renderLiveRoom();

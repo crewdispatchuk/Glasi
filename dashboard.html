@@ -1057,6 +1057,13 @@
     .cancel-btn:hover { border-color: var(--ice); color: var(--ice); }
     .confirm-btn { flex: 2; background: var(--ice); color: var(--navy); border: none; border-radius: 10px; padding: 11px; font-weight: 600; font-size: 13px; cursor: pointer; }
     .confirm-btn:hover { opacity: 0.85; }
+    .confirm-btn:disabled { background: rgba(100,116,139,0.18); color: var(--grey); cursor: not-allowed; opacity: 1; }
+    .confirm-btn:disabled:hover { opacity: 1; }
+
+    /* Q8 lock: mark_worker_onboarded precondition dots. */
+    .precond-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+    .precond-dot[data-state="present"] { background: var(--green); }
+    .precond-dot[data-state="missing"] { background: var(--amber); }
 
     .empty { text-align: center; padding: 48px 20px; color: var(--grey); font-size: 13px; line-height: 1.7; }
 
@@ -2405,6 +2412,20 @@
         <label>Vetting notes</label>
         <textarea class="field" id="ew-vetted-notes" rows="3"></textarea>
         <div class="error-msg" id="ew-vetted-error"></div>
+      </div>
+      <!-- Q8 lock: mark_worker_onboarded precondition status block. -->
+      <div id="ew-onboard-preconditions" style="margin:14px 0;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--navy-mid);">
+        <div style="font-size:10px;letter-spacing:2px;color:var(--grey);font-weight:600;margin-bottom:10px;">
+          ONBOARDING PRECONDITIONS
+        </div>
+        <div id="ew-precond-nm" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--white);margin-bottom:6px;">
+          <span class="precond-dot" data-state="missing"></span>
+          <span>NumberMill reference</span>
+        </div>
+        <div id="ew-precond-rtw" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--white);">
+          <span class="precond-dot" data-state="missing"></span>
+          <span>RTW share code</span>
+        </div>
       </div>
       <div class="modal-actions" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
         <button class="cancel-btn" onclick="closeOv('edit-worker')">Cancel</button>
@@ -9098,14 +9119,22 @@ function _renderMoneyNmbrPane() {
   const rows = list.length
     ? list.map(inv => {
         const settled = !!inv.settled_at;
-        return '<tr>'
+        const isExpanded = moneyState.nmbrExpandedId === inv.invoice_id;
+        const head = '<tr class="clickable" onclick="toggleMoneyNmbrInvoiceRow(' + inv.invoice_id + ')">'
           + '<td style="font-variant-numeric:tabular-nums;color:var(--ice);">' + _opsEscape(inv.nmbr_reference, '<span class="muted">,</span>') + '</td>'
           + '<td>' + _moneyFmtPeriod(inv.period_start, inv.period_end).replace('&mdash;', '-') + '</td>'
           + '<td>' + (inv.line_count || 0) + '</td>'
           + '<td><strong>' + _moneyFmtCurrency(inv.invoice_amount) + '</strong></td>'
           + '<td>' + (settled ? '<span class="money-status-pill green">Settled ' + _moneyFmtDate(inv.settled_at) + '</span>' : '<span class="money-status-pill amber">Unsettled</span>') + '</td>'
-          + '<td>' + (settled ? '<span class="muted">,</span>' : '<button class="health-link" onclick="settleNmbrInvoice(' + inv.invoice_id + ')">Settle</button>') + '</td>'
+          + '<td>' + (settled ? '<span class="muted">,</span>' : '<button class="health-link" onclick="event.stopPropagation();settleNmbrInvoice(' + inv.invoice_id + ')">Settle</button>') + '</td>'
           + '</tr>';
+        const exp = isExpanded
+          ? '<tr><td colspan="6" style="padding:0;background:transparent;">'
+            + (_renderMoneyNmbrInvoiceReconciliation(inv.invoice_id)
+                || '<div class="health-loading" style="margin:8px 0;">Loading reconciliation...</div>')
+            + '</td></tr>'
+          : '';
+        return head + exp;
       }).join('')
     : '<tr><td colspan="6" style="padding:24px 10px;text-align:center;color:var(--grey);">No NumberMill invoices ingested yet.</td></tr>';
   pane.innerHTML = genRow
@@ -9116,11 +9145,90 @@ function _renderMoneyNmbrPane() {
 }
 
 async function settleNmbrInvoice(invoiceId) {
-  if(!confirm('Mark this NumberMill invoice as settled (paid)?')) return;
+  // Q7 lock: warn-and-override when the reconciliation surfaces red rows
+  // (NumberMill invoiced for ASGs not in your timesheet). The settle_numbermill_invoice
+  // RPC itself is unchanged; the gate is UX only.
+  const cache = moneyState.nmbrReconciliationCache || {};
+  const recon = cache[invoiceId];
+  const redCount = recon && recon.rows
+    ? recon.rows.filter(r => r.status === 'invoiced_not_timesheeted').length
+    : 0;
+  let confirmMsg = 'Mark this NumberMill invoice as settled (paid)?';
+  if(redCount > 0) {
+    confirmMsg = 'This invoice has ' + redCount + ' row'
+      + (redCount === 1 ? '' : 's')
+      + ' that don\'t match your timesheet (NumberMill invoiced for ASGs not in your timesheet).\n\n'
+      + 'Settle anyway?';
+  }
+  if(!confirm(confirmMsg)) return;
   const res = await sbAuth.rpc('settle_numbermill_invoice', { p_invoice_id: invoiceId });
   if(res.error) { alert('Settle failed: ' + res.error.message); return; }
   moneyState.nmbrList = null;
+  moneyState.nmbrReconciliationCache = {};
   await loadMoneyNmbrData();
+}
+
+// Click-to-expand on a NumberMill invoices row. Lazy-loads the
+// reconciliation cache, mirror of toggleMoneyBarInvoiceRow.
+async function toggleMoneyNmbrInvoiceRow(invoiceId) {
+  if(moneyState.nmbrExpandedId === invoiceId) {
+    moneyState.nmbrExpandedId = null;
+    _renderMoneyNmbrPane();
+    return;
+  }
+  moneyState.nmbrExpandedId = invoiceId;
+  _renderMoneyNmbrPane();
+  if(!moneyState.nmbrReconciliationCache) moneyState.nmbrReconciliationCache = {};
+  if(!moneyState.nmbrReconciliationCache[invoiceId]) {
+    const res = await sbAuth.rpc('numbermill_reconciliation',
+                                 { p_invoice_id: invoiceId });
+    moneyState.nmbrReconciliationCache[invoiceId] = res.error
+      ? { _error: res.error.message }
+      : (res.data || {});
+    _renderMoneyNmbrPane();
+  }
+}
+
+// Renders the per-ASG reconciliation: green (matched on both sides),
+// amber (timesheeted but not invoiced), red (invoiced but not timesheeted).
+// The three-class read is the visual confirmation Sam needs before settling.
+function _renderMoneyNmbrInvoiceReconciliation(invoiceId) {
+  const cache = moneyState.nmbrReconciliationCache || {};
+  const d = cache[invoiceId];
+  if(!d) return null;
+  if(d._error) {
+    return '<div class="health-error" style="margin:10px;">'
+      + 'Failed to load reconciliation: ' + _opsEscape(d._error) + '</div>';
+  }
+  const rows = (d.rows || []);
+  const statusPill = (status) => {
+    if(status === 'matched') return '<span class="money-status-pill green">MATCHED</span>';
+    if(status === 'timesheeted_not_invoiced') return '<span class="money-status-pill amber">TIMESHEETED, NOT INVOICED</span>';
+    return '<span class="money-status-pill red">INVOICED, NOT TIMESHEETED</span>';
+  };
+  const tsCell = (line) => line
+    ? (_opsEscape(line.glasi_worker_ref || '') + ' &middot; ' + (line.requested_hours || 0) + 'h @ '
+       + _moneyFmtCurrency(line.worker_pay))
+    : '<span class="muted">,</span>';
+  const nmCell = (line) => line
+    ? (_moneyFmtCurrency(line.worker_pay) + ' + '
+       + _moneyFmtCurrency(line.numbermill_margin) + ' margin = '
+       + '<strong>' + _moneyFmtCurrency(line.line_total) + '</strong>')
+    : '<span class="muted">,</span>';
+  const tbody = rows.length
+    ? rows.map(r => '<tr>'
+        + '<td style="font-variant-numeric:tabular-nums;color:var(--ice);">' + _opsEscape(r.asg_reference || '') + '</td>'
+        + '<td>' + tsCell(r.timesheet_line) + '</td>'
+        + '<td>' + nmCell(r.invoice_line) + '</td>'
+        + '<td>' + statusPill(r.status) + '</td>'
+        + '</tr>').join('')
+    : '<tr><td colspan="4" style="padding:18px;text-align:center;color:var(--grey);">No timesheet or invoice rows for this period.</td></tr>';
+  return '<div style="padding:14px 18px;background:var(--navy);border-top:1px solid var(--border);">'
+    + '<table class="health-table" style="margin:0;">'
+    + '<thead><tr><th>ASG</th><th>Timesheet line</th><th>NumberMill line</th><th>Status</th></tr></thead>'
+    + '<tbody>' + tbody + '</tbody>'
+    + '</table>'
+    + '</div>';
 }
 
 function openMoneyIngestNmbrModal() {
@@ -10787,6 +10895,7 @@ async function openEditWorker(id) {
     document.getElementById('ew-vetted-address').value = w.full_address || '';
     document.getElementById('ew-vetted-notes').value   = w.vetting_notes || '';
     document.getElementById('ew-vetted-error').textContent = '';
+    _updateEditWorkerPreconditions(w);
   } else if(status === 'onboarded') {
     document.getElementById('ew-glasi-address').value = w.full_address || '';
     document.getElementById('ew-glasi-notes').value   = w.vetting_notes || '';
@@ -10881,20 +10990,52 @@ async function saveGlasiChanges() {
 
 async function markOnboarded() {
   if(!editingWorkerId) return;
+  const errEl = document.getElementById('ew-vetted-error');
+  if(errEl) errEl.textContent = '';
   if(!confirm('Mark this worker as onboarded? They will appear under Glasi\'s.')) return;
-  const now = new Date().toISOString();
-  try {
-    await sbPatch('applications', '?id=eq.'+editingWorkerId, {
-      worker_status: 'onboarded',
-      onboarded_at: now
-    });
-  } catch(e) {
-    alert('Failed: ' + (e.message || 'unknown'));
+  const res = await sbAuth.rpc('mark_worker_onboarded',
+                               { p_application_id: editingWorkerId });
+  if(res.error) {
+    const raw = res.error.message || 'unknown';
+    let friendly = raw;
+    if(/MISSING_NUMBERMILL_REF/.test(raw)) {
+      friendly = 'Add the NumberMill reference before onboarding.';
+    } else if(/MISSING_RTW_SHARE_CODE/.test(raw)) {
+      friendly = 'Add the RTW share code before onboarding.';
+    }
+    if(errEl) errEl.textContent = friendly;
+    else alert(friendly);
     return;
   }
   closeOv('edit-worker');
   await loadWorkers();
   setWorkersSubTab('onboarded');
+}
+
+// Q8 lock: precondition status block above the Mark onboarded button.
+// Reads numbermill_worker_ref + rtw_share_code from the loaded worker row,
+// flips the precondition dots, and enables/disables the button. Called on
+// edit-worker overlay open and after any NumberMill ref / RTW share code
+// save handler completes.
+function _updateEditWorkerPreconditions(worker) {
+  if(!worker) return;
+  const nmDot = document.querySelector('#ew-precond-nm .precond-dot');
+  const rtwDot = document.querySelector('#ew-precond-rtw .precond-dot');
+  const hasNm = !!(worker.numbermill_worker_ref || '').toString().trim();
+  const hasRtw = !!(worker.rtw_share_code || '').toString().trim();
+  if(nmDot) nmDot.setAttribute('data-state', hasNm ? 'present' : 'missing');
+  if(rtwDot) rtwDot.setAttribute('data-state', hasRtw ? 'present' : 'missing');
+  const onboardBtn = document.querySelector(
+    '#ew-section-vetted button.confirm-btn[onclick="markOnboarded()"]');
+  if(onboardBtn) {
+    if(hasNm && hasRtw) {
+      onboardBtn.disabled = false;
+      onboardBtn.title = '';
+    } else {
+      onboardBtn.disabled = true;
+      onboardBtn.title = 'Add NumberMill reference and RTW share code first';
+    }
+  }
 }
 
 async function loadWorkerFunnel() {

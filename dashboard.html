@@ -4837,7 +4837,7 @@ async function loadNetworkWorkersData() {
     // offboarded are hidden client-side (see _isWorkerHidden), not by the query.
     const rows = await sbGet('applications',
       '?worker_status=in.(registered,applied,vetted,onboarded)'
-      + '&select=id,name,email,phone,age_group,full_address,postcode_full,tier,hourly_rate,reliability_score,reliability_updated_at,total_points,worker_status,active,offboarded_at,created_at,referred_by,vetting_notes,admin_notes,reliability_notes,uk_work_right,hospitality_experience,available_hours,speaks_english,has_black_clothing,instagram_handle,glasi_worker_ref,numbermill_worker_ref,rtw_share_code,rtw_share_code_verified_at,rtw_documents_location,kid_acknowledged_at,kid_acknowledged_version,kid_acknowledged_typed_name'
+      + '&select=id,name,email,phone,age_group,full_address,postcode_full,tier,hourly_rate,reliability_score,reliability_updated_at,total_points,worker_status,active,offboarded_at,created_at,referred_by,vetting_notes,admin_notes,reliability_notes,uk_work_right,hospitality_experience,available_hours,speaks_english,has_black_clothing,instagram_handle,glasi_worker_ref,numbermill_worker_ref,rtw_share_code,rtw_share_code_verified_at,rtw_documents_location,kid_acknowledged_at,kid_acknowledged_version,kid_acknowledged_typed_name,invite_sent_at,password_set_at,terms_acknowledged_version'
       + '&order=name.asc');
     networkWorkersState.workers = Array.isArray(rows) ? rows : [];
     // Decision C: fetch active-flag set in one shot so the FLAGGED pill +
@@ -5202,6 +5202,67 @@ async function netWorkerInlineOnboard(wid) {
   if(typeof showDashboardToast === 'function') showDashboardToast('Worker onboarded');
 }
 
+// Worker-invite + set-password batch (2026-05-30 v2-surface patch):
+// Send platform invite from the Network workers expansion. Calls the
+// send-worker-platform-invite Edge Function with the worker's id, surfaces
+// success/failure inline next to the button, and re-renders the row so the
+// pip flips to "Invited (pending password)" with the fresh timestamp.
+//
+// Spam protection: confirm() the resend if invite_sent_at is within 60s.
+// The EF itself is not rate-limited (single click, admin-gated). Server
+// timestamp from the EF response would be slightly more accurate than
+// local clock for the optimistic write; close enough for the UI here, the
+// next loadNetworkWorkersData() picks up the authoritative value.
+async function netWorkerSendPlatformInvite(wid) {
+  const w = _findNetWorker(wid);
+  if(!w) return;
+  const statusEl = document.getElementById('net-worker-platform-status-' + wid);
+  const btn      = document.getElementById('net-worker-platform-btn-' + wid);
+  const setStatus = (msg, kind) => {
+    if(!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.style.color = (kind === 'error') ? 'var(--red)'
+      : (kind === 'success') ? 'var(--green)'
+      : 'var(--grey)';
+  };
+  if(w.invite_sent_at) {
+    const secs = Math.floor((Date.now() - new Date(w.invite_sent_at).getTime()) / 1000);
+    if(secs < 60) {
+      if(!confirm('You sent an invite ' + secs + ' seconds ago. Send another?')) return;
+    } else {
+      if(!confirm('Resend the platform invite? The worker will receive a fresh one-time link by email.')) return;
+    }
+  } else {
+    if(!confirm('Send the Glasi platform invite to ' + (w.email || 'this worker') + '?')) return;
+  }
+  if(btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  setStatus('', null);
+  try {
+    const { data: { session } } = await sbAuth.auth.getSession();
+    const token = session?.access_token || KEY;
+    const resp = await fetch(SB + '/functions/v1/send-worker-platform-invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ application_id: wid })
+    });
+    const result = await resp.json().catch(() => ({}));
+    if(!resp.ok || !result.ok) {
+      throw new Error(result.error || ('Edge Function HTTP ' + resp.status));
+    }
+    w.invite_sent_at = new Date().toISOString();
+    renderNetworkWorkersTable();
+    if(typeof showDashboardToast === 'function') {
+      const lbl = result.link_action === 'magiclink'
+        ? 'Magic link sent (auth user already existed)'
+        : 'Platform invite sent';
+      showDashboardToast(lbl);
+    }
+  } catch(e) {
+    if(btn) { btn.disabled = false; btn.textContent = w.invite_sent_at ? 'Resend platform invite' : 'Send platform invite'; }
+    setStatus('Invite failed: ' + ((e && e.message) || 'unknown'), 'error');
+  }
+}
+
 // Batch B amend: Mark Vetted modal. One consent question, optional notes.
 let _markVettedAppId = null;
 let _markVettedConsent = null;
@@ -5334,9 +5395,37 @@ function _renderWorkerExpansionOnboarded(w) {
     _populateWorkerFlags(w);
   }, 0);
 
+  // Worker-invite + set-password batch (2026-05-30 v2-surface patch):
+  // GLASI PLATFORM ACCESS section inline in the onboarded expansion.
+  // One click sends the worker a branded Resend email containing a
+  // generateLink-issued action link to set-password.html. Pip reads the
+  // same source-of-truth columns (invite_sent_at, password_set_at,
+  // terms_acknowledged_version) that the splash gate reads on the worker app.
+  const pip = (typeof _platformAccessPip === 'function')
+    ? _platformAccessPip(w)
+    : { state:'not-invited', label:'Not invited' };
+  const fmtTs = iso => iso
+    ? new Date(iso).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+    : 'never';
+  const platformBtnLabel = w.invite_sent_at ? 'Resend platform invite' : 'Send platform invite';
+  const platformHtml = ''
+    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">'
+    +   '<span class="platform-pip" data-state="' + pip.state + '">' + pip.label + '</span>'
+    + '</div>'
+    + '<div class="net-prof-grid">'
+    +   '<span class="k">Invite sent</span><span class="v">' + fmtTs(w.invite_sent_at) + '</span>'
+    +   '<span class="k">Password set</span><span class="v">' + fmtTs(w.password_set_at) + '</span>'
+    +   '<span class="k">Terms accepted</span><span class="v">' + _opsEscape(w.terms_acknowledged_version || 'none') + '</span>'
+    + '</div>'
+    + '<div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+    +   '<button class="ops-sched-btn" id="net-worker-platform-btn-' + wid + '" onclick="netWorkerSendPlatformInvite(' + wid + ')">' + platformBtnLabel + '</button>'
+    +   '<span class="field-status" id="net-worker-platform-status-' + wid + '"></span>'
+    + '</div>';
+
   return ''
     + '<tr class="ops-sched-expanded-row"><td colspan="5"><div class="ops-sched-exp-inner">'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Identity</h3>' + identityHtml + '</div>'
+    +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Glasi platform access</h3>' + platformHtml + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Compliance</h3>' + complianceHtml + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Performance</h3>' + perfHtml + '</div>'
     +   '<div class="ops-sched-exp-section"><h3 class="ops-sched-exp-h3">Recent Shifts</h3>' + shiftsHtml + '</div>'

@@ -5811,6 +5811,7 @@ function _renderWorkerProfile() {
     + '</div>'
     + countsHtml
     + _renderWorkerProfileAdmin(h)
+    + _renderWorkerProfilePlatformAccess(h)
     + _renderWorkerProfileOnboard(h)
     + '</div>';
 
@@ -5876,6 +5877,41 @@ function _renderWorkerProfileAdmin(h) {
     + '</div>';
 }
 
+// Worker-invite + set-password batch (2026-05-30 v2-surface redo).
+// Glasi platform access block, shown only for onboarded workers. Four-state
+// pip + three timestamp lines + Send platform invite button. Sits between
+// the admin block (NumberMill / RTW) and the onboard action (which renders
+// only for vetted workers, so the two never co-exist).
+function _renderWorkerProfilePlatformAccess(h) {
+  if((h.worker_status || '') !== 'onboarded') return '';
+  const pip = (typeof _platformAccessPip === 'function')
+    ? _platformAccessPip(h)
+    : { state:'not-invited', label:'Not invited' };
+  const fmt = iso => iso
+    ? new Date(iso).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+    : 'never';
+  const btnLabel = h.invite_sent_at ? 'Resend platform invite' : 'Send platform invite';
+  return ''
+    + '<div class="wprof-admin">'
+    +   '<h4 class="wprof-admin-h4" style="font-size:11px;color:var(--grey);margin-bottom:12px;">Glasi platform access</h4>'
+    +   '<div class="wprof-admin-block">'
+    +     '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;">'
+    +       '<p class="wprof-admin-note" style="margin:0;">Send the worker a Glasi-branded email containing a one-time link to set their password. NumberMill is the employer; Glasi is the platform they sign in to.</p>'
+    +       '<span class="platform-pip" data-state="' + pip.state + '">' + pip.label + '</span>'
+    +     '</div>'
+    +     '<div class="net-prof-grid">'
+    +       '<span class="k">Invite sent</span><span class="v">' + fmt(h.invite_sent_at) + '</span>'
+    +       '<span class="k">Password set</span><span class="v">' + fmt(h.password_set_at) + '</span>'
+    +       '<span class="k">Terms accepted</span><span class="v">' + _opsEscape(h.terms_acknowledged_version || 'none') + '</span>'
+    +     '</div>'
+    +     '<div class="wprof-admin-row" style="margin-top:12px;">'
+    +       '<button class="ops-sched-btn primary" id="wprof-platform-btn" onclick="wprofSendPlatformInvite()">' + btnLabel + '</button>'
+    +       '<span class="wprof-admin-status" id="wprof-platform-status"></span>'
+    +     '</div>'
+    +   '</div>'
+    + '</div>';
+}
+
 // Batch B (item 4, Q2): vetted to onboarded action. Shown only for vetted
 // workers, disabled until both the NumberMill reference and the RTW share code
 // are on file (the two inputs sit in the admin block directly above). The save
@@ -5911,6 +5947,96 @@ async function wprofMarkOnboarded() {
     return;
   }
   loadWorkerProfileHeader(appId);
+}
+
+// Worker-invite + set-password batch (2026-05-30 v2-surface redo).
+// Send platform invite from the worker profile pane. Calls the
+// send-worker-platform-invite Edge Function with the current worker's id,
+// reloads the header on success so the pip flips and the timestamp renders
+// with the EF-set invite_sent_at, then starts a 60 second cooldown countdown
+// on the button. Confirms before resend if invite_sent_at is recent.
+async function wprofSendPlatformInvite() {
+  const appId = workerProfileState.appId;
+  if(!appId) return;
+  const h = workerProfileState.header || {};
+  if((h.worker_status || '') !== 'onboarded') return;
+  const btn      = document.getElementById('wprof-platform-btn');
+  const statusEl = document.getElementById('wprof-platform-status');
+  const setStatus = (msg, kind) => {
+    if(!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.style.color = (kind === 'error') ? 'var(--red)'
+      : (kind === 'success') ? 'var(--green)'
+      : 'var(--grey)';
+  };
+  // Spam protection: confirm resend when an invite was sent recently.
+  if(h.invite_sent_at) {
+    const secs = Math.floor((Date.now() - new Date(h.invite_sent_at).getTime()) / 1000);
+    if(secs < 60) {
+      if(!confirm('You sent an invite ' + secs + ' seconds ago. Send another?')) return;
+    } else {
+      if(!confirm('Resend the platform invite? The worker will receive a fresh one-time link by email.')) return;
+    }
+  } else {
+    if(!confirm('Send the Glasi platform invite to ' + (h.email || 'this worker') + '?')) return;
+  }
+  if(btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  setStatus('', null);
+  try {
+    const { data: { session } } = await sbAuth.auth.getSession();
+    const token = session?.access_token || KEY;
+    const resp = await fetch(SB + '/functions/v1/send-worker-platform-invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ application_id: appId })
+    });
+    const result = await resp.json().catch(() => ({}));
+    if(!resp.ok || !result.ok) throw new Error(result.error || ('Edge Function HTTP ' + resp.status));
+    // Reload the header so the pip + timestamps reflect the EF-set values.
+    // The cooldown timer is started AFTER the reload so the button it targets
+    // is the freshly-rendered one.
+    await loadWorkerProfileHeader(appId);
+    if(typeof showDashboardToast === 'function') {
+      const lbl = result.link_action === 'magiclink'
+        ? 'Magic link sent (auth user already existed)'
+        : 'Platform invite sent';
+      showDashboardToast(lbl);
+    }
+    _wprofPlatformStartCooldown(60);
+  } catch(e) {
+    if(btn) {
+      btn.disabled = false;
+      btn.textContent = h.invite_sent_at ? 'Resend platform invite' : 'Send platform invite';
+    }
+    setStatus('Invite failed: ' + ((e && e.message) || 'unknown'), 'error');
+  }
+}
+
+// 60 second cooldown countdown on the freshly-rendered platform-invite button.
+// If the user navigates away from the worker profile pane mid-cooldown, the
+// button is removed from the DOM and the next tick ends silently.
+function _wprofPlatformStartCooldown(seconds) {
+  let secondsLeft = seconds;
+  const tick = () => {
+    const btn = document.getElementById('wprof-platform-btn');
+    if(!btn) return;
+    secondsLeft -= 1;
+    if(secondsLeft <= 0) {
+      btn.disabled = false;
+      const h = workerProfileState.header || {};
+      btn.textContent = h.invite_sent_at ? 'Resend platform invite' : 'Send platform invite';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Sent. Resend in ' + secondsLeft + 's';
+    setTimeout(tick, 1000);
+  };
+  const btn = document.getElementById('wprof-platform-btn');
+  if(btn) {
+    btn.disabled = true;
+    btn.textContent = 'Sent. Resend in ' + secondsLeft + 's';
+  }
+  setTimeout(tick, 1000);
 }
 
 function _renderWorkerProfileSection(appId, def) {

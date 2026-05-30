@@ -1065,6 +1065,20 @@
     .precond-dot[data-state="present"] { background: var(--green); }
     .precond-dot[data-state="missing"] { background: var(--amber); }
 
+    /* Platform-access pip in the ONBOARDED edit-worker section. Four states
+       computed from applications.invite_sent_at + password_set_at +
+       terms_acknowledged_version. */
+    .platform-pip { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; letter-spacing:.5px; padding:4px 10px; border-radius:999px; border:1px solid var(--border); background:var(--navy-mid); color:var(--white); text-transform:uppercase; }
+    .platform-pip::before { content:''; width:8px; height:8px; border-radius:50%; background:var(--grey); }
+    .platform-pip[data-state="not-invited"]      { color:var(--grey);  border-color:rgba(100,116,139,0.35); }
+    .platform-pip[data-state="not-invited"]::before  { background:var(--grey); }
+    .platform-pip[data-state="invited-pending"]  { color:var(--amber); border-color:rgba(245,158,11,0.35); }
+    .platform-pip[data-state="invited-pending"]::before { background:var(--amber); }
+    .platform-pip[data-state="ready"]            { color:var(--ice);   border-color:rgba(168,216,234,0.35); }
+    .platform-pip[data-state="ready"]::before    { background:var(--ice); }
+    .platform-pip[data-state="active"]           { color:var(--green); border-color:rgba(34,197,94,0.35); }
+    .platform-pip[data-state="active"]::before   { background:var(--green); }
+
     .empty { text-align: center; padding: 48px 20px; color: var(--grey); font-size: 13px; line-height: 1.7; }
 
     .close-session-btn { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 6px 14px; font-size: 12px; cursor: pointer; }
@@ -2443,6 +2457,26 @@
         <textarea class="field" id="ew-glasi-notes" rows="3"></textarea>
         <div class="error-msg" id="ew-glasi-error"></div>
       </div>
+
+      <!-- Worker-invite + set-password batch (2026-05-30): GLASI PLATFORM ACCESS.
+           One click sends the worker a branded Resend email containing a
+           generateLink-issued action link that lands on set-password.html.
+           Pip shows where the worker is in the join-the-platform journey;
+           timestamps below mirror the same source-of-truth columns. -->
+      <div id="ew-platform-access" style="margin:14px 0;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--navy-mid);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+          <div style="font-size:10px;letter-spacing:2px;color:var(--grey);font-weight:600;">GLASI PLATFORM ACCESS</div>
+          <span id="ew-platform-pip" class="platform-pip" data-state="not-invited">Not invited</span>
+        </div>
+        <div id="ew-platform-timestamps" style="font-size:12px;color:var(--grey);line-height:1.6;margin-bottom:10px;">
+          <div>Invite sent: <span id="ew-platform-invited-at" style="color:var(--white);">never</span></div>
+          <div>Password set: <span id="ew-platform-password-at" style="color:var(--white);">never</span></div>
+          <div>Terms accepted (version): <span id="ew-platform-terms-version" style="color:var(--white);">none</span></div>
+        </div>
+        <div id="ew-platform-error" class="error-msg" style="margin-bottom:8px;"></div>
+        <button id="ew-platform-send-btn" class="ghost-btn" onclick="sendWorkerPlatformInvite()" style="width:100%;">Send platform invite</button>
+      </div>
+
       <div class="modal-actions">
         <button class="cancel-btn" onclick="closeOv('edit-worker')">Cancel</button>
         <button class="confirm-btn" onclick="saveGlasiChanges()">Save changes</button>
@@ -10689,7 +10723,7 @@ async function loadWorkers() {
   // F-35: fetch workers + shift counts + active distances + active bars in parallel.
   const [workersResult, shiftCounts, distancesResult, barsResult] = await Promise.all([
     sbGet('applications',
-      '?order=name.asc&select=id,name,phone,email,postcode_full,full_address,tier,hourly_rate,active,age_group,reliability_notes,available_hours,reliability_score,reliability_updated_at,worker_status,total_points,last_login_claim_at,vetted_at,vetted_by,vetting_notes,experience_confirmed_at,numbermill_contact_consent_at,onboarded_at,hospitality_experience,uk_work_right,has_black_clothing,has_transport,physically_able,speaks_english,agrees_work_standard,created_at'),
+      '?order=name.asc&select=id,name,phone,email,postcode_full,full_address,tier,hourly_rate,active,age_group,reliability_notes,available_hours,reliability_score,reliability_updated_at,worker_status,total_points,last_login_claim_at,vetted_at,vetted_by,vetting_notes,experience_confirmed_at,numbermill_contact_consent_at,onboarded_at,hospitality_experience,uk_work_right,has_black_clothing,has_transport,physically_able,speaks_english,agrees_work_standard,created_at,numbermill_worker_ref,rtw_share_code,invite_sent_at,password_set_at,terms_acknowledged_version'),
     sbGet('shifts', '?status=eq.completed&select=session_worker_id,session_workers(application_id)'),
     sbGet('worker_bar_distances', '?active=eq.true&select=application_id,walking_minutes'),
     sbGet('bars', '?status=in.(trial,active,prospect)&select=id')
@@ -10900,6 +10934,7 @@ async function openEditWorker(id) {
     document.getElementById('ew-glasi-address').value = w.full_address || '';
     document.getElementById('ew-glasi-notes').value   = w.vetting_notes || '';
     document.getElementById('ew-glasi-error').textContent = '';
+    _updateEditWorkerPlatformAccess(w);
   }
 
   openOv('edit-worker');
@@ -11035,6 +11070,109 @@ function _updateEditWorkerPreconditions(worker) {
       onboardBtn.disabled = true;
       onboardBtn.title = 'Add NumberMill reference and RTW share code first';
     }
+  }
+}
+
+// Worker-invite + set-password batch (2026-05-30).
+// Compute the four-state pip from the three source-of-truth columns:
+//   - applications.invite_sent_at         (set by send-worker-platform-invite EF)
+//   - applications.password_set_at        (set by worker_password_set RPC)
+//   - applications.terms_acknowledged_version  (set by worker_accept_terms RPC)
+// Returns { state, label } where state is the data-state attribute value.
+function _platformAccessPip(w) {
+  if(!w) return { state:'not-invited', label:'Not invited' };
+  const inviteAt   = w.invite_sent_at || null;
+  const passAt     = w.password_set_at || null;
+  const termsVer   = (w.terms_acknowledged_version || '').toString().trim();
+  if(passAt && termsVer)   return { state:'active',          label:'Active' };
+  if(passAt)               return { state:'ready',           label:'Ready' };
+  if(inviteAt)             return { state:'invited-pending', label:'Invited (pending password)' };
+  return                          { state:'not-invited',     label:'Not invited' };
+}
+
+// Render the GLASI PLATFORM ACCESS block in the ONBOARDED edit-worker section.
+// Called from openEditWorker when status==='onboarded', and again after a
+// successful Send platform invite click so the pip + timestamps reflect the
+// fresh invite_sent_at without a full loadWorkers reload.
+function _updateEditWorkerPlatformAccess(worker) {
+  if(!worker) return;
+  const pip = _platformAccessPip(worker);
+  const pipEl = document.getElementById('ew-platform-pip');
+  if(pipEl) {
+    pipEl.setAttribute('data-state', pip.state);
+    pipEl.textContent = pip.label;
+  }
+  const invitedEl = document.getElementById('ew-platform-invited-at');
+  const passwdEl  = document.getElementById('ew-platform-password-at');
+  const termsEl   = document.getElementById('ew-platform-terms-version');
+  const fmt = iso => iso
+    ? new Date(iso).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+    : 'never';
+  if(invitedEl) invitedEl.textContent = fmt(worker.invite_sent_at);
+  if(passwdEl)  passwdEl.textContent  = fmt(worker.password_set_at);
+  if(termsEl)   termsEl.textContent   = worker.terms_acknowledged_version || 'none';
+  // Button label reflects whether this is a first invite or a resend.
+  const btn = document.getElementById('ew-platform-send-btn');
+  if(btn) {
+    btn.disabled = false;
+    btn.textContent = worker.invite_sent_at ? 'Resend platform invite' : 'Send platform invite';
+    btn.title = '';
+  }
+  const err = document.getElementById('ew-platform-error');
+  if(err) err.textContent = '';
+}
+
+// One-click handler. Calls send-worker-platform-invite with the worker's
+// application_id, surfaces success/failure inline, refreshes the worker row
+// in allWorkersData so the pip + timestamps update without a full reload,
+// then enforces a 60 second cooldown on the button to prevent accidental
+// double-sends. Returns to enabled with "Resend platform invite" after.
+async function sendWorkerPlatformInvite() {
+  if(!editingWorkerId) return;
+  const btn = document.getElementById('ew-platform-send-btn');
+  const err = document.getElementById('ew-platform-error');
+  if(err) err.textContent = '';
+  if(!btn) return;
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  try {
+    const { data: { session } } = await sbAuth.auth.getSession();
+    const token = session?.access_token || KEY;
+    const resp = await fetch(SB + '/functions/v1/send-worker-platform-invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ application_id: editingWorkerId })
+    });
+    const result = await resp.json().catch(() => ({}));
+    if(!resp.ok || !result.ok) {
+      throw new Error(result.error || ('Edge Function HTTP ' + resp.status));
+    }
+    // Reflect the fresh invite_sent_at locally without a full loadWorkers.
+    const idx = allWorkersData.findIndex(x => x.id === editingWorkerId);
+    if(idx >= 0) {
+      allWorkersData[idx] = { ...allWorkersData[idx], invite_sent_at: new Date().toISOString() };
+      _updateEditWorkerPlatformAccess(allWorkersData[idx]);
+    }
+    btn.textContent = 'Invite sent. Resend in 60s';
+    // 60 second cooldown.
+    let secondsLeft = 60;
+    const tick = () => {
+      secondsLeft -= 1;
+      if(secondsLeft <= 0) {
+        btn.disabled = false;
+        const w = allWorkersData.find(x => x.id === editingWorkerId);
+        btn.textContent = (w && w.invite_sent_at) ? 'Resend platform invite' : 'Send platform invite';
+        return;
+      }
+      btn.textContent = 'Sent. Resend in ' + secondsLeft + 's';
+      setTimeout(tick, 1000);
+    };
+    setTimeout(tick, 1000);
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = original;
+    if(err) err.textContent = 'Invite failed: ' + ((e && e.message) || 'unknown');
   }
 }
 
